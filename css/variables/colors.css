@@ -1,0 +1,168 @@
+/* 颜色变量定义 */
+:root {
+    /* 主色调 */
+    --primary-color: #667eea;
+    --primary-dark: #764ba2;
+    --primary-light: #8a9cff;
+    
+    /* 渐变色 */
+    --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --gradient-background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    
+    /* 中性色 */
+    --white: #ffffff;
+    --black: #000000;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+    
+    /* 语义化颜色 */
+    --success-color: #4CAF50;
+    --success-light: #81C784;
+    --success-dark: #388E3C;
+    
+    --error-color: #f44336;
+    --error-light: #ef5350;
+    --error-dark: #d32f2f;
+    
+    --warning-color: #ff9800;
+    --warning-light: #ffb74d;
+    --warning-dark: #f57c00;
+    
+    --info-color: #2196F3;
+    --info-light: #64B5F6;
+    --info-dark: #1976D2;
+    
+    /* 文本颜色 */
+    --text-primary: #333333;
+    --text-secondary: #666666;
+    --text-muted: #999999;
+    --text-light: #cccccc;
+    --text-white: #ffffff;
+    
+    /* 背景颜色 */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-dark: #343a40;
+    --bg-overlay: rgba(255, 255, 255, 0.95);
+    --bg-overlay-dark: rgba(0, 0, 0, 0.8);
+    --bg-glass: rgba(255, 255, 255, 0.9);
+    --bg-glass-light: rgba(255, 255, 255, 0.1);
+    
+    /* 边框颜色 */
+    --border-light: #e1e5e9;
+    --border-medium: #d1d5db;
+    --border-dark: #9ca3af;
+    --border-focus: var(--primary-color);
+    
+    /* 阴影颜色 */
+    --shadow-light: rgba(0, 0, 0, 0.1);
+    --shadow-medium: rgba(0, 0, 0, 0.2);
+    --shadow-dark: rgba(0, 0, 0, 0.3);
+    --shadow-primary: rgba(102, 126, 234, 0.3);
+    --shadow-focus: rgba(102, 126, 234, 0.1);
+    
+    /* 状态颜色 */
+    --hover-overlay: rgba(0, 0, 0, 0.05);
+    --active-overlay: rgba(0, 0, 0, 0.1);
+    --disabled-color: #9ca3af;
+    --disabled-bg: #f3f4f6;
+    
+    /* 特殊效果颜色 */
+    --backdrop-blur: blur(10px);
+    --text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    --glow-primary: 0 0 20px rgba(102, 126, 234, 0.5);
+    --glow-secondary: 0 0 20px rgba(240, 147, 251, 0.5);
+}
+
+/* 深色主题变量 */
+[data-theme="dark"] {
+    --primary-color: #8a9cff;
+    --primary-dark: #667eea;
+    --primary-light: #a5b4ff;
+    
+    --text-primary: #ffffff;
+    --text-secondary: #cccccc;
+    --text-muted: #999999;
+    --text-light: #666666;
+    
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2d2d2d;
+    --bg-dark: #0f0f0f;
+    --bg-overlay: rgba(26, 26, 26, 0.95);
+    --bg-overlay-dark: rgba(0, 0, 0, 0.9);
+    --bg-glass: rgba(26, 26, 26, 0.9);
+    --bg-glass-light: rgba(255, 255, 255, 0.05);
+    
+    --border-light: #404040;
+    --border-medium: #555555;
+    --border-dark: #666666;
+    
+    --shadow-light: rgba(0, 0, 0, 0.3);
+    --shadow-medium: rgba(0, 0, 0, 0.5);
+    --shadow-dark: rgba(0, 0, 0, 0.7);
+    
+    --hover-overlay: rgba(255, 255, 255, 0.05);
+    --active-overlay: rgba(255, 255, 255, 0.1);
+    --disabled-color: #666666;
+    --disabled-bg: #2d2d2d;
+}
+
+/* 高对比度主题变量 */
+[data-theme="high-contrast"] {
+    --primary-color: #0066cc;
+    --primary-dark: #004499;
+    --primary-light: #3388dd;
+    
+    --text-primary: #000000;
+    --text-secondary: #333333;
+    --text-muted: #666666;
+    --text-white: #ffffff;
+    
+    --bg-primary: #ffffff;
+    --bg-secondary: #f0f0f0;
+    --bg-dark: #000000;
+    
+    --border-light: #000000;
+    --border-medium: #333333;
+    --border-dark: #666666;
+    
+    --success-color: #008800;
+    --error-color: #cc0000;
+    --warning-color: #ff6600;
+    --info-color: #0066cc;
+}
+
+/* 颜色工具类 */
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-muted { color: var(--text-muted); }
+.text-white { color: var(--text-white); }
+.text-success { color: var(--success-color); }
+.text-error { color: var(--error-color); }
+.text-warning { color: var(--warning-color); }
+.text-info { color: var(--info-color); }
+
+.bg-primary { background-color: var(--bg-primary); }
+.bg-secondary { background-color: var(--bg-secondary); }
+.bg-dark { background-color: var(--bg-dark); }
+.bg-success { background-color: var(--success-color); }
+.bg-error { background-color: var(--error-color); }
+.bg-warning { background-color: var(--warning-color); }
+.bg-info { background-color: var(--info-color); }
+
+.bg-gradient-primary { background: var(--gradient-primary); }
+.bg-gradient-secondary { background: var(--gradient-secondary); }
+
+.border-light { border-color: var(--border-light); }
+.border-medium { border-color: var(--border-medium); }
+.border-dark { border-color: var(--border-dark); }
+.border-primary { border-color: var(--primary-color); }

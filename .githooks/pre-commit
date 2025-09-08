@@ -1,0 +1,88 @@
+#!/bin/sh
+# @ai-generated: 基于Claude 4 Sonnet生成的Git预提交钩子
+
+# 预提交质量检查钩子
+# 在每次提交前自动执行代码质量检查
+
+echo "🔍 执行预提交质量检查..."
+
+# 检查是否在Git仓库中
+if ! git rev-parse --git-dir > /dev/null 2>&1; then
+    echo "❌ 错误: 不在Git仓库中"
+    exit 1
+fi
+
+# 检查是否有暂存的文件
+if git diff --cached --quiet; then
+    echo "⚠️  警告: 没有暂存的文件"
+    exit 0
+fi
+
+# 获取暂存的JavaScript文件
+STAGED_JS_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.js$')
+
+if [ -z "$STAGED_JS_FILES" ]; then
+    echo "✅ 没有JavaScript文件需要检查"
+    exit 0
+fi
+
+echo "📁 检查的文件:"
+echo "$STAGED_JS_FILES" | sed 's/^/   - /'
+echo ""
+
+# 运行ESLint检查暂存的文件
+echo "🔍 运行ESLint检查..."
+if ! npx eslint $STAGED_JS_FILES; then
+    echo "❌ ESLint检查失败"
+    echo "💡 提示: 运行 'npm run lint:fix' 自动修复部分问题"
+    exit 1
+fi
+
+# 运行Prettier格式检查
+echo "🎨 检查代码格式..."
+if ! npx prettier --check $STAGED_JS_FILES; then
+    echo "❌ 代码格式检查失败"
+    echo "💡 提示: 运行 'npm run format' 自动格式化代码"
+    exit 1
+fi
+
+# 运行质量门禁检查（宽松模式，避免阻断开发）
+echo "🎯 运行质量门禁检查..."
+if ! npm run quality:gate > /dev/null 2>&1; then
+    echo "⚠️  质量门禁检查发现问题，但不阻断提交"
+    echo "💡 提示: 运行 'npm run quality:gate' 查看详细报告"
+else
+    echo "✅ 质量门禁检查通过"
+fi
+
+# 检查文件大小
+echo "📏 检查文件大小..."
+for file in $STAGED_JS_FILES; do
+    if [ -f "$file" ]; then
+        size=$(wc -c < "$file")
+        if [ $size -gt 102400 ]; then  # 100KB
+            echo "⚠️  警告: $file 文件较大 ($(($size / 1024))KB)"
+        fi
+    fi
+done
+
+# 检查TODO和FIXME注释
+echo "📝 检查待办事项..."
+TODO_COUNT=$(git diff --cached | grep -E '^\+.*\b(TODO|FIXME|XXX|HACK)\b' | wc -l)
+if [ $TODO_COUNT -gt 0 ]; then
+    echo "📋 发现 $TODO_COUNT 个待办事项标记"
+    git diff --cached | grep -E '^\+.*\b(TODO|FIXME|XXX|HACK)\b' | sed 's/^/   /'
+fi
+
+# 检查敏感信息
+echo "🔒 检查敏感信息..."
+SENSITIVE_PATTERNS="password|secret|key|token|api_key|private"
+if git diff --cached | grep -iE "$SENSITIVE_PATTERNS" | grep -v "// @ai-generated" > /dev/null; then
+    echo "⚠️  警告: 可能包含敏感信息"
+    git diff --cached | grep -iE "$SENSITIVE_PATTERNS" | grep -v "// @ai-generated" | sed 's/^/   /'
+    echo "💡 请确认这些内容是否安全"
+fi
+
+echo "✅ 预提交检查完成"
+echo "🚀 准备提交..."
+exit 0

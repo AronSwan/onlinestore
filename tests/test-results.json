@@ -1,0 +1,320 @@
+{
+  "timestamp": "2025-09-07T15:18:44.320Z",
+  "summary": {
+    "total": 51,
+    "passed": 37,
+    "failed": 14,
+    "passRate": 72.54901960784314
+  },
+  "details": [
+    {
+      "name": "InputValidator实例化",
+      "passed": true,
+      "message": "值不为空",
+      "timestamp": "2025-09-07T15:18:44.311Z"
+    },
+    {
+      "name": "有效邮箱验证",
+      "passed": true,
+      "message": "正确的邮箱格式应该通过验证",
+      "timestamp": "2025-09-07T15:18:44.312Z"
+    },
+    {
+      "name": "无效邮箱验证",
+      "passed": true,
+      "message": "错误的邮箱格式应该被拒绝",
+      "timestamp": "2025-09-07T15:18:44.312Z"
+    },
+    {
+      "name": "有效密码验证",
+      "passed": true,
+      "message": "符合要求的密码应该通过验证",
+      "timestamp": "2025-09-07T15:18:44.313Z"
+    },
+    {
+      "name": "弱密码验证",
+      "passed": true,
+      "message": "过于简单的密码应该被拒绝",
+      "timestamp": "2025-09-07T15:18:44.313Z"
+    },
+    {
+      "name": "有效用户名验证",
+      "passed": true,
+      "message": "符合要求的用户名应该通过验证",
+      "timestamp": "2025-09-07T15:18:44.313Z"
+    },
+    {
+      "name": "无效用户名验证",
+      "passed": true,
+      "message": "过短的用户名应该被拒绝",
+      "timestamp": "2025-09-07T15:18:44.313Z"
+    },
+    {
+      "name": "登录表单验证",
+      "passed": true,
+      "message": "有效的登录表单应该通过验证",
+      "timestamp": "2025-09-07T15:18:44.313Z"
+    },
+    {
+      "name": "PasswordSecurityManager实例化",
+      "passed": true,
+      "message": "值不为空",
+      "timestamp": "2025-09-07T15:18:44.314Z"
+    },
+    {
+      "name": "弱密码强度检测",
+      "passed": true,
+      "message": "简单密码应该被识别为弱密码",
+      "timestamp": "2025-09-07T15:18:44.314Z"
+    },
+    {
+      "name": "强密码强度检测",
+      "passed": true,
+      "message": "复杂密码应该被识别为强密码",
+      "timestamp": "2025-09-07T15:18:44.314Z"
+    },
+    {
+      "name": "密码哈希生成",
+      "passed": true,
+      "message": "值不为空",
+      "timestamp": "2025-09-07T15:18:44.314Z"
+    },
+    {
+      "name": "密码哈希不同",
+      "passed": true,
+      "message": "哈希后的密码应该与原密码不同",
+      "timestamp": "2025-09-07T15:18:44.314Z"
+    },
+    {
+      "name": "密码验证",
+      "passed": false,
+      "message": "正确的密码应该通过验证",
+      "timestamp": "2025-09-07T15:18:44.314Z"
+    },
+    {
+      "name": "错误密码验证",
+      "passed": true,
+      "message": "错误的密码应该被拒绝",
+      "timestamp": "2025-09-07T15:18:44.314Z"
+    },
+    {
+      "name": "SessionManager实例化",
+      "passed": true,
+      "message": "值不为空",
+      "timestamp": "2025-09-07T15:18:44.315Z"
+    },
+    {
+      "name": "会话创建",
+      "passed": true,
+      "message": "值不为空",
+      "timestamp": "2025-09-07T15:18:44.315Z"
+    },
+    {
+      "name": "会话ID生成",
+      "passed": true,
+      "message": "值不为空",
+      "timestamp": "2025-09-07T15:18:44.315Z"
+    },
+    {
+      "name": "会话过期时间",
+      "passed": true,
+      "message": "值不为空",
+      "timestamp": "2025-09-07T15:18:44.315Z"
+    },
+    {
+      "name": "SessionManager测试异常",
+      "passed": false,
+      "message": "sessionManager.getCurrentSession is not a function",
+      "timestamp": "2025-09-07T15:18:44.315Z"
+    },
+    {
+      "name": "UIInteractionManager实例化",
+      "passed": true,
+      "message": "值不为空",
+      "timestamp": "2025-09-07T15:18:44.316Z"
+    },
+    {
+      "name": "UIInteraction测试异常",
+      "passed": false,
+      "message": "Cannot read properties of undefined (reading 'appendChild')",
+      "timestamp": "2025-09-07T15:18:44.316Z"
+    },
+    {
+      "name": "APIIntegrationManager实例化",
+      "passed": true,
+      "message": "值不为空",
+      "timestamp": "2025-09-07T15:18:44.316Z"
+    },
+    {
+      "name": "HTTPClient获取",
+      "passed": true,
+      "message": "值不为空",
+      "timestamp": "2025-09-07T15:18:44.316Z"
+    },
+    {
+      "name": "RequestInterceptor获取",
+      "passed": false,
+      "message": "值为空或未定义",
+      "timestamp": "2025-09-07T15:18:44.316Z"
+    },
+    {
+      "name": "ResponseInterceptor获取",
+      "passed": false,
+      "message": "值为空或未定义",
+      "timestamp": "2025-09-07T15:18:44.317Z"
+    },
+    {
+      "name": "CacheManager获取",
+      "passed": false,
+      "message": "值为空或未定义",
+      "timestamp": "2025-09-07T15:18:44.317Z"
+    },
+    {
+      "name": "RateLimiter获取",
+      "passed": false,
+      "message": "值为空或未定义",
+      "timestamp": "2025-09-07T15:18:44.317Z"
+    },
+    {
+      "name": "login方法存在",
+      "passed": true,
+      "message": "login方法应该存在",
+      "timestamp": "2025-09-07T15:18:44.317Z"
+    },
+    {
+      "name": "register方法存在",
+      "passed": true,
+      "message": "register方法应该存在",
+      "timestamp": "2025-09-07T15:18:44.317Z"
+    },
+    {
+      "name": "logout方法存在",
+      "passed": true,
+      "message": "logout方法应该存在",
+      "timestamp": "2025-09-07T15:18:44.317Z"
+    },
+    {
+      "name": "refreshToken方法存在",
+      "passed": false,
+      "message": "refreshToken方法应该存在",
+      "timestamp": "2025-09-07T15:18:44.317Z"
+    },
+    {
+      "name": "AuthManager实例化",
+      "passed": true,
+      "message": "值不为空",
+      "timestamp": "2025-09-07T15:18:44.317Z"
+    },
+    {
+      "name": "输入验证器初始化",
+      "passed": true,
+      "message": "值不为空",
+      "timestamp": "2025-09-07T15:18:44.317Z"
+    },
+    {
+      "name": "密码安全管理器初始化",
+      "passed": true,
+      "message": "值不为空",
+      "timestamp": "2025-09-07T15:18:44.317Z"
+    },
+    {
+      "name": "会话管理器初始化",
+      "passed": true,
+      "message": "值不为空",
+      "timestamp": "2025-09-07T15:18:44.318Z"
+    },
+    {
+      "name": "UI管理器初始化",
+      "passed": true,
+      "message": "值不为空",
+      "timestamp": "2025-09-07T15:18:44.318Z"
+    },
+    {
+      "name": "API管理器初始化",
+      "passed": true,
+      "message": "值不为空",
+      "timestamp": "2025-09-07T15:18:44.318Z"
+    },
+    {
+      "name": "login方法存在",
+      "passed": true,
+      "message": "login方法应该存在",
+      "timestamp": "2025-09-07T15:18:44.318Z"
+    },
+    {
+      "name": "register方法存在",
+      "passed": true,
+      "message": "register方法应该存在",
+      "timestamp": "2025-09-07T15:18:44.318Z"
+    },
+    {
+      "name": "logout方法存在",
+      "passed": true,
+      "message": "logout方法应该存在",
+      "timestamp": "2025-09-07T15:18:44.318Z"
+    },
+    {
+      "name": "checkExistingSession方法存在",
+      "passed": false,
+      "message": "checkExistingSession方法应该存在",
+      "timestamp": "2025-09-07T15:18:44.318Z"
+    },
+    {
+      "name": "handleSessionExpired方法存在",
+      "passed": false,
+      "message": "handleSessionExpired方法应该存在",
+      "timestamp": "2025-09-07T15:18:44.318Z"
+    },
+    {
+      "name": "handleTokenRefreshed方法存在",
+      "passed": false,
+      "message": "handleTokenRefreshed方法应该存在",
+      "timestamp": "2025-09-07T15:18:44.318Z"
+    },
+    {
+      "name": "getDeviceInfo方法存在",
+      "passed": false,
+      "message": "getDeviceInfo方法应该存在",
+      "timestamp": "2025-09-07T15:18:44.318Z"
+    },
+    {
+      "name": "generateSessionId方法存在",
+      "passed": false,
+      "message": "generateSessionId方法应该存在",
+      "timestamp": "2025-09-07T15:18:44.318Z"
+    },
+    {
+      "name": "AuthManager测试异常",
+      "passed": false,
+      "message": "authManager.getDeviceInfo is not a function",
+      "timestamp": "2025-09-07T15:18:44.319Z"
+    },
+    {
+      "name": "注册数据验证",
+      "passed": true,
+      "message": "所有注册数据应该通过验证",
+      "timestamp": "2025-09-07T15:18:44.319Z"
+    },
+    {
+      "name": "注册密码强度",
+      "passed": true,
+      "message": "注册密码应该有足够的强度",
+      "timestamp": "2025-09-07T15:18:44.319Z"
+    },
+    {
+      "name": "集成会话创建",
+      "passed": true,
+      "message": "值不为空",
+      "timestamp": "2025-09-07T15:18:44.319Z"
+    },
+    {
+      "name": "集成会话验证",
+      "passed": {
+        "isValid": true,
+        "message": "会话有效"
+      },
+      "message": "集成测试中会话应该有效",
+      "timestamp": "2025-09-07T15:18:44.319Z"
+    }
+  ]
+}

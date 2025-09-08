@@ -1,0 +1,49 @@
+﻿{
+    "passed":  5,
+    "timestamp":  "2025-09-08 19:21:04",
+    "checks_performed":  8,
+    "failed":  3,
+    "checks":  [
+                   {
+                       "status":  "PASS",
+                       "details":  "File exists",
+                       "check":  "File existence: index.html"
+                   },
+                   {
+                       "status":  "FAIL",
+                       "details":  "File missing",
+                       "check":  "File existence: js/main.js"
+                   },
+                   {
+                       "status":  "PASS",
+                       "details":  "File exists",
+                       "check":  "File existence: css/style.css"
+                   },
+                   {
+                       "status":  "WARN",
+                       "details":  "Braces: 42 open, 43 close",
+                       "check":  "JS syntax check: analyzer.js"
+                   },
+                   {
+                       "status":  "PASS",
+                       "details":  "Braces: 12 open, 12 close",
+                       "check":  "JS syntax check: block-navigation.js"
+                   },
+                   {
+                       "status":  "WARN",
+                       "details":  "Braces: 223 open, 226 close",
+                       "check":  "JS syntax check: prettify.js"
+                   },
+                   {
+                       "status":  "PASS",
+                       "details":  "Braces: 41 open, 41 close",
+                       "check":  "JS syntax check: sorter.js"
+                   },
+                   {
+                       "status":  "PASS",
+                       "details":  "Braces: 48 open, 48 close",
+                       "check":  "JS syntax check: AnalysisCache.js"
+                   }
+               ],
+    "warnings":  2
+}

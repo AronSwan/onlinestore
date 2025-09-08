@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>离线模式 - Caddy Style Shopping</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+
+        .offline-container {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 90%;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .offline-icon {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 2rem;
+            background: linear-gradient(135deg, #ff6b6b, #ffa726);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .offline-icon svg {
+            width: 60px;
+            height: 60px;
+            stroke: white;
+            stroke-width: 2;
+        }
+
+        .offline-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 1rem;
+        }
+
+        .offline-message {
+            font-size: 1.1rem;
+            color: #718096;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .offline-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.875rem 2rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f7fafc;
+            color: #4a5568;
+            border: 2px solid #e2e8f0;
+        }
+
+        .btn-secondary:hover {
+            background: #edf2f7;
+            border-color: #cbd5e0;
+        }
+
+        .connection-status {
+            margin-top: 2rem;
+            padding: 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .status-offline {
+            background: #fed7d7;
+            color: #c53030;
+            border: 1px solid #feb2b2;
+        }
+
+        .status-online {
+            background: #c6f6d5;
+            color: #2f855a;
+            border: 1px solid #9ae6b4;
+        }
+
+        .cached-content {
+            margin-top: 2rem;
+            text-align: left;
+        }
+
+        .cached-content h3 {
+            color: #2d3748;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .cached-links {
+            list-style: none;
+        }
+
+        .cached-links li {
+            margin-bottom: 0.5rem;
+        }
+
+        .cached-links a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .cached-links a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 480px) {
+            .offline-container {
+                padding: 2rem 1.5rem;
+            }
+
+            .offline-title {
+                font-size: 1.5rem;
+            }
+
+            .offline-message {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="offline-container">
+        <div class="offline-icon">
+            <svg viewBox="0 0 24 24" fill="none">
+                <path
+                    d="M17 14v6m-3-3h6M6 10h2a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2zm10 0h2a2 2 0 002-2V6a2 2 0 00-2-2h-2a2 2 0 00-2 2v2a2 2 0 002 2zM6 20h2a2 2 0 002-2v-2a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2z" />
+            </svg>
+        </div>
+
+        <h1 class="offline-title">您当前处于离线状态</h1>
+
+        <p class="offline-message">
+            看起来您的网络连接出现了问题。不过别担心，我们已经为您缓存了一些内容，您仍然可以浏览部分页面。
+        </p>
+
+        <div class="offline-actions">
+            <button class="btn btn-primary" onclick="checkConnection()">重新连接</button>
+            <a href="/" class="btn btn-secondary">返回首页</a>
+        </div>
+
+        <div id="connectionStatus" class="connection-status status-offline">
+            🔴 网络连接已断开
+        </div>
+
+        <div class="cached-content">
+            <h3>📱 可用的离线内容</h3>
+            <ul class="cached-links">
+                <li><a href="/">🏠 首页</a></li>
+                <li><a href="/#popular">🔥 热门商品</a></li>
+                <li><a href="/#new">✨ 新品上市</a></li>
+                <li><a href="/test-image-loading.html">🧪 图片加载测试</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // 检查网络连接状态
+        function updateConnectionStatus() {
+            const statusElement = document.getElementById('connectionStatus');
+
+            if (navigator.onLine) {
+                statusElement.className = 'connection-status status-online';
+                statusElement.innerHTML = '🟢 网络连接已恢复';
+            } else {
+                statusElement.className = 'connection-status status-offline';
+                statusElement.innerHTML = '🔴 网络连接已断开';
+            }
+        }
+
+        // 手动检查连接
+        async function checkConnection() {
+            const button = event.target;
+            const originalText = button.textContent;
+
+            button.textContent = '检查中...';
+            button.disabled = true;
+
+            try {
+                // 尝试获取一个小的资源来测试连接
+                const response = await fetch('/manifest.json', {
+                    method: 'HEAD',
+                    cache: 'no-cache'
+                });
+
+                if (response.ok) {
+                    // 连接恢复，重定向到首页
+                    window.location.href = '/';
+                } else {
+                    throw new Error('连接测试失败');
+                }
+            } catch (error) {
+                // 连接仍然失败
+                button.textContent = '连接失败，请稍后重试';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.disabled = false;
+                }, 2000);
+            }
+        }
+
+        // 监听网络状态变化
+        window.addEventListener('online', () => {
+            updateConnectionStatus();
+            // 网络恢复时自动跳转到首页
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 1000);
+        });
+
+        window.addEventListener('offline', updateConnectionStatus);
+
+        // 初始化连接状态
+        updateConnectionStatus();
+
+        // 定期检查连接状态
+        setInterval(async () => {
+            try {
+                const response = await fetch('/manifest.json', {
+                    method: 'HEAD',
+                    cache: 'no-cache',
+                    signal: AbortSignal.timeout(3000)
+                });
+
+                if (response.ok && !navigator.onLine) {
+                    // 浏览器状态可能不准确，手动触发online事件
+                    window.dispatchEvent(new Event('online'));
+                }
+            } catch (error) {
+                // 连接仍然失败，保持当前状态
+            }
+        }, 10000); // 每10秒检查一次
+
+        // 页面加载动画
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.querySelector('.offline-container');
+            container.style.opacity = '0';
+            container.style.transform = 'translateY(30px)';
+
+            setTimeout(() => {
+                container.style.transition = 'all 0.6s ease-out';
+                container.style.opacity = '1';
+                container.style.transform = 'translateY(0)';
+            }, 100);
+        });
+    </script>
+</body>
+
+</html>

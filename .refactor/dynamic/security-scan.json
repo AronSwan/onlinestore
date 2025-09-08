@@ -1,0 +1,1006 @@
+﻿{
+    "medium_severity":  127,
+    "issues_found":  166,
+    "timestamp":  "2025-09-08 19:21:04",
+    "files_scanned":  162,
+    "high_severity":  25,
+    "issues":  [
+                   {
+                       "issue":  "eval() usage detected",
+                       "line":  "unknown",
+                       "file":  "analyzer.js",
+                       "severity":  "HIGH"
+                   },
+                   {
+                       "issue":  "document.write() usage detected",
+                       "line":  "unknown",
+                       "file":  "analyzer.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "analyzer.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "AnalysisCache.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "ASTAnalyzer.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "BasicAnalyzer.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "ComplexityAnalyzer.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "FileParser.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "ProjectAnalyzer.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "QualityAnalyzer.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "ReportGenerator.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "AuthAPI.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Potential hardcoded credentials",
+                       "line":  "unknown",
+                       "file":  "AuthAPI.js.html",
+                       "severity":  "HIGH"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "PasswordSecurity.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Potential hardcoded credentials",
+                       "line":  "unknown",
+                       "file":  "PasswordSecurity.js.html",
+                       "severity":  "HIGH"
+                   },
+                   {
+                       "issue":  "innerHTML usage detected",
+                       "line":  "unknown",
+                       "file":  "AuthUI.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "AuthUI.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "api-integration.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Potential hardcoded credentials",
+                       "line":  "unknown",
+                       "file":  "api-integration.js.html",
+                       "severity":  "HIGH"
+                   },
+                   {
+                       "issue":  "Potential hardcoded credentials",
+                       "line":  "unknown",
+                       "file":  "auth-manager.js.html",
+                       "severity":  "HIGH"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "AuthManager.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Potential hardcoded credentials",
+                       "line":  "unknown",
+                       "file":  "AuthManager.js.html",
+                       "severity":  "HIGH"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "error-manager.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "HTTP (non-HTTPS) URL detected",
+                       "line":  "unknown",
+                       "file":  "http-client.js.html",
+                       "severity":  "LOW"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "http-client.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "input-validator.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Potential hardcoded credentials",
+                       "line":  "unknown",
+                       "file":  "input-validator.js.html",
+                       "severity":  "HIGH"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "password-security.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "performance-monitor.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "registration-event-integration.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "registration-manager.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Potential hardcoded credentials",
+                       "line":  "unknown",
+                       "file":  "registration-manager.js.html",
+                       "severity":  "HIGH"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "registration-resilience.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "security-manager.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "session-management.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "storage-manager.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "ui-interaction.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Potential hardcoded credentials",
+                       "line":  "unknown",
+                       "file":  "ui-interaction.js.html",
+                       "severity":  "HIGH"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "APIConfig.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "PerformanceConfig.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "ShoppingCartConfig.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "animation-utils.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "HTTP (non-HTTPS) URL detected",
+                       "line":  "unknown",
+                       "file":  "auth-ui.js.html",
+                       "severity":  "LOW"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "auth-ui.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Potential hardcoded credentials",
+                       "line":  "unknown",
+                       "file":  "auth-ui.js.html",
+                       "severity":  "HIGH"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "auth.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Potential hardcoded credentials",
+                       "line":  "unknown",
+                       "file":  "auth.js.html",
+                       "severity":  "HIGH"
+                   },
+                   {
+                       "issue":  "innerHTML usage detected",
+                       "line":  "unknown",
+                       "file":  "cart.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "cart.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "click-effects.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "code-analyzer.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "HTTP (non-HTTPS) URL detected",
+                       "line":  "unknown",
+                       "file":  "config.js.html",
+                       "severity":  "LOW"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "config.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Potential hardcoded credentials",
+                       "line":  "unknown",
+                       "file":  "constants.js.html",
+                       "severity":  "HIGH"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "dependency-injection.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "di-container.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "HTTP (non-HTTPS) URL detected",
+                       "line":  "unknown",
+                       "file":  "error-handler.js.html",
+                       "severity":  "LOW"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "error-handler.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "error-utils.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "HTTP (non-HTTPS) URL detected",
+                       "line":  "unknown",
+                       "file":  "image-optimization.js.html",
+                       "severity":  "LOW"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "image-optimization.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "input-validator.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Potential hardcoded credentials",
+                       "line":  "unknown",
+                       "file":  "input-validator.js.html",
+                       "severity":  "HIGH"
+                   },
+                   {
+                       "issue":  "innerHTML usage detected",
+                       "line":  "unknown",
+                       "file":  "lazy-loader.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "lazy-loader.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "innerHTML usage detected",
+                       "line":  "unknown",
+                       "file":  "order-ui.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "order-ui.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "order.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "password-security.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "innerHTML usage detected",
+                       "line":  "unknown",
+                       "file":  "payment-ui.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "payment-ui.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "payment.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "innerHTML usage detected",
+                       "line":  "unknown",
+                       "file":  "performance-dashboard.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "performance-dashboard.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "performance-monitor.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "performance-optimizer.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "product-card.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "uniqueness-checker.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "innerHTML usage detected",
+                       "line":  "unknown",
+                       "file":  "utils.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "HTTP (non-HTTPS) URL detected",
+                       "line":  "unknown",
+                       "file":  "utils.js.html",
+                       "severity":  "LOW"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "utils.js.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "innerHTML usage detected",
+                       "line":  "unknown",
+                       "file":  "prettify.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "innerHTML usage detected",
+                       "line":  "unknown",
+                       "file":  "sorter.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "AnalysisCache.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "ASTAnalyzer.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "BasicAnalyzer.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "ComplexityAnalyzer.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "FileParser.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "ProjectAnalyzer.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "QualityAnalyzer.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "ReportGenerator.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "AuthAPI.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Potential hardcoded credentials",
+                       "line":  "unknown",
+                       "file":  "AuthAPI.js",
+                       "severity":  "HIGH"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "PasswordSecurity.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Potential hardcoded credentials",
+                       "line":  "unknown",
+                       "file":  "PasswordSecurity.js",
+                       "severity":  "HIGH"
+                   },
+                   {
+                       "issue":  "innerHTML usage detected",
+                       "line":  "unknown",
+                       "file":  "AuthUI.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "AuthUI.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "api-integration.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Potential hardcoded credentials",
+                       "line":  "unknown",
+                       "file":  "api-integration.js",
+                       "severity":  "HIGH"
+                   },
+                   {
+                       "issue":  "Potential hardcoded credentials",
+                       "line":  "unknown",
+                       "file":  "auth-manager.js",
+                       "severity":  "HIGH"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "AuthManager.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Potential hardcoded credentials",
+                       "line":  "unknown",
+                       "file":  "AuthManager.js",
+                       "severity":  "HIGH"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "error-manager.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "HTTP (non-HTTPS) URL detected",
+                       "line":  "unknown",
+                       "file":  "http-client.js",
+                       "severity":  "LOW"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "http-client.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "input-validator.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Potential hardcoded credentials",
+                       "line":  "unknown",
+                       "file":  "input-validator.js",
+                       "severity":  "HIGH"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "password-security.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "performance-monitor.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "registration-event-integration.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "registration-manager.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Potential hardcoded credentials",
+                       "line":  "unknown",
+                       "file":  "registration-manager.js",
+                       "severity":  "HIGH"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "registration-resilience.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "security-manager.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "session-management.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "storage-manager.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "ui-interaction.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Potential hardcoded credentials",
+                       "line":  "unknown",
+                       "file":  "ui-interaction.js",
+                       "severity":  "HIGH"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "APIConfig.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "PerformanceConfig.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "ShoppingCartConfig.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "animation-utils.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "HTTP (non-HTTPS) URL detected",
+                       "line":  "unknown",
+                       "file":  "auth-ui.js",
+                       "severity":  "LOW"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "auth-ui.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Potential hardcoded credentials",
+                       "line":  "unknown",
+                       "file":  "auth-ui.js",
+                       "severity":  "HIGH"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "auth.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Potential hardcoded credentials",
+                       "line":  "unknown",
+                       "file":  "auth.js",
+                       "severity":  "HIGH"
+                   },
+                   {
+                       "issue":  "innerHTML usage detected",
+                       "line":  "unknown",
+                       "file":  "cart.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "cart.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "click-effects.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "code-analyzer.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "HTTP (non-HTTPS) URL detected",
+                       "line":  "unknown",
+                       "file":  "config.js",
+                       "severity":  "LOW"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "config.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Potential hardcoded credentials",
+                       "line":  "unknown",
+                       "file":  "constants.js",
+                       "severity":  "HIGH"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "dependency-injection.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "di-container.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "HTTP (non-HTTPS) URL detected",
+                       "line":  "unknown",
+                       "file":  "error-handler.js",
+                       "severity":  "LOW"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "error-handler.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "error-utils.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "HTTP (non-HTTPS) URL detected",
+                       "line":  "unknown",
+                       "file":  "image-optimization.js",
+                       "severity":  "LOW"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "image-optimization.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "input-validator.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Potential hardcoded credentials",
+                       "line":  "unknown",
+                       "file":  "input-validator.js",
+                       "severity":  "HIGH"
+                   },
+                   {
+                       "issue":  "innerHTML usage detected",
+                       "line":  "unknown",
+                       "file":  "lazy-loader.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "lazy-loader.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "innerHTML usage detected",
+                       "line":  "unknown",
+                       "file":  "order-ui.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "order-ui.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "order.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "password-security.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "innerHTML usage detected",
+                       "line":  "unknown",
+                       "file":  "payment-ui.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "payment-ui.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "payment.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "innerHTML usage detected",
+                       "line":  "unknown",
+                       "file":  "performance-dashboard.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "performance-dashboard.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "performance-monitor.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "performance-optimizer.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "product-card.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "uniqueness-checker.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "innerHTML usage detected",
+                       "line":  "unknown",
+                       "file":  "utils.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "HTTP (non-HTTPS) URL detected",
+                       "line":  "unknown",
+                       "file":  "utils.js",
+                       "severity":  "LOW"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "utils.js",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "innerHTML usage detected",
+                       "line":  "unknown",
+                       "file":  "index.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "HTTP (non-HTTPS) URL detected",
+                       "line":  "unknown",
+                       "file":  "index.html",
+                       "severity":  "LOW"
+                   },
+                   {
+                       "issue":  "Template literal injection risk",
+                       "line":  "unknown",
+                       "file":  "index.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "innerHTML usage detected",
+                       "line":  "unknown",
+                       "file":  "offline.html",
+                       "severity":  "MEDIUM"
+                   },
+                   {
+                       "issue":  "HTTP (non-HTTPS) URL detected",
+                       "line":  "unknown",
+                       "file":  "sw.js",
+                       "severity":  "LOW"
+                   }
+               ],
+    "low_severity":  14
+}
