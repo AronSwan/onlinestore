@@ -1,0 +1,370 @@
+/* @ai-generated: 邮件订阅样式文件
+   Source: AI Assistant
+   Timestamp: 2025-11-20
+   为Gucci风格电商网站提供的邮件订阅区域样式 */
+
+/* ==========================================================================
+   导入基础样式
+   ========================================================================== */
+
+@import url('./gucci-style.css');
+
+/* ==========================================================================
+   邮件订阅区域
+   ========================================================================== */
+
+.newsletter-section {
+  background: linear-gradient(135deg, var(--gucci-black, #000000) 0%, #222222 100%);
+  color: var(--gucci-white, #FFFFFF);
+  padding: var(--gucci-spacing-xl, 8rem) 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.newsletter-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMtMS4zNiAwLTIuNS0xLjEyNS0yLjUtMi41cyAxLjEyNS0yLjUgMi41LTIuNWMxLjM2IDAgMi41IDEuMTI1IDIuNSAyLjVzLTEuMTI1IDIuNS0yLjUgMi41em0tNi00Yy0yLjE4IDAtMy45IDEuNzItMy45IDMuOXMzLjkgMy45IDMuOS0zLjkgMy45LTMuOXpNMTUgMjhjLTEuMzYgMC0yLjUtMS4xMjUtMi41LTIuNXMxLjEyNS0yLjUgMi41LTIuNWMxLjM2IDAgMi41IDEuMTI1IDIuNSAyLjVzLTEuMTI1IDIuNS0yLjUgMi41em0wIDZjLTIuMTggMC0zLjkgMS43Mi0zLjkgMy45czMuOSAzLjkgMy45LTMuOSAzLjktMy45eiIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjA1KSIvPjxwYXRoIGQ9Ik0yNCAzNmMtMS4zNiAwLTIuNS0xLjEyNS0yLjUtMi41czEuMTI1LTIuNSAyLjUtMi41YzEuMzYgMCAyLjUgMS4xMjUgMi41IDIuNXMtMS4xMjUgMi41LTIuNSAyLjV6TTM0IDE5YzAgMS4zNiAxLjEyNSAyLjUgMi41IDIuNXMxLjEyNS0yLjUgMi41LTIuNWMxLjM2IDAgMi41IDEuMTI1IDIuNSAyLjVzLTEuMTI1IDIuNS0yLjUgMi41ek00OCAzNmMtMS4zNiAwLTIuNS0xLjEyNS0yLjUtMi41czEuMTI1LTIuNSAyLjUtMi41YzEuMzYgMCAyLjUgMS4xMjUgMi41IDIuNXMtMS4xMjUgMi41LTIuNSAyLjV6bTAgNmMtMi4xOCAwLTMuOS0xLjcyLTMuOS0zLjlzMy45LTMuOSAzLjkgMy45IDMuOSAzLjl6IiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIi8+PHBhdGggZD0iTTM2IDQ4Yy0xLjM2IDAtMi41LTEuMTI1LTIuNS0yLjVzMS4xMjUtMi41IDIuNS0yLjVjMS4zNiAwIDIuNSAxLjEyNSAyLjUgMi41cy0xLjEyNSAyLjUtMi41IDIuNXpNMTUgMzVjLTEuMzYgMC0yLjUtMS4xMjUtMi41LTIuNXMxLjEyNS0yLjUgMi41LTIuNWMxLjM2IDAgMi41IDEuMTI1IDIuNSAyLjVzLTEuMTI1IDIuNS0yLjUgMi41em0tNi00Yy0yLjE4IDAtMy45IDEuNzItMy45IDMuOXMzLjkgMy45IDMuOS0zLjkgMy45LTMuOXpNMCAxMmMtMi4xOCAwLTMuOS0xLjcyLTMuOS0zLjlzMy45LTMuOSAzLjkgMy45IDMuOSAzLjl6IiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIi8+PC9nPjwvc3ZnPg==');
+  opacity: 0.1;
+  z-index: 0;
+}
+
+.newsletter-container {
+  position: relative;
+  z-index: 1;
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.newsletter-content {
+  margin-bottom: var(--gucci-spacing-lg, 4rem);
+}
+
+.newsletter-title {
+  font-family: var(--gucci-font-primary, 'Times New Roman', serif);
+  font-size: 2.5rem;
+  color: var(--gucci-white, #FFFFFF);
+  margin-bottom: var(--gucci-spacing-md, 2rem);
+  position: relative;
+}
+
+.newsletter-title::after {
+  content: '';
+  position: absolute;
+  bottom: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--gucci-gold, #D4AF37) 0%, var(--gucci-gold-light, #F0E68C) 100%);
+}
+
+.newsletter-description {
+  font-family: var(--gucci-font-secondary, 'Helvetica Neue', Arial, sans-serif);
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 0;
+  line-height: 1.6;
+}
+
+/* ==========================================================================
+   订阅表单
+   ========================================================================== */
+
+.newsletter-form {
+  display: flex;
+  gap: var(--gucci-spacing-sm, 1rem);
+  max-width: 600px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.newsletter-input {
+  flex: 1;
+  padding: var(--gucci-spacing-sm, 1rem) var(--gucci-spacing-md, 2rem);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--gucci-white, #FFFFFF);
+  font-family: var(--gucci-font-secondary, 'Helvetica Neue', Arial, sans-serif);
+  font-size: 1rem;
+  outline: none;
+  transition: all var(--gucci-transition-normal, 0.3s ease);
+}
+
+.newsletter-input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.newsletter-input:focus {
+  border-color: var(--gucci-gold, #D4AF37);
+  background-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
+}
+
+.newsletter-submit {
+  padding: var(--gucci-spacing-sm, 1rem) var(--gucci-spacing-lg, 4rem);
+  background: linear-gradient(135deg, var(--gucci-gold, #D4AF37) 0%, var(--gucci-gold-light, #F0E68C) 100%);
+  border: none;
+  border-radius: 4px;
+  color: var(--gucci-white, #FFFFFF);
+  font-family: var(--gucci-font-secondary, 'Helvetica Neue', Arial, sans-serif);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--gucci-transition-normal, 0.3s ease);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+.newsletter-submit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(212, 175, 55, 0.3);
+}
+
+.newsletter-submit:active {
+  transform: translateY(0);
+}
+
+.newsletter-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ==========================================================================
+   订阅状态提示
+   ========================================================================== */
+
+.newsletter-status {
+  margin-top: var(--gucci-spacing-sm, 1rem);
+  font-family: var(--gucci-font-secondary, 'Helvetica Neue', Arial, sans-serif);
+  font-size: 0.9rem;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all var(--gucci-transition-normal, 0.3s ease);
+}
+
+.newsletter-status.success {
+  color: #4CAF50;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.newsletter-status.error {
+  color: #F44336;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.newsletter-status.info {
+  color: var(--gucci-gold, #D4AF37);
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ==========================================================================
+   隐私政策链接
+   ========================================================================== */
+
+.newsletter-privacy {
+  margin-top: var(--gucci-spacing-md, 2rem);
+  font-family: var(--gucci-font-secondary, 'Helvetica Neue', Arial, sans-serif);
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.4;
+}
+
+.newsletter-privacy a {
+  color: var(--gucci-gold, #D4AF37);
+  text-decoration: none;
+  transition: color var(--gucci-transition-fast, 0.2s ease);
+}
+
+.newsletter-privacy a:hover {
+  color: var(--gucci-gold-light, #F0E68C);
+  text-decoration: underline;
+}
+
+/* ==========================================================================
+   装饰元素
+   ========================================================================== */
+
+.newsletter-decoration {
+  position: absolute;
+  z-index: 0;
+}
+
+.newsletter-decoration.top-left {
+  top: -50px;
+  left: -50px;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.1) 0%, transparent 70%);
+}
+
+.newsletter-decoration.bottom-right {
+  bottom: -50px;
+  right: -50px;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.1) 0%, transparent 70%);
+}
+
+/* ==========================================================================
+   响应式设计
+   ========================================================================== */
+
+@media (max-width: 992px) {
+  .newsletter-title {
+    font-size: 2rem;
+  }
+  
+  .newsletter-description {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .newsletter-section {
+    padding: var(--gucci-spacing-lg, 4rem) 0;
+  }
+  
+  .newsletter-form {
+    flex-direction: column;
+    max-width: 100%;
+    padding: 0 var(--gucci-spacing-md, 2rem);
+  }
+  
+  .newsletter-submit {
+    width: 100%;
+    padding: var(--gucci-spacing-sm, 1rem) var(--gucci-spacing-md, 2rem);
+  }
+  
+  .newsletter-title {
+    font-size: 1.8rem;
+  }
+  
+  .newsletter-title::after {
+    width: 40px;
+  }
+  
+  .newsletter-decoration {
+    display: none;
+  }
+}
+
+@media (max-width: 576px) {
+  .newsletter-title {
+    font-size: 1.6rem;
+  }
+  
+  .newsletter-description {
+    font-size: 0.9rem;
+  }
+  
+  .newsletter-input {
+    padding: var(--gucci-spacing-xs, 0.5rem) var(--gucci-spacing-sm, 1rem);
+    font-size: 0.9rem;
+  }
+  
+  .newsletter-submit {
+    padding: var(--gucci-spacing-xs, 0.5rem) var(--gucci-spacing-sm, 1rem);
+    font-size: 0.9rem;
+  }
+  
+  .newsletter-form {
+    padding: 0 var(--gucci-spacing-sm, 1rem);
+  }
+  
+  .newsletter-privacy {
+    padding: 0 var(--gucci-spacing-sm, 1rem);
+    font-size: 0.7rem;
+  }
+}
+
+/* ==========================================================================
+   动画效果
+   ========================================================================== */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.newsletter-content {
+  animation: fadeInUp 0.8s ease-out forwards;
+}
+
+.newsletter-form {
+  animation: fadeInUp 0.8s ease-out 0.2s forwards;
+  opacity: 0;
+}
+
+.newsletter-privacy {
+  animation: fadeInUp 0.8s ease-out 0.4s forwards;
+  opacity: 0;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(212, 175, 55, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(212, 175, 55, 0);
+  }
+}
+
+.newsletter-submit.pulse {
+  animation: pulse 2s infinite;
+}
+
+/* ==========================================================================
+   无障碍支持
+   ========================================================================== */
+
+.newsletter-form:focus-within {
+  outline: 2px solid var(--gucci-gold, #D4AF37);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.newsletter-input:focus-visible {
+  outline: 2px solid var(--gucci-gold, #D4AF37);
+  outline-offset: 2px;
+}
+
+.newsletter-submit:focus-visible {
+  outline: 2px solid var(--gucci-white, #FFFFFF);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

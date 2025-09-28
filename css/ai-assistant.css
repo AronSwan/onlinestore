@@ -1,0 +1,529 @@
+/* @ai-generated: AI奢华顾问样式文件
+   Source: AI Assistant
+   Timestamp: 2025-11-20
+   为Gucci风格电商网站提供的AI顾问侧边栏样式 */
+
+/* ==========================================================================
+   导入基础样式
+   ========================================================================== */
+
+@import url('./gucci-style.css');
+
+/* ==========================================================================
+   AI顾问侧边栏容器
+   ========================================================================== */
+
+.ai-assistant-container {
+  position: fixed;
+  top: 0;
+  right: -400px;
+  width: 400px;
+  height: 100vh;
+  background-color: var(--gucci-white, #FFFFFF);
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  transition: right var(--gucci-transition-normal, 0.3s ease);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ai-assistant-container.open {
+  right: 0;
+}
+
+/* ==========================================================================
+   侧边栏遮罩
+   ========================================================================== */
+
+.ai-assistant-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  opacity: 0;
+  visibility: hidden;
+  transition: all var(--gucci-transition-normal, 0.3s ease);
+}
+
+.ai-assistant-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ==========================================================================
+   侧边栏头部
+   ========================================================================== */
+
+.ai-assistant-header {
+  padding: var(--gucci-spacing-md, 2rem);
+  border-bottom: 1px solid var(--gucci-gray-light, #F5F5F5);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(90deg, var(--gucci-gold-light, #F0E68C) 0%, var(--gucci-gold, #D4AF37) 100%);
+  color: var(--gucci-white, #FFFFFF);
+}
+
+.ai-assistant-title {
+  font-family: var(--gucci-font-primary, 'Times New Roman', serif);
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.ai-assistant-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--gucci-white, #FFFFFF);
+  cursor: pointer;
+  padding: 5px;
+  transition: transform var(--gucci-transition-fast, 0.2s ease);
+}
+
+.ai-assistant-close:hover {
+  transform: rotate(90deg);
+}
+
+/* ==========================================================================
+   聊天内容区域
+   ========================================================================== */
+
+.ai-chat-container {
+  flex: 1;
+  padding: var(--gucci-spacing-md, 2rem);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gucci-spacing-md, 2rem);
+}
+
+.ai-chat-welcome {
+  text-align: center;
+  margin-bottom: var(--gucci-spacing-lg, 4rem);
+}
+
+.ai-chat-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gucci-gold, #D4AF37) 0%, var(--gucci-gold-light, #F0E68C) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--gucci-spacing-md, 2rem);
+  font-size: 2rem;
+  color: var(--gucci-white, #FFFFFF);
+  box-shadow: 0 10px 20px rgba(212, 175, 55, 0.3);
+}
+
+.ai-chat-welcome h3 {
+  font-family: var(--gucci-font-primary, 'Times New Roman', serif);
+  font-size: 1.3rem;
+  color: var(--gucci-black, #000000);
+  margin-bottom: var(--gucci-spacing-sm, 1rem);
+}
+
+.ai-chat-welcome p {
+  font-family: var(--gucci-font-secondary, 'Helvetica Neue', Arial, sans-serif);
+  font-size: 0.9rem;
+  color: var(--gucci-gray-dark, #808080);
+  line-height: 1.6;
+}
+
+/* ==========================================================================
+   聊天消息
+   ========================================================================== */
+
+.ai-message {
+  max-width: 85%;
+  align-self: flex-start;
+  margin-bottom: var(--gucci-spacing-md, 2rem);
+}
+
+.ai-message-header {
+  display: flex;
+  align-items: center;
+  gap: var(--gucci-spacing-xs, 0.5rem);
+  margin-bottom: var(--gucci-spacing-xs, 0.5rem);
+}
+
+.ai-message-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gucci-gold, #D4AF37) 0%, var(--gucci-gold-light, #F0E68C) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: var(--gucci-white, #FFFFFF);
+  flex-shrink: 0;
+}
+
+.ai-message-name {
+  font-family: var(--gucci-font-secondary, 'Helvetica Neue', Arial, sans-serif);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--gucci-black, #000000);
+}
+
+.ai-message-content {
+  padding: var(--gucci-spacing-sm, 1rem) var(--gucci-spacing-md, 2rem);
+  background-color: var(--gucci-gray-light, #F5F5F5);
+  border-radius: 8px;
+  font-family: var(--gucci-font-secondary, 'Helvetica Neue', Arial, sans-serif);
+  font-size: 0.9rem;
+  color: var(--gucci-gray-dark, #808080);
+  line-height: 1.6;
+  position: relative;
+}
+
+.ai-message-content::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: -10px;
+  border-top: 10px solid transparent;
+  border-right: 10px solid var(--gucci-gray-light, #F5F5F5);
+  border-bottom: 10px solid transparent;
+}
+
+.user-message {
+  max-width: 85%;
+  align-self: flex-end;
+  margin-bottom: var(--gucci-spacing-md, 2rem);
+}
+
+.user-message-content {
+  padding: var(--gucci-spacing-sm, 1rem) var(--gucci-spacing-md, 2rem);
+  background: linear-gradient(135deg, var(--gucci-gold, #D4AF37) 0%, var(--gucci-gold-light, #F0E68C) 100%);
+  border-radius: 8px;
+  font-family: var(--gucci-font-secondary, 'Helvetica Neue', Arial, sans-serif);
+  font-size: 0.9rem;
+  color: var(--gucci-white, #FFFFFF);
+  line-height: 1.6;
+  position: relative;
+}
+
+.user-message-content::after {
+  content: '';
+  position: absolute;
+  top: 10px;
+  right: -10px;
+  border-top: 10px solid transparent;
+  border-left: 10px solid var(--gucci-gold, #D4AF37);
+  border-bottom: 10px solid transparent;
+}
+
+/* ==========================================================================
+   快捷功能
+   ========================================================================== */
+
+.ai-quick-actions {
+  margin-bottom: var(--gucci-spacing-lg, 4rem);
+}
+
+.ai-quick-actions h4 {
+  font-family: var(--gucci-font-secondary, 'Helvetica Neue', Arial, sans-serif);
+  font-size: 0.9rem;
+  color: var(--gucci-gray-dark, #808080);
+  margin-bottom: var(--gucci-spacing-md, 2rem);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.ai-quick-actions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gucci-spacing-sm, 1rem);
+}
+
+.ai-quick-action-btn {
+  padding: var(--gucci-spacing-sm, 1rem);
+  background-color: var(--gucci-gray-light, #F5F5F5);
+  border: none;
+  border-radius: 4px;
+  font-family: var(--gucci-font-secondary, 'Helvetica Neue', Arial, sans-serif);
+  font-size: 0.8rem;
+  color: var(--gucci-black, #000000);
+  cursor: pointer;
+  transition: all var(--gucci-transition-normal, 0.3s ease);
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: var(--gucci-spacing-xs, 0.5rem);
+}
+
+.ai-quick-action-btn:hover {
+  background-color: var(--gucci-gold, #D4AF37);
+  color: var(--gucci-white, #FFFFFF);
+  transform: translateY(-2px);
+}
+
+.ai-quick-action-icon {
+  font-size: 1rem;
+}
+
+/* ==========================================================================
+   输入区域
+   ========================================================================== */
+
+.ai-input-container {
+  padding: var(--gucci-spacing-md, 2rem);
+  border-top: 1px solid var(--gucci-gray-light, #F5F5F5);
+}
+
+.ai-input-wrapper {
+  display: flex;
+  gap: var(--gucci-spacing-sm, 1rem);
+  align-items: center;
+}
+
+.ai-input {
+  flex: 1;
+  padding: var(--gucci-spacing-sm, 1rem) var(--gucci-spacing-md, 2rem);
+  border: 1px solid var(--gucci-gray-light, #F5F5F5);
+  border-radius: 25px;
+  font-family: var(--gucci-font-secondary, 'Helvetica Neue', Arial, sans-serif);
+  font-size: 0.9rem;
+  color: var(--gucci-black, #000000);
+  outline: none;
+  transition: border-color var(--gucci-transition-fast, 0.2s ease);
+}
+
+.ai-input:focus {
+  border-color: var(--gucci-gold, #D4AF37);
+}
+
+.ai-input-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gucci-gold, #D4AF37) 0%, var(--gucci-gold-light, #F0E68C) 100%);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--gucci-transition-fast, 0.2s ease);
+  color: var(--gucci-white, #FFFFFF);
+  flex-shrink: 0;
+}
+
+.ai-input-btn:hover {
+  transform: scale(1.1);
+}
+
+.ai-input-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ==========================================================================
+   发送按钮悬浮效果
+   ========================================================================== */
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(212, 175, 55, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(212, 175, 55, 0);
+  }
+}
+
+.ai-input-btn.pulse {
+  animation: pulse 2s infinite;
+}
+
+/* ==========================================================================
+   聊天按钮
+   ========================================================================== */
+
+.ai-assistant-trigger {
+  position: fixed;
+  bottom: var(--gucci-spacing-md, 2rem);
+  right: var(--gucci-spacing-md, 2rem);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gucci-gold, #D4AF37) 0%, var(--gucci-gold-light, #F0E68C) 100%);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--gucci-transition-normal, 0.3s ease);
+  color: var(--gucci-white, #FFFFFF);
+  font-size: 1.5rem;
+  z-index: 998;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.ai-assistant-trigger:hover {
+  transform: scale(1.1);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+}
+
+.ai-assistant-trigger.active {
+  transform: rotate(45deg);
+}
+
+/* ==========================================================================
+   加载状态
+   ========================================================================== */
+
+.ai-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--gucci-spacing-xs, 0.5rem);
+  padding: var(--gucci-spacing-sm, 1rem) var(--gucci-spacing-md, 2rem);
+  background-color: var(--gucci-gray-light, #F5F5F5);
+  border-radius: 8px;
+  align-self: flex-start;
+  margin-bottom: var(--gucci-spacing-md, 2rem);
+  position: relative;
+}
+
+.ai-loading::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: -10px;
+  border-top: 10px solid transparent;
+  border-right: 10px solid var(--gucci-gray-light, #F5F5F5);
+  border-bottom: 10px solid transparent;
+}
+
+.ai-loading-dots {
+  display: flex;
+  gap: 3px;
+}
+
+.ai-loading-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--gucci-gold, #D4AF37);
+  animation: loading-dot 1.4s infinite ease-in-out both;
+}
+
+.ai-loading-dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.ai-loading-dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes loading-dot {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+/* ==========================================================================
+   响应式设计
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .ai-assistant-container {
+    width: 100%;
+    right: -100%;
+  }
+  
+  .ai-chat-welcome h3 {
+    font-size: 1.2rem;
+  }
+  
+  .ai-chat-welcome p {
+    font-size: 0.8rem;
+  }
+  
+  .ai-quick-actions-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .ai-message,
+  .user-message {
+    max-width: 95%;
+  }
+}
+
+@media (max-width: 576px) {
+  .ai-assistant-trigger {
+    bottom: var(--gucci-spacing-sm, 1rem);
+    right: var(--gucci-spacing-sm, 1rem);
+    width: 50px;
+    height: 50px;
+    font-size: 1.2rem;
+  }
+  
+  .ai-assistant-container {
+    padding: 0;
+  }
+  
+  .ai-chat-container,
+  .ai-input-container {
+    padding: var(--gucci-spacing-sm, 1rem);
+  }
+  
+  .ai-message-content,
+  .user-message-content {
+    padding: var(--gucci-spacing-xs, 0.5rem) var(--gucci-spacing-sm, 1rem);
+    font-size: 0.8rem;
+  }
+}
+
+/* ==========================================================================
+   滚动条样式
+   ========================================================================== */
+
+.ai-chat-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.ai-chat-container::-webkit-scrollbar-track {
+  background: var(--gucci-gray-light, #F5F5F5);
+}
+
+.ai-chat-container::-webkit-scrollbar-thumb {
+  background: var(--gucci-gold, #D4AF37);
+  border-radius: 3px;
+}
+
+.ai-chat-container::-webkit-scrollbar-thumb:hover {
+  background: var(--gucci-gold-dark, #B38B24);
+}
+
+/* ==========================================================================
+   无障碍支持
+   ========================================================================== */
+
+.ai-assistant-container:focus-visible {
+  outline: 2px solid var(--gucci-gold, #D4AF37);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

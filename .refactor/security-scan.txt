@@ -1,7 +1,0 @@
-﻿Found potential hardcoded credential pattern: password =
-  WARNING: auth-ui.js:322 - const confirmPassword = document.getElementById('register-confirm-password');
-  WARNING: auth-ui.js:323 - const password = document.getElementById('register-password');
-  WARNING: auth.js:1190 - registeredUser.email === credentials.email && registeredUser.password === credentials.password
-Found potential hardcoded credential pattern: token =
-  WARNING: auth.js:1205 - const token = 'mock_token_' + Date.now() + '_' + randomString;
-  WARNING: password-security.js:243 - const token = this.crypto.randomBytes(tokenLength);

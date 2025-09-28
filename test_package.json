@@ -1,7 +1,0 @@
-﻿{
-  "devDependencies": {
-    "eslint": "^8.0.0",
-    "jscpd": "^3.5.0",
-    "prettier": "^2.0.0"
-  }
-}

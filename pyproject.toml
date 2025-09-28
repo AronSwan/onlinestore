@@ -1,3 +1,0 @@
-﻿[tool.bandit]
-skips = ["B101", "B601"]
-exclude_dirs = ["tests", "node_modules", ".git"]

@@ -1,0 +1,1290 @@
+/* Gucci AI 奢华助手样式系统 v1.0 */
+/* 更新时间：2025-01-26 16:00:00 */
+
+/* 奢华配色系统 */
+:root {
+    /* Gucci 品牌色彩 */
+    --gucci-gold: #D4AF37;
+    --gucci-gold-light: #F4E5A1;
+    --gucci-gold-dark: #B8860B;
+    --gucci-black: #1A1A1A;
+    --gucci-charcoal: #2C2C2C;
+    --gucci-cream: #F5F2E8;
+    --gucci-ivory: #FFFFF0;
+    --gucci-emerald: #50C878;
+    --gucci-ruby: #E0115F;
+    
+    /* 渐变系统 */
+    --gradient-gold: linear-gradient(135deg, var(--gucci-gold) 0%, var(--gucci-gold-dark) 100%);
+    --gradient-luxury: linear-gradient(135deg, var(--gucci-black) 0%, var(--gucci-charcoal) 50%, var(--gucci-gold) 100%);
+    --gradient-glass: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(245, 242, 232, 0.05) 100%);
+    
+    /* 字体系统 */
+    --font-display: 'Playfair Display', serif;
+    --font-body: 'Inter', sans-serif;
+    
+    /* 阴影系统 */
+    --shadow-luxury: 0 8px 32px rgba(212, 175, 55, 0.3);
+    --shadow-deep: 0 12px 48px rgba(0, 0, 0, 0.4);
+    --shadow-glow: 0 0 20px rgba(212, 175, 55, 0.5);
+    
+    /* 动画系统 */
+    --transition-luxury: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    --transition-smooth: all 0.3s ease-out;
+}
+
+/* 基础样式 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-body);
+    background: var(--gucci-black);
+    color: var(--gucci-cream);
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+/* 奢华背景 */
+.luxury-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -2;
+    background: var(--gradient-luxury);
+}
+
+.gradient-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 30% 20%, rgba(212, 175, 55, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 70% 80%, rgba(245, 242, 232, 0.08) 0%, transparent 50%);
+}
+
+.pattern-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.03;
+    background-image: 
+        repeating-linear-gradient(45deg, transparent, transparent 2px, var(--gucci-gold) 2px, var(--gucci-gold) 4px),
+        repeating-linear-gradient(-45deg, transparent, transparent 2px, var(--gucci-gold) 2px, var(--gucci-gold) 4px);
+}
+
+/* 主内容区域 */
+.main-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* 奢华标题 */
+.luxury-header {
+    text-align: center;
+    margin-bottom: 4rem;
+}
+
+.gucci-title {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.gucci-logo {
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--gucci-gold);
+    text-shadow: var(--shadow-glow);
+    animation: logoGlow 2s ease-in-out infinite alternate;
+}
+
+.title-text {
+    font-family: var(--font-display);
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: var(--gradient-gold);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+}
+
+.subtitle {
+    font-size: 1.2rem;
+    color: var(--gucci-gold-light);
+    font-weight: 300;
+    letter-spacing: 0.1em;
+}
+
+/* 功能展示区 */
+.features-showcase {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-bottom: 4rem;
+}
+
+.luxury-card {
+    background: rgba(245, 242, 232, 0.05);
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    border-radius: 20px;
+    padding: 2.5rem;
+    text-align: center;
+    backdrop-filter: blur(20px);
+    transition: var(--transition-luxury);
+    position: relative;
+    overflow: hidden;
+}
+
+.luxury-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.1), transparent);
+    transition: left 0.6s;
+}
+
+.luxury-card:hover::before {
+    left: 100%;
+}
+
+.luxury-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-luxury);
+    border-color: var(--gucci-gold);
+}
+
+.card-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.3));
+}
+
+.luxury-card h3 {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    color: var(--gucci-gold);
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+
+.luxury-card p {
+    color: var(--gucci-cream);
+    opacity: 0.8;
+    line-height: 1.6;
+}
+
+/* 统一AI助手按钮 */
+.gucci-assistant-container {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 1000;
+}
+
+.gucci-assistant-toggle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--gradient-gold);
+    border: none;
+    cursor: pointer;
+    box-shadow: var(--shadow-luxury);
+    transition: var(--transition-luxury);
+    position: relative;
+    overflow: hidden;
+}
+
+.gucci-assistant-toggle::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transition: var(--transition-smooth);
+    transform: translate(-50%, -50%);
+}
+
+.gucci-assistant-toggle:hover::before {
+    width: 100px;
+    height: 100px;
+}
+
+.gucci-assistant-toggle:hover {
+    transform: scale(1.1);
+    box-shadow: var(--shadow-glow);
+}
+
+.toggle-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.gucci-monogram {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--gucci-black);
+}
+
+.assistant-label {
+    position: absolute;
+    bottom: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.7rem;
+    color: var(--gucci-gold);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    opacity: 0;
+    transition: var(--transition-smooth);
+}
+
+.gucci-assistant-toggle:hover .assistant-label {
+    opacity: 1;
+}
+
+/* 奢华助手面板 */
+.gucci-assistant-panel {
+    position: fixed;
+    bottom: 100px;
+    right: 2rem;
+    width: 380px;
+    max-height: 600px;
+    background: rgba(28, 28, 28, 0.95);
+    backdrop-filter: blur(30px);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 24px;
+    box-shadow: var(--shadow-deep);
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+    transition: var(--transition-luxury);
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.gucci-assistant-panel.active {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    background: var(--gradient-gold);
+    border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.gucci-emblem {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--gucci-black);
+}
+
+.panel-title {
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    color: var(--gucci-black);
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+}
+
+.panel-subtitle {
+    font-size: 0.8rem;
+    color: rgba(26, 26, 26, 0.7);
+}
+
+.close-luxury {
+    background: none;
+    border: none;
+    color: var(--gucci-gold);
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 8px 12px;
+    transition: all 0.3s ease;
+    border-radius: 20px;
+    min-width: 50px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.close-luxury:hover {
+    background: rgba(212, 175, 55, 0.2);
+    border-color: var(--gucci-gold);
+    transform: translateY(-1px);
+}
+
+.close-text {
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: 0.5px;
+}
+
+.panel-content {
+    padding: 1.5rem;
+    max-height: 450px;
+    overflow-y: auto;
+}
+
+.settings-section {
+    margin-bottom: 2rem;
+}
+
+.section-title {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    color: var(--gucci-gold);
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+
+.gucci-setting {
+    margin-bottom: 1.5rem;
+}
+
+.setting-label {
+    display: block;
+    color: var(--gucci-cream);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.gucci-select {
+    width: 100%;
+    padding: 0.8rem;
+    background: rgba(245, 242, 232, 0.1);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 12px;
+    color: var(--gucci-cream);
+    font-family: var(--font-body);
+    transition: var(--transition-smooth);
+}
+
+.gucci-select:focus {
+    outline: none;
+    border-color: var(--gucci-gold);
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+}
+
+.voice-options {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.voice-btn {
+    padding: 0.5rem 1rem;
+    background: rgba(245, 242, 232, 0.1);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 20px;
+    color: var(--gucci-cream);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.voice-btn:hover {
+    border-color: var(--gucci-gold);
+    transform: translateY(-1px);
+}
+
+.voice-btn.active {
+    background: var(--gradient-gold);
+    color: var(--gucci-black);
+    border-color: var(--gucci-gold);
+}
+
+/* 奢华滑块 */
+.luxury-slider {
+    position: relative;
+}
+
+.gucci-range {
+    width: 100%;
+    height: 6px;
+    background: rgba(245, 242, 232, 0.2);
+    border-radius: 3px;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.gucci-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    background: var(--gradient-gold);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: var(--shadow-glow);
+}
+
+.slider-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+    font-size: 0.7rem;
+    color: rgba(245, 242, 232, 0.7);
+}
+
+/* 奢华开关 */
+.gucci-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+}
+
+.toggle-info {
+    flex: 1;
+}
+
+.toggle-label {
+    display: block;
+    color: var(--gucci-cream);
+    font-weight: 500;
+    margin-bottom: 0.2rem;
+}
+
+.toggle-desc {
+    font-size: 0.8rem;
+    color: rgba(245, 242, 232, 0.6);
+}
+
+.gucci-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.gucci-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(245, 242, 232, 0.2);
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: var(--gucci-gold);
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: var(--gucci-gold);
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+    background-color: var(--gucci-black);
+}
+
+/* 聊天区域样式 */
+.chat-area {
+    background: rgba(245, 242, 232, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    overflow: hidden;
+}
+
+.chat-messages {
+    height: 200px;
+    overflow-y: auto;
+    padding: 1rem;
+}
+
+.message {
+    margin-bottom: 0.8rem;
+    max-width: 85%;
+}
+
+.message-content {
+    padding: 0.8rem 1rem;
+    border-radius: 18px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.user-message .message-content {
+    background: var(--gradient-gold);
+    color: var(--gucci-black);
+    margin-left: auto;
+    border-bottom-right-radius: 4px;
+}
+
+.ai-message .message-content {
+    background: rgba(245, 242, 232, 0.1);
+    color: var(--gucci-cream);
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    border-bottom-left-radius: 4px;
+}
+
+.message-time {
+    font-size: 0.7rem;
+    color: rgba(245, 242, 232, 0.6);
+    margin-top: 0.2rem;
+}
+
+.user-message .message-time {
+    text-align: right;
+}
+
+.chat-input {
+    display: flex;
+    padding: 1rem;
+    border-top: 1px solid rgba(212, 175, 55, 0.2);
+    gap: 0.5rem;
+}
+
+.chat-text {
+    flex: 1;
+    padding: 0.8rem;
+    background: rgba(245, 242, 232, 0.1);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 20px;
+    color: var(--gucci-cream);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+}
+
+.chat-text:focus {
+    outline: none;
+    border-color: var(--gucci-gold);
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+}
+
+.chat-send {
+    padding: 0.8rem 1.2rem;
+    background: var(--gradient-gold);
+    color: var(--gucci-black);
+    border: none;
+    border-radius: 20px;
+    font-family: var(--font-body);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.chat-send:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-glow);
+}
+
+/* 奢华按钮 */
+.luxury-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.luxury-btn {
+    padding: 0.8rem 1.5rem;
+    background: var(--gradient-gold);
+    color: var(--gucci-black);
+    border: none;
+    border-radius: 20px;
+    font-family: var(--font-body);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    font-size: 0.85rem;
+}
+
+.luxury-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-glow);
+}
+
+.luxury-btn.secondary {
+    background: rgba(245, 242, 232, 0.1);
+    color: var(--gucci-cream);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.luxury-btn.secondary:hover {
+    background: rgba(212, 175, 55, 0.2);
+    border-color: var(--gucci-gold);
+}
+
+.gucci-send-btn:hover {
+    background: linear-gradient(135deg, #d4af37, #ffd700);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+}
+
+.gucci-send-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 3px 10px rgba(212, 175, 55, 0.3);
+}
+
+.gucci-voice-btn,
+.gucci-image-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #8b7355, #a0956b);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    margin-left: 8px;
+    font-size: 16px;
+}
+
+.gucci-voice-btn:hover,
+.gucci-image-btn:hover {
+    background: linear-gradient(135deg, #a0956b, #8b7355);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(160, 149, 107, 0.3);
+}
+
+.gucci-voice-btn.recording {
+    background: linear-gradient(135deg, #d4af37, #ff4444);
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.gucci-media-preview {
+    margin-top: 10px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.gucci-media-preview img {
+    max-width: 80px;
+    max-height: 80px;
+    border-radius: 4px;
+    object-fit: cover;
+}
+
+.gucci-remove-image {
+    background: rgba(255, 68, 68, 0.8);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+.gucci-remove-image:hover {
+    background: rgba(255, 68, 68, 1);
+}
+
+.gucci-voice-status {
+    margin-top: 10px;
+    padding: 10px;
+    background: rgba(212, 175, 55, 0.2);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #d4af37;
+    font-size: 14px;
+}
+
+.voice-wave {
+    animation: wave 1s infinite;
+}
+
+@keyframes wave {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.2); }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .gucci-assistant-panel {
+        width: 100%;
+        height: 100%;
+        right: 0;
+        top: 0;
+        border-radius: 0;
+    }
+    
+    .gucci-assistant-toggle {
+        bottom: 20px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+    }
+
+    .gucci-input-area {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .gucci-voice-btn,
+    .gucci-image-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
+    }
+
+    .gucci-media-preview img {
+        max-width: 60px;
+        max-height: 60px;
+    }
+
+    .gucci-monogram {
+        font-size: 1.4rem;
+    }
+    
+    .panel-content {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .gucci-assistant-panel {
+        width: 100vw;
+        right: 0;
+        bottom: 0;
+        border-radius: 20px 20px 0 0;
+        max-height: 80vh;
+        padding: 15px;
+    }
+    
+    .voice-options {
+        flex-direction: column;
+    }
+    
+    .voice-btn {
+        flex: 1;
+        text-align: center;
+    }
+    
+    .luxury-actions {
+        flex-direction: column;
+    }
+    
+    .luxury-btn {
+        width: 100%;
+    }
+
+    .gucci-assistant-toggle {
+        width: 55px;
+        height: 55px;
+        font-size: 20px;
+    }
+
+    .gucci-voice-btn,
+    .gucci-image-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+    }
+
+    .gucci-input-area {
+        gap: 6px;
+    }
+}
+
+/* 滚动条样式 */
+.panel-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.panel-content::-webkit-scrollbar-track {
+    background: rgba(245, 242, 232, 0.1);
+    border-radius: 3px;
+}
+
+.panel-content::-webkit-scrollbar-thumb {
+    background: var(--gucci-gold);
+    border-radius: 3px;
+}
+
+.chat-messages::-webkit-scrollbar {
+    width: 4px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+    background: rgba(212, 175, 55, 0.3);
+    border-radius: 2px;
+}
+
+/* 动画效果 */
+@keyframes logoGlow {
+    0% { text-shadow: 0 0 10px rgba(212, 175, 55, 0.5); }
+    100% { text-shadow: 0 0 20px rgba(212, 175, 55, 0.8), 0 0 30px rgba(212, 175, 55, 0.6); }
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+.luxury-card:hover .card-icon {
+    animation: float 2s ease-in-out infinite;
+}
+
+/* 暗色模式支持 */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --gucci-cream: #F5F2E8;
+        --gucci-ivory: #FFFFF0;
+    }
+}
+
+/* 打印样式 */
+@media print {
+    .gucci-assistant-container {
+        display: none;
+    }
+    
+    .luxury-bg {
+        display: none;
+    }
+}
+
+.slider-luxury {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(245, 242, 232, 0.2);
+    transition: var(--transition-smooth);
+    border-radius: 24px;
+}
+
+.slider-luxury:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background: var(--gucci-cream);
+    transition: var(--transition-smooth);
+    border-radius: 50%;
+}
+
+input:checked + .slider-luxury {
+    background: var(--gradient-gold);
+}
+
+input:checked + .slider-luxury:before {
+    transform: translateX(26px);
+}
+
+/* 对话区域 */
+.conversation-section {
+    margin-top: 25px;
+    border-top: 1px solid rgba(212, 175, 55, 0.2);
+    padding-top: 20px;
+}
+
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 300px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(212, 175, 55, 0.1);
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.message {
+    display: flex;
+    gap: 10px;
+    max-width: 85%;
+    animation: messageSlideIn 0.3s ease-out;
+}
+
+.message.ai-message {
+    align-self: flex-start;
+}
+
+.message.user-message {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+}
+
+.message-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--gucci-gold), var(--gucci-gold-light));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: var(--gucci-black);
+    flex-shrink: 0;
+}
+
+.message-content {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 12px 15px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--gucci-black);
+}
+
+.message.user-message .message-content {
+    background: linear-gradient(135deg, var(--gucci-gold), var(--gucci-gold-light));
+    color: var(--gucci-black);
+}
+
+.chat-input-area {
+    padding: 15px;
+    border-top: 1px solid rgba(212, 175, 55, 0.1);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.input-container {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.gucci-input {
+    flex: 1;
+    padding: 12px 15px;
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 25px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--gucci-black);
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+.gucci-input:focus {
+    border-color: var(--gucci-gold);
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+}
+
+.gucci-input::placeholder {
+    color: rgba(26, 26, 26, 0.5);
+}
+
+.voice-input-btn,
+.send-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--gucci-gold), var(--gucci-gold-light));
+    color: var(--gucci-black);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.voice-input-btn:hover,
+.send-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+}
+
+.voice-input-btn.recording {
+    background: linear-gradient(135deg, #ff4757, #ff6b7a);
+    animation: pulse 1.5s infinite;
+}
+
+.input-status {
+    margin-top: 8px;
+    font-size: 0.8rem;
+    color: var(--gucci-gold);
+    min-height: 16px;
+    text-align: center;
+}
+
+@keyframes messageSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* 奢华按钮 */
+.actions-section {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.gucci-btn {
+    flex: 1;
+    padding: 1rem;
+    border: none;
+    border-radius: 12px;
+    font-family: var(--font-body);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-luxury);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.gucci-btn.primary {
+    background: var(--gradient-gold);
+    color: var(--gucci-black);
+}
+
+.gucci-btn.secondary {
+    background: rgba(245, 242, 232, 0.1);
+    color: var(--gucci-cream);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.gucci-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-luxury);
+}
+
+.btn-icon {
+    font-size: 1.1rem;
+}
+
+.btn-text {
+    font-size: 0.9rem;
+}
+
+/* 动画 */
+@keyframes logoGlow {
+    0% { text-shadow: 0 0 5px rgba(212, 175, 55, 0.5); }
+    100% { text-shadow: 0 0 20px rgba(212, 175, 55, 0.8); }
+}
+
+@keyframes luxurySlideIn {
+    0% {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* 语音状态样式 */
+.voice-status {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    background: rgba(0, 0, 0, 0.8);
+    color: var(--gucci-gold);
+    border: 1px solid var(--gucci-gold);
+    border-radius: 25px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);
+    font-family: 'Georgia', serif;
+    font-weight: 500;
+    font-size: 0.9rem;
+    z-index: 1001;
+    transition: var(--transition-smooth);
+}
+
+.voice-status.playing {
+    background: rgba(212, 175, 55, 0.1);
+    border-color: var(--gucci-gold-light);
+    animation: voicePulse 2s infinite;
+}
+
+.voice-status.error {
+    background: rgba(139, 0, 0, 0.8);
+    color: #ffffff;
+    border-color: #ff4444;
+}
+
+@keyframes voicePulse {
+    0%, 100% {
+        box-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);
+    }
+    50% {
+        box-shadow: 0 4px 30px rgba(212, 175, 55, 0.6);
+    }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .main-content {
+        padding: 1rem;
+    }
+    
+    .gucci-title {
+        gap: 0.3rem;
+    }
+    
+    .gucci-logo {
+        font-size: 2.5rem;
+    }
+    
+    .title-text {
+        font-size: 2rem;
+    }
+    
+    .features-showcase {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .luxury-card {
+        padding: 2rem;
+    }
+    
+    .gucci-assistant-panel {
+        width: calc(100vw - 2rem);
+        right: 1rem;
+        bottom: 100px;
+    }
+    
+    .gucci-assistant-toggle {
+        width: 70px;
+        height: 70px;
+    }
+    
+    .gucci-monogram {
+        font-size: 1.5rem;
+    }
+    
+    .voice-status {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .gucci-assistant-toggle {
+        width: 60px;
+        height: 60px;
+        bottom: 1.5rem;
+        right: 1.5rem;
+    }
+    
+    .gucci-assistant-panel {
+        bottom: 80px;
+    }
+    
+    .actions-section {
+        flex-direction: column;
+    }
+}
+
+/* 滚动条美化 */
+.panel-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.panel-content::-webkit-scrollbar-track {
+    background: rgba(245, 242, 232, 0.1);
+    border-radius: 3px;
+}
+
+.panel-content::-webkit-scrollbar-thumb {
+    background: var(--gradient-gold);
+    border-radius: 3px;
+}
+
+.panel-content::-webkit-scrollbar-thumb:hover {
+    background: var(--gucci-gold);
+}
