@@ -1,0 +1,109 @@
+# 文档质量门禁配置
+# 用于 GitHub Actions 或其他 CI/CD 系统
+
+name: Documentation Quality Gate
+
+on:
+  push:
+    paths:
+      - 'backend/docs/**'
+      - 'backend/src/**/*.ts'
+  pull_request:
+    paths:
+      - 'backend/docs/**'
+      - 'backend/src/**/*.ts'
+
+jobs:
+  docs-quality-check:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Setup PowerShell
+      shell: pwsh
+      run: |
+        # 安装必要的 PowerShell 模块
+        Install-Module -Name powershell-yaml -Force -Scope CurrentUser
+        
+    - name: Markdown Lint Check
+      shell: pwsh
+      run: |
+        cd backend/docs
+        # 检查 Markdown 语法
+        npx markdownlint-cli2 "**/*.md" --config quality/markdownlint.json
+        
+    - name: Link Checker
+      shell: pwsh
+      run: |
+        cd backend/docs
+        # 检查文档中的死链
+        npx markdown-link-check **/*.md --config quality/link-check-config.json
+        
+    - name: API Documentation Sync Check
+      shell: pwsh
+      run: |
+        cd backend/docs
+        # 运行 API 文档同步检查
+        ./automation/api-docs-sync.ps1 -OpenApiPath "./openapi.json" -ApiDocsPath "./API_DOCUMENTATION.md"
+        
+    - name: Documentation Coverage Check
+      shell: pwsh
+      run: |
+        cd backend/docs
+        # 检查文档覆盖率
+        ./automation/docs-coverage-check.ps1
+        
+    - name: Frontmatter Validation
+      shell: pwsh
+      run: |
+        cd backend/docs
+        # 验证 frontmatter 格式
+        ./automation/frontmatter-validator.ps1
+        
+    - name: Generate Quality Report
+      shell: pwsh
+      run: |
+        cd backend/docs
+        # 生成质量报告
+        ./automation/generate-quality-report.ps1
+        
+    - name: Upload Quality Reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: docs-quality-reports
+        path: backend/docs/quality/
+        
+    - name: Comment PR with Results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const path = 'backend/docs/quality/api-sync-report.json';
+          
+          if (fs.existsSync(path)) {
+            const report = JSON.parse(fs.readFileSync(path, 'utf8'));
+            const comment = `
+            ## 📊 文档质量检查结果
+            
+            - **API 文档覆盖率**: ${report.coverage}%
+            - **缺失端点**: ${report.missingInDocs}
+            - **检查时间**: ${report.timestamp}
+            
+            ${report.coverage >= 95 ? '✅ 文档质量良好' : '⚠️ 需要改进文档'}
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+          }

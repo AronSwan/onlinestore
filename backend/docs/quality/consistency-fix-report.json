@@ -1,0 +1,29 @@
+{
+  "timestamp": "2025-10-05T05:56:51.486Z",
+  "projectInfo": {
+    "name": "caddy-style-shopping-backend",
+    "version": "1.0.0"
+  },
+  "summary": {
+    "totalFixes": 3,
+    "successfulFixes": 3,
+    "failedFixes": 0
+  },
+  "fixes": [
+    {
+      "file": "DEPLOYMENT_GUIDE.md",
+      "action": "更新依赖版本",
+      "status": "success"
+    },
+    {
+      "file": "DEVELOPER_GUIDE.md",
+      "action": "更新脚本命令",
+      "status": "success"
+    },
+    {
+      "file": "CONFIG_MANAGEMENT.md",
+      "action": "更新环境变量",
+      "status": "success"
+    }
+  ]
+}

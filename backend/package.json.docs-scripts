@@ -1,0 +1,102 @@
+{
+  "scripts": {
+    "docs:all": "npm run docs:generate && npm run docs:validate && npm run docs:site:build",
+    "docs:generate": "npm run docs:api && npm run docs:code && npm run docs:coverage && npm run docs:security",
+    "docs:watch": "nodemon --watch src --watch docs --ext ts,md --exec 'npm run docs:generate'",
+    "docs:serve": "http-server docs -p 3001 -o -c-1",
+    
+    "docs:api": "npm run docs:api:generate && npm run docs:api:examples",
+    "docs:api:generate": "node scripts/generate-openapi.js",
+    "docs:api:examples": "node scripts/generate-api-examples.js",
+    "docs:api:postman": "node scripts/generate-postman-collection.js",
+    
+    "docs:code": "typedoc --out docs/generated/code-docs src --theme minimal --excludePrivate",
+    "docs:code:watch": "typedoc --out docs/generated/code-docs src --theme minimal --excludePrivate --watch",
+    
+    "docs:coverage": "npm run test:cov && npm run docs:coverage:report",
+    "docs:coverage:report": "nyc report --reporter=html --report-dir=docs/generated/test-coverage",
+    "docs:coverage:badge": "node scripts/generate-coverage-badge.js",
+    "docs:coverage:check": "node scripts/docs-coverage-check.js",
+    "docs:coverage:update": "node scripts/update-coverage-docs.js",
+    
+    "docs:security": "npm run docs:security:scan && npm run docs:security:dashboard && npm run docs:security:update",
+    "docs:security:scan": "npm audit --audit-level=moderate --json > docs/generated/security-reports/audit-report.json || true",
+    "docs:security:dashboard": "node scripts/generate-security-dashboard.js",
+    "docs:security:generate": "node scripts/generate-security-report.js",
+    "docs:security:update": "node scripts/update-security-docs.js",
+    
+    "docs:performance": "npm run docs:performance:test && npm run docs:performance:report",
+    "docs:performance:test": "node scripts/performance-benchmark.js",
+    "docs:performance:report": "node scripts/generate-performance-report.js",
+    "docs:performance:trends": "node scripts/generate-performance-trends.js",
+    "docs:performance:generate": "node scripts/update-performance-docs.js",
+    
+    "docs:validate": "npm run docs:validate:markdown && npm run docs:validate:links && npm run docs:validate:spelling",
+    "docs:validate:markdown": "markdownlint docs/**/*.md --config docs/quality/markdownlint.json",
+    "docs:validate:links": "find docs -name '*.md' -exec markdown-link-check {} \\;",
+    "docs:validate:spelling": "cspell 'docs/**/*.md' --config docs/quality/cspell.json",
+    
+    "docs:quality": "npm run docs:quality:check && npm run docs:quality:report && npm run docs:quality:metrics",
+    "docs:quality:check": "node scripts/docs-quality-check.js",
+    "docs:quality:report": "node scripts/generate-quality-report.js",
+    "docs:quality:metrics": "node scripts/update-quality-metrics.js",
+    
+    "docs:coordination": "npm run docs:coordination-check && npm run docs:coordination-fix",
+    "docs:coordination-check": "node scripts/check-docs-coordination.js",
+    "docs:coordination-fix": "node scripts/fix-docs-coordination.js",
+    "docs:coordination-report": "node scripts/generate-coordination-report.js",
+    
+    "docs:site": "npm run docs:site:configure && npm run docs:site:build && npm run docs:site:serve",
+    "docs:site:configure": "node scripts/configure-docusaurus.js",
+    "docs:site:build": "docusaurus build --out-dir docs/build",
+    "docs:site:serve": "docusaurus serve --dir docs/build --port 3002",
+    "docs:site:deploy": "npm run docs:site:build && gh-pages -d docs/build",
+    "docs:site:sitemap": "node scripts/generate-sitemap.js",
+    
+    "docs:templates": "npm run docs:templates:create && npm run docs:templates:validate",
+    "docs:templates:create": "node scripts/create-doc-templates.js",
+    "docs:templates:validate": "node scripts/validate-doc-templates.js",
+    
+    "docs:improvement": "npm run docs:improvement:analyze && npm run docs:improvement:suggestions",
+    "docs:improvement:analyze": "node scripts/analyze-docs-improvement.js",
+    "docs:improvement:suggestions": "node scripts/generate-improvement-suggestions.js",
+    "docs:improvement:report": "node scripts/generate-improvement-report.js",
+    
+    "docs:ai": "npm run docs:ai:generate && npm run docs:ai:review && npm run docs:ai:optimize",
+    "docs:ai:generate": "node scripts/ai-doc-generator.js",
+    "docs:ai:review": "node scripts/ai-doc-reviewer.js",
+    "docs:ai:optimize": "node scripts/ai-doc-optimizer.js",
+    
+    "docs:deploy": "npm run docs:generate && npm run docs:validate && npm run docs:site:deploy",
+    "docs:deploy:staging": "npm run docs:deploy -- --staging",
+    "docs:deploy:production": "npm run docs:deploy -- --production",
+    
+    "docs:backup": "node scripts/backup-docs.js",
+    "docs:restore": "node scripts/restore-docs.js",
+    "docs:migration": "node scripts/migrate-docs.js",
+    
+    "docs:stats": "node scripts/generate-docs-stats.js",
+    "docs:analytics": "node scripts/analyze-docs-usage.js",
+    "docs:feedback": "node scripts/collect-docs-feedback.js",
+    
+    "docs:clean": "rimraf docs/generated docs/build docs/.docusaurus",
+    "docs:reset": "npm run docs:clean && npm run docs:generate",
+    
+    "docs:dev": "concurrently \"npm run docs:watch\" \"npm run docs:serve\"",
+    "docs:preview": "npm run docs:generate && npm run docs:site:build && npm run docs:site:serve"
+  },
+  
+  "devDependencies": {
+    "@docusaurus/core": "^3.0.0",
+    "@docusaurus/preset-classic": "^3.0.0",
+    "markdownlint-cli": "^0.37.0",
+    "markdown-link-check": "^3.11.2",
+    "cspell": "^7.3.8",
+    "typedoc": "^0.25.4",
+    "http-server": "^14.1.1",
+    "nodemon": "^3.0.1",
+    "concurrently": "^8.2.2",
+    "rimraf": "^5.0.5",
+    "gh-pages": "^6.0.0"
+  }
+}

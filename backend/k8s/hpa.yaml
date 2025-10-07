@@ -1,0 +1,44 @@
+# 用途：配置Kubernetes水平Pod自动伸缩器，用于分布式环境下的弹性扩缩容
+# 依赖文件：deployment.yaml
+# 作者：后端开发团队
+# 更新：AI助手 - 增强分布式部署弹性伸缩
+# 时间：2025-09-26 18:30:00
+
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: caddy-shopping-backend-hpa
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: caddy-shopping-backend
+  minReplicas: 3 # 增加最小副本数，提高分布式部署的稳定性和可用性
+  maxReplicas: 15 # 增加最大副本数，支持更高的并发负载
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 65 # 降低CPU目标利用率，更早触发扩缩容
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 75 # 降低内存目标利用率，更早触发扩缩容
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 600 # 增加缩容稳定窗口，避免频繁缩放
+      policies:
+      - type: Percent
+        value: 30 # 降低每次缩容百分比，保持系统稳定性
+        periodSeconds: 120
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 15

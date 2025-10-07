@@ -1,0 +1,83 @@
+{
+  "timestamp": "2025-10-05T06:09:26.416Z",
+  "projectInfo": {
+    "name": "caddy-style-shopping-backend",
+    "version": "1.0.0",
+    "description": "基于 CongoMall 设计的购物网站后端服务"
+  },
+  "validation": {
+    "summary": {
+      "totalCategories": 5,
+      "passedCategories": 5,
+      "totalChecks": 14,
+      "passedChecks": 14
+    },
+    "results": [
+      {
+        "category": "Package.json 同步",
+        "isValid": true,
+        "totalChecks": 3,
+        "passedChecks": 3,
+        "inconsistencies": [],
+        "details": [
+          {
+            "isValid": true,
+            "inconsistencies": []
+          },
+          {
+            "isValid": true,
+            "inconsistencies": []
+          },
+          {
+            "isValid": true,
+            "inconsistencies": []
+          }
+        ]
+      },
+      {
+        "category": "配置文件同步",
+        "isValid": true,
+        "totalChecks": 1,
+        "passedChecks": 1,
+        "inconsistencies": []
+      },
+      {
+        "category": "API 文档同步",
+        "isValid": true,
+        "totalChecks": 1,
+        "passedChecks": 1,
+        "inconsistencies": []
+      },
+      {
+        "category": "文档结构",
+        "isValid": true,
+        "totalChecks": 6,
+        "passedChecks": 6,
+        "inconsistencies": []
+      },
+      {
+        "category": "内容质量",
+        "isValid": true,
+        "totalChecks": 3,
+        "passedChecks": 3,
+        "inconsistencies": []
+      }
+    ]
+  },
+  "fixes": {
+    "summary": {
+      "totalFixes": 0,
+      "successfulFixes": 0,
+      "failedFixes": 0
+    },
+    "results": []
+  },
+  "sync": {
+    "summary": {
+      "totalSyncs": 0,
+      "successfulSyncs": 0,
+      "failedSyncs": 0
+    },
+    "results": []
+  }
+}

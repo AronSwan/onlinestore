@@ -1,0 +1,12 @@
+﻿{
+    "previous_state":  "OPTIMIZING",
+    "current_state":  "OPTIMIZING",
+    "updated_at":  "2025-09-24 12:27:08",
+    "reason":  "Quality gate passed",
+    "gate_status":  "pass",
+    "gate_profile":  "balanced",
+    "gate_thresholds":  {
+                            "max_vulnerabilities":  5,
+                            "block_on_cvss":  8
+                        }
+}

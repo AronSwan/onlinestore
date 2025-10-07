@@ -1,0 +1,699 @@
+{
+  "dashboard": {
+    "id": "user-behavior-analytics",
+    "title": "用户行为分析",
+    "description": "用户行为数据分析和洞察仪表板",
+    "tags": ["analytics", "user-behavior", "business"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": "real-time-overview",
+        "title": "实时概览",
+        "type": "stat",
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT COUNT(DISTINCT sessionId) as active_sessions FROM user-behavior WHERE timestamp >= now() - INTERVAL '5 minutes'",
+            "datasource": "openobserve",
+            "format": "time_series"
+          },
+          {
+            "refId": "B",
+            "query": "SELECT COUNT(DISTINCT userId) as active_users FROM user-behavior WHERE timestamp >= now() - INTERVAL '5 minutes'",
+            "datasource": "openobserve",
+            "format": "time_series"
+          },
+          {
+            "refId": "C",
+            "query": "SELECT COUNT(*) as page_views FROM user-behavior WHERE eventType = 'page_view' AND timestamp >= now() - INTERVAL '5 minutes'",
+            "datasource": "openobserve",
+            "format": "time_series"
+          },
+          {
+            "refId": "D",
+            "query": "SELECT COUNT(*) as conversions FROM business-events WHERE eventType = 'conversion' AND timestamp >= now() - INTERVAL '5 minutes'",
+            "datasource": "openobserve",
+            "format": "time_series"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "displayMode": "list",
+              "orientation": "horizontal"
+            },
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "displayMode": "list",
+          "orientation": "horizontal"
+        }
+      },
+      {
+        "id": "page-views-timeline",
+        "title": "页面浏览趋势",
+        "type": "timeseries",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT time_bucket('5 minute', timestamp) as time, COUNT(*) as page_views FROM user-behavior WHERE eventType = 'page_view' AND timestamp >= now() - INTERVAL '1 hour' GROUP BY time ORDER BY time",
+            "datasource": "openobserve",
+            "format": "time_series"
+          },
+          {
+            "refId": "B",
+            "query": "SELECT time_bucket('5 minute', timestamp) as time, COUNT(DISTINCT sessionId) as unique_sessions FROM user-behavior WHERE eventType = 'page_view' AND timestamp >= now() - INTERVAL '1 hour' GROUP BY time ORDER BY time",
+            "datasource": "openobserve",
+            "format": "time_series"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              },
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom"
+          },
+          "tooltip": {
+            "mode": "single"
+          }
+        }
+      },
+      {
+        "id": "top-pages",
+        "title": "热门页面TOP10",
+        "type": "table",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT pageUrl, pageTitle, COUNT(*) as page_views, COUNT(DISTINCT sessionId) as unique_sessions, COUNT(DISTINCT userId) as unique_users FROM user-behavior WHERE eventType = 'page_view' AND timestamp >= now() - INTERVAL '24 hours' GROUP BY pageUrl, pageTitle ORDER BY page_views DESC LIMIT 10",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "custom": {
+              "align": "auto",
+              "displayMode": "auto"
+            },
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "page_views"
+              },
+              "properties": [
+                {
+                  "id": "custom.displayMode",
+                  "value": "color-background"
+                },
+                {
+                  "id": "thresholds",
+                  "value": {
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      },
+                      {
+                        "color": "yellow",
+                        "value": 100
+                      },
+                      {
+                        "color": "red",
+                        "value": 500
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "showHeader": true
+        }
+      },
+      {
+        "id": "user-sessions",
+        "title": "用户会话分析",
+        "type": "pie",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 16
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT CASE WHEN session_duration < 60000 THEN '< 1分钟' WHEN session_duration < 300000 THEN '1-5分钟' WHEN session_duration < 600000 THEN '5-10分钟' ELSE '> 10分钟' END as session_duration_range, COUNT(*) as sessions FROM (SELECT sessionId, MAX(timestamp) - MIN(timestamp) as session_duration FROM user-behavior WHERE timestamp >= now() - INTERVAL '24 hours' GROUP BY sessionId) GROUP BY session_duration_range",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            },
+            "mappings": []
+          },
+          "overrides": []
+        },
+        "options": {
+          "displayMode": "list",
+          "orientation": "horizontal"
+        }
+      },
+      {
+        "id": "device-breakdown",
+        "title": "设备类型分布",
+        "type": "pie",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 16
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT deviceInfo.isMobile ? 'Mobile' : (deviceInfo.isTablet ? 'Tablet' : 'Desktop') as device_type, COUNT(*) as sessions FROM user-behavior WHERE eventType = 'page_view' AND timestamp >= now() - INTERVAL '24 hours' GROUP BY device_type",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            },
+            "mappings": []
+          },
+          "overrides": []
+        },
+        "options": {
+          "displayMode": "list",
+          "orientation": "horizontal"
+        }
+      },
+      {
+        "id": "conversion-funnel",
+        "title": "转化漏斗",
+        "type": "funnel",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 24
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT conversionType, COUNT(*) as conversions, COUNT(DISTINCT sessionId) as converting_sessions FROM business-events WHERE eventType = 'conversion' AND timestamp >= now() - INTERVAL '24 hours' GROUP BY conversionType ORDER BY conversions DESC",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            },
+            "mappings": []
+          },
+          "overrides": []
+        },
+        "options": {
+          "displayMode": "list",
+          "orientation": "horizontal"
+        }
+      },
+      {
+        "id": "user-paths",
+        "title": "用户路径分析",
+        "type": "sankey",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 24
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT action, target, COUNT(*) as path_count FROM user-behavior WHERE eventType = 'user_path' AND timestamp >= now() - INTERVAL '24 hours' GROUP BY action, target ORDER BY path_count DESC LIMIT 20",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            },
+            "mappings": []
+          },
+          "overrides": []
+        },
+        "options": {
+          "displayMode": "list",
+          "orientation": "horizontal"
+        }
+      },
+      {
+        "id": "click-heatmap",
+        "title": "点击热力图",
+        "type": "heatmap",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 32
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT FLOOR(position.x / 100) * 100 as x_bucket, FLOOR(position.y / 100) * 100 as y_bucket, COUNT(*) as click_count FROM user-behavior WHERE eventType = 'click' AND timestamp >= now() - INTERVAL '24 hours' GROUP BY x_bucket, y_bucket ORDER BY click_count DESC",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            },
+            "mappings": []
+          },
+          "overrides": []
+        },
+        "options": {
+          "displayMode": "list",
+          "orientation": "horizontal"
+        }
+      },
+      {
+        "id": "scroll-depth",
+        "title": "滚动深度分布",
+        "type": "histogram",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 32
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT scrollDepth FROM user-behavior WHERE eventType = 'scroll' AND timestamp >= now() - INTERVAL '24 hours'",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              },
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        }
+      },
+      {
+        "id": "form-interactions",
+        "title": "表单交互分析",
+        "type": "table",
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 40
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT form.id, form.action, COUNT(*) as submissions, COUNT(DISTINCT sessionId) as unique_sessions, AVG(form.fieldCount) as avg_fields FROM user-behavior WHERE eventType = 'form_submit' AND timestamp >= now() - INTERVAL '24 hours' GROUP BY form.id, form.action ORDER BY submissions DESC",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "custom": {
+              "align": "auto",
+              "displayMode": "auto"
+            },
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "submissions"
+              },
+              "properties": [
+                {
+                  "id": "custom.displayMode",
+                  "value": "color-background"
+                },
+                {
+                  "id": "thresholds",
+                  "value": {
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      },
+                      {
+                        "color": "yellow",
+                        "value": 10
+                      },
+                      {
+                        "color": "red",
+                        "value": 50
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "showHeader": true
+        }
+      },
+      {
+        "id": "performance-metrics",
+        "title": "性能指标",
+        "type": "timeseries",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 48
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT time_bucket('10 minute', timestamp) as time, AVG(timing.pageLoad) as avg_page_load FROM user-behavior WHERE eventType = 'performance' AND timestamp >= now() - INTERVAL '6 hours' GROUP BY time ORDER BY time",
+            "datasource": "openobserve",
+            "format": "time_series"
+          },
+          {
+            "refId": "B",
+            "query": "SELECT time_bucket('10 minute', timestamp) as time, AVG(timing.domInteractive) as avg_dom_interactive FROM user-behavior WHERE eventType = 'performance' AND timestamp >= now() - INTERVAL '6 hours' GROUP BY time ORDER BY time",
+            "datasource": "openobserve",
+            "format": "time_series"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              },
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom"
+          },
+          "tooltip": {
+            "mode": "single"
+          }
+        }
+      },
+      {
+        "id": "geographic-distribution",
+        "title": "地理分布",
+        "type": "worldmap",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 48
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT geoLocation.country as country, COUNT(*) as sessions FROM user-behavior WHERE eventType = 'page_view' AND timestamp >= now() - INTERVAL '24 hours' GROUP BY geoLocation.country ORDER BY sessions DESC",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            },
+            "mappings": []
+          },
+          "overrides": []
+        },
+        "options": {
+          "displayMode": "list",
+          "orientation": "horizontal"
+        }
+      }
+    ],
+    "time": {
+      "from": "now-24h",
+      "to": "now"
+    },
+    "refresh": "1m"
+  }
+}

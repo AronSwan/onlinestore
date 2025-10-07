@@ -1,0 +1,56 @@
+# OpenObserve告警配置
+alerts:
+  - name: "HighErrorRate"
+    description: "错误率超过5%"
+    condition: "SELECT count(*) as error_count FROM application-logs WHERE level='ERROR' AND timestamp >= now() - INTERVAL '5 minutes' GROUP BY time_bucket('1 minute', timestamp) HAVING error_count > 100"
+    severity: "critical"
+    for: "5m"
+    labels:
+      team: "backend"
+    annotations:
+      summary: "应用错误率过高"
+      description: "过去5分钟内错误次数超过100次"
+      
+  - name: "HighLatency"
+    description: "P95响应时间超过1秒"
+    condition: "SELECT percentile_cont(0.95) WITHIN GROUP (ORDER BY duration) as p95_latency FROM request-traces WHERE timestamp >= now() - INTERVAL '5 minutes' HAVING p95_latency > 1000"
+    severity: "warning"
+    for: "5m"
+    labels:
+      team: "backend"
+    annotations:
+      summary: "应用响应时间过长"
+      description: "过去5分钟内P95响应时间超过1秒"
+      
+  - name: "HighMemoryUsage"
+    description: "内存使用率超过85%"
+    condition: "SELECT value FROM system-metrics WHERE metric_name='memory_usage_percent' AND timestamp >= now() - INTERVAL '5 minutes' ORDER BY timestamp DESC LIMIT 1 HAVING value > 85"
+    severity: "warning"
+    for: "5m"
+    labels:
+      team: "ops"
+    annotations:
+      summary: "系统内存使用率过高"
+      description: "当前内存使用率超过85%"
+      
+  - name: "HighCPUUsage"
+    description: "CPU使用率超过80%"
+    condition: "SELECT value FROM system-metrics WHERE metric_name='cpu_usage_percent' AND timestamp >= now() - INTERVAL '5 minutes' ORDER BY timestamp DESC LIMIT 1 HAVING value > 80"
+    severity: "warning"
+    for: "5m"
+    labels:
+      team: "ops"
+    annotations:
+      summary: "系统CPU使用率过高"
+      description: "当前CPU使用率超过80%"
+      
+  - name: "DiskSpaceLow"
+    description: "磁盘空间不足"
+    condition: "SELECT value FROM system-metrics WHERE metric_name='disk_usage_percent' AND timestamp >= now() - INTERVAL '5 minutes' ORDER BY timestamp DESC LIMIT 1 HAVING value > 90"
+    severity: "critical"
+    for: "5m"
+    labels:
+      team: "ops"
+    annotations:
+      summary: "磁盘空间不足"
+      description: "当前磁盘使用率超过90%"

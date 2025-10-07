@@ -1,0 +1,31 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: business-alerts
+spec:
+  groups:
+  - name: business.rules
+    rules:
+    - alert: HighOrderFailureRate
+      expr: rate(orders_failed_total[5m]) / rate(orders_created_total[5m]) > 0.05
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "订单失败率超过5% ({{ $value }})"
+        
+    - alert: APISlowResponse
+      expr: histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[1m])) > 1
+      for: 10m
+      labels:
+        severity: warning
+      annotations:
+        summary: "API响应时间P99超过1秒 ({{ $value }}s)"
+        
+    - alert: RedisMemoryWarning
+      expr: redis_memory_usage_bytes / redis_maxmemory > 0.8
+      for: 30m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Redis内存使用超过80% ({{ $value }})"

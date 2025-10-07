@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>安全仪表板</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e0e6ed;
+        }
+        
+        .header h1 {
+            margin: 0;
+            color: #2c3e50;
+        }
+        
+        .header .last-updated {
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+        
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+            color: #7f8c8d;
+        }
+        
+        .stat-card .value {
+            font-size: 32px;
+            font-weight: bold;
+            margin: 0;
+        }
+        
+        .stat-card.critical .value {
+            color: #e74c3c;
+        }
+        
+        .stat-card.high .value {
+            color: #e67e22;
+        }
+        
+        .stat-card.medium .value {
+            color: #f39c12;
+        }
+        
+        .stat-card.low .value {
+            color: #27ae60;
+        }
+        
+        .stat-card .change {
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        
+        .stat-card .change.positive {
+            color: #27ae60;
+        }
+        
+        .stat-card .change.negative {
+            color: #e74c3c;
+        }
+        
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .chart-card h3 {
+            margin: 0 0 15px 0;
+            font-size: 18px;
+            color: #2c3e50;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+        
+        .heatmap-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+        }
+        
+        .heatmap-container h3 {
+            margin: 0 0 15px 0;
+            font-size: 18px;
+            color: #2c3e50;
+        }
+        
+        .tooltip {
+            position: absolute;
+            text-align: center;
+            padding: 8px;
+            font: 12px sans-serif;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border: 0px;
+            border-radius: 4px;
+            pointer-events: none;
+            opacity: 0;
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            margin-top: 15px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 0 10px;
+        }
+        
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            margin-right: 5px;
+            border-radius: 2px;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .time-filter {
+            display: flex;
+        }
+        
+        .time-filter button {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 8px 16px;
+            margin-right: 5px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        
+        .time-filter button.active {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+        
+        .export-button {
+            background: #2ecc71;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .vulnerability-table {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            overflow-x: auto;
+        }
+        
+        .vulnerability-table h3 {
+            margin: 0 0 15px 0;
+            font-size: 18px;
+            color: #2c3e50;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #e0e6ed;
+        }
+        
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .severity-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .severity-badge.critical {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .severity-badge.high {
+            background-color: #e67e22;
+            color: white;
+        }
+        
+        .severity-badge.medium {
+            background-color: #f39c12;
+            color: white;
+        }
+        
+        .severity-badge.low {
+            background-color: #27ae60;
+            color: white;
+        }
+        
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-badge.open {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .status-badge.in-progress {
+            background-color: #f39c12;
+            color: white;
+        }
+        
+        .status-badge.resolved {
+            background-color: #27ae60;
+            color: white;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 800px;
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+        }
+        
+        @media (max-width: 768px) {
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .time-filter {
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>安全仪表板</h1>
+            <div class="last-updated">最后更新: <span id="lastUpdated"></span></div>
+        </div>
+        
+        <div class="controls">
+            <div class="time-filter">
+                <button class="active" data-range="7">7天</button>
+                <button data-range="30">30天</button>
+                <button data-range="90">90天</button>
+                <button data-range="365">1年</button>
+            </div>
+            <button class="export-button" id="exportButton">导出报告</button>
+        </div>
+        
+        <div class="stats-container">
+            <div class="stat-card critical">
+                <h3>严重漏洞</h3>
+                <p class="value" id="criticalCount">0</p>
+                <p class="change negative">↑ 2 本周</p>
+            </div>
+            <div class="stat-card high">
+                <h3>高危漏洞</h3>
+                <p class="value" id="highCount">0</p>
+                <p class="change negative">↑ 1 本周</p>
+            </div>
+            <div class="stat-card medium">
+                <h3>中危漏洞</h3>
+                <p class="value" id="mediumCount">0</p>
+                <p class="change positive">↓ 3 本周</p>
+            </div>
+            <div class="stat-card low">
+                <h3>低危漏洞</h3>
+                <p class="value" id="lowCount">0</p>
+                <p class="change positive">↓ 5 本周</p>
+            </div>
+        </div>
+        
+        <div class="charts-container">
+            <div class="chart-card">
+                <h3>漏洞趋势</h3>
+                <div class="chart-container">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3>漏洞分布</h3>
+                <div class="chart-container">
+                    <canvas id="distributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="heatmap-container">
+            <h3>系统风险热力图</h3>
+            <div id="heatmap"></div>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #d32f2f;"></div>
+                    <span>严重</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #f57c00;"></div>
+                    <span>高</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #fbc02d;"></div>
+                    <span>中</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #388e3c;"></div>
+                    <span>低</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="vulnerability-table">
+            <h3>最近发现的漏洞</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>标题</th>
+                        <th>严重度</th>
+                        <th>系统</th>
+                        <th>状态</th>
+                        <th>发现日期</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="vulnerabilityTableBody">
+                    <!-- 表格内容将通过JavaScript动态生成 -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div id="vulnerabilityModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modalTitle">漏洞详情</h2>
+            <div id="modalContent">
+                <!-- 模态框内容将通过JavaScript动态生成 -->
+            </div>
+        </div>
+    </div>
+    
+    <div class="tooltip"></div>
+    
+    <script>
+        // 直接从文件获取数据
+        let vulnerabilityData = {
+            critical: 0,
+            high: 0,
+            medium: 0,
+            low: 0,
+            trend: [],
+            systems: [],
+            recentVulnerabilities: []
+        };
+
+        // 从文件获取漏洞数据
+        async function fetchVulnerabilityData() {
+            try {
+                const response = await fetch('../data/security-vulnerabilities.json');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                
+                // 处理漏洞数据
+                const vulnerabilities = data.vulnerabilities || [];
+                
+                // 统计各严重级别的漏洞数量
+                vulnerabilityData.critical = vulnerabilities.filter(v => v.severity === '严重').length;
+                vulnerabilityData.high = vulnerabilities.filter(v => v.severity === '高').length;
+                vulnerabilityData.medium = vulnerabilities.filter(v => v.severity === '中').length;
+                vulnerabilityData.low = vulnerabilities.filter(v => v.severity === '低').length;
+                
+                // 生成趋势数据（模拟过去30天的数据）
+                vulnerabilityData.trend = generateTrendData(vulnerabilities);
+                
+                // 处理系统数据
+                vulnerabilityData.systems = processSystemData(vulnerabilities);
+                
+                // 处理最近发现的漏洞
+                vulnerabilityData.recentVulnerabilities = vulnerabilities.map(vuln => ({
+                    id: vuln.id,
+                    title: vuln.title,
+                    severity: convertSeverityToEnglish(vuln.severity),
+                    system: getSystemFromRuleId(vuln.ruleId),
+                    status: convertStatusToEnglish(vuln.status),
+                    date: vuln.firstFound,
+                    cvss: vuln.cvss,
+                    description: vuln.businessImpact,
+                    remediation: `负责人: ${vuln.owner}, 目标日期: ${vuln.targetDate}`,
+                    cwe: vuln.ruleId
+                })).sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                // 更新最后更新时间
+                document.getElementById('lastUpdated').textContent =
+                    new Date(data.metadata.lastUpdated).toLocaleString('zh-CN');
+                
+                return true;
+            } catch (error) {
+                console.error('获取漏洞数据失败:', error);
+                showErrorMessage('无法获取漏洞数据: ' + error.message);
+                return false;
+            }
+        }
+        
+        // 生成趋势数据
+        function generateTrendData(vulnerabilities) {
+            const trendData = [];
+            const now = new Date();
+            
+            // 生成过去30天的趋势数据
+            for (let i = 29; i >= 0; i--) {
+                const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+                const dateStr = date.toISOString().split('T')[0];
+                
+                // 统计该日期发现的漏洞
+                const dayVulnerabilities = vulnerabilities.filter(vuln =>
+                    vuln.firstFound === dateStr
+                );
+
+                const trend = {
+                    date: dateStr,
+                    critical: dayVulnerabilities.filter(v => v.severity === '严重').length,
+                    high: dayVulnerabilities.filter(v => v.severity === '高').length,
+                    medium: dayVulnerabilities.filter(v => v.severity === '中').length,
+                    low: dayVulnerabilities.filter(v => v.severity === '低').length,
+                    total: dayVulnerabilities.length
+                };
+
+                trendData.push(trend);
+            }
+            
+            return trendData;
+        }
+        
+        // 处理系统数据
+        function processSystemData(vulnerabilities) {
+            const systems = {};
+            
+            vulnerabilities.forEach(vuln => {
+                const system = getSystemFromRuleId(vuln.ruleId);
+                
+                if (!systems[system]) {
+                    systems[system] = {
+                        name: system,
+                        critical: 0,
+                        high: 0,
+                        medium: 0,
+                        low: 0
+                    };
+                }
+                
+                systems[system][convertSeverityToEnglish(vuln.severity)]++;
+            });
+            
+            return Object.values(systems);
+        }
+        
+        // 将中文严重度转换为英文
+        function convertSeverityToEnglish(severity) {
+            const severityMap = {
+                '严重': 'critical',
+                '高': 'high',
+                '中': 'medium',
+                '低': 'low'
+            };
+            return severityMap[severity] || 'unknown';
+        }
+        
+        // 将中文状态转换为英文
+        function convertStatusToEnglish(status) {
+            const statusMap = {
+                '发现': 'discovered',
+                '确认': 'confirmed',
+                '待修复': 'open',
+                '进行中': 'in-progress',
+                '待复测': 'pending-retest',
+                '已完成': 'resolved',
+                '风险接受': 'risk-accepted'
+            };
+            return statusMap[status] || 'unknown';
+        }
+        
+        // 从规则ID获取系统名称
+        function getSystemFromRuleId(ruleId) {
+            const systemMapping = {
+                'jwt-format-validation': '认证授权',
+                'roles-guard': '认证授权',
+                'input-validation': '支付系统',
+                'input-length-validation': '支付系统',
+                'password-field-exclusion': '数据安全',
+                'database-indexes': '订单系统',
+                'transaction-usage': '支付系统',
+                'transaction-rollback': '订单系统'
+            };
+            return systemMapping[ruleId] || '其他系统';
+        }
+
+        // 显示错误消息
+        function showErrorMessage(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = message;
+            errorDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background-color: #e74c3c;
+                color: white;
+                padding: 10px 20px;
+                border-radius: 4px;
+                z-index: 1000;
+                max-width: 300px;
+            `;
+            
+            document.body.appendChild(errorDiv);
+            
+            // 5秒后自动移除
+            setTimeout(() => {
+                if (errorDiv.parentNode) {
+                    errorDiv.parentNode.removeChild(errorDiv);
+                }
+            }, 5000);
+        }
+        
+        // 更新统计卡片
+        function updateStatCards() {
+            document.getElementById('criticalCount').textContent = vulnerabilityData.critical;
+            document.getElementById('highCount').textContent = vulnerabilityData.high;
+            document.getElementById('mediumCount').textContent = vulnerabilityData.medium;
+            document.getElementById('lowCount').textContent = vulnerabilityData.low;
+        }
+        
+        // 创建趋势图表
+        function createTrendChart() {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            
+            const labels = vulnerabilityData.trend.map(item => {
+                const date = new Date(item.date);
+                return `${date.getMonth() + 1}/${date.getDate()}`;
+            });
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '严重',
+                            data: vulnerabilityData.trend.map(item => item.critical),
+                            borderColor: '#e74c3c',
+                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: '高',
+                            data: vulnerabilityData.trend.map(item => item.high),
+                            borderColor: '#e67e22',
+                            backgroundColor: 'rgba(230, 126, 34, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: '中',
+                            data: vulnerabilityData.trend.map(item => item.medium),
+                            borderColor: '#f39c12',
+                            backgroundColor: 'rgba(243, 156, 18, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: '低',
+                            data: vulnerabilityData.trend.map(item => item.low),
+                            borderColor: '#27ae60',
+                            backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 创建分布图表
+        function createDistributionChart() {
+            const ctx = document.getElementById('distributionChart').getContext('2d');
+            
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['严重', '高', '中', '低'],
+                    datasets: [{
+                        data: [
+                            vulnerabilityData.critical,
+                            vulnerabilityData.high,
+                            vulnerabilityData.medium,
+                            vulnerabilityData.low
+                        ],
+                        backgroundColor: [
+                            '#e74c3c',
+                            '#e67e22',
+                            '#f39c12',
+                            '#27ae60'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 创建热力图
+        function createHeatmap() {
+            const margin = { top: 30, right: 30, bottom: 70, left: 100 };
+            const width = 800 - margin.left - margin.right;
+            const height = 400 - margin.top - margin.bottom;
+            
+            // 创建SVG
+            const svg = d3.select("#heatmap")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+            
+            // 定义系统名称和严重级别
+            const systems = vulnerabilityData.systems.map(d => d.name);
+            const severities = ['critical', 'high', 'medium', 'low'];
+            
+            // 创建颜色比例尺
+            const colorScale = d3.scaleOrdinal()
+                .domain(['critical', 'high', 'medium', 'low'])
+                .range(['#d32f2f', '#f57c00', '#fbc02d', '#388e3c']);
+            
+            // 创建X轴比例尺
+            const x = d3.scaleBand()
+                .range([0, width])
+                .domain(severities)
+                .padding(0.1);
+            
+            // 创建Y轴比例尺
+            const y = d3.scaleBand()
+                .range([height, 0])
+                .domain(systems)
+                .padding(0.1);
+            
+            // 添加X轴
+            svg.append("g")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(x))
+                .append("text")
+                .attr("x", width / 2)
+                .attr("y", 40)
+                .attr("fill", "black")
+                .style("text-anchor", "middle")
+                .text("严重度");
+            
+            // 添加Y轴
+            svg.append("g")
+                .call(d3.axisLeft(y));
+            
+            // 创建工具提示
+            const tooltip = d3.select(".tooltip");
+            
+            // 添加热力图单元格
+            svg.selectAll(".cell")
+                .data(vulnerabilityData.systems.flatMap(system => 
+                    severities.map(severity => ({
+                        system: system.name,
+                        severity: severity,
+                        value: system[severity] || 0
+                    }))
+                ))
+                .enter().append("rect")
+                .attr("class", "cell")
+                .attr("x", d => x(d.severity))
+                .attr("y", d => y(d.system))
+                .attr("width", x.bandwidth())
+                .attr("height", y.bandwidth())
+                .attr("fill", d => d.value > 0 ? colorScale(d.severity) : "#f5f5f5")
+                .attr("stroke", "white")
+                .attr("stroke-width", 2)
+                .on("mouseover", function(event, d) {
+                    tooltip.transition()
+                        .duration(200)
+                        .style("opacity", .9);
+                    tooltip.html(`${d.system}<br/>${d.severity}: ${d.value}`)
+                        .style("left", (event.pageX + 10) + "px")
+                        .style("top", (event.pageY - 28) + "px");
+                })
+                .on("mouseout", function(d) {
+                    tooltip.transition()
+                        .duration(500)
+                        .style("opacity", 0);
+                })
+                .on("click", function(event, d) {
+                    if (d.value > 0) {
+                        showSystemVulnerabilities(d.system, d.severity);
+                    }
+                });
+            
+            // 添加单元格文本
+            svg.selectAll(".text")
+                .data(vulnerabilityData.systems.flatMap(system => 
+                    severities.map(severity => ({
+                        system: system.name,
+                        severity: severity,
+                        value: system[severity] || 0
+                    }))
+                ))
+                .enter().append("text")
+                .attr("x", d => x(d.severity) + x.bandwidth() / 2)
+                .attr("y", d => y(d.system) + y.bandwidth() / 2)
+                .attr("text-anchor", "middle")
+                .attr("dominant-baseline", "middle")
+                .attr("fill", d => d.value > 0 ? "white" : "#666")
+                .text(d => d.value > 0 ? d.value : "");
+        }
+        
+        // 填充漏洞表格
+        function populateVulnerabilityTable() {
+            const tableBody = document.getElementById('vulnerabilityTableBody');
+            tableBody.innerHTML = '';
+            
+            vulnerabilityData.recentVulnerabilities.forEach(vuln => {
+                const row = document.createElement('tr');
+                
+                row.innerHTML = `
+                    <td>${vuln.id}</td>
+                    <td>${vuln.title}</td>
+                    <td><span class="severity-badge ${vuln.severity}">${vuln.severity}</span></td>
+                    <td>${vuln.system}</td>
+                    <td><span class="status-badge ${vuln.status.replace('-', '')}">${vuln.status}</span></td>
+                    <td>${vuln.date}</td>
+                    <td><button class="details-button" data-id="${vuln.id}">详情</button></td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+            
+            // 添加详情按钮事件监听器
+            document.querySelectorAll('.details-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const vulnId = this.getAttribute('data-id');
+                    const vuln = vulnerabilityData.recentVulnerabilities.find(v => v.id === vulnId);
+                    showVulnerabilityDetails(vuln);
+                });
+            });
+        }
+        
+        // 显示漏洞详情
+        function showVulnerabilityDetails(vuln) {
+            const modal = document.getElementById('vulnerabilityModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalContent = document.getElementById('modalContent');
+            
+            modalTitle.textContent = `${vuln.id}: ${vuln.title}`;
+            
+            modalContent.innerHTML = `
+                <p><strong>严重度:</strong> <span class="severity-badge ${vuln.severity}">${vuln.severity}</span></p>
+                <p><strong>系统:</strong> ${vuln.system}</p>
+                <p><strong>状态:</strong> <span class="status-badge ${vuln.status.replace('-', '')}">${vuln.status}</span></p>
+                <p><strong>发现日期:</strong> ${vuln.date}</p>
+                <p><strong>CWE:</strong> ${vuln.cwe}</p>
+                <p><strong>CVSS评分:</strong> ${vuln.cvss}</p>
+                <p><strong>描述:</strong> ${vuln.description}</p>
+                <p><strong>修复建议:</strong> ${vuln.remediation}</p>
+            `;
+            
+            modal.style.display = 'block';
+        }
+        
+        // 显示系统漏洞
+        function showSystemVulnerabilities(system, severity) {
+            const vulns = vulnerabilityData.recentVulnerabilities.filter(v => 
+                v.system === system && v.severity === severity
+            );
+            
+            if (vulns.length === 0) {
+                alert(`${system}系统中没有${severity}级别的漏洞`);
+                return;
+            }
+            
+            const modal = document.getElementById('vulnerabilityModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalContent = document.getElementById('modalContent');
+            
+            modalTitle.textContent = `${system} - ${severity}级别漏洞`;
+            
+            let vulnList = '<ul>';
+            vulns.forEach(vuln => {
+                vulnList += `<li><strong>${vuln.id}:</strong> ${vuln.title}</li>`;
+            });
+            vulnList += '</ul>';
+            
+            modalContent.innerHTML = `
+                <p>${system}系统中发现${vulns.length}个${severity}级别的漏洞:</p>
+                ${vulnList}
+            `;
+            
+            modal.style.display = 'block';
+        }
+        
+        // 更新最后更新时间
+        function updateLastUpdatedTime() {
+            const now = new Date();
+            const formattedTime = now.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            
+            document.getElementById('lastUpdated').textContent = formattedTime;
+        }
+        
+        // 刷新整个仪表板
+        async function refreshDashboard() {
+            const success = await fetchVulnerabilityData();
+            if (success) {
+                updateStatCards();
+                updateCharts();
+                populateVulnerabilityTable();
+            }
+        }
+        
+        // 更新图表
+        function updateCharts() {
+            // 清除现有图表
+            const trendChart = Chart.getChart('trendChart');
+            if (trendChart) {
+                trendChart.destroy();
+            }
+            
+            const distributionChart = Chart.getChart('distributionChart');
+            if (distributionChart) {
+                distributionChart.destroy();
+            }
+            
+            // 清除现有热力图
+            d3.select('#heatmap').selectAll('*').remove();
+            
+            // 重新创建图表
+            createTrendChart();
+            createDistributionChart();
+            createHeatmap();
+        }
+        
+        // 导出报告
+        function exportReport() {
+            // 创建报告内容
+            const reportContent = {
+                generatedAt: new Date().toISOString(),
+                summary: {
+                    critical: vulnerabilityData.critical,
+                    high: vulnerabilityData.high,
+                    medium: vulnerabilityData.medium,
+                    low: vulnerabilityData.low
+                },
+                trend: vulnerabilityData.trend,
+                systems: vulnerabilityData.systems,
+                recentVulnerabilities: vulnerabilityData.recentVulnerabilities
+            };
+            
+            // 创建下载链接
+            const dataStr = JSON.stringify(reportContent, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = `security-report-${new Date().toISOString().split('T')[0]}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+        }
+        
+        // 初始化仪表板
+        async function initDashboard() {
+            // 显示加载指示器
+            showLoadingIndicator();
+            
+            // 从文件获取数据
+            const success = await fetchVulnerabilityData();
+            
+            if (success) {
+                updateStatCards();
+                createTrendChart();
+                createDistributionChart();
+                createHeatmap();
+                populateVulnerabilityTable();
+            } else {
+                // 如果文件读取失败，使用默认值初始化图表
+                updateStatCards();
+                createTrendChart();
+                createDistributionChart();
+                createHeatmap();
+                populateVulnerabilityTable();
+            }
+            
+            hideLoadingIndicator();
+            
+            // 添加时间过滤器事件监听器
+            document.querySelectorAll('.time-filter button').forEach(button => {
+                button.addEventListener('click', async function() {
+                    // 移除所有按钮的active类
+                    document.querySelectorAll('.time-filter button').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    
+                    // 添加当前按钮的active类
+                    this.classList.add('active');
+                    
+                    // 根据时间范围更新数据
+                    const range = parseInt(this.getAttribute('data-range'));
+                    console.log(`切换到${range}天的时间范围`);
+                    
+                    // 重新加载数据
+                    await refreshDashboard();
+                });
+            });
+            
+            // 添加导出按钮事件监听器
+            document.getElementById('exportButton').addEventListener('click', exportReport);
+            
+            // 添加模态框关闭事件监听器
+            document.querySelector('.close').addEventListener('click', function() {
+                document.getElementById('vulnerabilityModal').style.display = 'none';
+            });
+            
+            // 点击模态框外部关闭模态框
+            window.addEventListener('click', function(event) {
+                const modal = document.getElementById('vulnerabilityModal');
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+            
+            // 设置自动刷新（每5分钟）
+            setInterval(async () => {
+                console.log('自动刷新仪表板数据');
+                await refreshDashboard();
+            }, 5 * 60 * 1000);
+        }
+        
+        // 显示加载指示器
+        function showLoadingIndicator() {
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = 'loading-indicator';
+            loadingDiv.innerHTML = `
+                <div style="
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background-color: rgba(255, 255, 255, 0.8);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 9999;
+                ">
+                    <div style="
+                        text-align: center;
+                    ">
+                        <div style="
+                            border: 4px solid #f3f3f3;
+                            border-top: 4px solid #3498db;
+                            border-radius: 50%;
+                            width: 40px;
+                            height: 40px;
+                            animation: spin 1s linear infinite;
+                            margin: 0 auto 10px;
+                        "></div>
+                        <p>正在加载安全数据...</p>
+                    </div>
+                </div>
+                <style>
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+                </style>
+            `;
+            document.body.appendChild(loadingDiv);
+        }
+        
+        // 隐藏加载指示器
+        function hideLoadingIndicator() {
+            const loadingDiv = document.getElementById('loading-indicator');
+            if (loadingDiv) {
+                loadingDiv.parentNode.removeChild(loadingDiv);
+            }
+        }
+        
+        // 页面加载完成后初始化仪表板
+        document.addEventListener('DOMContentLoaded', initDashboard);
+    </script>
+</body>
+</html>

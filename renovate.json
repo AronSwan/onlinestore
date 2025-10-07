@@ -1,0 +1,131 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Renovate 依赖更新配置",
+  "extends": [
+    "config:base",
+    "security:openssf-scorecard"
+  ],
+  "timezone": "Asia/Shanghai",
+  "schedule": [
+    "before 10am on monday"
+  ],
+  "labels": ["dependencies"],
+  "assignees": ["maintainer"],
+  "reviewers": ["maintainer"],
+  "prConcurrentLimit": 10,
+  "prHourlyLimit": 2,
+  "commitMessagePrefix": "deps:",
+  "commitMessageAction": "update",
+  "commitMessageTopic": "{{depName}}",
+  "commitMessageExtra": "to {{newVersion}}",
+  "semanticCommits": "enabled",
+  "separateMinorPatch": true,
+  "separateMajorMinor": true,
+  "separateMultipleMajor": true,
+  "rangeStrategy": "bump",
+  "bumpVersion": "patch",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on monday"]
+  },
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "schedule": ["at any time"]
+  },
+  "osvVulnerabilityAlerts": true,
+  "packageRules": [
+    {
+      "description": "安全更新立即处理",
+      "matchPackagePatterns": ["*"],
+      "matchUpdateTypes": ["security"],
+      "schedule": ["at any time"],
+      "labels": ["security", "dependencies"],
+      "assignees": ["maintainer"],
+      "reviewers": ["maintainer"],
+      "prPriority": 10
+    },
+    {
+      "description": "主要版本更新需要手动审查",
+      "matchUpdateTypes": ["major"],
+      "labels": ["major-update", "dependencies"],
+      "assignees": ["maintainer"],
+      "reviewers": ["maintainer"],
+      "prPriority": -1,
+      "schedule": ["before 10am on first day of month"]
+    },
+    {
+      "description": "次要版本更新",
+      "matchUpdateTypes": ["minor"],
+      "labels": ["minor-update", "dependencies"],
+      "groupName": "minor dependencies",
+      "schedule": ["before 10am on monday"]
+    },
+    {
+      "description": "补丁版本更新",
+      "matchUpdateTypes": ["patch"],
+      "labels": ["patch-update", "dependencies"],
+      "groupName": "patch dependencies",
+      "schedule": ["before 10am on monday"]
+    },
+    {
+      "description": "开发依赖分组",
+      "matchDepTypes": ["devDependencies"],
+      "labels": ["dev-dependencies"],
+      "groupName": "dev dependencies",
+      "schedule": ["before 10am on monday"]
+    },
+    {
+      "description": "NestJS 相关包分组",
+      "matchPackagePatterns": ["@nestjs/*"],
+      "groupName": "NestJS packages",
+      "labels": ["nestjs", "backend"],
+      "schedule": ["before 10am on monday"]
+    },
+    {
+      "description": "TypeScript 相关包分组",
+      "matchPackagePatterns": ["@types/*", "typescript", "@typescript-eslint/*"],
+      "groupName": "TypeScript packages",
+      "labels": ["typescript"],
+      "schedule": ["before 10am on monday"]
+    },
+    {
+      "description": "测试相关包分组",
+      "matchPackagePatterns": ["jest", "@playwright/*", "playwright", "supertest", "@types/jest"],
+      "groupName": "test packages",
+      "labels": ["testing"],
+      "schedule": ["before 10am on monday"]
+    },
+    {
+      "description": "ESLint 相关包分组",
+      "matchPackagePatterns": ["eslint*", "@eslint/*"],
+      "groupName": "ESLint packages",
+      "labels": ["linting"],
+      "schedule": ["before 10am on monday"]
+    },
+    {
+      "description": "构建工具分组",
+      "matchPackagePatterns": ["vite", "webpack", "rollup"],
+      "groupName": "build tools",
+      "labels": ["build-tools"],
+      "schedule": ["before 10am on monday"]
+    }
+  ],
+  "ignoreDeps": [
+    "node"
+  ],
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/temp_congomall/**"
+  ],
+  "enabledManagers": [
+    "npm"
+  ],
+  "npm": {
+    "minimumReleaseAge": "3 days"
+  },
+  "prBodyTemplate": "{{{header}}}{{{table}}}{{{notes}}}{{{changelogs}}}{{{configDescription}}}{{{controls}}}",
+  "prTitle": "{{commitMessagePrefix}} {{commitMessageAction}} {{commitMessageTopic}} {{commitMessageExtra}}",
+  "automerge": false,
+  "platformAutomerge": false,
+  "rebaseWhen": "conflicted"
+}

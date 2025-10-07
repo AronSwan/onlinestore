@@ -1,0 +1,484 @@
+# 文档自动化 GitHub Actions 工作流
+name: 📚 Documentation Automation
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/src/**'
+      - 'backend/docs/**'
+      - 'backend/package.json'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'backend/src/**'
+      - 'backend/docs/**'
+  schedule:
+    # 每天凌晨2点自动检查和更新
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: '强制重建所有文档'
+        required: false
+        default: 'false'
+        type: boolean
+
+env:
+  NODE_VERSION: '20'
+  DOCS_DIR: 'backend/docs'
+  GENERATED_DIR: 'backend/docs/generated'
+
+jobs:
+  # 文档质量检查
+  docs-quality-check:
+    name: 📋 文档质量检查
+    runs-on: ubuntu-latest
+    outputs:
+      docs-changed: ${{ steps.changes.outputs.docs }}
+      code-changed: ${{ steps.changes.outputs.code }}
+    
+    steps:
+      - name: 📥 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🔍 检测变更文件
+        uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            docs:
+              - 'backend/docs/**'
+            code:
+              - 'backend/src/**'
+              - 'backend/package.json'
+
+      - name: 🛠️ 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'backend/package-lock.json'
+
+      - name: 📦 安装依赖
+        working-directory: backend
+        run: |
+          npm ci
+          npm install -g markdownlint-cli markdown-link-check
+
+      - name: 📝 Markdown 格式检查
+        working-directory: backend
+        run: |
+          echo "🔍 检查 Markdown 文件格式..."
+          markdownlint docs/**/*.md --config docs/quality/markdownlint.json || true
+
+      - name: 🔗 链接有效性检查
+        working-directory: backend
+        run: |
+          echo "🔗 检查文档链接有效性..."
+          find docs -name "*.md" -exec markdown-link-check {} \; || true
+
+      - name: 📊 文档覆盖率检查
+        working-directory: backend
+        run: |
+          echo "📊 检查文档覆盖率..."
+          npm run docs:coverage-check || true
+
+      - name: 🔍 拼写检查
+        working-directory: backend
+        run: |
+          echo "🔤 检查文档拼写..."
+          npx cspell "docs/**/*.md" --config docs/quality/cspell.json || true
+
+  # API 文档生成
+  generate-api-docs:
+    name: 🔌 生成 API 文档
+    runs-on: ubuntu-latest
+    needs: docs-quality-check
+    if: needs.docs-quality-check.outputs.code-changed == 'true' || github.event.inputs.force_rebuild == 'true'
+    
+    steps:
+      - name: 📥 检出代码
+        uses: actions/checkout@v4
+
+      - name: 🛠️ 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'backend/package-lock.json'
+
+      - name: 📦 安装依赖
+        working-directory: backend
+        run: npm ci
+
+      - name: 🔌 生成 OpenAPI 规范文件
+        working-directory: backend
+        run: |
+          echo "🔌 生成 OpenAPI 文档..."
+          npm run build
+          npm run docs:api:generate
+          
+          # 确保生成的文件存在
+          if [ ! -f "docs/openapi.json" ]; then
+            echo "⚠️ OpenAPI 文件生成失败"
+            exit 1
+          fi
+
+      - name: 📖 生成 TypeDoc 文档
+        working-directory: backend
+        run: |
+          echo "📖 生成代码文档..."
+          mkdir -p ${{ env.GENERATED_DIR }}/code-docs
+          npx typedoc --out ${{ env.GENERATED_DIR }}/code-docs src --theme minimal
+
+      - name: 📊 生成 API 使用示例
+        working-directory: backend
+        run: |
+          echo "📊 生成 API 使用示例..."
+          npm run docs:api:examples
+
+      - name: 💾 上传 API 文档
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-docs
+          path: |
+            backend/docs/openapi.json
+            backend/docs/generated/code-docs/
+            backend/docs/api/examples/
+          retention-days: 30
+
+  # 测试覆盖率报告生成
+  generate-coverage-report:
+    name: 📊 生成测试覆盖率报告
+    runs-on: ubuntu-latest
+    needs: docs-quality-check
+    if: needs.docs-quality-check.outputs.code-changed == 'true' || github.event.inputs.force_rebuild == 'true'
+    
+    steps:
+      - name: 📥 检出代码
+        uses: actions/checkout@v4
+
+      - name: 🛠️ 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'backend/package-lock.json'
+
+      - name: 📦 安装依赖
+        working-directory: backend
+        run: npm ci
+
+      - name: 🧪 运行测试并生成覆盖率报告
+        working-directory: backend
+        run: |
+          echo "🧪 运行测试套件..."
+          npm run test:cov
+          
+          # 生成HTML覆盖率报告
+          mkdir -p ${{ env.GENERATED_DIR }}/test-coverage
+          npx nyc report --reporter=html --report-dir=${{ env.GENERATED_DIR }}/test-coverage
+
+      - name: 📊 生成覆盖率徽章
+        working-directory: backend
+        run: |
+          echo "📊 生成覆盖率徽章..."
+          npm run docs:coverage-badge
+
+      - name: 📈 更新覆盖率报告文档
+        working-directory: backend
+        run: |
+          echo "📈 更新覆盖率报告..."
+          npm run docs:coverage-update
+
+      - name: 💾 上传覆盖率报告
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            backend/docs/generated/test-coverage/
+            backend/docs/quality/TEST_COVERAGE_REPORT.md
+          retention-days: 30
+
+  # 安全扫描报告生成
+  generate-security-report:
+    name: 🛡️ 生成安全扫描报告
+    runs-on: ubuntu-latest
+    needs: docs-quality-check
+    if: needs.docs-quality-check.outputs.code-changed == 'true' || github.event.inputs.force_rebuild == 'true'
+    
+    steps:
+      - name: 📥 检出代码
+        uses: actions/checkout@v4
+
+      - name: 🛠️ 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'backend/package-lock.json'
+
+      - name: 📦 安装依赖
+        working-directory: backend
+        run: npm ci
+
+      - name: 🔍 依赖安全扫描
+        working-directory: backend
+        run: |
+          echo "🔍 执行安全扫描..."
+          npm audit --audit-level=moderate --json > audit-report.json || true
+          
+          # 生成安全报告
+          npm run docs:security:generate
+
+      - name: 🛡️ 生成安全仪表板
+        working-directory: backend
+        run: |
+          echo "🛡️ 生成安全仪表板..."
+          npm run docs:security:dashboard
+
+      - name: 📊 更新安全文档
+        working-directory: backend
+        run: |
+          echo "📊 更新安全相关文档..."
+          npm run docs:security:update
+
+      - name: 💾 上传安全报告
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: |
+            backend/docs/security-dashboard.html
+            backend/docs/generated/security-reports/
+          retention-days: 30
+
+  # 性能基准测试报告
+  generate-performance-report:
+    name: ⚡ 生成性能基准报告
+    runs-on: ubuntu-latest
+    needs: docs-quality-check
+    if: needs.docs-quality-check.outputs.code-changed == 'true' || github.event.inputs.force_rebuild == 'true'
+    
+    steps:
+      - name: 📥 检出代码
+        uses: actions/checkout@v4
+
+      - name: 🛠️ 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'backend/package-lock.json'
+
+      - name: 📦 安装依赖
+        working-directory: backend
+        run: npm ci
+
+      - name: 🚀 启动测试服务
+        working-directory: backend
+        run: |
+          echo "🚀 启动应用进行性能测试..."
+          npm run build
+          npm run start:prod &
+          sleep 30  # 等待应用启动
+
+      - name: ⚡ 执行性能基准测试
+        working-directory: backend
+        run: |
+          echo "⚡ 执行性能基准测试..."
+          npm run test:performance
+          
+          # 生成性能报告
+          npm run docs:performance:generate
+
+      - name: 📊 生成性能趋势图
+        working-directory: backend
+        run: |
+          echo "📊 生成性能趋势分析..."
+          npm run docs:performance:trends
+
+      - name: 💾 上传性能报告
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-report
+          path: |
+            backend/docs/generated/performance-reports/
+            backend/docs/MONITORING_PERFORMANCE_REPORT.md
+          retention-days: 30
+
+  # 文档网站构建和部署
+  build-and-deploy-docs:
+    name: 🌐 构建并部署文档网站
+    runs-on: ubuntu-latest
+    needs: [docs-quality-check, generate-api-docs, generate-coverage-report, generate-security-report, generate-performance-report]
+    if: always() && (needs.docs-quality-check.result == 'success')
+    
+    steps:
+      - name: 📥 检出代码
+        uses: actions/checkout@v4
+
+      - name: 🛠️ 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'backend/package-lock.json'
+
+      - name: 📦 安装依赖
+        working-directory: backend
+        run: npm ci
+
+      - name: 📥 下载生成的文档
+        uses: actions/download-artifact@v4
+        with:
+          path: backend/docs/generated/
+          merge-multiple: true
+
+      - name: 🔧 配置文档网站
+        working-directory: backend
+        run: |
+          echo "🔧 配置 Docusaurus..."
+          npm run docs:site:configure
+
+      - name: 🏗️ 构建文档网站
+        working-directory: backend
+        run: |
+          echo "🏗️ 构建静态文档网站..."
+          npm run docs:site:build
+
+      - name: 📊 生成网站地图
+        working-directory: backend
+        run: |
+          echo "📊 生成网站地图和搜索索引..."
+          npm run docs:site:sitemap
+
+      - name: 🚀 部署到 GitHub Pages
+        if: github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: backend/docs/build
+          cname: docs.caddy-shopping.com
+
+      - name: 📱 部署到 Netlify
+        if: github.ref == 'refs/heads/main'
+        uses: nwtgck/actions-netlify@v2.0
+        with:
+          publish-dir: backend/docs/build
+          production-branch: main
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy-message: "Deploy from GitHub Actions"
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
+  # 文档质量报告
+  generate-quality-report:
+    name: 📋 生成文档质量报告
+    runs-on: ubuntu-latest
+    needs: [build-and-deploy-docs]
+    if: always()
+    
+    steps:
+      - name: 📥 检出代码
+        uses: actions/checkout@v4
+
+      - name: 🛠️ 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'backend/package-lock.json'
+
+      - name: 📦 安装依赖
+        working-directory: backend
+        run: npm ci
+
+      - name: 📊 生成质量报告
+        working-directory: backend
+        run: |
+          echo "📊 生成综合质量报告..."
+          npm run docs:quality:report
+
+      - name: 📈 更新质量指标
+        working-directory: backend
+        run: |
+          echo "📈 更新质量指标..."
+          npm run docs:quality:metrics
+
+      - name: 🔄 协调性检查
+        working-directory: backend
+        run: |
+          echo "🔄 执行文档协调性检查..."
+          npm run docs:coordination-check
+
+      - name: 📝 生成改进建议
+        working-directory: backend
+        run: |
+          echo "📝 生成改进建议..."
+          npm run docs:improvement:suggestions
+
+      - name: 💾 上传质量报告
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-report
+          path: |
+            backend/docs/quality/
+            backend/docs/improvement/
+          retention-days: 90
+
+  # 通知和总结
+  notify-completion:
+    name: 📢 通知完成状态
+    runs-on: ubuntu-latest
+    needs: [generate-quality-report]
+    if: always()
+    
+    steps:
+      - name: 📊 收集执行结果
+        run: |
+          echo "📊 文档自动化执行结果:"
+          echo "- 质量检查: ${{ needs.docs-quality-check.result }}"
+          echo "- API文档生成: ${{ needs.generate-api-docs.result }}"
+          echo "- 覆盖率报告: ${{ needs.generate-coverage-report.result }}"
+          echo "- 安全扫描: ${{ needs.generate-security-report.result }}"
+          echo "- 性能测试: ${{ needs.generate-performance-report.result }}"
+          echo "- 文档部署: ${{ needs.build-and-deploy-docs.result }}"
+          echo "- 质量报告: ${{ needs.generate-quality-report.result }}"
+
+      - name: 📧 发送邮件通知
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "📚 文档自动化执行失败 - ${{ github.repository }}"
+          body: |
+            文档自动化工作流执行失败！
+            
+            分支: ${{ github.ref }}
+            提交: ${{ github.sha }}
+            执行时间: ${{ github.run_id }}
+            
+            请检查 GitHub Actions 日志获取详细信息。
+          to: devops@caddy-shopping.com
+
+      - name: 💬 Slack 通知
+        if: always()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          channel: '#backend-docs'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+          username: 'GitHub Actions'
+          icon_emoji: ':books:'
+          text: |
+            📚 文档自动化完成 - ${{ job.status }}
+            
+            🔗 查看详情: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            📖 文档网站: https://docs.caddy-shopping.com

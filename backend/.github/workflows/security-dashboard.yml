@@ -1,0 +1,365 @@
+name: Security Dashboard
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # 每日UTC 00:00执行
+  workflow_dispatch:  # 允许手动触发
+  push:
+    paths:
+      - 'SECURITY_VULNERABILITY_TRACKING.md'
+      - 'data/security-vulnerabilities.json'
+      - 'data/security-vulnerabilities.schema.json'
+      - 'scripts/security-check.js'
+      - 'scripts/validate-vulnerability-data.js'
+      - 'scripts/generate-risk-heatmap-v2.js'
+      - 'scripts/generate-burndown-chart.js'
+      - 'scripts/validate-security-constants.js'
+      - 'scripts/modules/security-constants.schema.json'
+      - 'scripts/modules/performance-optimizer.js'
+      - 'scripts/modules/notification-service.js'
+      - 'scripts/send-security-notification.js'
+  pull_request:
+    paths:
+      - 'SECURITY_VULNERABILITY_TRACKING.md'
+      - 'data/security-vulnerabilities.json'
+      - 'data/security-vulnerabilities.schema.json'
+      - 'scripts/security-check.js'
+      - 'scripts/validate-vulnerability-data.js'
+      - 'scripts/generate-risk-heatmap-v2.js'
+      - 'scripts/generate-burndown-chart.js'
+      - 'scripts/validate-security-constants.js'
+      - 'scripts/modules/security-constants.schema.json'
+      - 'scripts/modules/performance-optimizer.js'
+      - 'scripts/modules/notification-service.js'
+      - 'scripts/send-security-notification.js'
+
+# 设置权限
+permissions:
+  contents: write
+  pull-requests: write
+  security-events: write
+  actions: read
+  issues: write
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+          
+      - name: Cache security scanner databases
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/trivy
+            ~/.cache/osv-scanner
+            ~/.cache/gitleaks
+            ~/.cache/npm
+          key: ${{ runner.os }}-security-scanners-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/scripts/*.js') }}
+          restore-keys: |
+            ${{ runner.os }}-security-scanners-${{ hashFiles('**/package-lock.json') }}-
+            ${{ runner.os }}-security-scanners-
+            
+      - name: Cache vulnerability data
+        uses: actions/cache@v4
+        with:
+          path: |
+            data/security-vulnerabilities.json
+            data/security-vulnerabilities.schema.json
+          key: ${{ runner.os }}-vulnerability-data-${{ hashFiles('data/security-vulnerabilities.json', 'data/security-vulnerabilities.schema.json') }}
+          restore-keys: |
+            ${{ runner.os }}-vulnerability-data-
+            
+      - name: Cache generated artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            docs/security-risk-heatmap.svg
+            docs/security-burndown-chart.svg
+          key: ${{ runner.os }}-security-artifacts-${{ hashFiles('data/security-vulnerabilities.json') }}
+          restore-keys: |
+            ${{ runner.os }}-security-artifacts-
+            
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run npm audit
+        run: npm audit --audit-level=high
+        continue-on-error: true
+        
+      - name: Run OSV Scanner
+        uses: google/osv-scanner-action@v1.6.0
+        with:
+          scan-args: '. --recursive'
+        continue-on-error: true
+        
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.12.0
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+        continue-on-error: true
+        
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2.3.2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+          
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2.3.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+        
+      - name: Validate security constants
+        run: npm run security:validate-constants:ci
+        continue-on-error: true
+        
+      - name: Validate vulnerability data
+        run: npm run security:validate-data:ci
+        
+      - name: Generate validation report
+        run: npm run security:validate-data:json
+        if: failure()
+        continue-on-error: true
+        
+      - name: Upload validation report
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: validation-report
+          path: validation-report.json
+        
+      - name: Run security-check script
+        run: npm run security:check -- --format=sarif --output=security-results.sarif
+        continue-on-error: true
+        
+      - name: Upload security-check results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2.3.2
+        if: always()
+        with:
+          sarif_file: 'security-results.sarif'
+          
+      - name: Generate SARIF report for ticket creation
+        run: npm run security:sarif -- --output=ticket-data.sarif
+        if: failure()
+        continue-on-error: true
+        
+      - name: Upload SARIF report for ticket creation
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: ticket-sarif
+          path: ticket-data.sarif
+          
+      - name: Create tickets for critical issues
+        if: failure()
+        run: |
+          echo "Critical security issues detected. Please review the SARIF report and create tickets."
+          echo "SARIF report available at: ticket-data.sarif"
+          
+      - name: Create GitHub Issues for critical vulnerabilities
+        if: failure()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            try {
+              const sarifData = JSON.parse(fs.readFileSync('ticket-data.sarif', 'utf8'));
+              const criticalIssues = sarifData.runs[0].results.filter(r =>
+                r.level === 'error' &&
+                r.properties &&
+                r.properties.severity === 'critical'
+              );
+              
+              if (criticalIssues.length > 0) {
+                console.log(`Found ${criticalIssues.length} critical issues, creating GitHub Issues...`);
+                 
+                for (const issue of criticalIssues) {
+                  const title = `🚨 Critical Security Issue: ${issue.ruleId}`;
+                  const body = `
+## Critical Security Issue Detected
+
+**Rule ID**: ${issue.ruleId}
+**Message**: ${issue.message.text}
+**Severity**: Critical
+**Location**: ${issue.locations && issue.locations[0] ? issue.locations[0].physicalLocation.artifactLocation.uri : 'Unknown'}
+**Line**: ${issue.locations && issue.locations[0] ? issue.locations[0].physicalLocation.region.startLine : 'Unknown'}
+
+### Action Required
+
+This is a critical security issue that must be addressed immediately. Please:
+
+1. Review the issue details in the SARIF report
+2. Implement a fix as soon as possible
+3. Create a pull request with the fix
+4. Request security team review
+
+### Additional Information
+
+- **SARIF Report**: [View Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+- **Security Checklist**: [SECURITY_CHECKLIST.md](https://github.com/${{ github.repository }}/blob/main/SECURITY_CHECKLIST.md#${issue.ruleId})
+- **Release Gate**: [SECURITY_RELEASE_GATE.md](https://github.com/${{ github.repository }}/blob/main/SECURITY_RELEASE_GATE.md)
+
+---
+*This issue was automatically created by the Security Dashboard workflow.*
+                  `;
+                   
+                  // Create the issue
+                  await github.rest.issues.create({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    title: title,
+                    body: body,
+                    labels: ['security', 'critical', 'auto-generated']
+                  });
+                  
+                  console.log(`Created issue: ${title}`);
+                }
+              } else {
+                console.log('No critical issues found that require ticket creation.');
+              }
+            } catch (error) {
+              console.error('Error processing SARIF data:', error.message);
+            }
+      
+      - name: Send error notification
+        if: failure()
+        run: |
+          echo "Sending error notification..."
+          npm run security:notify-error -- --message="Security scan failed with critical issues"
+        continue-on-error: true
+        
+      - name: Send warning notification
+        if: failure() && steps.'Validate vulnerability data'.outcome == 'failure'
+        run: |
+          echo "Sending warning notification for validation issues..."
+          npm run security:notify-warning -- --message="Security data validation failed"
+        continue-on-error: true
+
+  update-dashboard:
+    runs-on: ubuntu-latest
+    needs: security-scan
+    strategy:
+      matrix:
+        cache-version: [v1]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+          
+      - name: Cache dashboard dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/npm
+            node_modules
+          key: ${{ matrix.cache-version }}-${{ runner.os }}-dashboard-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ matrix.cache-version }}-${{ runner.os }}-dashboard-
+            ${{ runner.os }}-dashboard-
+          
+      - name: Cache dashboard scripts
+        uses: actions/cache@v4
+        with:
+          path: |
+            scripts/generate-risk-heatmap-v2.js
+            scripts/generate-burndown-chart.js
+            scripts/modules/
+          key: ${{ matrix.cache-version }}-${{ runner.os }}-dashboard-scripts-${{ hashFiles('scripts/generate-risk-heatmap-v2.js', 'scripts/generate-burndown-chart.js', 'scripts/modules/**/*.js') }}
+          restore-keys: |
+            ${{ matrix.cache-version }}-${{ runner.os }}-dashboard-scripts-
+            ${{ runner.os }}-dashboard-scripts-
+            
+      - name: Cache vulnerability data for dashboard
+        uses: actions/cache@v4
+        with:
+          path: |
+            data/security-vulnerabilities.json
+            data/security-vulnerabilities.schema.json
+          key: ${{ matrix.cache-version }}-${{ runner.os }}-dashboard-vulnerability-data-${{ hashFiles('data/security-vulnerabilities.json', 'data/security-vulnerabilities.schema.json') }}
+          restore-keys: |
+            ${{ matrix.cache-version }}-${{ runner.os }}-dashboard-vulnerability-data-
+            ${{ runner.os }}-dashboard-vulnerability-data-
+            
+      - name: Cache generated dashboard artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            docs/security-risk-heatmap.svg
+            docs/security-burndown-chart.svg
+          key: ${{ matrix.cache-version }}-${{ runner.os }}-dashboard-artifacts-${{ hashFiles('data/security-vulnerabilities.json') }}
+          restore-keys: |
+            ${{ matrix.cache-version }}-${{ runner.os }}-dashboard-artifacts-
+            ${{ runner.os }}-dashboard-artifacts-
+            
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run tests
+        run: npm run security:heatmap:jest
+        
+      - name: Generate Risk Heatmap
+        run: npm run security:heatmap:v2
+        
+      - name: Generate Burndown Chart
+        run: npm run security:burndown
+        
+      - name: Validate generated artifacts
+        run: |
+          if [ -f "docs/security-risk-heatmap.svg" ]; then
+            echo "Risk heatmap generated successfully"
+          else
+            echo "Risk heatmap generation failed"
+            exit 1
+          fi
+          
+          if [ -f "docs/security-burndown-chart.svg" ]; then
+            echo "Burndown chart generated successfully"
+          else
+            echo "Burndown chart generation failed"
+            exit 1
+          fi
+        
+      - name: Commit and Push
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add docs/security-risk-heatmap.svg docs/security-burndown-chart.svg
+          git commit -m "Auto-update security dashboard" || exit 0
+          git push
+          
+      - name: Send success notification
+        if: success()
+        run: |
+          echo "Sending success notification..."
+          npm run security:notify-success
+        continue-on-error: true
+        
+      - name: Send warning notification
+        if: failure()
+        run: |
+          echo "Sending warning notification for dashboard update failure..."
+          npm run security:notify-warning -- --message="Security dashboard update failed"
+        continue-on-error: true

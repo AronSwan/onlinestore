@@ -1,0 +1,129 @@
+version: '3.8'
+
+services:
+  # Jaeger 分布式追踪系统
+  jaeger:
+    image: jaegertracing/all-in-one:1.50
+    container_name: caddy-jaeger
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "14268:14268"  # HTTP collector
+      - "14250:14250"  # gRPC collector
+      - "6831:6831/udp"  # UDP agent
+      - "6832:6832/udp"  # UDP agent
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+      - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+    networks:
+      - tracing
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jaeger.rule=Host(`jaeger.localhost`)"
+      - "traefik.http.services.jaeger.loadbalancer.server.port=16686"
+
+  # Zipkin 分布式追踪系统（备选）
+  zipkin:
+    image: openzipkin/zipkin:2.24
+    container_name: caddy-zipkin
+    ports:
+      - "9411:9411"  # Zipkin UI and API
+    environment:
+      - STORAGE_TYPE=mem
+      - JAVA_OPTS=-Xms512m -Xmx512m
+    networks:
+      - tracing
+    restart: unless-stopped
+    profiles:
+      - zipkin  # 使用 profile 来选择性启动
+
+  # Prometheus 指标收集
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: caddy-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - tracing
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+  # Grafana 可视化
+  grafana:
+    image: grafana/grafana:10.1.0
+    container_name: caddy-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - tracing
+    restart: unless-stopped
+    profiles:
+      - monitoring
+    depends_on:
+      - prometheus
+
+  # OpenTelemetry Collector（可选，用于更复杂的追踪管道）
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.86.0
+    container_name: caddy-otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./monitoring/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+      - "8888:8888"   # Prometheus metrics
+      - "8889:8889"   # Prometheus exporter metrics
+    networks:
+      - tracing
+    restart: unless-stopped
+    profiles:
+      - otel
+    depends_on:
+      - jaeger
+
+  # Redis（用于缓存和会话存储，也会被追踪）
+  redis:
+    image: redis:7.2-alpine
+    container_name: caddy-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - tracing
+    restart: unless-stopped
+    profiles:
+      - cache
+
+networks:
+  tracing:
+    driver: bridge
+    name: caddy-tracing-network
+
+volumes:
+  prometheus_data:
+    name: caddy-prometheus-data
+  grafana_data:
+    name: caddy-grafana-data
+  redis_data:
+    name: caddy-redis-data

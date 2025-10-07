@@ -1,0 +1,150 @@
+{
+  "id": "business-metrics",
+  "title": "业务指标监控仪表板",
+  "description": "业务关键指标和用户行为分析",
+  "tags": [
+    "business",
+    "metrics"
+  ],
+  "panels": [
+    {
+      "id": 1,
+      "title": "用户登录趋势",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "query": "SELECT count(*) FROM business-events WHERE event_name = \"login\" AND time > NOW() - 24h GROUP BY time(1h)",
+          "legendFormat": "成功登录"
+        },
+        {
+          "query": "SELECT count(*) FROM application-logs WHERE event_name = \"login_failure\" AND time > NOW() - 24h GROUP BY time(1h)",
+          "legendFormat": "登录失败"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "订单量统计",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "query": "SELECT count(*) FROM business-events WHERE event_name = \"order_created\" AND time > NOW() - 24h GROUP BY time(1h)",
+          "legendFormat": "创建订单"
+        },
+        {
+          "query": "SELECT count(*) FROM business-events WHERE event_name = \"order_completed\" AND time > NOW() - 24h GROUP BY time(1h)",
+          "legendFormat": "完成订单"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "最热门商品",
+      "type": "table",
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "query": "SELECT properties.product_name, count(*) as view_count FROM business-events WHERE event_name = \"product_view\" AND time > NOW() - 24h GROUP BY properties.product_name ORDER BY view_count DESC LIMIT 10",
+          "legendFormat": "{{properties.product_name}}"
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "View Count"
+          }
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "title": "支付方式分布",
+      "type": "piechart",
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "query": "SELECT properties.payment_method, count(*) FROM business-events WHERE event_name = \"order_completed\" AND time > NOW() - 24h GROUP BY properties.payment_method",
+          "legendFormat": "{{properties.payment_method}}"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "right"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "购物车操作统计",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "query": "SELECT count(*) FROM business-events WHERE event_name = \"cart_add\" AND time > NOW() - 24h GROUP BY time(1h)",
+          "legendFormat": "添加商品"
+        },
+        {
+          "query": "SELECT count(*) FROM business-events WHERE event_name = \"cart_remove\" AND time > NOW() - 24h GROUP BY time(1h)",
+          "legendFormat": "移除商品"
+        },
+        {
+          "query": "SELECT count(*) FROM business-events WHERE event_name = \"cart_clear\" AND time > NOW() - 24h GROUP BY time(1h)",
+          "legendFormat": "清空购物车"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    }
+  ],
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "refresh": "1m"
+}

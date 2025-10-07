@@ -1,0 +1,262 @@
+# 用途：在Kubernetes环境中部署完整的TiDB集群（包含TiKV和PD服务）
+# 作者：后端开发团队
+# 时间：2025-09-29 09:40:00
+# 依赖文件：tidb-service.yaml
+
+---
+# PD Service 定义
+apiVersion: v1
+kind: Service
+metadata:
+  name: pd-service
+  namespace: caddy-shopping
+  labels:
+    app: pd
+    component: server
+spec:
+  ports:
+  - name: client
+    port: 2379
+    targetPort: 2379
+    protocol: TCP
+  - name: peer
+    port: 2380
+    targetPort: 2380
+    protocol: TCP
+  selector:
+    app: pd
+    component: server
+  clusterIP: None
+
+---
+# PD StatefulSet 定义
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: pd-server
+  namespace: caddy-shopping
+  labels:
+    app: pd
+    component: server
+spec:
+  serviceName: "pd-service"
+  replicas: 3  # PD通常部署3个节点以提供高可用性
+  selector:
+    matchLabels:
+      app: pd
+      component: server
+  template:
+    metadata:
+      labels:
+        app: pd
+        component: server
+    spec:
+      containers:
+      - name: pd
+        image: pingcap/pd:latest
+        ports:
+        - containerPort: 2379
+          name: client
+        - containerPort: 2380
+          name: peer
+        volumeMounts:
+        - name: pd-config
+          mountPath: /etc/pd/
+        - name: pd-data
+          mountPath: /pd-data
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        command:
+        - /pd-server
+        - --config
+        - /etc/pd/pd.toml
+        - --name
+        - $(POD_NAME)
+        - --client-urls
+        - http://0.0.0.0:2379
+        - --peer-urls
+        - http://0.0.0.0:2380
+        - --advertise-client-urls
+        - http://$(POD_NAME).pd-service.caddy-shopping.svc.cluster.local:2379
+        - --advertise-peer-urls
+        - http://$(POD_NAME).pd-service.caddy-shopping.svc.cluster.local:2380
+        - --initial-cluster
+        - pd-server-0=http://pd-server-0.pd-service.caddy-shopping.svc.cluster.local:2380,pd-server-1=http://pd-server-1.pd-service.caddy-shopping.svc.cluster.local:2380,pd-server-2=http://pd-server-2.pd-service.caddy-shopping.svc.cluster.local:2380
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+      volumes:
+      - name: pd-config
+        configMap:
+          name: pd-config
+  volumeClaimTemplates:
+  - metadata:
+      name: pd-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "managed-nfs-storage"
+      resources:
+        requests:
+          storage: 20Gi
+
+---
+# PD ConfigMap 定义
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pd-config
+  namespace: caddy-shopping
+  labels:
+    app: pd
+    component: config
+data:
+  pd.toml: |
+    # PD 配置文件
+    log-level = "info"
+    heartbeat-interval = 3
+    election-interval = 10
+    
+    [replication]
+    max-replicas = 3
+    location-labels = ["zone", "rack", "host"]
+
+---
+# TiKV Service 定义
+apiVersion: v1
+kind: Service
+metadata:
+  name: tikv-service
+  namespace: caddy-shopping
+  labels:
+    app: tikv
+    component: server
+spec:
+  ports:
+  - name: client
+    port: 20160
+    targetPort: 20160
+    protocol: TCP
+  selector:
+    app: tikv
+    component: server
+  clusterIP: None
+
+---
+# TiKV StatefulSet 定义
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: tikv-server
+  namespace: caddy-shopping
+  labels:
+    app: tikv
+    component: server
+spec:
+  serviceName: "tikv-service"
+  replicas: 3  # TiKV通常部署3个节点以提供高可用性和数据冗余
+  selector:
+    matchLabels:
+      app: tikv
+      component: server
+  template:
+    metadata:
+      labels:
+        app: tikv
+        component: server
+    spec:
+      containers:
+      - name: tikv
+        image: pingcap/tikv:latest
+        ports:
+        - containerPort: 20160
+          name: client
+        volumeMounts:
+        - name: tikv-config
+          mountPath: /etc/tikv/
+        - name: tikv-data
+          mountPath: /tikv-data
+        resources:
+          requests:
+            memory: "8Gi"
+            cpu: "2000m"
+          limits:
+            memory: "16Gi"
+            cpu: "4000m"
+        command:
+        - /tikv-server
+        - --config
+        - /etc/tikv/tikv.toml
+        - --pd
+        - pd-service.caddy-shopping.svc.cluster.local:2379
+        - --addr
+        - 0.0.0.0:20160
+        - --data-dir
+        - /tikv-data
+      volumes:
+      - name: tikv-config
+        configMap:
+          name: tikv-config
+  volumeClaimTemplates:
+  - metadata:
+      name: tikv-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "managed-nfs-storage"
+      resources:
+        requests:
+          storage: 100Gi  # TiKV需要较大的存储空间
+
+---
+# TiKV ConfigMap 定义
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tikv-config
+  namespace: caddy-shopping
+  labels:
+    app: tikv
+    component: config
+data:
+  tikv.toml: |
+    # TiKV 配置文件
+    log-level = "info"
+    
+    [storage]
+    data-dir = "/tikv-data"
+    engine = "rocksdb"
+    
+    [server]
+    status-port = 20180
+    
+    [raft]
+    prevote = true
+    
+    [rocksdb]
+    max-open-files = 4096
+    
+    [rocksdb.defaultcf]
+    block-cache-size = "4GB"  # 根据实际内存调整
+    
+    [rocksdb.writecf]
+    block-cache-size = "1GB"
+    
+    [raftdb]
+    max-open-files = 4096
+    
+    [readpool]
+    storage = "shared"
+    coprocessor = "shared"
+    
+    [readpool.unified]
+    thread-count = 8  # 根据CPU核心数调整
+    
+    [coprocessor]
+    region-max-size = "144MB"
+    region-split-size = "96MB"

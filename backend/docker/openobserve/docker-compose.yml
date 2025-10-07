@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  openobserve:
+    image: public.ecr.aws/zinclabs/openobserve:latest
+    container_name: openobserve
+    ports:
+      - "5080:5080"
+    environment:
+      - ZO_ROOT_USER_EMAIL=admin@example.com
+      - ZO_ROOT_USER_PASSWORD=Complexpass#123
+      - ZO_DATA_DIR=/data
+      - ZO_META_DIR=/data/meta
+      - ZO_FILE_DATA_DIR=/data/files
+    volumes:
+      - openobserve_data:/data
+    restart: unless-stopped
+    networks:
+      - caddy-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5080/api/_health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # 可选：OpenObserve UI (如果需要单独的 UI 实例)
+  # openobserve-ui:
+  #   image: public.ecr.aws/zinclabs/openobserve:latest
+  #   container_name: openobserve-ui
+  #   ports:
+  #     - "5081:5080"
+  #   environment:
+  #     - ZO_ROOT_USER_EMAIL=admin@example.com
+  #     - ZO_ROOT_USER_PASSWORD=Complexpass#123
+  #   volumes:
+  #     - openobserve_ui_data:/data
+  #   restart: unless-stopped
+  #   networks:
+  #     - caddy-network
+
+volumes:
+  openobserve_data:
+    driver: local
+  # openobserve_ui_data:
+  #   driver: local
+
+networks:
+  caddy-network:
+    external: true
+    # 如果网络不存在，可以使用以下配置创建
+    # driver: bridge

@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zincsearch
+  namespace: search
+  labels:
+    app: zincsearch
+    component: search-engine
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: zincsearch
+  template:
+    metadata:
+      labels:
+        app: zincsearch
+    spec:
+      containers:
+      - name: zincsearch
+        image: public.ecr.aws/zinclabs/zinc:latest
+        ports:
+        - containerPort: 4080
+        env:
+        - name: ZINC_FIRST_ADMIN_USER
+          valueFrom:
+            secretKeyRef:
+              name: search-secrets
+              key: zinc-admin-user
+        - name: ZINC_FIRST_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: search-secrets
+              key: zinc-admin-password
+        - name: ZINC_DATA_PATH
+          value: "/data"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 4080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 4080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: zinc-data
+          mountPath: /data
+      volumes:
+      - name: zinc-data
+        persistentVolumeClaim:
+          claimName: zinc-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zincsearch-service
+  namespace: search
+  labels:
+    app: zincsearch
+spec:
+  selector:
+    app: zincsearch
+  ports:
+  - port: 4080
+    targetPort: 4080
+  type: ClusterIP

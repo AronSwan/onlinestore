@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  # Gopay 微服务
+  gopay-service:
+    build:
+      context: ./microservices/gopay-service
+      dockerfile: Dockerfile
+    container_name: gopay-service
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - ALIPAY_APP_ID=${ALIPAY_APP_ID}
+      - ALIPAY_PRIVATE_KEY=${ALIPAY_PRIVATE_KEY}
+      - ALIPAY_PUBLIC_KEY=${ALIPAY_PUBLIC_KEY}
+      - ALIPAY_SANDBOX=true
+      - WECHAT_APP_ID=${WECHAT_APP_ID}
+      - WECHAT_MCH_ID=${WECHAT_MCH_ID}
+      - WECHAT_API_KEY=${WECHAT_API_KEY}
+      - WECHAT_SANDBOX=true
+    volumes:
+      - ./microservices/gopay-service/.env:/root/.env:ro
+    networks:
+      - payment-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 加密货币支付网关（示例）
+  crypto-gateway:
+    image: nginx:alpine
+    container_name: crypto-gateway
+    ports:
+      - "8081:80"
+    volumes:
+      - ./crypto-gateway-mock.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - payment-network
+    restart: unless-stopped
+
+  # Redis（用于缓存和会话）
+  redis:
+    image: redis:7-alpine
+    container_name: payment-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - payment-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+networks:
+  payment-network:
+    driver: bridge
+
+volumes:
+  redis-data:

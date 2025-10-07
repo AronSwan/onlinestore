@@ -1,0 +1,36 @@
+{
+  "status": "configured",
+  "organization": "caddy-shopping",
+  "streams": [
+    {
+      "name": "application-logs",
+      "type": "logs",
+      "status": "active",
+      "retention": "30d"
+    },
+    {
+      "name": "system-metrics",
+      "type": "metrics",
+      "status": "active",
+      "retention": "90d"
+    },
+    {
+      "name": "request-traces",
+      "type": "traces",
+      "status": "active",
+      "retention": "7d"
+    },
+    {
+      "name": "business-events",
+      "type": "logs",
+      "status": "active",
+      "retention": "365d"
+    }
+  ],
+  "endpoints": {
+    "logs": "http://localhost:5080/api/caddy-shopping/application-logs/_json",
+    "metrics": "http://localhost:5080/api/caddy-shopping/system-metrics/_json",
+    "traces": "http://localhost:5080/api/caddy-shopping/request-traces/_json",
+    "events": "http://localhost:5080/api/caddy-shopping/business-events/_json"
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "totalPixels": 7913781,
+  "processedPixels": 791379,
+  "uniqueColorCount": 6063,
+  "targetSampleRate": 0.1,
+  "actualSampleRate": 0.10000011372566413,
+  "imageDimensions": {
+    "width": 3369,
+    "height": 2349
+  },
+  "topColors": [
+    {
+      "color": "255,255,255,255",
+      "count": 305005,
+      "percentage": "38.54%"
+    },
+    {
+      "color": "0,0,0,255",
+      "count": 73451,
+      "percentage": "9.28%"
+    },
+    {
+      "color": "85,85,85,255",
+      "count": 12942,
+      "percentage": "1.64%"
+    },
+    {
+      "color": "119,119,119,255",
+      "count": 6272,
+      "percentage": "0.79%"
+    },
+    {
+      "color": "68,68,68,255",
+      "count": 4621,
+      "percentage": "0.58%"
+    },
+    {
+      "color": "187,187,187,255",
+      "count": 3525,
+      "percentage": "0.45%"
+    },
+    {
+      "color": "153,153,153,255",
+      "count": 1795,
+      "percentage": "0.23%"
+    },
+    {
+      "color": "204,204,204,255",
+      "count": 1788,
+      "percentage": "0.23%"
+    },
+    {
+      "color": "17,17,17,255",
+      "count": 1628,
+      "percentage": "0.21%"
+    },
+    {
+      "color": "102,102,102,255",
+      "count": 1590,
+      "percentage": "0.20%"
+    }
+  ],
+  "verification": {
+    "expectedProcessedPixels": 791378,
+    "actualProcessedPixels": 791379,
+    "pixelCountMatch": false,
+    "topColorsPercentageSum": "52.15%",
+    "pixelCountDifference": 1,
+    "sampleRateDifference": 1.137256641220441e-7
+  }
+}

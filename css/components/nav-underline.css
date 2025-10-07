@@ -1,0 +1,124 @@
+:root {
+    --nav-underline-height: 2px;
+    --nav-underline-height-mobile: 1.5px;
+    --nav-underline-transition: 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    --nav-link-padding: 8px 0;
+    --nav-link-padding-mobile: 12px 0;
+    --nav-link-margin: 0 12px;
+    --underline-delay: 0ms;
+    /* 添加下划线延迟变量，默认为0确保同步显示 */
+    --nav-highlight-color: rgba(0, 0, 0, 0.05);
+    /* 高亮背景色 */
+    --nav-highlight-hover-color: rgba(0, 0, 0, 0.1);
+    /* 悬停时的高亮背景色 */
+    --nav-highlight-active-color: rgba(0, 0, 0, 0.15);
+    /* 激活时的高亮背景色 */
+    --nav-underline-glow-color: rgba(0, 0, 0, 0.3);
+    /* 下划线发光效果 */
+    --nav-underline-glow-size: 4px;
+    /* 下划线发光大小 */
+}
+
+/* 导航下划线动画优化
+ * 解决问题：
+ * 1. 减少过渡时间，提高响应速度
+ * 2. 优化过渡曲线，使动画更自然
+ * 3. 简化选择器，提高性能
+ * 
+ * 创建时间: 2025-06-18
+ * 来源: 优化导航下划线动画性能
+ */
+
+/* 导航链接样式 - 优化：减少过渡时间，优化过渡曲线，添加高亮效果 */
+.main-nav .nav-link-luxury {
+    position: relative;
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    text-decoration: none;
+    color: var(--nav-text-color, #333);
+    font-weight: 500;
+    transition: color 0.2s ease, background-color 0.3s ease;
+    /* 优化：添加背景色过渡 */
+     
+    border-radius: 4px;
+    /* 添加圆角使高亮效果更自然 */
+}
+
+/* 导航链接悬停和活动状态 - 优化：简化选择器，添加高亮效果 */
+.main-nav .nav-link-luxury:hover,
+.main-nav .nav-link-luxury.active {
+    color: var(--nav-text-active-color, #000);
+}
+
+/* 导航链接悬停状态 - 统一管理，确保同一时间只有一个悬停效果 */
+.main-nav .nav-link-luxury.hover-state {
+    background-color: var(--nav-highlight-hover-color, rgba(0, 0, 0, 0.1));
+    color: var(--nav-text-active-color, #000);
+}
+
+/* 导航链接活动状态 - 统一管理，确保同一时间只有一个激活状态 */
+.main-nav .nav-link-luxury.active-state {
+    background-color: var(--nav-highlight-active-color, rgba(0, 0, 0, 0.15));
+    color: var(--nav-text-active-color, #000);
+    font-weight: 600;
+}
+
+/* 导航下划线 - 优化：减少过渡时间，优化过渡曲线，发光效果已移除以保持界面简洁性 */
+.main-nav .nav-link-luxury::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: var(--nav-underline-color, #000);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    /* 优化：移除发光效果相关过渡 */
+    will-change: transform;
+    /* 优化：仅保留transform硬件加速 */
+    /* 发光效果已移除：box-shadow: 0 0 var(--nav-underline-glow-size, 4px) transparent; */
+}
+
+/* 导航链接悬停状态的下划线 - 统一管理悬停动画，发光效果已移除 */
+.main-nav .nav-link-luxury.hover-state::after {
+    transform: scaleX(1);
+    background-color: var(--nav-underline-hover-color, #666);
+    /* 发光效果已移除：box-shadow: 0 0 var(--nav-underline-glow-size, 4px) var(--nav-underline-glow-color, rgba(0, 0, 0, 0.3)); */
+}
+
+/* 导航链接激活状态的下划线 - 统一管理激活动画，发光效果已移除 */
+.main-nav .nav-link-luxury.active-state::after {
+    transform: scaleX(1);
+    background-color: var(--nav-underline-color, #000);
+    /* 发光效果已移除：box-shadow: 0 0 calc(var(--nav-underline-glow-size, 4px) * 1.5) var(--nav-underline-glow-color, rgba(0, 0, 0, 0.4)); */
+    height: calc(var(--nav-underline-height, 2px) * 1.5);
+}
+
+/* 响应式设计 - 优化：减少过渡时间，确保高亮和发光效果在移动设备上正常显示 */
+@media (max-width: 768px) {
+    .main-nav .nav-link-luxury {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    .main-nav .nav-link-luxury::after {
+        height: 1.5px;
+        bottom: -1px;
+        transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease;
+        /* 优化：添加阴影过渡 */
+    }
+
+    /* 移动设备上的高亮效果 - 统一状态类 */
+    .main-nav .nav-link-luxury.hover-state,
+    .main-nav .nav-link-luxury.active-state {
+        background-color: var(--nav-highlight-hover-color, rgba(0, 0, 0, 0.08));
+    }
+
+    /* 移动设备上的发光效果已移除 */
+    /* .main-nav .nav-link-luxury.hover-state::after,
+    .main-nav .nav-link-luxury.active-state::after {
+        box-shadow: 0 0 calc(var(--nav-underline-glow-size, 4px) * 0.75) var(--nav-underline-glow-color, rgba(0, 0, 0, 0.25));
+    } */
+}

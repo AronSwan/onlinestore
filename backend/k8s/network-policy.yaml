@@ -1,0 +1,63 @@
+# 用途：定义Kubernetes网络策略，限制Pod间网络通信
+# 依赖文件：deployment.yaml
+# 作者：后端开发团队
+# 时间：2025-09-30 11:00:00
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: caddy-shopping-backend-network-policy
+  namespace: caddy-shopping
+spec:
+  podSelector:
+    matchLabels:
+      app: caddy-shopping-backend
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: caddy-shopping
+    - podSelector:
+        matchLabels:
+          app: caddy-shopping-backend
+    ports:
+    - protocol: TCP
+      port: 3000
+  - from:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 3000
+    - protocol: TCP
+      port: 8080
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: caddy-shopping
+    ports:
+    - protocol: TCP
+      port: 5432
+    - protocol: TCP
+      port: 6379
+    - protocol: TCP
+      port: 4000
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+        except:
+        - 10.0.0.0/8
+        - 172.16.0.0/12
+        - 192.168.0.0/16
+    ports:
+    - protocol: TCP
+      port: 80
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 53

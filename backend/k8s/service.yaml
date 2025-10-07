@@ -1,0 +1,28 @@
+# 用途：定义Kubernetes服务配置，用于分布式环境下的服务发现和负载均衡
+# 依赖文件：deployment.yaml
+# 作者：后端开发团队
+# 更新：AI助手 - 增强分布式部署服务配置
+# 时间：2025-09-26 18:30:00
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: caddy-shopping-backend-service
+  namespace: default
+  labels:
+    app: caddy-shopping-backend
+spec:
+  selector:
+    app: caddy-shopping-backend
+  ports:
+  - name: http
+    port: 80
+    targetPort: 3000
+    protocol: TCP
+    appProtocol: http
+  clusterIP: None # 使用Headless Service，提高服务发现效率
+  # 会话亲和性配置，提高分布式环境下的会话稳定性
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800 # 3小时会话保持

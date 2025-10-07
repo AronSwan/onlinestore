@@ -1,13 +1,15 @@
-/* @ai-generated: Casdoor认证样式文件
+/* ==========================================================================
+   Reich 认证模态框样式
    Source: AI Assistant
-   Timestamp: 2025-11-20
-   为Gucci风格电商网站提供的认证模态框样式 */
+   Timestamp: 2025-09-17
+   为Reich品牌电商网站提供的认证模态框样式 */
 
 /* ==========================================================================
    导入基础样式
    ========================================================================== */
 
-@import url('./gucci-style.css');
+@import url('./variables/reich-colors.css');
+@import url('./variables/typography.css');
 
 /* ==========================================================================
    认证模态框容器
@@ -26,7 +28,7 @@
   z-index: 1000;
   opacity: 0;
   visibility: hidden;
-  transition: all var(--gucci-transition-normal, 0.3s ease);
+  transition: all var(--transition-normal, 0.3s ease);
 }
 
 .casdoor-auth-container.open {
@@ -39,7 +41,7 @@
    ========================================================================== */
 
 .casdoor-auth-modal {
-  background-color: var(--gucci-white, #FFFFFF);
+  background-color: var(--brand-white, #FFFFFF);
   border-radius: 8px;
   width: 90%;
   max-width: 600px;
@@ -48,7 +50,7 @@
   position: relative;
   transform: scale(0.9);
   opacity: 0;
-  transition: all var(--gucci-transition-normal, 0.3s ease);
+  transition: all var(--transition-normal, 0.3s ease);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
 }
 
@@ -62,18 +64,18 @@
    ========================================================================== */
 
 .casdoor-auth-header {
-  padding: var(--gucci-spacing-md, 2rem);
-  border-bottom: 1px solid var(--gucci-gray-light, #F5F5F5);
+  padding: var(--spacing-md, 2rem);
+  border-bottom: 1px solid var(--brand-gray-light, #F5F5F5);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: linear-gradient(90deg, var(--gucci-gold, #D4AF37) 0%, var(--gucci-gold-light, #F0E68C) 100%);
-  color: var(--gucci-white, #FFFFFF);
+  background: linear-gradient(90deg, var(--brand-secondary, #D4AF37) 0%, var(--brand-secondary-light, #F0E68C) 100%);
+  color: var(--brand-white, #FFFFFF);
   border-radius: 8px 8px 0 0;
 }
 
 .casdoor-auth-title {
-  font-family: var(--gucci-font-primary, 'Times New Roman', serif);
+  font-family: var(--font-primary, 'Times New Roman', serif);
   font-size: 1.5rem;
   margin: 0;
 }
@@ -82,10 +84,10 @@
   background: none;
   border: none;
   font-size: 1.5rem;
-  color: var(--gucci-white, #FFFFFF);
+  color: var(--brand-white, #FFFFFF);
   cursor: pointer;
   padding: 5px;
-  transition: transform var(--gucci-transition-fast, 0.2s ease);
+  transition: transform var(--transition-fast, 0.2s ease);
 }
 
 .casdoor-auth-close:hover {
@@ -97,56 +99,58 @@
    ========================================================================== */
 
 .casdoor-auth-form {
-  padding: var(--gucci-spacing-md, 2rem);
+  padding: var(--spacing-md, 2rem);
 }
 
 .casdoor-auth-form-group {
-  margin-bottom: var(--gucci-spacing-md, 2rem);
+  margin-bottom: var(--spacing-md, 2rem);
 }
 
 .casdoor-auth-form-label {
   display: block;
-  font-family: var(--gucci-font-secondary, 'Helvetica Neue', Arial, sans-serif);
+  font-family: var(--font-secondary, 'Helvetica Neue', Arial, sans-serif);
   font-size: 0.9rem;
-  color: var(--gucci-black, #000000);
-  margin-bottom: var(--gucci-spacing-xs, 0.5rem);
+  color: var(--brand-primary, #000000);
+  margin-bottom: var(--spacing-xs, 0.5rem);
   font-weight: 600;
 }
 
 .casdoor-auth-form-input {
   width: 100%;
-  padding: var(--gucci-spacing-sm, 1rem) var(--gucci-spacing-md, 2rem);
-  border: 1px solid var(--gucci-gray-light, #F5F5F5);
+  padding: var(--spacing-sm, 1rem) var(--spacing-md, 2rem);
+  border: 1px solid var(--brand-gray-light, #F5F5F5);
   border-radius: 4px;
-  font-family: var(--gucci-font-secondary, 'Helvetica Neue', Arial, sans-serif);
+  font-family: var(--font-secondary, 'Helvetica Neue', Arial, sans-serif);
   font-size: 1rem;
-  color: var(--gucci-black, #000000);
-  outline: none;
-  transition: border-color var(--gucci-transition-fast, 0.2s ease);
+  color: var(--brand-primary, #000000);
+
+  transition: border-color var(--transition-fast, 0.2s ease);
   box-sizing: border-box;
 }
 
 .casdoor-auth-form-input:focus {
-  border-color: var(--gucci-gold, #D4AF37);
-  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+  border-color: var(--brand-secondary, #D4AF37);
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-shadow);
 }
 
 .casdoor-auth-form-checkbox {
   display: flex;
   align-items: center;
-  gap: var(--gucci-spacing-xs, 0.5rem);
+  gap: var(--spacing-xs, 0.5rem);
 }
 
 .casdoor-auth-form-checkbox input[type="checkbox"] {
   width: 18px;
   height: 18px;
-  accent-color: var(--gucci-gold, #D4AF37);
+  accent-color: var(--brand-secondary, #D4AF37);
 }
 
 .casdoor-auth-form-checkbox label {
-  font-family: var(--gucci-font-secondary, 'Helvetica Neue', Arial, sans-serif);
+  font-family: var(--font-secondary, 'Helvetica Neue', Arial, sans-serif);
   font-size: 0.9rem;
-  color: var(--gucci-gray-dark, #808080);
+  color: var(--brand-gray-dark, #808080);
   cursor: pointer;
 }
 
@@ -155,21 +159,21 @@
    ========================================================================== */
 
 .casdoor-auth-form-actions {
-  margin-top: var(--gucci-spacing-lg, 4rem);
+  margin-top: var(--spacing-lg, 4rem);
 }
 
 .casdoor-auth-form-submit {
   width: 100%;
-  padding: var(--gucci-spacing-sm, 1rem) var(--gucci-spacing-md, 2rem);
-  background: linear-gradient(135deg, var(--gucci-gold, #D4AF37) 0%, var(--gucci-gold-light, #F0E68C) 100%);
+  padding: var(--spacing-sm, 1rem) var(--spacing-md, 2rem);
+  background: linear-gradient(135deg, var(--brand-secondary, #D4AF37) 0%, var(--brand-secondary-light, #F0E68C) 100%);
   border: none;
   border-radius: 4px;
-  font-family: var(--gucci-font-secondary, 'Helvetica Neue', Arial, sans-serif);
+  font-family: var(--font-secondary, 'Helvetica Neue', Arial, sans-serif);
   font-size: 1rem;
   font-weight: 600;
-  color: var(--gucci-white, #FFFFFF);
+  color: var(--brand-white, #FFFFFF);
   cursor: pointer;
-  transition: all var(--gucci-transition-normal, 0.3s ease);
+  transition: all var(--transition-normal, 0.3s ease);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
@@ -193,19 +197,19 @@
 .casdoor-auth-links {
   display: flex;
   justify-content: space-between;
-  margin-top: var(--gucci-spacing-md, 2rem);
+  margin-top: var(--spacing-md, 2rem);
 }
 
 .casdoor-auth-link {
-  font-family: var(--gucci-font-secondary, 'Helvetica Neue', Arial, sans-serif);
+  font-family: var(--font-secondary, 'Helvetica Neue', Arial, sans-serif);
   font-size: 0.9rem;
-  color: var(--gucci-gold, #D4AF37);
+  color: var(--brand-secondary, #D4AF37);
   text-decoration: none;
-  transition: color var(--gucci-transition-fast, 0.2s ease);
+  transition: color var(--transition-fast, 0.2s ease);
 }
 
 .casdoor-auth-link:hover {
-  color: var(--gucci-gold-dark, #B38B24);
+  color: var(--brand-secondary-dark, #B38B24);
   text-decoration: underline;
 }
 
@@ -216,7 +220,7 @@
 .casdoor-auth-divider {
   display: flex;
   align-items: center;
-  margin: var(--gucci-spacing-lg, 4rem) 0;
+  margin: var(--spacing-lg, 4rem) 0;
 }
 
 .casdoor-auth-divider::before,
@@ -224,43 +228,43 @@
   content: '';
   flex: 1;
   height: 1px;
-  background-color: var(--gucci-gray-light, #F5F5F5);
+  background-color: var(--brand-gray-light, #F5F5F5);
 }
 
 .casdoor-auth-divider-text {
-  padding: 0 var(--gucci-spacing-md, 2rem);
-  font-family: var(--gucci-font-secondary, 'Helvetica Neue', Arial, sans-serif);
+  padding: 0 var(--spacing-md, 2rem);
+  font-family: var(--font-secondary, 'Helvetica Neue', Arial, sans-serif);
   font-size: 0.9rem;
-  color: var(--gucci-gray-dark, #808080);
+  color: var(--brand-gray-dark, #808080);
 }
 
 .casdoor-auth-social {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: var(--gucci-spacing-md, 2rem);
-  margin-bottom: var(--gucci-spacing-lg, 4rem);
+  gap: var(--spacing-md, 2rem);
+  margin-bottom: var(--spacing-lg, 4rem);
 }
 
 .casdoor-auth-social-btn {
-  padding: var(--gucci-spacing-sm, 1rem);
-  background-color: var(--gucci-white, #FFFFFF);
-  border: 1px solid var(--gucci-gray-light, #F5F5F5);
+  padding: var(--spacing-sm, 1rem);
+  background-color: var(--brand-white, #FFFFFF);
+  border: 1px solid var(--brand-gray-light, #F5F5F5);
   border-radius: 4px;
-  font-family: var(--gucci-font-secondary, 'Helvetica Neue', Arial, sans-serif);
+  font-family: var(--font-secondary, 'Helvetica Neue', Arial, sans-serif);
   font-size: 0.9rem;
-  color: var(--gucci-black, #000000);
+  color: var(--brand-primary, #000000);
   cursor: pointer;
-  transition: all var(--gucci-transition-normal, 0.3s ease);
+  transition: all var(--transition-normal, 0.3s ease);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--gucci-spacing-xs, 0.5rem);
+  gap: var(--spacing-xs, 0.5rem);
 }
 
 .casdoor-auth-social-btn:hover {
-  background-color: var(--gucci-gold, #D4AF37);
-  color: var(--gucci-white, #FFFFFF);
-  border-color: var(--gucci-gold, #D4AF37);
+  background-color: var(--brand-secondary, #D4AF37);
+  color: var(--brand-white, #FFFFFF);
+  border-color: var(--brand-secondary, #D4AF37);
   transform: translateY(-2px);
   box-shadow: 0 10px 20px rgba(212, 175, 55, 0.2);
 }
@@ -275,20 +279,20 @@
 
 .casdoor-auth-register {
   text-align: center;
-  font-family: var(--gucci-font-secondary, 'Helvetica Neue', Arial, sans-serif);
+  font-family: var(--font-secondary, 'Helvetica Neue', Arial, sans-serif);
   font-size: 0.9rem;
-  color: var(--gucci-gray-dark, #808080);
+  color: var(--brand-gray-dark, #808080);
 }
 
 .casdoor-auth-register a {
-  color: var(--gucci-gold, #D4AF37);
+  color: var(--brand-secondary, #D4AF37);
   text-decoration: none;
   font-weight: 600;
-  transition: color var(--gucci-transition-fast, 0.2s ease);
+  transition: color var(--transition-fast, 0.2s ease);
 }
 
 .casdoor-auth-register a:hover {
-  color: var(--gucci-gold-dark, #B38B24);
+  color: var(--brand-secondary-dark, #B38B24);
   text-decoration: underline;
 }
 
@@ -299,14 +303,14 @@
 .casdoor-auth-error {
   background-color: #FFF2F2;
   color: #E53E3E;
-  padding: var(--gucci-spacing-sm, 1rem) var(--gucci-spacing-md, 2rem);
+  padding: var(--spacing-sm, 1rem) var(--spacing-md, 2rem);
   border-radius: 4px;
-  margin-bottom: var(--gucci-spacing-md, 2rem);
-  font-family: var(--gucci-font-secondary, 'Helvetica Neue', Arial, sans-serif);
+  margin-bottom: var(--spacing-md, 2rem);
+  font-family: var(--font-secondary, 'Helvetica Neue', Arial, sans-serif);
   font-size: 0.9rem;
   display: flex;
   align-items: center;
-  gap: var(--gucci-spacing-xs, 0.5rem);
+  gap: var(--spacing-xs, 0.5rem);
 }
 
 .casdoor-auth-error-icon {
@@ -319,9 +323,9 @@
 
 .casdoor-auth-form-error {
   color: #E53E3E;
-  font-family: var(--gucci-font-secondary, 'Helvetica Neue', Arial, sans-serif);
+  font-family: var(--font-secondary, 'Helvetica Neue', Arial, sans-serif);
   font-size: 0.8rem;
-  margin-top: var(--gucci-spacing-xs, 0.5rem);
+  margin-top: var(--spacing-xs, 0.5rem);
 }
 
 /* ==========================================================================
@@ -345,8 +349,8 @@
 .casdoor-auth-loading-spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid var(--gucci-gray-light, #F5F5F5);
-  border-top-color: var(--gucci-gold, #D4AF37);
+  border: 3px solid var(--brand-gray-light, #F5F5F5);
+  border-top-color: var(--brand-secondary, #D4AF37);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -364,15 +368,15 @@
 @media (max-width: 768px) {
   .casdoor-auth-modal {
     width: 95%;
-    margin: var(--gucci-spacing-sm, 1rem);
+    margin: var(--spacing-sm, 1rem);
   }
   
   .casdoor-auth-form {
-    padding: var(--gucci-spacing-sm, 1rem);
+    padding: var(--spacing-sm, 1rem);
   }
   
   .casdoor-auth-header {
-    padding: var(--gucci-spacing-sm, 1rem);
+    padding: var(--spacing-sm, 1rem);
   }
   
   .casdoor-auth-social {
@@ -381,7 +385,7 @@
   
   .casdoor-auth-links {
     flex-direction: column;
-    gap: var(--gucci-spacing-sm, 1rem);
+    gap: var(--spacing-sm, 1rem);
   }
 }
 
@@ -391,17 +395,17 @@
   }
   
   .casdoor-auth-form-input {
-    padding: var(--gucci-spacing-xs, 0.5rem) var(--gucci-spacing-sm, 1rem);
+    padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 1rem);
     font-size: 0.9rem;
   }
   
   .casdoor-auth-form-submit {
-    padding: var(--gucci-spacing-xs, 0.5rem) var(--gucci-spacing-sm, 1rem);
+    padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 1rem);
     font-size: 0.9rem;
   }
   
   .casdoor-auth-divider-text {
-    padding: 0 var(--gucci-spacing-sm, 1rem);
+    padding: 0 var(--spacing-sm, 1rem);
     font-size: 0.8rem;
   }
 }
@@ -415,16 +419,16 @@
 }
 
 .casdoor-auth-modal::-webkit-scrollbar-track {
-  background: var(--gucci-gray-light, #F5F5F5);
+  background: var(--brand-gray-light, #F5F5F5);
 }
 
 .casdoor-auth-modal::-webkit-scrollbar-thumb {
-  background: var(--gucci-gold, #D4AF37);
+  background: var(--brand-secondary, #D4AF37);
   border-radius: 3px;
 }
 
 .casdoor-auth-modal::-webkit-scrollbar-thumb:hover {
-  background: var(--gucci-gold-dark, #B38B24);
+  background: var(--brand-secondary-dark, #B38B24);
 }
 
 /* ==========================================================================
@@ -432,13 +436,13 @@
    ========================================================================== */
 
 .casdoor-auth-container:focus-visible {
-  outline: 2px solid var(--gucci-gold, #D4AF37);
-  outline-offset: 2px;
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .casdoor-auth-modal:focus-visible {
-  outline: 2px solid var(--gucci-gold, #D4AF37);
-  outline-offset: 2px;
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .sr-only {

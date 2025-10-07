@@ -1,0 +1,36 @@
+{
+  "timestamp": "2025-10-05T05:57:20.737Z",
+  "projectInfo": {
+    "name": "caddy-style-shopping-backend",
+    "version": "1.0.0"
+  },
+  "summary": {
+    "totalCategories": 3,
+    "passedCategories": 3,
+    "totalChecks": 5,
+    "passedChecks": 5
+  },
+  "results": [
+    {
+      "category": "Package.json 同步",
+      "isValid": true,
+      "totalChecks": 3,
+      "passedChecks": 3,
+      "inconsistencies": []
+    },
+    {
+      "category": "配置文件同步",
+      "isValid": true,
+      "totalChecks": 1,
+      "passedChecks": 1,
+      "inconsistencies": []
+    },
+    {
+      "category": "API 文档同步",
+      "isValid": true,
+      "totalChecks": 1,
+      "passedChecks": 1,
+      "inconsistencies": []
+    }
+  ]
+}

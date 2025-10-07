@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- SEO 优化 -->
+    <title>我的订单 - Reich | 订单历史与详情</title>
+    <meta name="description" content="查看您的Reich订单历史，追踪订单状态，下载发票，管理退换货。享受顶级的客户服务体验。">
+    <meta name="keywords" content="Reich订单,订单历史,订单追踪,发票下载,退换货,客户服务">
+    <meta name="author" content="Reich">
+    <meta name="robots" content="noindex, nofollow">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="我的订单 - Reich">
+    <meta property="og:description" content="查看您的Reich订单历史，追踪订单状态，下载发票，管理退换货。">
+    <meta property="og:url" content="https://reich.com/orders">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
+    
+    <!-- 关键资源预加载 -->
+    <link rel="preload" href="css/variables/complete-variables.css" as="style">
+    <link rel="preload" href="css/main.css" as="style">
+    <link rel="preload" href="js/orders.js" as="script">
+    
+    <!-- DNS 预解析 -->
+    <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="//cdn.tailwindcss.com">
+    
+    <!-- 预连接关键第三方域名 -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin>
+    
+    <!-- CSS变量系统 - 必须在其他样式之前加载 -->
+    <link rel="stylesheet" href="css/variables/complete-variables.css">
+    <!-- 主样式表 -->
+    <link rel="stylesheet" href="css/main.css">
+    <!-- 奢华组件样式 -->
+    <link rel="stylesheet" href="css/components/luxury-components.css">
+    <!-- 导航下划线效果 -->
+    <link rel="stylesheet" href="css/components/nav-underline.css">
+    <!-- 响应式设计 -->
+    <link rel="stylesheet" href="css/responsive/enhanced-responsive.css">
+    <link rel="stylesheet" href="css/responsive/mobile-navigation.css">
+    <!-- 性能优化组件 -->
+    <link rel="stylesheet" href="css/components/visibility-optimization.css">
+    <link rel="stylesheet" href="css/responsive/touch-optimization.css">
+    <!-- 按钮组件样式 -->
+    <link rel="stylesheet" href="css/components/buttons.css">
+    <!-- 订单页面专用样式 -->
+    <link rel="stylesheet" href="css/orders.css">
+    
+    <!-- 引入Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    
+    <!-- 引入Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 配置Tailwind自定义样式 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: 'var(--brand-black)',
+                        secondary: 'var(--brand-gold)',
+                        accent: 'var(--brand-red)',
+                        dark: 'var(--bg-dark)',
+                    },
+                    fontFamily: {
+                        sans: ['var(--brand-font-secondary)', 'Arial', 'sans-serif'],
+                        serif: ['var(--brand-font-primary)', 'serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    
+    <!-- 自定义工具类 -->
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow {
+                text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+            }
+            .transition-custom {
+                transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            }
+        }
+    </style>
+    
+    <!-- 结构化数据 -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "我的订单 - Reich",
+        "description": "查看您的Reich订单历史，追踪订单状态，下载发票，管理退换货",
+        "url": "https://reich.com/orders",
+        "breadcrumb": {
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+                {
+                    "@type": "ListItem",
+                    "position": 1,
+                    "name": "首页",
+                    "item": "https://reich.com/"
+                },
+                {
+                    "@type": "ListItem",
+                    "position": 2,
+                    "name": "我的账户",
+                    "item": "https://reich.com/account"
+                },
+                {
+                    "@type": "ListItem",
+                    "position": 3,
+                    "name": "我的订单",
+                    "item": "https://reich.com/orders"
+                }
+            ]
+        }
+    }
+    </script>
+</head>
+
+<body class="bg-[var(--cream-luxury)] font-serif text-[var(--text-primary)]">
+    <!-- 跳转到主内容链接 (无障碍性) -->
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-[var(--gold-standard)] text-white px-4 py-2 rounded z-50">跳转到主内容</a>
+    
+    <!-- 导航栏 -->
+    <header class="navbar-luxury fixed w-full top-0 left-0 z-50" role="banner">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between h-24">
+                <!-- 左侧导航链接 -->
+                <nav class="hidden md:flex items-center space-x-6" role="navigation" aria-label="主导航">
+                    <a href="/#women" class="nav-link-luxury" aria-label="女士系列">女士</a>
+                    <a href="/#men" class="nav-link-luxury" aria-label="男士系列">男士</a>
+                    <a href="/#accessories" class="nav-link-luxury" aria-label="配饰系列">配饰</a>
+                </nav>
+                
+                <!-- 品牌标志 -->
+                <div class="flex-shrink-0">
+                    <h1 class="text-3xl md:text-4xl font-bold tracking-widest text-center">
+                        <a href="/" aria-label="Reich 首页">REICH</a>
+                    </h1>
+                </div>
+                
+                <!-- 右侧功能区 -->
+                <div class="flex items-center space-x-4" role="toolbar" aria-label="用户操作">
+                    <!-- 返回账户按钮 -->
+                    <a href="account.html" 
+                       class="text-[var(--dark-primary)] hover:text-[var(--gold-standard)] transition-colors p-2"
+                       aria-label="返回我的账户">
+                        <i class="fas fa-arrow-left text-xl" aria-hidden="true"></i>
+                    </a>
+                    
+                    <!-- 购物车图标 -->
+                    <button class="text-[var(--dark-primary)] hover:text-[var(--gold-standard)] transition-colors p-2 relative"
+                            aria-label="购物车"
+                            data-cart-icon="true">
+                        <img src="shopping-bag-icon.svg" alt="" class="h-6 w-6" aria-hidden="true">
+                        <span id="cart-count" class="sr-only">购物车中有 0 件商品</span>
+                        <span id="cart-badge" class="hidden absolute -top-1 -right-1 bg-[var(--brand-red)] text-white text-xs rounded-full h-5 w-5 flex items-center justify-center" aria-hidden="true">0</span>
+                    </button>
+                    
+                    <!-- 移动端菜单按钮 -->
+                    <button id="mobileMenuBtn" 
+                            class="md:hidden text-[var(--dark-primary)] hover:text-[var(--gold-standard)] transition-colors p-2"
+                            aria-label="打开菜单"
+                            aria-expanded="false"
+                            aria-controls="mobileMenu">
+                        <i class="fas fa-bars text-2xl" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 移动端导航菜单 -->
+        <div id="mobileMenu" class="hidden md:hidden bg-white border-t border-[var(--border-default)]">
+            <div class="container mx-auto px-4 py-6">
+                <nav class="flex flex-col space-y-5" role="navigation" aria-label="移动端导航">
+                    <a href="/#women" class="nav-link-luxury py-2 text-lg">女士</a>
+                    <a href="/#men" class="nav-link-luxury py-2 text-lg">男士</a>
+                    <a href="/#accessories" class="nav-link-luxury py-2 text-lg">配饰</a>
+                    <a href="/#perfume" class="nav-link-luxury py-2 text-lg">香水</a>
+                    <a href="/#gifts" class="nav-link-luxury py-2 text-lg">礼品</a>
+                    <a href="account.html" class="nav-link-luxury py-2 text-lg">我的账户</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main id="main-content" class="pt-24" role="main">
+        <!-- 页面标题和面包屑 -->
+        <section class="bg-white py-8 border-b border-[var(--border-default)]">
+            <div class="container mx-auto px-4">
+                <!-- 面包屑导航 -->
+                <nav aria-label="面包屑导航" class="mb-4">
+                    <ol class="flex items-center space-x-2 text-sm">
+                        <li><a href="/" class="text-[var(--gold-standard)] hover:underline">首页</a></li>
+                        <li><i class="fas fa-chevron-right text-xs text-[var(--text-muted)]" aria-hidden="true"></i></li>
+                        <li><a href="account.html" class="text-[var(--gold-standard)] hover:underline">我的账户</a></li>
+                        <li><i class="fas fa-chevron-right text-xs text-[var(--text-muted)]" aria-hidden="true"></i></li>
+                        <li class="text-[var(--text-primary)] font-medium">我的订单</li>
+                    </ol>
+                </nav>
+                
+                <h1 class="text-3xl md:text-4xl font-bold">我的订单</h1>
+                <p class="text-[var(--text-muted)] mt-2">查看您的订单历史和详细信息</p>
+            </div>
+        </section>
+
+        <!-- 订单筛选和搜索 -->
+        <section class="bg-white py-6 border-b border-[var(--border-default)]">
+            <div class="container mx-auto px-4">
+                <div class="flex flex-col md:flex-row gap-4 items-center">
+                    <!-- 搜索框 -->
+                    <div class="flex-1 w-full md:w-auto">
+                        <div class="relative">
+                            <input type="text" 
+                                   id="orderSearch"
+                                   placeholder="搜索订单号、产品名称..." 
+                                   class="w-full py-2 px-4 pr-10 border border-[var(--border-default)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] focus:border-transparent"
+                                   aria-label="搜索订单">
+                            <button class="absolute right-2 top-1/2 transform -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--gold-standard)] transition-colors"
+                                    aria-label="搜索订单">
+                                <i class="fas fa-search" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 状态筛选 -->
+                    <div class="flex gap-2 flex-wrap">
+                        <button class="order-filter-btn active" data-status="all">全部订单</button>
+                        <button class="order-filter-btn" data-status="pending">待付款</button>
+                        <button class="order-filter-btn" data-status="processing">处理中</button>
+                        <button class="order-filter-btn" data-status="shipped">已发货</button>
+                        <button class="order-filter-btn" data-status="delivered">已送达</button>
+                        <button class="order-filter-btn" data-status="cancelled">已取消</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 订单列表 -->
+        <section class="py-8">
+            <div class="container mx-auto px-4">
+                <!-- 加载状态 -->
+                <div id="loadingState" class="text-center py-12">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--gold-standard)]" aria-hidden="true"></div>
+                    <p class="mt-2 text-[var(--text-muted)]">正在加载订单...</p>
+                </div>
+                
+                <!-- 空状态 -->
+                <div id="emptyState" class="text-center py-12 hidden">
+                    <i class="fas fa-shopping-bag text-6xl text-[var(--text-muted)] mb-4" aria-hidden="true"></i>
+                    <h3 class="text-xl font-medium mb-2">暂无订单</h3>
+                    <p class="text-[var(--text-muted)] mb-6">您还没有任何订单，开始购物吧！</p>
+                    <a href="/" class="btn-luxury btn-luxury-primary">开始购物</a>
+                </div>
+                
+                <!-- 订单列表容器 -->
+                <div id="ordersList" class="space-y-6 hidden">
+                    <!-- 订单项将通过JavaScript动态加载 -->
+                </div>
+                
+                <!-- 分页 -->
+                <div id="pagination" class="mt-8 flex justify-center hidden">
+                    <nav aria-label="订单分页">
+                        <ul class="flex space-x-2">
+                            <!-- 分页按钮将通过JavaScript动态生成 -->
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-white py-16 mt-16" role="contentinfo">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-12">
+                <!-- 品牌信息 -->
+                <div>
+                    <h3 class="text-2xl font-bold mb-6">REICH</h3>
+                    <p class="mb-6">探索Reich的奢华世界，体验无与伦比的品质与风格。</p>
+                    <div class="flex space-x-4" role="list" aria-label="社交媒体链接">
+                        <a href="https://instagram.com/reich" 
+                           class="text-[var(--dark-primary)] hover:text-[var(--gold-standard)] p-2 focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded"
+                           aria-label="关注我们的Instagram"
+                           target="_blank"
+                           rel="noopener noreferrer">
+                            <i class="fab fa-instagram text-xl" aria-hidden="true"></i>
+                        </a>
+                        <a href="https://facebook.com/reich" 
+                           class="text-[var(--dark-primary)] hover:text-[var(--gold-standard)] p-2 focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded"
+                           aria-label="关注我们的Facebook"
+                           target="_blank"
+                           rel="noopener noreferrer">
+                            <i class="fab fa-facebook text-xl" aria-hidden="true"></i>
+                        </a>
+                        <a href="https://twitter.com/reich" 
+                           class="text-[var(--dark-primary)] hover:text-[var(--gold-standard)] p-2 focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded"
+                           aria-label="关注我们的Twitter"
+                           target="_blank"
+                           rel="noopener noreferrer">
+                            <i class="fab fa-twitter text-xl" aria-hidden="true"></i>
+                        </a>
+                        <a href="https://weibo.com/reich" 
+                           class="text-[var(--dark-primary)] hover:text-[var(--gold-standard)] p-2 focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded"
+                           aria-label="关注我们的微博"
+                           target="_blank"
+                           rel="noopener noreferrer">
+                            <i class="fab fa-weibo text-xl" aria-hidden="true"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- 客户服务 -->
+                <div>
+                    <h4 class="text-lg font-medium mb-6">客户服务</h4>
+                    <nav aria-label="客户服务链接">
+                        <ul class="space-y-3">
+                            <li><a href="/contact" class="hover:text-[var(--gold-standard)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded">联系我们</a></li>
+                            <li><a href="/shipping" class="hover:text-[var(--gold-standard)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded">配送信息</a></li>
+                            <li><a href="/returns" class="hover:text-[var(--gold-standard)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded">退换政策</a></li>
+                            <li><a href="/faq" class="hover:text-[var(--gold-standard)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded">常见问题</a></li>
+                        </ul>
+                    </nav>
+                </div>
+                
+                <!-- 关于我们 -->
+                <div>
+                    <h4 class="text-lg font-medium mb-6">关于我们</h4>
+                    <nav aria-label="关于我们链接">
+                        <ul class="space-y-3">
+                            <li><a href="/about" class="hover:text-[var(--gold-standard)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded">品牌故事</a></li>
+                            <li><a href="/stores" class="hover:text-[var(--gold-standard)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded">门店查询</a></li>
+                            <li><a href="/sustainability" class="hover:text-[var(--gold-standard)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded">可持续发展</a></li>
+                            <li><a href="/careers" class="hover:text-[var(--gold-standard)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded">招聘信息</a></li>
+                        </ul>
+                    </nav>
+                </div>
+                
+                <!-- 法律信息 -->
+                <div>
+                    <h4 class="text-lg font-medium mb-6">法律信息</h4>
+                    <nav aria-label="法律信息链接">
+                        <ul class="space-y-3">
+                            <li><a href="/privacy" class="hover:text-[var(--gold-standard)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded">隐私政策</a></li>
+                            <li><a href="/terms" class="hover:text-[var(--gold-standard)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded">使用条款</a></li>
+                            <li><a href="/cookies" class="hover:text-[var(--gold-standard)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded">Cookie政策</a></li>
+                            <li><a href="/intellectual-property" class="hover:text-[var(--gold-standard)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded">知识产权</a></li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+            
+            <div class="mt-12 pt-8 border-t border-[var(--border-default)] text-center">
+                <p>&copy; 2025 Reich. 保留所有权利。</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 订单详情模态框 -->
+    <div id="orderDetailModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                <div class="sticky top-0 bg-white border-b border-[var(--border-default)] p-6 flex justify-between items-center">
+                    <h2 id="modalTitle" class="text-2xl font-bold">订单详情</h2>
+                    <button id="closeModal" class="text-[var(--text-muted)] hover:text-[var(--dark-primary)] transition-colors" aria-label="关闭模态框">
+                        <i class="fas fa-times text-xl" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <div id="modalContent" class="p-6">
+                    <!-- 订单详情内容将通过JavaScript动态加载 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script type="module" defer src="js/navigation.js"></script>
+    <script type="module" defer src="js/cart.js"></script>
+    <script type="module" defer src="js/orders.js"></script>
+    
+    <!-- 性能监控 -->
+    <script>
+        // 性能监控
+        if ('performance' in window) {
+            window.addEventListener('load', function() {
+                setTimeout(function() {
+                    const perfData = performance.getEntriesByType('navigation')[0];
+                    console.log('页面加载时间:', perfData.loadEventEnd - perfData.fetchStart, 'ms');
+                }, 0);
+            });
+        }
+        
+        // 错误监控
+        window.addEventListener('error', function(e) {
+            console.error('JavaScript错误:', e.error);
+        });
+        
+        // 未处理的Promise拒绝
+        window.addEventListener('unhandledrejection', function(e) {
+            console.error('未处理的Promise拒绝:', e.reason);
+        });
+    </script>
+    
+    <!-- 基础交互 -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 移动端菜单交互
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const mobileMenu = document.getElementById('mobileMenu');
+            
+            function toggleMobileMenu() {
+                const isHidden = mobileMenu.classList.contains('hidden');
+                mobileMenu.classList.toggle('hidden');
+                mobileMenuBtn.setAttribute('aria-expanded', !isHidden);
+            }
+            
+            mobileMenuBtn.addEventListener('click', toggleMobileMenu);
+            
+            // 导航栏滚动效果
+            const navbar = document.querySelector('.navbar-luxury');
+            let ticking = false;
+            
+            function updateNavbar() {
+                if (window.scrollY > 50) {
+                    navbar.classList.add('scrolled');
+                } else {
+                    navbar.classList.remove('scrolled');
+                }
+                ticking = false;
+            }
+            
+            window.addEventListener('scroll', function() {
+                if (!ticking) {
+                    requestAnimationFrame(updateNavbar);
+                    ticking = true;
+                }
+            });
+            
+            // 购物车数量更新
+            function updateCartCount(count) {
+                const cartCount = document.getElementById('cart-count');
+                const cartBadge = document.getElementById('cart-badge');
+                
+                if (cartCount) {
+                    cartCount.textContent = `购物车中有 ${count} 件商品`;
+                }
+                
+                if (cartBadge) {
+                    if (count > 0) {
+                        cartBadge.textContent = count > 99 ? '99+' : count;
+                        cartBadge.classList.remove('hidden');
+                    } else {
+                        cartBadge.classList.add('hidden');
+                    }
+                }
+            }
+            
+            // 初始化导航
+            if (typeof setupNavigation === 'function') {
+                setupNavigation();
+            }
+            
+            // 初始化购物车数量
+            updateCartCount(0);
+        });
+    </script>
+</body>
+
+</html>

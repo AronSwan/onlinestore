@@ -1,0 +1,123 @@
+# 用途：Paperless-NGX Kubernetes部署配置，支持分布式部署
+# 依赖文件：paperless-ngx/docker-compose.yml, paperless-ngx/docker-compose.env
+# 作者：AI助手
+# 时间：2025-09-30 15:20:00
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paperless-ngx
+  namespace: paperless
+  labels:
+    app: paperless-ngx
+    version: v1.0.0
+spec:
+  replicas: 3 # 多副本支持高可用
+  selector:
+    matchLabels:
+      app: paperless-ngx
+  template:
+    metadata:
+      labels:
+        app: paperless-ngx
+        version: v1.0.0
+    spec:
+      containers:
+      - name: paperless-ngx
+        image: ghcr.io/paperless-ngx/paperless-ngx:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        env:
+        - name: PAPERLESS_REDIS
+          value: "redis://paperless-redis:6379"
+        - name: PAPERLESS_TIKA_ENABLED
+          value: "1"
+        - name: PAPERLESS_PORT
+          value: "8000"
+        - name: PAPERLESS_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: paperless-secrets
+              key: secret-key
+        - name: PAPERLESS_URL
+          value: "https://paperless.caddy-shopping.com"
+        - name: PAPERLESS_ALLOWED_HOSTS
+          value: "paperless.caddy-shopping.com,localhost,127.0.0.1"
+        - name: PAPERLESS_CORS_ALLOWED_HOSTS
+          value: "https://paperless.caddy-shopping.com"
+        - name: PAPERLESS_TIME_ZONE
+          value: "Asia/Shanghai"
+        - name: PAPERLESS_OCR_LANGUAGE
+          value: "eng+chi_sim"
+        # 数据库配置 - 使用PostgreSQL替代SQLite
+        - name: PAPERLESS_DBHOST
+          value: "paperless-postgresql"
+        - name: PAPERLESS_DBNAME
+          value: "paperless"
+        - name: PAPERLESS_DBUSER
+          valueFrom:
+            secretKeyRef:
+              name: paperless-secrets
+              key: db-username
+        - name: PAPERLESS_DBPASS
+          valueFrom:
+            secretKeyRef:
+              name: paperless-secrets
+              key: db-password
+        # 存储配置 - 使用持久化存储
+        volumeMounts:
+        - name: paperless-data
+          mountPath: /usr/src/paperless/data
+        - name: paperless-media
+          mountPath: /usr/src/paperless/media
+        - name: paperless-export
+          mountPath: /usr/src/paperless/export
+        - name: paperless-consume
+          mountPath: /usr/src/paperless/consume
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /api/
+            port: 8000
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /api/
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+      volumes:
+      - name: paperless-data
+        persistentVolumeClaim:
+          claimName: paperless-data-pvc
+      - name: paperless-media
+        persistentVolumeClaim:
+          claimName: paperless-media-pvc
+      - name: paperless-export
+        persistentVolumeClaim:
+          claimName: paperless-export-pvc
+      - name: paperless-consume
+        persistentVolumeClaim:
+          claimName: paperless-consume-pvc
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - paperless-ngx
+              topologyKey: kubernetes.io/hostname

@@ -1,0 +1,132 @@
+# TiDB Kubernetes 配置文件
+# 用途：在Kubernetes环境中部署TiDB数据库服务（生产环境配置）
+# 作者：后端开发团队
+# 时间：2025-09-29 09:30:00
+
+---
+# TiDB Service 定义
+apiVersion: v1
+kind: Service
+metadata:
+  name: tidb-service
+  namespace: caddy-shopping
+  labels:
+    app: tidb
+    component: server
+spec:
+  ports:
+  - name: mysql-client
+    port: 4000
+    targetPort: 4000
+    protocol: TCP
+  - name: status
+    port: 10080
+    targetPort: 10080
+    protocol: TCP
+  selector:
+    app: tidb
+    component: server
+  type: ClusterIP
+
+---
+# TiDB StatefulSet 定义
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: tidb-server
+  namespace: caddy-shopping
+  labels:
+    app: tidb
+    component: server
+spec:
+  serviceName: "tidb-service"
+  replicas: 2  # 生产环境使用2个副本提供高可用性
+  selector:
+    matchLabels:
+      app: tidb
+      component: server
+  template:
+    metadata:
+      labels:
+        app: tidb
+        component: server
+    spec:
+      containers:
+      - name: tidb
+        image: pingcap/tidb:latest
+        ports:
+        - containerPort: 4000
+          name: mysql-client
+        - containerPort: 10080
+          name: status
+        volumeMounts:
+        - name: tidb-config
+          mountPath: /etc/tidb/
+        - name: tidb-data
+          mountPath: /tidb-data
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "2000m"
+          limits:
+            memory: "8Gi"
+            cpu: "4000m"
+        command:
+        - /tidb-server
+        - --config
+        - /etc/tidb/tidb.toml
+        - --store
+        - tikv  # 生产环境使用真实的TiKV存储引擎
+        - --pd
+        - pd-service.caddy-shopping.svc.cluster.local:2379  # PD服务地址
+      volumes:
+      - name: tidb-config
+        configMap:
+          name: tidb-config
+  volumeClaimTemplates:
+  - metadata:
+      name: tidb-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "managed-nfs-storage"  # 使用持久化存储类
+      resources:
+        requests:
+          storage: 50Gi  # 生产环境增加存储容量
+
+---
+# TiDB ConfigMap 定义
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tidb-config
+  namespace: caddy-shopping
+  labels:
+    app: tidb
+    component: config
+data:
+  tidb.toml: |
+    # TiDB 配置文件
+    port = 4000
+    status-port = 10080
+    host = "0.0.0.0"
+    
+    # 存储配置
+    store = "tikv"  # 生产环境使用TiKV存储引擎
+    path = "/tidb-data"
+    
+    # 内存配置
+    performance.max-procs = 0
+    
+    # 连接配置
+    max-connections = 1000
+    wait-timeout = 600
+    
+    # 优化器配置
+    tikv-client.max-batch-wait-time = "1ms"
+    
+    # SQL 模式配置
+    sql-mode = "STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION"
+    
+    # 字符集配置
+    character-set-server = "utf8mb4"
+    collation-server = "utf8mb4_unicode_ci"

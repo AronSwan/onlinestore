@@ -1,0 +1,105 @@
+{
+  "summary": {
+    "total": 7,
+    "passed": 2,
+    "failed": 5,
+    "passRate": 29,
+    "severityBreakdown": {
+      "critical": 3,
+      "high": 3,
+      "medium": 1,
+      "low": 0
+    }
+  },
+  "metadata": {
+    "environment": "development",
+    "startTime": "2025-10-03T16:18:33.544Z",
+    "endTime": "2025-10-03T16:18:33.780Z",
+    "durationMs": 236,
+    "envFile": ".env"
+  },
+  "results": [
+    {
+      "id": "jwt-expiration",
+      "name": "JWT令牌过期时间检查",
+      "category": "auth",
+      "description": "检查JWT令牌是否包含过期时间",
+      "severity": "medium",
+      "passed": false,
+      "message": "JWT令牌未包含过期时间",
+      "files": [
+        "D:\\codes\\onlinestore\\caddy-style-shopping-site\\backend\\src\\auth\\guards\\jwt-auth.guard.ts"
+      ]
+    },
+    {
+      "id": "jwt-secret-strength",
+      "name": "JWT密钥强度检查",
+      "category": "auth",
+      "description": "检查JWT密钥是否足够强",
+      "severity": "high",
+      "passed": false,
+      "message": "JWT密钥长度不足64字符",
+      "files": []
+    },
+    {
+      "id": "jwt-format-validation",
+      "name": "JWT格式验证检查",
+      "category": "auth",
+      "description": "检查JWT认证守卫是否正确验证令牌格式",
+      "severity": "high",
+      "passed": false,
+      "message": "JWT格式验证未正确实现",
+      "files": [
+        "D:\\codes\\onlinestore\\caddy-style-shopping-site\\backend\\src\\auth\\guards\\jwt-auth.guard.ts"
+      ]
+    },
+    {
+      "id": "jwt-refresh-mechanism",
+      "name": "JWT刷新机制检查",
+      "category": "auth",
+      "description": "检查是否实现了JWT令牌刷新机制",
+      "severity": "critical",
+      "passed": true,
+      "message": "JWT刷新机制已实现",
+      "files": [
+        "D:\\codes\\onlinestore\\caddy-style-shopping-site\\backend\\src\\auth\\auth.service.ts"
+      ]
+    },
+    {
+      "id": "jwt-minimal-payload",
+      "name": "JWT最小载荷检查",
+      "category": "auth",
+      "description": "检查JWT令牌是否只包含最小必要信息",
+      "severity": "critical",
+      "passed": false,
+      "message": "JWT载荷包含敏感信息",
+      "files": [
+        "D:\\codes\\onlinestore\\caddy-style-shopping-site\\backend\\src\\auth\\auth.service.ts"
+      ]
+    },
+    {
+      "id": "session-management",
+      "name": "会话管理检查",
+      "category": "auth",
+      "description": "检查是否实现了会话超时机制",
+      "severity": "critical",
+      "passed": true,
+      "message": "已实现会话超时机制",
+      "files": [
+        "D:\\codes\\onlinestore\\caddy-style-shopping-site\\backend\\src\\auth\\auth.service.ts"
+      ]
+    },
+    {
+      "id": "roles-guard",
+      "name": "角色守卫检查",
+      "category": "auth",
+      "description": "检查角色守卫是否正确验证用户角色",
+      "severity": "high",
+      "passed": false,
+      "message": "角色守卫未正确实现角色验证",
+      "files": [
+        "D:\\codes\\onlinestore\\caddy-style-shopping-site\\backend\\src\\auth\\guards\\roles.guard.ts"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+/* ==========================================================================
+   reich品牌色彩系统 - 集中管理的品牌颜色变量
+   ========================================================================== */
+
+:root {
+  /* reich经典色彩系统 */
+  --brand-black:        #000000;
+  --brand-white:        #FFFFFF;
+  --brand-gold:         #D4AF37;
+  --brand-gold-light:   #F0E68C;
+  --brand-gold-dark:    #996515;
+  --brand-gray-light:   #F5F5F5;
+  --brand-gray:         #E0E0E0;
+  --brand-gray-dark:    #808080;
+  
+  /* 品牌扩展色 */
+  --brand-red:          #8B0000;
+  --brand-green:        #228B22;
+  --brand-dark-brown:   #4E342E;
+  --brand-light-brown:  #8D6E63;
+}

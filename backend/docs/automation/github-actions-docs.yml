@@ -1,0 +1,116 @@
+# GitHub Actions 文档自动化配置
+# 位置: .github/workflows/docs-automation.yml
+
+name: Documentation Automation
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'src/**/*.ts'
+
+jobs:
+  generate-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate API Documentation
+        run: npm run docs:api
+
+      - name: Generate Code Documentation
+        run: npm run docs:code
+
+      - name: Generate Test Coverage Report
+        run: npm run test:coverage && npm run docs:coverage
+
+      - name: Generate Security Report
+        run: npm run security:report
+
+      - name: Validate Documentation
+        run: npm run docs:validate
+
+      - name: Check Documentation Coverage
+        run: npm run docs:coverage-check
+
+      - name: Check Documentation Coordination
+        run: npm run docs:coordination-check
+
+      - name: Deploy to GitHub Pages
+        if: github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
+          cname: docs.your-domain.com
+
+  check-docs-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install documentation tools
+        run: |
+          npm install -g markdownlint-cli
+          npm install -g markdown-link-check
+          npm install -g cspell
+          npm install -g @types/node
+
+      - name: Lint Markdown files
+        run: markdownlint docs/**/*.md
+
+      - name: Check broken links
+        run: find docs -name "*.md" -exec markdown-link-check {} \;
+
+      - name: Spell check
+        run: cspell "docs/**/*.md"
+
+      - name: Check documentation coordination
+        run: |
+          node backend/scripts/docs-coordination-check.js
+          echo "文档协调性检查完成"
+
+      - name: Generate quality report
+        run: |
+          echo "# 文档质量报告" > docs-quality-report.md
+          echo "生成时间: $(date)" >> docs-quality-report.md
+          echo "提交: ${{ github.sha }}" >> docs-quality-report.md
+          echo "## 协调性检查结果" >> docs-quality-report.md
+          node backend/scripts/docs-coordination-check.js >> docs-quality-report.md 2>&1 || true
+
+      - name: Upload quality report
+        uses: actions/upload-artifact@v3
+        with:
+          name: docs-quality-report
+          path: docs-quality-report.md
+
+  notify-team:
+    runs-on: ubuntu-latest
+    needs: [generate-docs, check-docs-quality]
+    if: failure()
+    steps:
+      - name: Notify team on failure
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          channel: '#development'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}

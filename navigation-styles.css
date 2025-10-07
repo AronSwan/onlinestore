@@ -1,0 +1,14 @@
+.nav-item {
+  transition: all 0.3s ease;
+}
+
+.nav-item.active {
+  color: var(--primary-color);
+  border-bottom: 2px solid currentColor;
+}
+
+.nav-item.hover-active {
+  color: var(--hover-color);
+  transform: translateY(-2px);
+  opacity: 0.9;
+}

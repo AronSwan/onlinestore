@@ -1,0 +1,499 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/security-vulnerabilities.schema.json",
+  "title": "安全漏洞数据结构",
+  "description": "安全漏洞追踪数据的JSON Schema定义",
+  "type": "object",
+  "required": [
+    "metadata",
+    "workflow",
+    "statusDictionary",
+    "vulnerabilities"
+  ],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "description": "元数据信息",
+      "required": [
+        "version",
+        "lastUpdated",
+        "maintainer",
+        "effectiveDate",
+        "auditDate",
+        "codeBranch",
+        "commitHash",
+        "environment"
+      ],
+      "properties": {
+        "version": {
+          "type": "string",
+          "description": "数据版本号",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "lastUpdated": {
+          "type": "string",
+          "description": "最后更新日期",
+          "format": "date",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "maintainer": {
+          "type": "string",
+          "description": "维护团队",
+          "minLength": 1
+        },
+        "effectiveDate": {
+          "type": "string",
+          "description": "生效日期",
+          "format": "date",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "auditDate": {
+          "type": "string",
+          "description": "审计日期",
+          "format": "date",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "codeBranch": {
+          "type": "string",
+          "description": "代码分支",
+          "minLength": 1
+        },
+        "commitHash": {
+          "type": "string",
+          "description": "提交哈希",
+          "pattern": "^[a-fA-F0-9]+$",
+          "minLength": 7,
+          "maxLength": 40
+        },
+        "environment": {
+          "type": "string",
+          "description": "环境",
+          "enum": ["开发环境", "测试环境", "预生产环境", "生产环境"]
+        },
+        "configSnapshot": {
+          "type": "string",
+          "description": "配置快照文件名",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow": {
+      "type": "object",
+      "description": "工作流状态定义",
+      "required": [
+        "discovery",
+        "confirmed",
+        "pendingFix",
+        "inProgress",
+        "pendingRetest",
+        "completed",
+        "riskAccepted"
+      ],
+      "properties": {
+        "discovery": {
+          "type": "string",
+          "description": "发现状态"
+        },
+        "confirmed": {
+          "type": "string",
+          "description": "确认状态"
+        },
+        "pendingFix": {
+          "type": "string",
+          "description": "待修复状态"
+        },
+        "inProgress": {
+          "type": "string",
+          "description": "进行中状态"
+        },
+        "pendingRetest": {
+          "type": "string",
+          "description": "待复测状态"
+        },
+        "completed": {
+          "type": "string",
+          "description": "已完成状态"
+        },
+        "riskAccepted": {
+          "type": "string",
+          "description": "风险接受状态"
+        }
+      },
+      "additionalProperties": false
+    },
+    "statusDictionary": {
+      "type": "array",
+      "description": "状态字典",
+      "items": {
+        "type": "object",
+        "required": [
+          "status",
+          "description",
+          "entryCondition",
+          "exitCondition",
+          "requiredEvidence"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "状态名称",
+            "enum": ["发现", "确认", "待修复", "进行中", "待复测", "已完成", "风险接受"]
+          },
+          "description": {
+            "type": "string",
+            "description": "状态描述",
+            "minLength": 1
+          },
+          "entryCondition": {
+            "type": "string",
+            "description": "进入条件",
+            "minLength": 1
+          },
+          "exitCondition": {
+            "type": "string",
+            "description": "退出条件",
+            "minLength": 1
+          },
+          "requiredEvidence": {
+            "type": "string",
+            "description": "所需证据",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "vulnerabilities": {
+      "type": "array",
+      "description": "漏洞列表",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "ruleId",
+          "cvss",
+          "severity",
+          "status",
+          "owner",
+          "firstFound",
+          "slaThreshold",
+          "escalationStatus",
+          "targetDate",
+          "priority",
+          "businessImpact",
+          "falsePositive",
+          "evidenceLinks",
+          "entryExitCriteria"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "漏洞ID",
+            "pattern": "^VULN-\\d+$",
+            "minLength": 8,
+            "maxLength": 20
+          },
+          "title": {
+            "type": "string",
+            "description": "漏洞标题",
+            "minLength": 5,
+            "maxLength": 200
+          },
+          "ruleId": {
+            "type": "string",
+            "description": "规则ID",
+            "pattern": "^[a-z0-9-]+$",
+            "minLength": 3,
+            "maxLength": 50
+          },
+          "cvss": {
+            "type": "number",
+            "description": "CVSS评分",
+            "minimum": 0,
+            "maximum": 10,
+            "multipleOf": 0.1
+          },
+          "severity": {
+            "type": "string",
+            "description": "严重度",
+            "enum": ["低", "中", "高", "严重"]
+          },
+          "status": {
+            "type": "string",
+            "description": "状态",
+            "enum": ["发现", "确认", "待修复", "进行中", "待复测", "已完成", "风险接受"]
+          },
+          "owner": {
+            "type": "string",
+            "description": "负责人",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "firstFound": {
+            "type": "string",
+            "description": "首次发现时间",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "slaThreshold": {
+            "type": "string",
+            "description": "SLA阈值",
+            "pattern": "^\\d+小时|\\d+天$"
+          },
+          "escalationStatus": {
+            "type": "string",
+            "description": "升级状态",
+            "enum": ["正常", "已升级", "严重升级"]
+          },
+          "targetDate": {
+            "type": "string",
+            "description": "目标日期",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "relatedCommit": {
+            "type": "string",
+            "description": "相关提交",
+            "pattern": "^#PR\\d+$|^#ISSUE\\d+$",
+            "maxLength": 20
+          },
+          "relatedTicket": {
+            "type": "string",
+            "description": "相关工单",
+            "pattern": "^#TICKET\\d+$",
+            "maxLength": 20
+          },
+          "priority": {
+            "type": "string",
+            "description": "优先级",
+            "enum": ["低", "中", "高", "严重"]
+          },
+          "businessImpact": {
+            "type": "string",
+            "description": "业务影响",
+            "minLength": 5,
+            "maxLength": 200
+          },
+          "falsePositive": {
+            "type": "boolean",
+            "description": "是否误报"
+          },
+          "evidenceLinks": {
+            "type": "array",
+            "description": "证据链接",
+            "items": {
+              "type": "object",
+              "required": [
+                "type",
+                "url",
+                "description"
+              ],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "description": "证据类型",
+                  "enum": ["日志", "PoC", "测试报告", "截图", "视频", "代码位置"]
+                },
+                "url": {
+                  "type": "string",
+                  "description": "证据URL",
+                  "pattern": "^[a-zA-Z0-9/._-]+$",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "description": {
+                  "type": "string",
+                  "description": "证据描述",
+                  "minLength": 1,
+                  "maxLength": 100
+                }
+              },
+              "additionalProperties": false
+            },
+            "minItems": 1
+          },
+          "entryExitCriteria": {
+            "type": "string",
+            "description": "进入/退出标准",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "evidenceLinkStandards": {
+      "type": "array",
+      "description": "证据链接标准",
+      "items": {
+        "type": "object",
+        "required": [
+          "type",
+          "formatRequirements",
+          "storageLocation",
+          "retentionPeriod",
+          "verificationMethod",
+          "requiredDescription"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "证据类型",
+            "enum": ["日志", "PoC", "测试报告", "截图", "视频", "代码位置"]
+          },
+          "formatRequirements": {
+            "type": "string",
+            "description": "格式要求",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "storageLocation": {
+            "type": "string",
+            "description": "存储位置",
+            "pattern": "^[a-zA-Z0-9/._-]+/$",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "retentionPeriod": {
+            "type": "string",
+            "description": "保留期限",
+            "pattern": "^\\d+天|\\d+月|\\d+年|永久$"
+          },
+          "verificationMethod": {
+            "type": "string",
+            "description": "验证方法",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "requiredDescription": {
+            "type": "string",
+            "description": "必含说明",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "slaAndEscalationPath": {
+      "type": "array",
+      "description": "SLA和升级路径",
+      "items": {
+        "type": "object",
+        "required": [
+          "severity",
+          "slaProcessingTime",
+          "escalation2h",
+          "escalation4h",
+          "escalation8h"
+        ],
+        "properties": {
+          "severity": {
+            "type": "string",
+            "description": "严重度",
+            "enum": ["严重", "高", "中", "低"]
+          },
+          "slaProcessingTime": {
+            "type": "string",
+            "description": "SLA处理时间",
+            "pattern": "^\\d+小时|\\d+天$"
+          },
+          "escalation2h": {
+            "type": "string",
+            "description": "2小时未处理升级",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "escalation4h": {
+            "type": "string",
+            "description": "4小时未处理升级",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "escalation8h": {
+            "type": "string",
+            "description": "8小时未处理升级",
+            "minLength": 1,
+            "maxLength": 50
+          }
+        },
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "documentReferences": {
+      "type": "array",
+      "description": "文档引用",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "url"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "文档名称",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "url": {
+            "type": "string",
+            "description": "文档URL",
+            "pattern": "^[A-Z_]+\\.md$",
+            "minLength": 5,
+            "maxLength": 50
+          }
+        },
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "updateHistory": {
+      "type": "array",
+      "description": "更新历史",
+      "items": {
+        "type": "object",
+        "required": [
+          "version",
+          "date",
+          "updateContent",
+          "updatedBy"
+        ],
+        "properties": {
+          "version": {
+            "type": "string",
+            "description": "版本号",
+            "pattern": "^\\d+\\.\\d+\\.\\d+$"
+          },
+          "date": {
+            "type": "string",
+            "description": "更新日期",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "updateContent": {
+            "type": "string",
+            "description": "更新内容",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "updatedBy": {
+            "type": "string",
+            "description": "更新人",
+            "minLength": 1,
+            "maxLength": 50
+          }
+        },
+        "additionalProperties": false
+      },
+      "minItems": 1
+    }
+  },
+  "additionalProperties": false
+}

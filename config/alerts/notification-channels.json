@@ -1,0 +1,149 @@
+{
+  "channels": [
+    {
+      "name": "email-notifications",
+      "type": "email",
+      "enabled": true,
+      "settings": {
+        "smtp_host": "smtp.gmail.com",
+        "smtp_port": 587,
+        "smtp_username": "your-email@gmail.com",
+        "smtp_password": "your-app-password",
+        "from_address": "alerts@caddy-shopping.com",
+        "to_addresses": [
+          "admin@caddy-shopping.com",
+          "ops@caddy-shopping.com"
+        ]
+      },
+      "filters": {
+        "severities": [
+          "critical",
+          "warning"
+        ]
+      }
+    },
+    {
+      "name": "webhook-notifications",
+      "type": "webhook",
+      "enabled": true,
+      "settings": {
+        "url": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
+        "method": "POST",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "template": {
+          "text": "🚨 {{alert_name}}",
+          "attachments": [
+            {
+              "color": "{{severity}}",
+              "fields": [
+                {
+                  "title": "告警名称",
+                  "value": "{{alert_name}}",
+                  "short": true
+                },
+                {
+                  "title": "严重程度",
+                  "value": "{{severity}}",
+                  "short": true
+                },
+                {
+                  "title": "描述",
+                  "value": "{{description}}",
+                  "short": false
+                },
+                {
+                  "title": "时间",
+                  "value": "{{timestamp}}",
+                  "short": true
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "filters": {
+        "severities": [
+          "critical",
+          "warning"
+        ]
+      }
+    },
+    {
+      "name": "teams-notifications",
+      "type": "webhook",
+      "enabled": false,
+      "settings": {
+        "url": "https://outlook.office.com/webhook/YOUR-TEAMS-WEBHOOK",
+        "method": "POST",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "template": {
+          "@type": "MessageCard",
+          "@context": "http://schema.org/extensions",
+          "themeColor": "{{severity_color}}",
+          "summary": "{{alert_name}}",
+          "sections": [
+            {
+              "activityTitle": "🚨 告警通知",
+              "activitySubtitle": "{{alert_name}}",
+              "facts": [
+                {
+                  "name": "严重程度",
+                  "value": "{{severity}}"
+                },
+                {
+                  "name": "描述",
+                  "value": "{{description}}"
+                },
+                {
+                  "name": "时间",
+                  "value": "{{timestamp}}"
+                }
+              ],
+              "markdown": true
+            }
+          ]
+        }
+      },
+      "filters": {
+        "severities": [
+          "critical"
+        ]
+      }
+    }
+  ],
+  "routing": {
+    "rules": [
+      {
+        "match": {
+          "severity": "critical"
+        },
+        "channels": [
+          "email-notifications",
+          "webhook-notifications",
+          "teams-notifications"
+        ]
+      },
+      {
+        "match": {
+          "severity": "warning"
+        },
+        "channels": [
+          "email-notifications",
+          "webhook-notifications"
+        ]
+      },
+      {
+        "match": {
+          "service": "business"
+        },
+        "channels": [
+          "email-notifications"
+        ]
+      }
+    ]
+  }
+}

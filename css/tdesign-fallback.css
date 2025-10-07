@@ -1,0 +1,158 @@
+/* TDesign Fallback CSS - 基础样式确保功能可用 */
+
+/* 基础重置和变量 */
+:root {
+  --td-brand-color: #0052d9;
+  --td-success-color: #00a870;
+  --td-warning-color: #ed7b2f;
+  --td-error-color: #d54941;
+  --td-gray-color-1: #f3f3f3;
+  --td-gray-color-3: #e7e7e7;
+  --td-gray-color-6: #b9b9b9;
+  --td-gray-color-10: #1a1a1a;
+  --td-font-size-s: 12px;
+  --td-font-size-base: 14px;
+  --td-font-size-m: 16px;
+  --td-border-radius-default: 3px;
+  --td-comp-paddingTB-s: 4px;
+  --td-comp-paddingTB-m: 8px;
+  --td-comp-paddingLR-s: 8px;
+  --td-comp-paddingLR-m: 16px;
+}
+
+/* 基础按钮样式 */
+.t-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--td-comp-paddingTB-m) var(--td-comp-paddingLR-m);
+  font-size: var(--td-font-size-base);
+  border-radius: var(--td-border-radius-default);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  background-color: var(--td-brand-color);
+  color: white;
+  border-color: var(--td-brand-color);
+}
+
+.t-button:hover {
+  opacity: 0.8;
+}
+
+.t-button--variant-outline {
+  background-color: transparent;
+  color: var(--td-brand-color);
+  border-color: var(--td-brand-color);
+}
+
+.t-button--size-small {
+  padding: var(--td-comp-paddingTB-s) var(--td-comp-paddingLR-s);
+  font-size: var(--td-font-size-s);
+}
+
+/* 基础输入框样式 */
+.t-input {
+  display: inline-block;
+  width: 100%;
+  padding: var(--td-comp-paddingTB-m) var(--td-comp-paddingLR-m);
+  font-size: var(--td-font-size-base);
+  border: 1px solid var(--td-gray-color-3);
+  border-radius: var(--td-border-radius-default);
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  transition: border-color 0.2s ease;
+}
+
+.t-input:focus {
+  border-color: var(--td-brand-color);
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-shadow);
+}
+
+/* 基础消息样式 */
+.t-message {
+  padding: var(--td-comp-paddingTB-m) var(--td-comp-paddingLR-m);
+  border-radius: var(--td-border-radius-default);
+  margin-bottom: 8px;
+}
+
+.t-message--theme-success {
+  background-color: #f0f9ff;
+  color: var(--td-success-color);
+  border: 1px solid var(--td-success-color);
+}
+
+.t-message--theme-warning {
+  background-color: #fff7e6;
+  color: var(--td-warning-color);
+  border: 1px solid var(--td-warning-color);
+}
+
+.t-message--theme-error {
+  background-color: #fff1f0;
+  color: var(--td-error-color);
+  border: 1px solid var(--td-error-color);
+}
+
+/* 基础加载样式 */
+.t-loading {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--td-gray-color-3);
+  border-top: 2px solid var(--td-brand-color);
+  border-radius: 50%;
+  animation: t-loading-spin 1s linear infinite;
+}
+
+@keyframes t-loading-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 基础卡片样式 */
+.t-card {
+  background-color: white;
+  border: 1px solid var(--td-gray-color-3);
+  border-radius: var(--td-border-radius-default);
+  padding: var(--td-comp-paddingTB-m) var(--td-comp-paddingLR-m);
+}
+
+/* 基础间距工具类 */
+.t-space-vertical {
+  display: flex;
+  flex-direction: column;
+}
+
+.t-space-horizontal {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.t-space-vertical > * + * {
+  margin-top: 8px;
+}
+
+.t-space-horizontal > * + * {
+  margin-left: 8px;
+}
+
+/* 确保基础功能可用的最小样式 */
+.t-popup, .t-dialog, .t-drawer {
+  position: fixed;
+  z-index: 1000;
+}
+
+.t-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}

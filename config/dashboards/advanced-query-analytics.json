@@ -1,0 +1,773 @@
+{
+  "dashboard": {
+    "id": "advanced-query-analytics",
+    "title": "高级查询分析",
+    "description": "高级查询和数据分析仪表板",
+    "tags": ["analytics", "query", "advanced"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": "query-overview",
+        "title": "查询概览",
+        "type": "stat",
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT COUNT(*) as total_queries FROM query_log WHERE timestamp >= now() - INTERVAL '1 hour'",
+            "datasource": "openobserve",
+            "format": "time_series"
+          },
+          {
+            "refId": "B",
+            "query": "SELECT AVG(duration) as avg_query_duration FROM query_log WHERE timestamp >= now() - INTERVAL '1 hour'",
+            "datasource": "openobserve",
+            "format": "time_series"
+          },
+          {
+            "refId": "C",
+            "query": "SELECT COUNT(DISTINCT user_id) as active_users FROM query_log WHERE timestamp >= now() - INTERVAL '1 hour'",
+            "datasource": "openobserve",
+            "format": "time_series"
+          },
+          {
+            "refId": "D",
+            "query": "SELECT COUNT(*) as cached_queries FROM query_log WHERE cached = true AND timestamp >= now() - INTERVAL '1 hour'",
+            "datasource": "openobserve",
+            "format": "time_series"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "displayMode": "list",
+              "orientation": "horizontal"
+            },
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "displayMode": "list",
+          "orientation": "horizontal"
+        }
+      },
+      {
+        "id": "query-performance",
+        "title": "查询性能分析",
+        "type": "timeseries",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT time_bucket('5 minute', timestamp) as time, AVG(duration) as avg_duration, percentile_cont(0.95) WITHIN GROUP (ORDER BY duration) as p95_duration FROM query_log WHERE timestamp >= now() - INTERVAL '1 hour' GROUP BY time ORDER BY time",
+            "datasource": "openobserve",
+            "format": "time_series"
+          },
+          {
+            "refId": "B",
+            "query": "SELECT time_bucket('5 minute', timestamp) as time, COUNT(*) as query_count FROM query_log WHERE timestamp >= now() - INTERVAL '1 hour' GROUP BY time ORDER BY time",
+            "datasource": "openobserve",
+            "format": "time_series"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              },
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom"
+          },
+          "tooltip": {
+            "mode": "single"
+          }
+        }
+      },
+      {
+        "id": "popular-queries",
+        "title": "热门查询TOP10",
+        "type": "table",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT query_template, COUNT(*) as execution_count, AVG(duration) as avg_duration FROM query_log WHERE timestamp >= now() - INTERVAL '24 hours' GROUP BY query_template ORDER BY execution_count DESC LIMIT 10",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "custom": {
+              "align": "auto",
+              "displayMode": "auto"
+            },
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "execution_count"
+              },
+              "properties": [
+                {
+                  "id": "custom.displayMode",
+                  "value": "color-background"
+                },
+                {
+                  "id": "thresholds",
+                  "value": {
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      },
+                      {
+                        "color": "yellow",
+                        "value": 10
+                      },
+                      {
+                        "color": "red",
+                        "value": 50
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "showHeader": true
+        }
+      },
+      {
+        "id": "slow-queries",
+        "title": "慢查询分析",
+        "type": "table",
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 16
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT query_template, duration, result_count, user_id, timestamp FROM query_log WHERE timestamp >= now() - INTERVAL '24 hours' ORDER BY duration DESC LIMIT 20",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "custom": {
+              "align": "auto",
+              "displayMode": "auto"
+            },
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "duration"
+              },
+              "properties": [
+                {
+                  "id": "custom.displayMode",
+                  "value": "color-background"
+                },
+                {
+                  "id": "thresholds",
+                  "value": {
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      },
+                      {
+                        "color": "yellow",
+                        "value": 1000
+                      },
+                      {
+                        "color": "red",
+                        "value": 5000
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "showHeader": true
+        }
+      },
+      {
+        "id": "query-errors",
+        "title": "查询错误分析",
+        "type": "table",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 24
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT error_type, error_message, COUNT(*) as error_count FROM query_log WHERE status = 'error' AND timestamp >= now() - INTERVAL '24 hours' GROUP BY error_type, error_message ORDER BY error_count DESC LIMIT 10",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "custom": {
+              "align": "auto",
+              "displayMode": "auto"
+            },
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "error_count"
+              },
+              "properties": [
+                {
+                  "id": "custom.displayMode",
+                  "value": "color-background"
+                },
+                {
+                  "id": "thresholds",
+                  "value": {
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      },
+                      {
+                        "color": "yellow",
+                        "value": 5
+                      },
+                      {
+                        "color": "red",
+                        "value": 20
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "showHeader": true
+        }
+      },
+      {
+        "id": "cache-performance",
+        "title": "缓存性能分析",
+        "type": "pie",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 24
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT cached ? 'cached' : 'not_cached' as cache_status, COUNT(*) as query_count FROM query_log WHERE timestamp >= now() - INTERVAL '24 hours' GROUP BY cache_status",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            },
+            "mappings": []
+          },
+          "overrides": []
+        },
+        "options": {
+          "displayMode": "list",
+          "orientation": "horizontal"
+        }
+      },
+      {
+        "id": "data-source-analysis",
+        "title": "数据源分析",
+        "type": "pie",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 32
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT stream, COUNT(*) as query_count FROM query_log WHERE timestamp >= now() - INTERVAL '24 hours' GROUP BY stream ORDER BY query_count DESC",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            },
+            "mappings": []
+          },
+          "overrides": []
+        },
+        "options": {
+          "displayMode": "list",
+          "orientation": "horizontal"
+        }
+      },
+      {
+        "id": "user-query-activity",
+        "title": "用户查询活动",
+        "type": "heatmap",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 32
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT time_bucket('1 hour', timestamp) as hour, user_id, COUNT(*) as query_count FROM query_log WHERE timestamp >= now() - INTERVAL '24 hours' GROUP BY hour, user_id ORDER BY hour",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            },
+            "mappings": []
+          },
+          "overrides": []
+        },
+        "options": {
+          "displayMode": "list",
+          "orientation": "horizontal"
+        }
+      },
+      {
+        "id": "query-result-size",
+        "title": "查询结果大小分析",
+        "type": "histogram",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 40
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT result_count FROM query_log WHERE timestamp >= now() - INTERVAL '24 hours' AND result_count IS NOT NULL",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              },
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        }
+      },
+      {
+        "id": "saved-queries",
+        "title": "保存的查询统计",
+        "type": "table",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 40
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT query_name, COUNT(*) as execution_count, AVG(duration) as avg_duration, MAX(executed_at) as last_executed FROM saved_query_log WHERE executed_at >= now() - INTERVAL '24 hours' GROUP BY query_name ORDER BY execution_count DESC",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "custom": {
+              "align": "auto",
+              "displayMode": "auto"
+            },
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "execution_count"
+              },
+              "properties": [
+                {
+                  "id": "custom.displayMode",
+                  "value": "color-background"
+                },
+                {
+                  "id": "thresholds",
+                  "value": {
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      },
+                      {
+                        "color": "yellow",
+                        "value": 5
+                      },
+                      {
+                        "color": "red",
+                        "value": 20
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "showHeader": true
+        }
+      },
+      {
+        "id": "query-complexity",
+        "title": "查询复杂度分析",
+        "type": "pie",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 48
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT CASE WHEN complexity_score < 3 THEN 'simple' WHEN complexity_score < 7 THEN 'medium' ELSE 'complex' END as complexity_level, COUNT(*) as query_count FROM query_log WHERE timestamp >= now() - INTERVAL '24 hours' GROUP BY complexity_level",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            },
+            "mappings": []
+          },
+          "overrides": []
+        },
+        "options": {
+          "displayMode": "list",
+          "orientation": "horizontal"
+        }
+      },
+      {
+        "id": "query-trends",
+        "title": "查询趋势分析",
+        "type": "timeseries",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 48
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT time_bucket('1 hour', timestamp) as time, COUNT(*) as total_queries, COUNT(CASE WHEN cached = true THEN 1 END) as cached_queries FROM query_log WHERE timestamp >= now() - INTERVAL '24 hours' GROUP BY time ORDER BY time",
+            "datasource": "openobserve",
+            "format": "time_series"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              },
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom"
+          },
+          "tooltip": {
+            "mode": "single"
+          }
+        }
+      }
+    ],
+    "time": {
+      "from": "now-24h",
+      "to": "now"
+    },
+    "refresh": "5m"
+  }
+}

@@ -1,0 +1,486 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/security-constants.schema.json",
+  "title": "安全常量配置Schema",
+  "description": "安全常量配置的JSON Schema定义",
+  "type": "object",
+  "required": [
+    "SEVERITY_WEIGHTS",
+    "SARIF_CATEGORIES",
+    "SARIF_RULES",
+    "LOCALIZATION",
+    "SYSTEM_MAPPING"
+  ],
+  "properties": {
+    "SEVERITY_WEIGHTS": {
+      "type": "object",
+      "description": "严重度权重配置",
+      "required": ["critical", "high", "medium", "low"],
+      "properties": {
+        "critical": {
+          "type": "integer",
+          "description": "严重级别权重",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "high": {
+          "type": "integer",
+          "description": "高级别权重",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "medium": {
+          "type": "integer",
+          "description": "中级别权重",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "low": {
+          "type": "integer",
+          "description": "低级别权重",
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "additionalProperties": false
+    },
+    "SARIF_CATEGORIES": {
+      "type": "object",
+      "description": "SARIF类别配置",
+      "required": [
+        "authentication",
+        "inputValidation",
+        "database",
+        "webSecurity",
+        "businessLogic",
+        "apiSecurity",
+        "supplyChain",
+        "logging",
+        "infrastructure"
+      ],
+      "properties": {
+        "authentication": {
+          "type": "string",
+          "description": "认证类别ID"
+        },
+        "inputValidation": {
+          "type": "string",
+          "description": "输入验证类别ID"
+        },
+        "database": {
+          "type": "string",
+          "description": "数据库类别ID"
+        },
+        "webSecurity": {
+          "type": "string",
+          "description": "Web安全类别ID"
+        },
+        "businessLogic": {
+          "type": "string",
+          "description": "业务逻辑类别ID"
+        },
+        "apiSecurity": {
+          "type": "string",
+          "description": "API安全类别ID"
+        },
+        "supplyChain": {
+          "type": "string",
+          "description": "供应链安全类别ID"
+        },
+        "logging": {
+          "type": "string",
+          "description": "日志记录类别ID"
+        },
+        "infrastructure": {
+          "type": "string",
+          "description": "基础设施类别ID"
+        }
+      },
+      "additionalProperties": false
+    },
+    "SARIF_RULES": {
+      "type": "object",
+      "description": "SARIF规则配置",
+      "patternProperties": {
+        "^[a-z0-9-]+$": {
+          "type": "object",
+          "required": [
+            "id",
+            "name",
+            "shortDescription",
+            "fullDescription",
+            "category",
+            "severity",
+            "helpUri"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "规则ID",
+              "pattern": "^[a-z0-9-]+$"
+            },
+            "name": {
+              "type": "string",
+              "description": "规则名称",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "shortDescription": {
+              "type": "object",
+              "description": "简短描述",
+              "required": ["text"],
+              "properties": {
+                "text": {
+                  "type": "string",
+                  "description": "描述文本",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              },
+              "additionalProperties": false
+            },
+            "fullDescription": {
+              "type": "object",
+              "description": "完整描述",
+              "required": ["text"],
+              "properties": {
+                "text": {
+                  "type": "string",
+                  "description": "描述文本",
+                  "minLength": 1,
+                  "maxLength": 1000
+                }
+              },
+              "additionalProperties": false
+            },
+            "category": {
+              "type": "string",
+              "description": "规则类别",
+              "enum": [
+                "authentication",
+                "inputValidation",
+                "database",
+                "webSecurity",
+                "businessLogic",
+                "apiSecurity",
+                "supplyChain",
+                "logging",
+                "infrastructure"
+              ]
+            },
+            "severity": {
+              "type": "string",
+              "description": "严重度",
+              "enum": ["critical", "high", "medium", "low"]
+            },
+            "helpUri": {
+              "type": "string",
+              "description": "帮助URI",
+              "format": "uri",
+              "minLength": 1,
+              "maxLength": 500
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    "LOCALIZATION": {
+      "type": "object",
+      "description": "本地化配置",
+      "required": ["supportedLanguages", "defaultLanguage", "labels"],
+      "properties": {
+        "supportedLanguages": {
+          "type": "array",
+          "description": "支持的语言列表",
+          "items": {
+            "type": "string",
+            "enum": ["zh", "en"]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "defaultLanguage": {
+          "type": "string",
+          "description": "默认语言",
+          "enum": ["zh", "en"]
+        },
+        "labels": {
+          "type": "object",
+          "description": "标签配置",
+          "required": ["zh", "en"],
+          "properties": {
+            "zh": {
+              "type": "object",
+              "description": "中文标签",
+              "required": [
+                "heatmapTitle",
+                "systemSeverity",
+                "legend",
+                "critical",
+                "high",
+                "medium",
+                "low",
+                "updatePrefix",
+                "dataSource",
+                "updateFrequency",
+                "owner",
+                "generateScript",
+                "triggerConditions",
+                "outputLocation",
+                "ciIntegration",
+                "noDataMessage",
+                "errorLoadingData"
+              ],
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "en": {
+              "type": "object",
+              "description": "英文标签",
+              "required": [
+                "heatmapTitle",
+                "systemSeverity",
+                "legend",
+                "critical",
+                "high",
+                "medium",
+                "low",
+                "updatePrefix",
+                "dataSource",
+                "updateFrequency",
+                "owner",
+                "generateScript",
+                "triggerConditions",
+                "outputLocation",
+                "ciIntegration",
+                "noDataMessage",
+                "errorLoadingData"
+              ],
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "anchors": {
+          "type": "object",
+          "description": "锚点配置",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "SYSTEM_MAPPING": {
+      "type": "object",
+      "description": "系统映射配置",
+      "patternProperties": {
+        "^[一-龥a-zA-Z0-9]+$": {
+          "type": "object",
+          "required": ["keywords", "priority", "color", "aliases"],
+          "properties": {
+            "keywords": {
+              "type": "array",
+              "description": "关键词列表",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 50
+              },
+              "uniqueItems": true
+            },
+            "priority": {
+              "type": "integer",
+              "description": "优先级",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "color": {
+              "type": "string",
+              "description": "颜色代码",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            },
+            "aliases": {
+              "type": "array",
+              "description": "别名列表",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 50
+              },
+              "uniqueItems": true
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    "SEVERITY_COLORS": {
+      "type": "object",
+      "description": "严重度颜色配置",
+      "required": ["critical", "high", "medium", "low", "empty"],
+      "properties": {
+        "critical": {
+          "type": "object",
+          "description": "严重级别颜色",
+          "required": ["bg", "text"],
+          "properties": {
+            "bg": {
+              "type": "string",
+              "description": "背景色",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            },
+            "text": {
+              "type": "string",
+              "description": "文本色",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            }
+          },
+          "additionalProperties": false
+        },
+        "high": {
+          "type": "object",
+          "description": "高级别颜色",
+          "required": ["bg", "text"],
+          "properties": {
+            "bg": {
+              "type": "string",
+              "description": "背景色",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            },
+            "text": {
+              "type": "string",
+              "description": "文本色",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            }
+          },
+          "additionalProperties": false
+        },
+        "medium": {
+          "type": "object",
+          "description": "中级别颜色",
+          "required": ["bg", "text"],
+          "properties": {
+            "bg": {
+              "type": "string",
+              "description": "背景色",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            },
+            "text": {
+              "type": "string",
+              "description": "文本色",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            }
+          },
+          "additionalProperties": false
+        },
+        "low": {
+          "type": "object",
+          "description": "低级别颜色",
+          "required": ["bg", "text"],
+          "properties": {
+            "bg": {
+              "type": "string",
+              "description": "背景色",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            },
+            "text": {
+              "type": "string",
+              "description": "文本色",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            }
+          },
+          "additionalProperties": false
+        },
+        "empty": {
+          "type": "object",
+          "description": "空值颜色",
+          "required": ["bg", "text"],
+          "properties": {
+            "bg": {
+              "type": "string",
+              "description": "背景色",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            },
+            "text": {
+              "type": "string",
+              "description": "文本色",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "DIMENSIONS": {
+      "type": "object",
+      "description": "尺寸配置",
+      "required": [
+        "cellWidth",
+        "cellHeight",
+        "headerHeight",
+        "headerWidth",
+        "legendHeight"
+      ],
+      "properties": {
+        "cellWidth": {
+          "type": "integer",
+          "description": "单元格宽度",
+          "minimum": 50,
+          "maximum": 500
+        },
+        "cellHeight": {
+          "type": "integer",
+          "description": "单元格高度",
+          "minimum": 20,
+          "maximum": 200
+        },
+        "headerHeight": {
+          "type": "integer",
+          "description": "表头高度",
+          "minimum": 20,
+          "maximum": 100
+        },
+        "headerWidth": {
+          "type": "integer",
+          "description": "表头宽度",
+          "minimum": 50,
+          "maximum": 300
+        },
+        "legendHeight": {
+          "type": "integer",
+          "description": "图例高度",
+          "minimum": 30,
+          "maximum": 150
+        }
+      },
+      "additionalProperties": false
+    },
+    "DATA_SOURCE": {
+      "type": "object",
+      "description": "数据源配置",
+      "required": ["primary", "fallback"],
+      "properties": {
+        "primary": {
+          "type": "string",
+          "description": "主数据源",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "fallback": {
+          "type": "string",
+          "description": "备用数据源",
+          "minLength": 1,
+          "maxLength": 200
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

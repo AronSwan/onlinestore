@@ -1,0 +1,81 @@
+# Dependabot 配置文件
+# 自动化依赖更新和安全补丁
+
+version: 2
+updates:
+  # 前端依赖更新
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "maintainer"
+    assignees:
+      - "maintainer"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "frontend"
+    ignore:
+      # 忽略主要版本更新（需要手动处理）
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    allow:
+      # 只允许安全更新和补丁版本
+      - dependency-type: "direct"
+        update-types: ["security-update", "version-update:semver-patch", "version-update:semver-minor"]
+      - dependency-type: "indirect"
+        update-types: ["security-update"]
+
+  # 后端依赖更新
+  - package-ecosystem: "npm"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:30"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "maintainer"
+    assignees:
+      - "maintainer"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "backend"
+    ignore:
+      # 忽略主要版本更新（需要手动处理）
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    allow:
+      # 只允许安全更新和补丁版本
+      - dependency-type: "direct"
+        update-types: ["security-update", "version-update:semver-patch", "version-update:semver-minor"]
+      - dependency-type: "indirect"
+        update-types: ["security-update"]
+
+  # GitHub Actions 工作流更新
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      day: "first-monday"
+      time: "09:00"
+      timezone: "Asia/Shanghai"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "ci/cd"
+      - "github-actions"

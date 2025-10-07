@@ -1,0 +1,59 @@
+import {
+  PaymentStrategy,
+  PaymentRequest,
+  PaymentResponse,
+  PaymentQueryResponse,
+  PaymentCallbackResponse,
+  RefundRequest,
+  RefundResponse,
+} from './payment-strategy.interface';
+
+export class AlipayStrategy extends PaymentStrategy {
+  async createPayment(request: PaymentRequest): Promise<PaymentResponse> {
+    // TODO: 集成支付宝SDK
+    // 这里是模拟实现，实际需要调用支付宝API
+
+    const paymentId = `ALIPAY_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+
+    return {
+      success: true,
+      paymentId,
+      redirectUrl: `https://openapi.alipay.com/gateway.do?payment_id=${paymentId}`,
+      qrCode: `alipay://pay?payment_id=${paymentId}`,
+      thirdPartyTransactionId: paymentId,
+    };
+  }
+
+  async queryPayment(paymentId: string): Promise<PaymentQueryResponse> {
+    // TODO: 查询支付宝支付状态
+    return {
+      status: 'success',
+      thirdPartyTransactionId: paymentId,
+    };
+  }
+
+  async handleCallback(data: any): Promise<PaymentCallbackResponse> {
+    // TODO: 处理支付宝回调
+    return {
+      success: true,
+      paymentId: data.out_trade_no,
+      status: 'success',
+      thirdPartyTransactionId: data.trade_no,
+    };
+  }
+
+  async refund(request: RefundRequest): Promise<RefundResponse> {
+    // TODO: 支付宝退款
+    return {
+      success: true,
+      refundId: `REFUND_${request.paymentId}_${Date.now()}`,
+      message: '退款成功',
+    };
+  }
+
+  validateCallback(data: any): boolean {
+    // TODO: 验证支付宝回调签名
+    // 这里应该验证支付宝的签名
+    return true;
+  }
+}

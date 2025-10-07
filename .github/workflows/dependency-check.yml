@@ -1,0 +1,175 @@
+name: 依赖安全检查
+
+on:
+  schedule:
+    # 每周一早上 8 点运行
+    - cron: '0 8 * * 1'
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch: # 允许手动触发
+
+jobs:
+  dependency-audit:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+      
+    - name: 设置 Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        
+    - name: 安装前端依赖
+      run: npm ci
+      
+    - name: 安装后端依赖
+      run: |
+        cd backend
+        npm ci
+        
+    - name: 前端安全审计
+      run: |
+        echo "=== 前端安全审计 ==="
+        npm audit --audit-level=moderate
+      continue-on-error: true
+      
+    - name: 后端安全审计
+      run: |
+        echo "=== 后端安全审计 ==="
+        cd backend
+        npm audit --audit-level=moderate
+      continue-on-error: true
+      
+    - name: 检查过时依赖
+      run: |
+        echo "=== 前端过时依赖 ==="
+        npm outdated || true
+        echo "=== 后端过时依赖 ==="
+        cd backend
+        npm outdated || true
+        
+    - name: 运行自定义依赖检查
+      run: |
+        node scripts/update-dependencies.js --verbose
+        
+    - name: 上传依赖报告
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: dependency-report-node-${{ matrix.node-version }}
+        path: |
+          docs/dependency-update-report.json
+          logs/dependency-update.log
+        retention-days: 30
+        
+    - name: 创建 Issue（如果发现安全漏洞）
+      if: failure()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const path = require('path');
+          
+          try {
+            const reportPath = path.join(process.cwd(), 'docs/dependency-update-report.json');
+            if (fs.existsSync(reportPath)) {
+              const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+              
+              const criticalRecommendations = report.recommendations.filter(
+                rec => rec.priority === 'critical'
+              );
+              
+              if (criticalRecommendations.length > 0) {
+                const issueBody = `
+          ## 🚨 发现安全漏洞
+          
+          自动依赖检查发现了需要立即处理的安全问题：
+          
+          ${criticalRecommendations.map(rec => `- ${rec.message}`).join('\n')}
+          
+          ### 检查详情
+          - **检查时间**: ${report.timestamp}
+          - **Node.js 版本**: ${report.nodeVersion.current}
+          
+          ### 前端安全状况
+          - **漏洞总数**: ${report.frontend.security.totalVulnerabilities || 0}
+          
+          ### 后端安全状况
+          - **漏洞总数**: ${report.backend.security.totalVulnerabilities || 0}
+          
+          ### 建议操作
+          1. 立即运行 \`npm audit fix\` 修复自动可修复的漏洞
+          2. 手动检查和更新无法自动修复的依赖
+          3. 运行完整测试套件确保更新不会破坏功能
+          4. 部署前进行安全验证
+          
+          ---
+          *此 Issue 由自动化依赖检查工作流创建*
+                `;
+                
+                await github.rest.issues.create({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  title: `🚨 安全漏洞警报 - ${new Date().toISOString().split('T')[0]}`,
+                  body: issueBody,
+                  labels: ['security', 'dependencies', 'high-priority']
+                });
+              }
+            }
+          } catch (error) {
+            console.log('创建 Issue 时出错:', error);
+          }
+
+  license-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+      
+    - name: 设置 Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+        
+    - name: 安装 license-checker
+      run: npm install -g license-checker
+      
+    - name: 检查前端许可证
+      run: |
+        echo "=== 前端许可证检查 ==="
+        npm ci
+        license-checker --summary
+        license-checker --onlyAllow 'MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;Unlicense' || true
+        
+    - name: 检查后端许可证
+      run: |
+        echo "=== 后端许可证检查 ==="
+        cd backend
+        npm ci
+        license-checker --summary
+        license-checker --onlyAllow 'MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;Unlicense' || true
+
+  dependency-review:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+      
+    - name: 依赖审查
+      uses: actions/dependency-review-action@v4
+      with:
+        fail-on-severity: moderate
+        allow-licenses: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, Unlicense

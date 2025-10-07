@@ -1,0 +1,181 @@
+{
+  "id": "application-performance",
+  "title": "应用性能监控仪表板",
+  "description": "应用程序性能指标和健康状态",
+  "tags": [
+    "application",
+    "performance"
+  ],
+  "panels": [
+    {
+      "id": 1,
+      "title": "请求响应时间",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "query": "SELECT histogram_quantile(0.50, rate(app_http_request_duration_seconds_bucket[5m])) FROM system-metrics WHERE time > NOW() - 1h GROUP BY time(1m)",
+          "legendFormat": "50th percentile"
+        },
+        {
+          "query": "SELECT histogram_quantile(0.95, rate(app_http_request_duration_seconds_bucket[5m])) FROM system-metrics WHERE time > NOW() - 1h GROUP BY time(1m)",
+          "legendFormat": "95th percentile"
+        },
+        {
+          "query": "SELECT histogram_quantile(0.99, rate(app_http_request_duration_seconds_bucket[5m])) FROM system-metrics WHERE time > NOW() - 1h GROUP BY time(1m)",
+          "legendFormat": "99th percentile"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "请求量",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "query": "SELECT rate(app_http_requests_total[5m]) FROM system-metrics WHERE time > NOW() - 1h GROUP BY time(1m), method",
+          "legendFormat": "{{method}}"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "错误率",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "query": "SELECT rate(app_http_requests_total{status_code=~\"5..\"}[5m]) / rate(app_http_requests_total[5m]) * 100 FROM system-metrics WHERE time > NOW() - 1h GROUP BY time(1m)",
+          "legendFormat": "5xx Error Rate"
+        },
+        {
+          "query": "SELECT rate(app_http_requests_total{status_code=~\"4..\"}[5m]) / rate(app_http_requests_total[5m]) * 100 FROM system-metrics WHERE time > NOW() - 1h GROUP BY time(1m)",
+          "legendFormat": "4xx Error Rate"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "yAxes": [
+          {
+            "max": 100,
+            "min": 0,
+            "show": true,
+            "label": "Error Rate (%)"
+          }
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "title": "活跃连接数",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "query": "SELECT app_active_connections FROM system-metrics WHERE time > NOW() - 1h GROUP BY time(1m)",
+          "legendFormat": "Active Connections"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "HTTP状态码分布",
+      "type": "piechart",
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "query": "SELECT count(*) FROM application-logs WHERE time > NOW() - 1h GROUP BY status_code",
+          "legendFormat": "{{status_code}}"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "right"
+        },
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "最慢的API端点",
+      "type": "table",
+      "gridPos": {
+        "x": 12,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "query": "SELECT route, avg(response_time) as avg_response_time, count(*) as request_count FROM application-logs WHERE time > NOW() - 1h GROUP BY route ORDER BY avg_response_time DESC LIMIT 10",
+          "legendFormat": "{{route}}"
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Avg Response Time"
+          }
+        ]
+      }
+    }
+  ],
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "refresh": "30s"
+}

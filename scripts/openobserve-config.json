@@ -1,0 +1,35 @@
+{
+  "development": {
+    "url": "http://localhost:5080",
+    "organization": "default",
+    "username": "admin@example.com",
+    "password": "ComplexPass#123",
+    "stream": "default",
+    "timeout": 30000,
+    "maxRetries": 3,
+    "indexWaitTime": 2000,
+    "queryLimit": 100
+  },
+  "production": {
+    "url": "https://openobserve.yourcompany.com",
+    "organization": "production",
+    "username": "",
+    "password": "",
+    "stream": "production",
+    "timeout": 60000,
+    "maxRetries": 5,
+    "indexWaitTime": 5000,
+    "queryLimit": 1000
+  },
+  "demo": {
+    "url": "https://demo.openobserve.ai",
+    "organization": "demo",
+    "username": "demo@example.com",
+    "password": "demo123",
+    "stream": "demo",
+    "timeout": 30000,
+    "maxRetries": 3,
+    "indexWaitTime": 3000,
+    "queryLimit": 500
+  }
+}

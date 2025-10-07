@@ -1,0 +1,47 @@
+# OpenObserve通知配置
+notifications:
+  - name: "email"
+    type: "email"
+    enabled: true
+    config:
+      smtp_host: "smtp.example.com"
+      smtp_port: 587
+      smtp_username: "alerts@example.com"
+      smtp_password: "password"
+      from: "alerts@example.com"
+      to: ["admin@example.com", "ops@example.com"]
+      
+  - name: "webhook"
+    type: "webhook"
+    enabled: true
+    config:
+      url: "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK"
+      method: "POST"
+      headers:
+        Content-Type: "application/json"
+      template: |
+        {
+          "text": "告警: {{ .alert.name }}",
+          "attachments": [
+            {
+              "color": "{{ if eq .alert.severity \"critical\" }}danger{{ else }}warning{{ end }}",
+              "fields": [
+                {
+                  "title": "描述",
+                  "value": "{{ .alert.description }}",
+                  "short": false
+                },
+                {
+                  "title": "严重程度",
+                  "value": "{{ .alert.severity }}",
+                  "short": true
+                },
+                {
+                  "title": "时间",
+                  "value": "{{ .alert.timestamp }}",
+                  "short": true
+                }
+              ]
+            }
+          ]
+        }

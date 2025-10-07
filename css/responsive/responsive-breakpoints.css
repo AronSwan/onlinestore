@@ -1,0 +1,729 @@
+/* ==========================================================================
+   响应式断点系统 - Reich Luxury Shopping Platform
+   用于统一管理网站的响应式设计断点
+   更新时间: 2025-09-23
+   来源: AI assistant - 根据改进任务清单优化
+   ========================================================================== */
+
+/* 导入变量系统 */
+@import url('../variables/complete-variables.css');
+
+/* 响应式断点定义 - 基于主流设备分析 */
+/* 断点策略：移动优先，渐进增强 */
+
+/* 基础断点变量 - 定义在CSS变量中以便全局使用 */
+:root {
+  /* 断点定义 - 基于市场主流设备分析 */
+  --breakpoint-xs: 320px;    /* 小型手机 (iPhone SE, Galaxy S10e等) */
+  --breakpoint-sm: 576px;    /* 大型手机 (iPhone 12/13/14, Galaxy S21等) */
+  --breakpoint-md: 768px;    /* 小型平板 (iPad Mini, Nexus 7等) */
+  --breakpoint-lg: 992px;    /* 大型平板 (iPad, Surface等) */
+  --breakpoint-xl: 1200px;   /* 小型桌面 (MacBook Air, 小型显示器等) */
+  --breakpoint-xxl: 1400px; /* 大型桌面 (iMac, 大型显示器等) */
+  
+  /* 容器最大宽度 - 对应不同断点 */
+  --container-max-width-xs: 100%;
+  --container-max-width-sm: 540px;
+  --container-max-width-md: 720px;
+  --container-max-width-lg: 960px;
+  --container-max-width-xl: 1140px;
+  --container-max-width-xxl: 1320px;
+  
+  /* 网格列数和间距 - 响应式调整 */
+  --grid-columns-xs: 4;
+  --grid-columns-sm: 6;
+  --grid-columns-md: 8;
+  --grid-columns-lg: 10;
+  --grid-columns-xl: 12;
+  --grid-columns-xxl: 12;
+  
+  /* 间距缩放因子 - 基于断点调整 */
+  --spacing-scale-xs: 0.875;
+  --spacing-scale-sm: 0.925;
+  --spacing-scale-md: 1;
+  --spacing-scale-lg: 1.125;
+  --spacing-scale-xl: 1.25;
+  --spacing-scale-xxl: 1.375;
+  
+  /* 字体缩放因子 - 基于断点调整 */
+  --font-scale-xs: 0.875;
+  --font-scale-sm: 0.925;
+  --font-scale-md: 1;
+  --font-scale-lg: 1.125;
+  --font-scale-xl: 1.25;
+  --font-scale-xxl: 1.375;
+}
+
+/* ==========================================================================
+   响应式容器类
+   ========================================================================== */
+
+.container {
+  width: 100%;
+  margin-right: auto;
+  margin-left: auto;
+  padding-right: var(--spacing-4);
+  padding-left: var(--spacing-4);
+}
+
+/* 响应式容器宽度 */
+@media (min-width: 576px) {
+  .container {
+    max-width: var(--container-max-width-sm);
+    padding-right: var(--spacing-3);
+    padding-left: var(--spacing-3);
+  }
+}
+
+@media (min-width: 768px) {
+  .container {
+    max-width: var(--container-max-width-md);
+    padding-right: var(--spacing-4);
+    padding-left: var(--spacing-4);
+  }
+}
+
+@media (min-width: 992px) {
+  .container {
+    max-width: var(--container-max-width-lg);
+    padding-right: var(--spacing-5);
+    padding-left: var(--spacing-5);
+  }
+}
+
+@media (min-width: 1200px) {
+  .container {
+    max-width: var(--container-max-width-xl);
+    padding-right: var(--spacing-6);
+    padding-left: var(--spacing-6);
+  }
+}
+
+@media (min-width: 1400px) {
+  .container {
+    max-width: var(--container-max-width-xxl);
+    padding-right: var(--spacing-8);
+    padding-left: var(--spacing-8);
+  }
+}
+
+/* 流体容器 - 占满整个视口宽度 */
+.container-fluid {
+  width: 100%;
+  margin-right: auto;
+  margin-left: auto;
+  padding-right: var(--spacing-4);
+  padding-left: var(--spacing-4);
+}
+
+/* ==========================================================================
+   响应式网格系统
+   ========================================================================== */
+
+.grid {
+  display: grid;
+  gap: var(--spacing-4);
+  grid-template-columns: repeat(var(--grid-columns-xs), 1fr);
+}
+
+@media (min-width: 576px) {
+  .grid {
+    gap: calc(var(--spacing-4) * var(--spacing-scale-sm));
+    grid-template-columns: repeat(var(--grid-columns-sm), 1fr);
+  }
+}
+
+@media (min-width: 768px) {
+  .grid {
+    gap: calc(var(--spacing-4) * var(--spacing-scale-md));
+    grid-template-columns: repeat(var(--grid-columns-md), 1fr);
+  }
+}
+
+@media (min-width: 992px) {
+  .grid {
+    gap: calc(var(--spacing-4) * var(--spacing-scale-lg));
+    grid-template-columns: repeat(var(--grid-columns-lg), 1fr);
+  }
+}
+
+@media (min-width: 1200px) {
+  .grid {
+    gap: calc(var(--spacing-4) * var(--spacing-scale-xl));
+    grid-template-columns: repeat(var(--grid-columns-xl), 1fr);
+  }
+}
+
+@media (min-width: 1400px) {
+  .grid {
+    gap: calc(var(--spacing-4) * var(--spacing-scale-xxl));
+    grid-template-columns: repeat(var(--grid-columns-xxl), 1fr);
+  }
+}
+
+/* 网格列跨度类 */
+.grid-col-span-1 { grid-column: span 1; }
+.grid-col-span-2 { grid-column: span 2; }
+.grid-col-span-3 { grid-column: span 3; }
+.grid-col-span-4 { grid-column: span 4; }
+.grid-col-span-5 { grid-column: span 5; }
+.grid-col-span-6 { grid-column: span 6; }
+.grid-col-span-7 { grid-column: span 7; }
+.grid-col-span-8 { grid-column: span 8; }
+.grid-col-span-9 { grid-column: span 9; }
+.grid-col-span-10 { grid-column: span 10; }
+.grid-col-span-11 { grid-column: span 11; }
+.grid-col-span-12 { grid-column: span 12; }
+
+/* 响应式网格列跨度 */
+@media (min-width: 576px) {
+  .grid-col-span-sm-1 { grid-column: span 1; }
+  .grid-col-span-sm-2 { grid-column: span 2; }
+  .grid-col-span-sm-3 { grid-column: span 3; }
+  .grid-col-span-sm-4 { grid-column: span 4; }
+  .grid-col-span-sm-5 { grid-column: span 5; }
+  .grid-col-span-sm-6 { grid-column: span 6; }
+}
+
+@media (min-width: 768px) {
+  .grid-col-span-md-1 { grid-column: span 1; }
+  .grid-col-span-md-2 { grid-column: span 2; }
+  .grid-col-span-md-3 { grid-column: span 3; }
+  .grid-col-span-md-4 { grid-column: span 4; }
+  .grid-col-span-md-5 { grid-column: span 5; }
+  .grid-col-span-md-6 { grid-column: span 6; }
+  .grid-col-span-md-7 { grid-column: span 7; }
+  .grid-col-span-md-8 { grid-column: span 8; }
+}
+
+@media (min-width: 992px) {
+  .grid-col-span-lg-1 { grid-column: span 1; }
+  .grid-col-span-lg-2 { grid-column: span 2; }
+  .grid-col-span-lg-3 { grid-column: span 3; }
+  .grid-col-span-lg-4 { grid-column: span 4; }
+  .grid-col-span-lg-5 { grid-column: span 5; }
+  .grid-col-span-lg-6 { grid-column: span 6; }
+  .grid-col-span-lg-7 { grid-column: span 7; }
+  .grid-col-span-lg-8 { grid-column: span 8; }
+  .grid-col-span-lg-9 { grid-column: span 9; }
+  .grid-col-span-lg-10 { grid-column: span 10; }
+  .grid-col-span-lg-11 { grid-column: span 11; }
+  .grid-col-span-lg-12 { grid-column: span 12; }
+}
+
+@media (min-width: 1200px) {
+  .grid-col-span-xl-1 { grid-column: span 1; }
+  .grid-col-span-xl-2 { grid-column: span 2; }
+  .grid-col-span-xl-3 { grid-column: span 3; }
+  .grid-col-span-xl-4 { grid-column: span 4; }
+  .grid-col-span-xl-5 { grid-column: span 5; }
+  .grid-col-span-xl-6 { grid-column: span 6; }
+  .grid-col-span-xl-7 { grid-column: span 7; }
+  .grid-col-span-xl-8 { grid-column: span 8; }
+  .grid-col-span-xl-9 { grid-column: span 9; }
+  .grid-col-span-xl-10 { grid-column: span 10; }
+  .grid-col-span-xl-11 { grid-column: span 11; }
+  .grid-col-span-xl-12 { grid-column: span 12; }
+}
+
+@media (min-width: 1400px) {
+  .grid-col-span-xxl-1 { grid-column: span 1; }
+  .grid-col-span-xxl-2 { grid-column: span 2; }
+  .grid-col-span-xxl-3 { grid-column: span 3; }
+  .grid-col-span-xxl-4 { grid-column: span 4; }
+  .grid-col-span-xxl-5 { grid-column: span 5; }
+  .grid-col-span-xxl-6 { grid-column: span 6; }
+  .grid-col-span-xxl-7 { grid-column: span 7; }
+  .grid-col-span-xxl-8 { grid-column: span 8; }
+  .grid-col-span-xxl-9 { grid-column: span 9; }
+  .grid-col-span-xxl-10 { grid-column: span 10; }
+  .grid-col-span-xxl-11 { grid-column: span 11; }
+  .grid-col-span-xxl-12 { grid-column: span 12; }
+}
+
+/* ==========================================================================
+   响应式间距系统
+   ========================================================================== */
+
+/* 响应式边距 */
+.m-xs-0 { margin: 0 !important; }
+.m-xs-1 { margin: calc(var(--spacing-1) * var(--spacing-scale-xs)) !important; }
+.m-xs-2 { margin: calc(var(--spacing-2) * var(--spacing-scale-xs)) !important; }
+.m-xs-3 { margin: calc(var(--spacing-3) * var(--spacing-scale-xs)) !important; }
+.m-xs-4 { margin: calc(var(--spacing-4) * var(--spacing-scale-xs)) !important; }
+.m-xs-5 { margin: calc(var(--spacing-5) * var(--spacing-scale-xs)) !important; }
+.m-xs-6 { margin: calc(var(--spacing-6) * var(--spacing-scale-xs)) !important; }
+
+@media (min-width: 576px) {
+  .m-sm-0 { margin: 0 !important; }
+  .m-sm-1 { margin: calc(var(--spacing-1) * var(--spacing-scale-sm)) !important; }
+  .m-sm-2 { margin: calc(var(--spacing-2) * var(--spacing-scale-sm)) !important; }
+  .m-sm-3 { margin: calc(var(--spacing-3) * var(--spacing-scale-sm)) !important; }
+  .m-sm-4 { margin: calc(var(--spacing-4) * var(--spacing-scale-sm)) !important; }
+  .m-sm-5 { margin: calc(var(--spacing-5) * var(--spacing-scale-sm)) !important; }
+  .m-sm-6 { margin: calc(var(--spacing-6) * var(--spacing-scale-sm)) !important; }
+}
+
+@media (min-width: 768px) {
+  .m-md-0 { margin: 0 !important; }
+  .m-md-1 { margin: calc(var(--spacing-1) * var(--spacing-scale-md)) !important; }
+  .m-md-2 { margin: calc(var(--spacing-2) * var(--spacing-scale-md)) !important; }
+  .m-md-3 { margin: calc(var(--spacing-3) * var(--spacing-scale-md)) !important; }
+  .m-md-4 { margin: calc(var(--spacing-4) * var(--spacing-scale-md)) !important; }
+  .m-md-5 { margin: calc(var(--spacing-5) * var(--spacing-scale-md)) !important; }
+  .m-md-6 { margin: calc(var(--spacing-6) * var(--spacing-scale-md)) !important; }
+}
+
+@media (min-width: 992px) {
+  .m-lg-0 { margin: 0 !important; }
+  .m-lg-1 { margin: calc(var(--spacing-1) * var(--spacing-scale-lg)) !important; }
+  .m-lg-2 { margin: calc(var(--spacing-2) * var(--spacing-scale-lg)) !important; }
+  .m-lg-3 { margin: calc(var(--spacing-3) * var(--spacing-scale-lg)) !important; }
+  .m-lg-4 { margin: calc(var(--spacing-4) * var(--spacing-scale-lg)) !important; }
+  .m-lg-5 { margin: calc(var(--spacing-5) * var(--spacing-scale-lg)) !important; }
+  .m-lg-6 { margin: calc(var(--spacing-6) * var(--spacing-scale-lg)) !important; }
+}
+
+@media (min-width: 1200px) {
+  .m-xl-0 { margin: 0 !important; }
+  .m-xl-1 { margin: calc(var(--spacing-1) * var(--spacing-scale-xl)) !important; }
+  .m-xl-2 { margin: calc(var(--spacing-2) * var(--spacing-scale-xl)) !important; }
+  .m-xl-3 { margin: calc(var(--spacing-3) * var(--spacing-scale-xl)) !important; }
+  .m-xl-4 { margin: calc(var(--spacing-4) * var(--spacing-scale-xl)) !important; }
+  .m-xl-5 { margin: calc(var(--spacing-5) * var(--spacing-scale-xl)) !important; }
+  .m-xl-6 { margin: calc(var(--spacing-6) * var(--spacing-scale-xl)) !important; }
+}
+
+@media (min-width: 1400px) {
+  .m-xxl-0 { margin: 0 !important; }
+  .m-xxl-1 { margin: calc(var(--spacing-1) * var(--spacing-scale-xxl)) !important; }
+  .m-xxl-2 { margin: calc(var(--spacing-2) * var(--spacing-scale-xxl)) !important; }
+  .m-xxl-3 { margin: calc(var(--spacing-3) * var(--spacing-scale-xxl)) !important; }
+  .m-xxl-4 { margin: calc(var(--spacing-4) * var(--spacing-scale-xxl)) !important; }
+  .m-xxl-5 { margin: calc(var(--spacing-5) * var(--spacing-scale-xxl)) !important; }
+  .m-xxl-6 { margin: calc(var(--spacing-6) * var(--spacing-scale-xxl)) !important; }
+}
+
+/* 响应式内边距 */
+.p-xs-0 { padding: 0 !important; }
+.p-xs-1 { padding: calc(var(--spacing-1) * var(--spacing-scale-xs)) !important; }
+.p-xs-2 { padding: calc(var(--spacing-2) * var(--spacing-scale-xs)) !important; }
+.p-xs-3 { padding: calc(var(--spacing-3) * var(--spacing-scale-xs)) !important; }
+.p-xs-4 { padding: calc(var(--spacing-4) * var(--spacing-scale-xs)) !important; }
+.p-xs-5 { padding: calc(var(--spacing-5) * var(--spacing-scale-xs)) !important; }
+.p-xs-6 { padding: calc(var(--spacing-6) * var(--spacing-scale-xs)) !important; }
+
+@media (min-width: 576px) {
+  .p-sm-0 { padding: 0 !important; }
+  .p-sm-1 { padding: calc(var(--spacing-1) * var(--spacing-scale-sm)) !important; }
+  .p-sm-2 { padding: calc(var(--spacing-2) * var(--spacing-scale-sm)) !important; }
+  .p-sm-3 { padding: calc(var(--spacing-3) * var(--spacing-scale-sm)) !important; }
+  .p-sm-4 { padding: calc(var(--spacing-4) * var(--spacing-scale-sm)) !important; }
+  .p-sm-5 { padding: calc(var(--spacing-5) * var(--spacing-scale-sm)) !important; }
+  .p-sm-6 { padding: calc(var(--spacing-6) * var(--spacing-scale-sm)) !important; }
+}
+
+@media (min-width: 768px) {
+  .p-md-0 { padding: 0 !important; }
+  .p-md-1 { padding: calc(var(--spacing-1) * var(--spacing-scale-md)) !important; }
+  .p-md-2 { padding: calc(var(--spacing-2) * var(--spacing-scale-md)) !important; }
+  .p-md-3 { padding: calc(var(--spacing-3) * var(--spacing-scale-md)) !important; }
+  .p-md-4 { padding: calc(var(--spacing-4) * var(--spacing-scale-md)) !important; }
+  .p-md-5 { padding: calc(var(--spacing-5) * var(--spacing-scale-md)) !important; }
+  .p-md-6 { padding: calc(var(--spacing-6) * var(--spacing-scale-md)) !important; }
+}
+
+@media (min-width: 992px) {
+  .p-lg-0 { padding: 0 !important; }
+  .p-lg-1 { padding: calc(var(--spacing-1) * var(--spacing-scale-lg)) !important; }
+  .p-lg-2 { padding: calc(var(--spacing-2) * var(--spacing-scale-lg)) !important; }
+  .p-lg-3 { padding: calc(var(--spacing-3) * var(--spacing-scale-lg)) !important; }
+  .p-lg-4 { padding: calc(var(--spacing-4) * var(--spacing-scale-lg)) !important; }
+  .p-lg-5 { padding: calc(var(--spacing-5) * var(--spacing-scale-lg)) !important; }
+  .p-lg-6 { padding: calc(var(--spacing-6) * var(--spacing-scale-lg)) !important; }
+}
+
+@media (min-width: 1200px) {
+  .p-xl-0 { padding: 0 !important; }
+  .p-xl-1 { padding: calc(var(--spacing-1) * var(--spacing-scale-xl)) !important; }
+  .p-xl-2 { padding: calc(var(--spacing-2) * var(--spacing-scale-xl)) !important; }
+  .p-xl-3 { padding: calc(var(--spacing-3) * var(--spacing-scale-xl)) !important; }
+  .p-xl-4 { padding: calc(var(--spacing-4) * var(--spacing-scale-xl)) !important; }
+  .p-xl-5 { padding: calc(var(--spacing-5) * var(--spacing-scale-xl)) !important; }
+  .p-xl-6 { padding: calc(var(--spacing-6) * var(--spacing-scale-xl)) !important; }
+}
+
+@media (min-width: 1400px) {
+  .p-xxl-0 { padding: 0 !important; }
+  .p-xxl-1 { padding: calc(var(--spacing-1) * var(--spacing-scale-xxl)) !important; }
+  .p-xxl-2 { padding: calc(var(--spacing-2) * var(--spacing-scale-xxl)) !important; }
+  .p-xxl-3 { padding: calc(var(--spacing-3) * var(--spacing-scale-xxl)) !important; }
+  .p-xxl-4 { padding: calc(var(--spacing-4) * var(--spacing-scale-xxl)) !important; }
+  .p-xxl-5 { padding: calc(var(--spacing-5) * var(--spacing-scale-xxl)) !important; }
+  .p-xxl-6 { padding: calc(var(--spacing-6) * var(--spacing-scale-xxl)) !important; }
+}
+
+/* ==========================================================================
+   响应式显示工具类
+   ========================================================================== */
+
+/* 默认隐藏，在小屏幕上显示 */
+.d-xs-none { display: none !important; }
+.d-xs-block { display: block !important; }
+.d-xs-inline { display: inline !important; }
+.d-xs-inline-block { display: inline-block !important; }
+.d-xs-flex { display: flex !important; }
+.d-xs-grid { display: grid !important; }
+
+@media (min-width: 576px) {
+  .d-sm-none { display: none !important; }
+  .d-sm-block { display: block !important; }
+  .d-sm-inline { display: inline !important; }
+  .d-sm-inline-block { display: inline-block !important; }
+  .d-sm-flex { display: flex !important; }
+  .d-sm-grid { display: grid !important; }
+}
+
+@media (min-width: 768px) {
+  .d-md-none { display: none !important; }
+  .d-md-block { display: block !important; }
+  .d-md-inline { display: inline !important; }
+  .d-md-inline-block { display: inline-block !important; }
+  .d-md-flex { display: flex !important; }
+  .d-md-grid { display: grid !important; }
+}
+
+@media (min-width: 992px) {
+  .d-lg-none { display: none !important; }
+  .d-lg-block { display: block !important; }
+  .d-lg-inline { display: inline !important; }
+  .d-lg-inline-block { display: inline-block !important; }
+  .d-lg-flex { display: flex !important; }
+  .d-lg-grid { display: grid !important; }
+}
+
+@media (min-width: 1200px) {
+  .d-xl-none { display: none !important; }
+  .d-xl-block { display: block !important; }
+  .d-xl-inline { display: inline !important; }
+  .d-xl-inline-block { display: inline-block !important; }
+  .d-xl-flex { display: flex !important; }
+  .d-xl-grid { display: grid !important; }
+}
+
+@media (min-width: 1400px) {
+  .d-xxl-none { display: none !important; }
+  .d-xxl-block { display: block !important; }
+  .d-xxl-inline { display: inline !important; }
+  .d-xxl-inline-block { display: inline-block !important; }
+  .d-xxl-flex { display: flex !important; }
+  .d-xxl-grid { display: grid !important; }
+}
+
+/* ==========================================================================
+   响应式文本大小
+   ========================================================================== */
+
+/* 响应式文本大小类 */
+.text-xs-responsive {
+  font-size: calc(var(--text-xs) * var(--font-scale-xs)) !important;
+}
+
+.text-sm-responsive {
+  font-size: calc(var(--text-sm) * var(--font-scale-xs)) !important;
+}
+
+.text-base-responsive {
+  font-size: calc(var(--text-base) * var(--font-scale-xs)) !important;
+}
+
+.text-lg-responsive {
+  font-size: calc(var(--text-lg) * var(--font-scale-xs)) !important;
+}
+
+.text-xl-responsive {
+  font-size: calc(var(--text-xl) * var(--font-scale-xs)) !important;
+}
+
+.text-2xl-responsive {
+  font-size: calc(var(--text-2xl) * var(--font-scale-xs)) !important;
+}
+
+.text-3xl-responsive {
+  font-size: calc(var(--text-3xl) * var(--font-scale-xs)) !important;
+}
+
+.text-4xl-responsive {
+  font-size: calc(var(--text-4xl) * var(--font-scale-xs)) !important;
+}
+
+.text-5xl-responsive {
+  font-size: calc(var(--text-5xl) * var(--font-scale-xs)) !important;
+}
+
+.text-6xl-responsive {
+  font-size: calc(var(--text-6xl) * var(--font-scale-xs)) !important;
+}
+
+@media (min-width: 576px) {
+  .text-xs-responsive {
+    font-size: calc(var(--text-xs) * var(--font-scale-sm)) !important;
+  }
+  
+  .text-sm-responsive {
+    font-size: calc(var(--text-sm) * var(--font-scale-sm)) !important;
+  }
+  
+  .text-base-responsive {
+    font-size: calc(var(--text-base) * var(--font-scale-sm)) !important;
+  }
+  
+  .text-lg-responsive {
+    font-size: calc(var(--text-lg) * var(--font-scale-sm)) !important;
+  }
+  
+  .text-xl-responsive {
+    font-size: calc(var(--text-xl) * var(--font-scale-sm)) !important;
+  }
+  
+  .text-2xl-responsive {
+    font-size: calc(var(--text-2xl) * var(--font-scale-sm)) !important;
+  }
+  
+  .text-3xl-responsive {
+    font-size: calc(var(--text-3xl) * var(--font-scale-sm)) !important;
+  }
+  
+  .text-4xl-responsive {
+    font-size: calc(var(--text-4xl) * var(--font-scale-sm)) !important;
+  }
+  
+  .text-5xl-responsive {
+    font-size: calc(var(--text-5xl) * var(--font-scale-sm)) !important;
+  }
+  
+  .text-6xl-responsive {
+    font-size: calc(var(--text-6xl) * var(--font-scale-sm)) !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .text-xs-responsive {
+    font-size: calc(var(--text-xs) * var(--font-scale-md)) !important;
+  }
+  
+  .text-sm-responsive {
+    font-size: calc(var(--text-sm) * var(--font-scale-md)) !important;
+  }
+  
+  .text-base-responsive {
+    font-size: calc(var(--text-base) * var(--font-scale-md)) !important;
+  }
+  
+  .text-lg-responsive {
+    font-size: calc(var(--text-lg) * var(--font-scale-md)) !important;
+  }
+  
+  .text-xl-responsive {
+    font-size: calc(var(--text-xl) * var(--font-scale-md)) !important;
+  }
+  
+  .text-2xl-responsive {
+    font-size: calc(var(--text-2xl) * var(--font-scale-md)) !important;
+  }
+  
+  .text-3xl-responsive {
+    font-size: calc(var(--text-3xl) * var(--font-scale-md)) !important;
+  }
+  
+  .text-4xl-responsive {
+    font-size: calc(var(--text-4xl) * var(--font-scale-md)) !important;
+  }
+  
+  .text-5xl-responsive {
+    font-size: calc(var(--text-5xl) * var(--font-scale-md)) !important;
+  }
+  
+  .text-6xl-responsive {
+    font-size: calc(var(--text-6xl) * var(--font-scale-md)) !important;
+  }
+}
+
+@media (min-width: 992px) {
+  .text-xs-responsive {
+    font-size: calc(var(--text-xs) * var(--font-scale-lg)) !important;
+  }
+  
+  .text-sm-responsive {
+    font-size: calc(var(--text-sm) * var(--font-scale-lg)) !important;
+  }
+  
+  .text-base-responsive {
+    font-size: calc(var(--text-base) * var(--font-scale-lg)) !important;
+  }
+  
+  .text-lg-responsive {
+    font-size: calc(var(--text-lg) * var(--font-scale-lg)) !important;
+  }
+  
+  .text-xl-responsive {
+    font-size: calc(var(--text-xl) * var(--font-scale-lg)) !important;
+  }
+  
+  .text-2xl-responsive {
+    font-size: calc(var(--text-2xl) * var(--font-scale-lg)) !important;
+  }
+  
+  .text-3xl-responsive {
+    font-size: calc(var(--text-3xl) * var(--font-scale-lg)) !important;
+  }
+  
+  .text-4xl-responsive {
+    font-size: calc(var(--text-4xl) * var(--font-scale-lg)) !important;
+  }
+  
+  .text-5xl-responsive {
+    font-size: calc(var(--text-5xl) * var(--font-scale-lg)) !important;
+  }
+  
+  .text-6xl-responsive {
+    font-size: calc(var(--text-6xl) * var(--font-scale-lg)) !important;
+  }
+}
+
+@media (min-width: 1200px) {
+  .text-xs-responsive {
+    font-size: calc(var(--text-xs) * var(--font-scale-xl)) !important;
+  }
+  
+  .text-sm-responsive {
+    font-size: calc(var(--text-sm) * var(--font-scale-xl)) !important;
+  }
+  
+  .text-base-responsive {
+    font-size: calc(var(--text-base) * var(--font-scale-xl)) !important;
+  }
+  
+  .text-lg-responsive {
+    font-size: calc(var(--text-lg) * var(--font-scale-xl)) !important;
+  }
+  
+  .text-xl-responsive {
+    font-size: calc(var(--text-xl) * var(--font-scale-xl)) !important;
+  }
+  
+  .text-2xl-responsive {
+    font-size: calc(var(--text-2xl) * var(--font-scale-xl)) !important;
+  }
+  
+  .text-3xl-responsive {
+    font-size: calc(var(--text-3xl) * var(--font-scale-xl)) !important;
+  }
+  
+  .text-4xl-responsive {
+    font-size: calc(var(--text-4xl) * var(--font-scale-xl)) !important;
+  }
+  
+  .text-5xl-responsive {
+    font-size: calc(var(--text-5xl) * var(--font-scale-xl)) !important;
+  }
+  
+  .text-6xl-responsive {
+    font-size: calc(var(--text-6xl) * var(--font-scale-xl)) !important;
+  }
+}
+
+@media (min-width: 1400px) {
+  .text-xs-responsive {
+    font-size: calc(var(--text-xs) * var(--font-scale-xxl)) !important;
+  }
+  
+  .text-sm-responsive {
+    font-size: calc(var(--text-sm) * var(--font-scale-xxl)) !important;
+  }
+  
+  .text-base-responsive {
+    font-size: calc(var(--text-base) * var(--font-scale-xxl)) !important;
+  }
+  
+  .text-lg-responsive {
+    font-size: calc(var(--text-lg) * var(--font-scale-xxl)) !important;
+  }
+  
+  .text-xl-responsive {
+    font-size: calc(var(--text-xl) * var(--font-scale-xxl)) !important;
+  }
+  
+  .text-2xl-responsive {
+    font-size: calc(var(--text-2xl) * var(--font-scale-xxl)) !important;
+  }
+  
+  .text-3xl-responsive {
+    font-size: calc(var(--text-3xl) * var(--font-scale-xxl)) !important;
+  }
+  
+  .text-4xl-responsive {
+    font-size: calc(var(--text-4xl) * var(--font-scale-xxl)) !important;
+  }
+  
+  .text-5xl-responsive {
+    font-size: calc(var(--text-5xl) * var(--font-scale-xxl)) !important;
+  }
+  
+  .text-6xl-responsive {
+    font-size: calc(var(--text-6xl) * var(--font-scale-xxl)) !important;
+  }
+}
+
+/* ==========================================================================
+   响应式断点测试工具
+   ========================================================================== */
+
+/* 断点指示器 - 仅用于开发测试 */
+.breakpoint-indicator {
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  z-index: 9999;
+  display: none; /* 默认隐藏，需要时取消注释 */
+}
+
+/* 断点指示器内容 - 通过伪元素显示当前断点 */
+.breakpoint-indicator::before {
+  content: "XS";
+}
+
+@media (min-width: 576px) {
+  .breakpoint-indicator::before {
+    content: "SM";
+  }
+}
+
+@media (min-width: 768px) {
+  .breakpoint-indicator::before {
+    content: "MD";
+  }
+}
+
+@media (min-width: 992px) {
+  .breakpoint-indicator::before {
+    content: "LG";
+  }
+}
+
+@media (min-width: 1200px) {
+  .breakpoint-indicator::before {
+    content: "XL";
+  }
+}
+
+@media (min-width: 1400px) {
+  .breakpoint-indicator::before {
+    content: "XXL";
+  }
+}

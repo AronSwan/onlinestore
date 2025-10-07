@@ -1,0 +1,949 @@
+/*
+ * 触摸优化样式 - Reich Luxury Shopping Platform
+ * 专门用于优化移动设备触摸体验的样式
+ * 创建时间: 2025-09-23
+ * 来源: AI助手生成，基于6.2触摸优化任务需求
+ */
+
+/* ========================================================================== 
+   触摸优化基础设置
+   ========================================================================== */
+
+/* 确保所有可触摸元素有足够的点击区域 */
+.touch-optimization {
+  /* 优化触摸性能 */
+  touch-action: manipulation;
+  /* 禁用双击缩放，提高单次点击响应速度 */
+  touch-action: pan-y pinch-zoom;
+}
+
+/* 为所有可交互元素添加触摸优化 */
+button,
+a,
+input,
+select,
+textarea,
+.clickable,
+.product-action-btn,
+.reich-product-action,
+.nav-link-luxury,
+.btn-luxury,
+.user-icon-btn,
+.cart-button,
+.btn-login,
+.action-btn {
+  /* 确保触摸区域至少为44x44像素（iOS建议的最小触摸区域） */
+  min-height: 44px;
+  min-width: 44px;
+  /* 优化触摸性能 */
+  touch-action: manipulation;
+  /* 禁用长按菜单和文本选择 */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  /* 添加触摸反馈 */
+  -webkit-tap-highlight-color: rgba(212, 175, 55, 0.5);
+  /* 确保元素在触摸时不会半透明 */
+  -webkit-opacity: 1;
+  opacity: 1;
+}
+
+/* 特殊处理小图标按钮 */
+.reich-product-action,
+.user-icon-btn,
+.cart-button,
+.btn-login,
+.action-btn {
+  /* 确保小图标按钮有足够的触摸区域 */
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 添加内边距扩大触摸区域 */
+  padding: 8px;
+  /* 确保图标居中 */
+  margin: 0;
+}
+
+/* 文本链接触摸优化 */
+.nav-link-luxury,
+.footer-link {
+  /* 为文本链接添加内边距以扩大触摸区域 */
+  padding: 8px 12px;
+  margin: -8px -12px;
+  /* 确保文本链接有足够的触摸区域 */
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ========================================================================== 
+   按钮触摸优化
+   ========================================================================== */
+
+/* 奢华按钮触摸优化 */
+.btn-luxury {
+  /* 扩大触摸区域 */
+  min-height: 48px;
+  padding: 12px 24px;
+  /* 优化触摸反馈 */
+  transition: all 0.2s ease;
+  /* 确保按钮在触摸时不会移动 */
+  position: relative;
+}
+
+/* 按钮触摸状态 */
+.btn-luxury:active {
+  transform: scale(0.98);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* 主按钮触摸优化 */
+.btn-luxury-primary:active {
+  background-color: var(--gold-dark);
+  border-color: var(--gold-dark);
+}
+
+/* 次要按钮触摸优化 */
+.btn-luxury-secondary:active {
+  background-color: var(--dark-secondary);
+  border-color: var(--dark-secondary);
+}
+
+/* 轮廓按钮触摸优化 */
+.btn-luxury-outline:active {
+  background-color: rgba(212, 175, 55, 0.1);
+}
+
+/* 小按钮触摸优化 */
+.btn-luxury-sm {
+  min-height: 40px;
+  padding: 8px 16px;
+}
+
+/* 大按钮触摸优化 */
+.btn-luxury-lg {
+  min-height: 56px;
+  padding: 16px 32px;
+}
+
+/* ========================================================================== 
+   产品卡片触摸优化
+   ========================================================================== */
+
+/* 产品卡片触摸优化 */
+.reich-product-card {
+  /* 优化触摸性能 */
+  touch-action: manipulation;
+  /* 确保卡片在触摸时不会意外触发其他交互 */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* 产品操作按钮触摸优化 */
+.reich-product-actions {
+  /* 确保操作按钮有足够的间距 */
+  gap: 16px;
+  /* 优化触摸性能 */
+  touch-action: manipulation;
+}
+
+.reich-product-action {
+  /* 扩大触摸区域 */
+  width: 48px;
+  height: 48px;
+  /* 添加触摸反馈 */
+  transition: all 0.2s ease;
+  /* 确保按钮在触摸时不会移动 */
+  position: relative;
+}
+
+/* 产品操作按钮触摸状态 */
+.reich-product-action:active {
+  transform: scale(0.95);
+  background-color: var(--gold-standard);
+  color: var(--white);
+}
+
+/* 产品卡片悬停效果在触摸设备上的优化 */
+@media (hover: none) {
+  .reich-product-card:hover .reich-product-overlay {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  .reich-product-card:hover .reich-product-image {
+    transform: scale(1.05);
+  }
+}
+
+/* ========================================================================== 
+   导航栏触摸优化
+   ========================================================================== */
+
+/* 导航链接触摸优化 */
+.nav-link-luxury {
+  /* 扩大触摸区域 */
+  padding: 12px 16px;
+  margin: -12px -16px;
+  /* 优化触摸反馈 */
+  transition: all 0.2s ease;
+}
+
+/* 导航链接触摸状态 */
+.nav-link-luxury:active {
+  color: var(--gold-standard);
+}
+
+/* 用户图标按钮触摸优化 */
+.user-icon-btn {
+  /* 扩大触摸区域 */
+  width: 48px;
+  height: 48px;
+  /* 添加触摸反馈 */
+  transition: all 0.2s ease;
+}
+
+/* 用户图标按钮触摸状态 */
+.user-icon-btn:active {
+  background-color: rgba(212, 175, 55, 0.1);
+  border-color: var(--gold-standard);
+  color: var(--gold-standard);
+}
+
+/* 购物车计数触摸优化 */
+.cart-count {
+  /* 确保计数器在触摸设备上有足够的大小 */
+  min-width: 28px;
+  min-height: 28px;
+  /* 优化触摸反馈 */
+  transition: all 0.2s ease;
+  /* 确保计数器在触摸时不会移动 */
+  position: relative;
+}
+
+/* 购物车按钮触摸状态 */
+.cart-button:active .cart-count {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.7);
+}
+
+/* ========================================================================== 
+   表单触摸优化
+   ========================================================================== */
+
+/* 输入框触摸优化 */
+.input-luxury,
+.newsletter-input {
+  /* 扩大触摸区域 */
+  min-height: 48px;
+  padding: 12px 16px;
+  /* 优化触摸性能 */
+  touch-action: manipulation;
+  /* 确保输入框在触摸时不会意外触发其他交互 */
+  -webkit-touch-callout: none;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* 输入框触摸状态 */
+.input-luxury:focus,
+.newsletter-input:focus {
+  border-color: var(--gold-standard);
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-shadow);
+}
+
+/* ========================================================================== 
+   手势优化
+   ========================================================================== */
+
+/* 滑动手势优化 */
+.swipeable {
+  /* 优化滑动性能 */
+  touch-action: pan-y;
+  /* 确保滑动流畅 */
+  -webkit-overflow-scrolling: touch;
+  /* 禁用弹性滚动 */
+  overscroll-behavior: contain;
+}
+
+/* 水平滑动区域 */
+.horizontal-scroll {
+  /* 优化水平滑动性能 */
+  touch-action: pan-x;
+  /* 确保滑动流畅 */
+  -webkit-overflow-scrolling: touch;
+  /* 显示滚动条提示 */
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold-standard) var(--gray-200);
+}
+
+/* 水平滑动区域滚动条样式 */
+.horizontal-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+
+.horizontal-scroll::-webkit-scrollbar-track {
+  background: var(--gray-200);
+  border-radius: 3px;
+}
+
+.horizontal-scroll::-webkit-scrollbar-thumb {
+  background-color: var(--gold-standard);
+  border-radius: 3px;
+}
+
+/* ========================================================================== 
+   触摸反馈动画
+   ========================================================================== */
+
+/* 触摸涟漪效果 */
+.ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.ripple:active::before {
+  width: 300px;
+  height: 300px;
+}
+
+/* 触摸脉冲效果 - 移除脉动动画
+.pulse-on-touch {
+  position: relative;
+}
+
+.pulse-on-touch::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  border: 2px solid var(--gold-standard);
+  opacity: 0;
+  transform: scale(0.9);
+  transition: all 0.3s ease;
+}
+
+.pulse-on-touch:active::after {
+  opacity: 1;
+  transform: scale(1.1);
+}
+*/
+
+/* 触摸效果 - 替代方案 */
+.pulse-on-touch {
+  position: relative;
+}
+
+.pulse-on-touch:active {
+  transform: scale(0.98);
+  transition: transform 0.1s ease;
+}
+
+/* ========================================================================== 
+   响应式触摸优化
+   ========================================================================== */
+
+/* 移动设备触摸优化 */
+@media (max-width: 768px) {
+
+  /* 扩大所有按钮的触摸区域 */
+  .btn-luxury {
+    min-height: 48px;
+    padding: 12px 20px;
+  }
+
+  /* 扩大产品操作按钮的触摸区域 */
+  .reich-product-action {
+    width: 48px;
+    height: 48px;
+  }
+
+  /* 扩大导航链接的触摸区域 */
+  .nav-link-luxury {
+    padding: 12px 16px;
+    margin: -12px -16px;
+  }
+
+  /* 扩大用户图标按钮的触摸区域 */
+  .user-icon-btn {
+    width: 48px;
+    height: 48px;
+  }
+
+  /* 扩大输入框的触摸区域 */
+  .input-luxury,
+  .newsletter-input {
+    min-height: 48px;
+    padding: 12px 16px;
+  }
+}
+
+/* 小屏移动设备触摸优化 */
+@media (max-width: 575px) {
+
+  /* 进一步扩大按钮的触摸区域 */
+  .btn-luxury {
+    min-height: 48px;
+    padding: 14px 24px;
+  }
+
+  /* 进一步扩大产品操作按钮的触摸区域 */
+  .reich-product-action {
+    width: 52px;
+    height: 52px;
+  }
+
+  /* 进一步扩大导航链接的触摸区域 */
+  .nav-link-luxury {
+    padding: 14px 18px;
+    margin: -14px -18px;
+  }
+
+  /* 进一步扩大用户图标按钮的触摸区域 */
+  .user-icon-btn {
+    width: 52px;
+    height: 52px;
+  }
+
+  /* 进一步扩大输入框的触摸区域 */
+  .input-luxury,
+  .newsletter-input {
+    min-height: 48px;
+    padding: 14px 18px;
+  }
+
+  /* 移动端产品卡片优化 */
+  .products-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    padding: 0 1rem;
+  }
+
+  .reich-product-card {
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  }
+
+  .reich-product-image-container {
+    aspect-ratio: 4/5;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .reich-product-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .reich-product-content {
+    padding: 1.25rem;
+    background: var(--bg-primary);
+  }
+
+  .reich-product-name {
+    font-size: 1.125rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: var(--brand-black);
+  }
+
+  .reich-product-price {
+    font-size: 1rem;
+    color: var(--brand-gold);
+    font-weight: 600;
+  }
+
+  .reich-product-actions {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+    display: flex;
+    gap: 0.75rem;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+  }
+
+  .reich-product-card:hover .reich-product-actions {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .reich-product-action {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .reich-product-action:hover {
+    background: var(--brand-gold);
+    color: var(--brand-white);
+    transform: scale(1.1);
+  }
+}
+
+/* ========================================================================== 
+   特殊触摸优化
+   ========================================================================== */
+
+/* 禁用双击缩放 */
+.disable-double-tap-zoom {
+  touch-action: manipulation;
+}
+
+/* 优化长按操作 */
+.long-pressable {
+  -webkit-touch-callout: default;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* 优化滑动删除操作 */
+.swipe-to-delete {
+  touch-action: pan-x;
+  transition: transform 0.3s ease;
+}
+
+.swipe-to-delete.deleting {
+  transform: translateX(-100px);
+}
+
+/* ========================================================================== 
+   触摸辅助功能
+   ========================================================================== */
+
+/* 确保触摸目标足够大 */
+.touch-target {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* 为触摸目标添加视觉反馈 */
+.touch-feedback {
+  transition: background-color 0.2s ease;
+}
+
+.touch-feedback:active {
+  background-color: rgba(212, 175, 55, 0.2);
+}
+
+/* 确保触摸目标之间有足够的间距 */
+.touch-spacing {
+  margin: 8px;
+}
+
+/* 移动端汉堡菜单优化 */
+@media (max-width: 768px) {
+  .main-nav {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 80vw;
+    max-width: 320px;
+    height: 100vh;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 248, 248, 0.98) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    z-index: 1000;
+    padding: 100px 24px 32px;
+    box-shadow: -8px 0 30px rgba(0, 0, 0, 0.15);
+    transition: right 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .main-nav.active {
+    right: 0;
+  }
+
+  .main-nav ul {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  .main-nav .nav-link {
+    font-size: 1.125rem;
+    font-weight: 500;
+    padding: 1rem 1.5rem;
+    margin: 0;
+    width: 100%;
+    display: block;
+    position: relative;
+    color: var(--brand-black);
+    border-radius: 12px;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    background: transparent;
+  }
+
+  .main-nav .nav-link:hover {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(212, 175, 55, 0.05) 100%);
+    color: var(--brand-gold);
+    transform: translateX(8px);
+  }
+
+  /* 移动端英雄区域优化 */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-content {
+    text-align: center;
+    padding: 0 1.5rem;
+    max-width: 100%;
+  }
+
+  .hero h1 {
+    font-size: clamp(2rem, 8vw, 3.5rem);
+    font-weight: 300;
+    margin-bottom: 1.5rem;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+
+  .hero p {
+    font-size: clamp(1rem, 4vw, 1.25rem);
+    margin-bottom: 2.5rem;
+    line-height: 1.6;
+    opacity: 0.9;
+  }
+
+  .hero-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .hero-buttons .btn-luxury {
+    width: 100%;
+    max-width: 280px;
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    border-radius: 50px;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .hero-buttons .btn-luxury:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  /* 移动端品牌亮点区域优化 */
+  .features {
+    padding: 4rem 1rem;
+    background: var(--bg-secondary);
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    margin-top: 2.5rem;
+  }
+
+  .feature-card {
+    background: var(--bg-primary);
+    border-radius: 20px;
+    padding: 2rem;
+    text-align: center;
+    border: 1px solid rgba(212, 175, 55, 0.1);
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--brand-gold), var(--brand-gold-light));
+    transform: scaleX(0);
+    transition: transform 0.4s ease;
+  }
+
+  .feature-card:hover::before {
+    transform: scaleX(1);
+  }
+
+  .feature-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+  }
+
+  .feature-icon {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 1.5rem;
+    background: linear-gradient(135deg, var(--brand-gold), var(--brand-gold-light));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: var(--brand-white);
+    transition: transform 0.3s ease;
+  }
+
+  .feature-card:hover .feature-icon {
+    transform: scale(1.1);
+  }
+
+  .feature-card h3 {
+    font-size: 1.25rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+    color: var(--brand-black);
+  }
+
+  .feature-card p {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+
+  /* 移动端页脚和邮件订阅优化 */
+  .newsletter-section {
+    padding: 3rem 1rem;
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+  }
+
+  .newsletter-container {
+    max-width: 100%;
+    padding: 0;
+  }
+
+  .newsletter-form {
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .newsletter-input {
+    width: 100%;
+    min-height: 48px;
+    padding: 14px 18px;
+    border-radius: 12px;
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    background: var(--bg-primary);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+  }
+
+  .newsletter-input:focus {
+    outline: 2px solid var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset);
+    border-color: var(--brand-gold);
+    box-shadow: var(--focus-shadow);
+  }
+
+  .newsletter-button {
+    min-height: 48px;
+    padding: 14px 2rem;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .newsletter-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(212, 175, 55, 0.3);
+  }
+
+  .newsletter-privacy {
+    margin-top: 1rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-align: center;
+  }
+
+  .footer {
+    padding: 3rem 1rem 1.5rem;
+    background: var(--brand-black);
+  }
+
+  .footer-content {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .footer-column {
+    text-align: center;
+  }
+
+  .footer-column h4 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    color: var(--brand-white);
+  }
+
+  .footer-column ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .footer-column li {
+    margin-bottom: 0.75rem;
+  }
+
+  .footer-column a {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    display: inline-block;
+    padding: 0.25rem 0;
+  }
+
+  .footer-column a:hover {
+    color: var(--brand-gold);
+    transform: translateX(4px);
+  }
+
+  .footer-bottom {
+    text-align: center;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.6);
+  }
+}
+
+/* 移动端滚动和动画性能优化 */
+@media (max-width: 768px) {
+
+  /* 启用硬件加速 */
+  .reich-product-card,
+  .feature-card,
+  .hero-buttons .btn-luxury,
+  .newsletter-button,
+  .main-nav .nav-link {
+    will-change: transform;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  /* 优化滚动性能 */
+  .main-nav {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
+  /* 减少重绘和重排 */
+  .reich-product-image {
+    will-change: transform;
+  }
+
+  .reich-product-actions {
+    will-change: opacity, transform;
+  }
+
+  /* 优化动画性能 */
+  .feature-icon {
+    will-change: transform;
+  }
+
+  /* 禁用不必要的动画 */
+  @media (prefers-reduced-motion: reduce) {
+
+    .reich-product-card,
+    .feature-card,
+    .hero-buttons .btn-luxury,
+    .newsletter-button,
+    .main-nav .nav-link,
+    .reich-product-image,
+    .reich-product-actions,
+    .feature-icon {
+      transition: none !important;
+      animation: none !important;
+      transform: none !important;
+    }
+  }
+
+  /* 优化触摸响应 */
+  .reich-product-card,
+  .feature-card {
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* 优化图片加载 */
+  .reich-product-image {
+    /* loading: lazy; - 这是HTML属性，不是CSS属性 */
+    /* decoding: async; - 这是HTML属性，不是CSS属性 */
+    will-change: transform;
+    contain: layout style;
+  }
+}
+
+/* ========================================================================== 
+   触摸性能优化
+   ========================================================================== */
+
+/* 优化滚动性能 */
+.smooth-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* 减少重绘和重排 */
+.gpu-accelerated {
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* 优化动画性能 */
+.hardware-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}

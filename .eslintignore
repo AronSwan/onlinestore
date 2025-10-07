@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Test files
+coverage/
+*.spec.js
+*.test.js
+tests/
+
+# Configuration files
+.eslintrc.*
+.eslintignore
+.prettierrc
+.prettierignore
+package-lock.json
+yarn.lock
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Logs
+*.log
+
+# Audit reports
+audit-reports/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Documentation
+*.md
+README.md
+LICENSE
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Other
+webpack.config.js
+babel.config.js
+postcss.config.js

@@ -1,0 +1,16 @@
+{
+  "timestamp": "2025-10-05T05:45:02.117Z",
+  "packageInfo": {
+    "name": "caddy-style-shopping-backend",
+    "version": "1.0.0",
+    "description": "基于 CongoMall 设计的购物网站后端服务"
+  },
+  "syncedFiles": [
+    "docs/index.md",
+    "docs/DEPLOYMENT_GUIDE.md",
+    "docs/DEVELOPER_GUIDE.md"
+  ],
+  "dependenciesCount": 63,
+  "devDependenciesCount": 28,
+  "scriptsCount": 61
+}

@@ -1,0 +1,583 @@
+{
+  "dashboard": {
+    "id": "security-management",
+    "title": "安全管理",
+    "description": "系统安全和权限管理仪表板",
+    "tags": ["security", "access-control", "audit"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": "security-overview",
+        "title": "安全概览",
+        "type": "stat",
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT COUNT(DISTINCT userId) as active_users FROM security-audit-log WHERE eventType = 'user_login_success' AND timestamp >= now() - INTERVAL '24 hours'",
+            "datasource": "openobserve",
+            "format": "time_series"
+          },
+          {
+            "refId": "B",
+            "query": "SELECT COUNT(*) as failed_logins FROM security-audit-log WHERE eventType = 'user_login_failed' AND timestamp >= now() - INTERVAL '24 hours'",
+            "datasource": "openobserve",
+            "format": "time_series"
+          },
+          {
+            "refId": "C",
+            "query": "SELECT COUNT(*) as locked_accounts FROM security-audit-log WHERE eventType = 'account_locked' AND timestamp >= now() - INTERVAL '24 hours'",
+            "datasource": "openobserve",
+            "format": "time_series"
+          },
+          {
+            "refId": "D",
+            "query": "SELECT COUNT(*) as permission_denied FROM access-control WHERE eventType = 'permission_denied' AND timestamp >= now() - INTERVAL '24 hours'",
+            "datasource": "openobserve",
+            "format": "time_series"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "displayMode": "list",
+              "orientation": "horizontal"
+            },
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "displayMode": "list",
+          "orientation": "horizontal"
+        }
+      },
+      {
+        "id": "login-activity",
+        "title": "登录活动趋势",
+        "type": "timeseries",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT time_bucket('1 hour', timestamp) as time, COUNT(*) as successful_logins FROM security-audit-log WHERE eventType = 'user_login_success' AND timestamp >= now() - INTERVAL '24 hours' GROUP BY time ORDER BY time",
+            "datasource": "openobserve",
+            "format": "time_series"
+          },
+          {
+            "refId": "B",
+            "query": "SELECT time_bucket('1 hour', timestamp) as time, COUNT(*) as failed_logins FROM security-audit-log WHERE eventType = 'user_login_failed' AND timestamp >= now() - INTERVAL '24 hours' GROUP BY time ORDER BY time",
+            "datasource": "openobserve",
+            "format": "time_series"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              },
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom"
+          },
+          "tooltip": {
+            "mode": "single"
+          }
+        }
+      },
+      {
+        "id": "user-sessions",
+        "title": "用户会话统计",
+        "type": "pie",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT roles as user_role, COUNT(*) as session_count FROM security-audit-log WHERE eventType = 'user_login_success' AND timestamp >= now() - INTERVAL '24 hours' CROSS JOIN UNNEST(roles) as roles GROUP BY user_role",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            },
+            "mappings": []
+          },
+          "overrides": []
+        },
+        "options": {
+          "displayMode": "list",
+          "orientation": "horizontal"
+        }
+      },
+      {
+        "id": "security-events",
+        "title": "安全事件",
+        "type": "table",
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 16
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT timestamp, eventType, username, userId, clientIp, userAgent, error FROM security-audit-log WHERE timestamp >= now() - INTERVAL '24 hours' ORDER BY timestamp DESC LIMIT 20",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "custom": {
+              "align": "auto",
+              "displayMode": "auto"
+            },
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "eventType"
+              },
+              "properties": [
+                {
+                  "id": "custom.displayMode",
+                  "value": "color-background"
+                },
+                {
+                  "id": "thresholds",
+                  "value": {
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      },
+                      {
+                        "color": "yellow",
+                        "value": "user_login_failed"
+                      },
+                      {
+                        "color": "red",
+                        "value": "account_locked"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "showHeader": true
+        }
+      },
+      {
+        "id": "access-control",
+        "title": "访问控制统计",
+        "type": "pie",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 24
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT eventType as access_event, COUNT(*) as event_count FROM access-control WHERE timestamp >= now() - INTERVAL '24 hours' GROUP BY access_event",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            },
+            "mappings": []
+          },
+          "overrides": []
+        },
+        "options": {
+          "displayMode": "list",
+          "orientation": "horizontal"
+        }
+      },
+      {
+        "id": "permission-usage",
+        "title": "权限使用统计",
+        "type": "table",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 24
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT permission, COUNT(*) as usage_count FROM access-control WHERE eventType = 'permission_granted' AND timestamp >= now() - INTERVAL '24 hours' GROUP BY permission ORDER BY usage_count DESC LIMIT 10",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "custom": {
+              "align": "auto",
+              "displayMode": "auto"
+            },
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "usage_count"
+              },
+              "properties": [
+                {
+                  "id": "custom.displayMode",
+                  "value": "color-background"
+                },
+                {
+                  "id": "thresholds",
+                  "value": {
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      },
+                      {
+                        "color": "yellow",
+                        "value": 10
+                      },
+                      {
+                        "color": "red",
+                        "value": 50
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "showHeader": true
+        }
+      },
+      {
+        "id": "failed-login-attempts",
+        "title": "失败登录尝试",
+        "type": "table",
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 32
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT timestamp, username, clientIp, userAgent, error FROM security-audit-log WHERE eventType = 'user_login_failed' AND timestamp >= now() - INTERVAL '24 hours' ORDER BY timestamp DESC LIMIT 20",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "custom": {
+              "align": "auto",
+              "displayMode": "auto"
+            },
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "showHeader": true
+        }
+      },
+      {
+        "id": "user-activity",
+        "title": "用户活动热力图",
+        "type": "heatmap",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 40
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT time_bucket('1 hour', timestamp) as hour, username, COUNT(*) as activity_count FROM security-audit-log WHERE timestamp >= now() - INTERVAL '24 hours' AND eventType IN ('user_login_success', 'user_logout', 'permission_granted') GROUP BY hour, username ORDER BY hour",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            },
+            "mappings": []
+          },
+          "overrides": []
+        },
+        "options": {
+          "displayMode": "list",
+          "orientation": "horizontal"
+        }
+      },
+      {
+        "id": "account-lockouts",
+        "title": "账户锁定统计",
+        "type": "stat",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 40
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT COUNT(*) as total_lockouts FROM security-audit-log WHERE eventType = 'account_locked' AND timestamp >= now() - INTERVAL '24 hours'",
+            "datasource": "openobserve",
+            "format": "time_series"
+          },
+          {
+            "refId": "B",
+            "query": "SELECT COUNT(DISTINCT username) as unique_locked_users FROM security-audit-log WHERE eventType = 'account_locked' AND timestamp >= now() - INTERVAL '24 hours'",
+            "datasource": "openobserve",
+            "format": "time_series"
+          },
+          {
+            "refId": "C",
+            "query": "SELECT AVG(attempts) as avg_attempts_before_lock FROM security-audit-log WHERE eventType = 'account_locked' AND timestamp >= now() - INTERVAL '24 hours'",
+            "datasource": "openobserve",
+            "format": "time_series"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "displayMode": "list",
+              "orientation": "horizontal"
+            },
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "displayMode": "list",
+          "orientation": "horizontal"
+        }
+      },
+      {
+        "id": "security-timeline",
+        "title": "安全事件时间线",
+        "type": "timeline",
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 48
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT timestamp, eventType, username, clientIp FROM security-audit-log WHERE timestamp >= now() - INTERVAL '24 hours' AND eventType IN ('user_login_success', 'user_login_failed', 'account_locked', 'permission_denied', 'user_created', 'user_deleted') ORDER BY timestamp",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            },
+            "mappings": []
+          },
+          "overrides": []
+        },
+        "options": {
+          "displayMode": "list",
+          "orientation": "horizontal"
+        }
+      }
+    ],
+    "time": {
+      "from": "now-24h",
+      "to": "now"
+    },
+    "refresh": "5m"
+  }
+}

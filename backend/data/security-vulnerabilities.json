@@ -1,0 +1,414 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "lastUpdated": "2025-10-03",
+    "maintainer": "安全团队",
+    "effectiveDate": "2025-10-03",
+    "auditDate": "2025-10-02",
+    "codeBranch": "main",
+    "commitHash": "a1b2c3d4e5f6g7h8i9j0",
+    "environment": "开发环境",
+    "configSnapshot": "config-snapshot.json"
+  },
+  "workflow": {
+    "discovery": "发现",
+    "confirmed": "确认",
+    "pendingFix": "待修复",
+    "inProgress": "进行中",
+    "pendingRetest": "待复测",
+    "completed": "已完成",
+    "riskAccepted": "风险接受"
+  },
+  "statusDictionary": [
+    {
+      "status": "发现",
+      "description": "漏洞初步发现，待确认",
+      "entryCondition": "漏洞被初步识别",
+      "exitCondition": "漏洞已确认",
+      "requiredEvidence": "初步分析报告"
+    },
+    {
+      "status": "确认",
+      "description": "漏洞已确认，等待分配",
+      "entryCondition": "漏洞已确认",
+      "exitCondition": "漏洞已分配负责人",
+      "requiredEvidence": "确认报告"
+    },
+    {
+      "status": "待修复",
+      "description": "漏洞已确认，等待修复",
+      "entryCondition": "漏洞已分配负责人",
+      "exitCondition": "修复已提交代码审查",
+      "requiredEvidence": "分配通知"
+    },
+    {
+      "status": "进行中",
+      "description": "正在修复中",
+      "entryCondition": "修复已提交代码审查",
+      "exitCondition": "修复已合并到主分支",
+      "requiredEvidence": "PR链接"
+    },
+    {
+      "status": "待复测",
+      "description": "修复已完成，等待复测",
+      "entryCondition": "修复已合并到主分支",
+      "exitCondition": "复测通过",
+      "requiredEvidence": "合并ID"
+    },
+    {
+      "status": "已完成",
+      "description": "修复已完成并通过复测",
+      "entryCondition": "复测通过",
+      "exitCondition": "无",
+      "requiredEvidence": "复测报告"
+    },
+    {
+      "status": "风险接受",
+      "description": "经评估决定接受风险",
+      "entryCondition": "风险经评估无法或不需要修复",
+      "exitCondition": "无",
+      "requiredEvidence": "风险接受审批"
+    }
+  ],
+  "vulnerabilities": [
+    {
+      "id": "VULN-001",
+      "title": "JWT认证守卫实现过于简单",
+      "ruleId": "jwt-format-validation",
+      "cvss": 7.5,
+      "severity": "高",
+      "status": "已完成",
+      "completedDate": "2025-10-03",
+      "owner": "张三",
+      "firstFound": "2025-10-02",
+      "slaThreshold": "72小时",
+      "escalationStatus": "正常",
+      "targetDate": "2025-10-05",
+      "relatedCommit": "#PR123",
+      "relatedTicket": "#TICKET456",
+      "priority": "高",
+      "businessImpact": "可能导致未授权访问",
+      "falsePositive": false,
+      "evidenceLinks": [
+        {
+          "type": "日志",
+          "url": "logs/jwt.log",
+          "description": "认证日志"
+        },
+        {
+          "type": "PoC",
+          "url": "poc/jwt.md",
+          "description": "漏洞复现步骤"
+        }
+      ],
+      "entryExitCriteria": "已确认/待修复"
+    },
+    {
+      "id": "VULN-002",
+      "title": "角色守卫实现存在逻辑错误",
+      "ruleId": "roles-guard",
+      "cvss": 8.2,
+      "severity": "高",
+      "status": "进行中",
+      "inProgressDate": "2025-10-03",
+      "owner": "李四",
+      "firstFound": "2025-10-02",
+      "slaThreshold": "72小时",
+      "escalationStatus": "正常",
+      "targetDate": "2025-10-04",
+      "relatedCommit": "#PR124",
+      "relatedTicket": "#TICKET457",
+      "priority": "高",
+      "businessImpact": "可能导致权限提升",
+      "falsePositive": false,
+      "evidenceLinks": [
+        {
+          "type": "测试报告",
+          "url": "tests/roles.pdf",
+          "description": "角色权限测试报告"
+        },
+        {
+          "type": "截图",
+          "url": "images/roles.png",
+          "description": "权限提升截图"
+        }
+      ],
+      "entryExitCriteria": "已确认/待修复"
+    },
+    {
+      "id": "VULN-003",
+      "title": "支付控制器缺乏严格输入验证",
+      "ruleId": "input-validation",
+      "cvss": 9.0,
+      "severity": "严重",
+      "status": "待复测",
+      "completedDate": "2025-10-03",
+      "owner": "王五",
+      "firstFound": "2025-10-02",
+      "slaThreshold": "24小时",
+      "escalationStatus": "正常",
+      "targetDate": "2025-10-03",
+      "relatedCommit": "#PR125",
+      "relatedTicket": "#TICKET458",
+      "priority": "严重",
+      "businessImpact": "可能导致支付系统被入侵",
+      "falsePositive": false,
+      "evidenceLinks": [
+        {
+          "type": "注入测试",
+          "url": "tests/injection.md",
+          "description": "输入注入测试"
+        },
+        {
+          "type": "视频",
+          "url": "videos/poc.mp4",
+          "description": "漏洞复现视频"
+        }
+      ],
+      "entryExitCriteria": "已确认/待修复"
+    },
+    {
+      "id": "VULN-004",
+      "title": "地址控制器缺乏输入长度限制",
+      "ruleId": "input-length-validation",
+      "cvss": 5.3,
+      "severity": "中",
+      "status": "已完成",
+      "completedDate": "2025-10-03",
+      "owner": "赵六",
+      "firstFound": "2025-10-02",
+      "slaThreshold": "7天",
+      "escalationStatus": "正常",
+      "targetDate": "2025-10-10",
+      "relatedCommit": "#PR126",
+      "relatedTicket": "#TICKET459",
+      "priority": "中",
+      "businessImpact": "可能导致DoS攻击",
+      "falsePositive": false,
+      "evidenceLinks": [
+        {
+          "type": "性能测试",
+          "url": "tests/performance.pdf",
+          "description": "DoS攻击性能测试"
+        }
+      ],
+      "entryExitCriteria": "已确认/待修复"
+    },
+    {
+      "id": "VULN-005",
+      "title": "用户实体密码字段处理不当",
+      "ruleId": "password-field-exclusion",
+      "cvss": 6.5,
+      "severity": "中",
+      "status": "风险接受",
+      "acceptedDate": "2025-10-03",
+      "owner": "钱七",
+      "firstFound": "2025-10-02",
+      "slaThreshold": "7天",
+      "escalationStatus": "正常",
+      "targetDate": "2025-10-08",
+      "relatedCommit": "#PR127",
+      "relatedTicket": "#TICKET460",
+      "priority": "中",
+      "businessImpact": "可能导致密码泄露",
+      "falsePositive": false,
+      "evidenceLinks": [
+        {
+          "type": "API文档",
+          "url": "docs/api.json",
+          "description": "API响应文档"
+        },
+        {
+          "type": "截图",
+          "url": "images/password.png",
+          "description": "密码泄露截图"
+        }
+      ],
+      "entryExitCriteria": "已确认/待修复"
+    },
+    {
+      "id": "VULN-006",
+      "title": "订单实体缺乏数据库索引",
+      "ruleId": "database-indexes",
+      "cvss": 3.7,
+      "severity": "低",
+      "status": "待修复",
+      "owner": "孙八",
+      "firstFound": "2025-10-02",
+      "slaThreshold": "14天",
+      "escalationStatus": "正常",
+      "targetDate": "2025-10-15",
+      "relatedCommit": "#PR128",
+      "relatedTicket": "#TICKET461",
+      "priority": "低",
+      "businessImpact": "可能影响查询性能",
+      "falsePositive": false,
+      "evidenceLinks": [
+        {
+          "type": "查询分析",
+          "url": "db/queries.sql",
+          "description": "数据库查询分析"
+        }
+      ],
+      "entryExitCriteria": "已确认/待修复"
+    },
+    {
+      "id": "VULN-007",
+      "title": "支付服务中存在竞态条件",
+      "ruleId": "transaction-usage",
+      "cvss": 8.6,
+      "severity": "高",
+      "status": "待修复",
+      "owner": "周九",
+      "firstFound": "2025-10-02",
+      "slaThreshold": "72小时",
+      "escalationStatus": "正常",
+      "targetDate": "2025-10-04",
+      "relatedCommit": "#PR129",
+      "relatedTicket": "#TICKET462",
+      "priority": "高",
+      "businessImpact": "可能导致支付状态不一致",
+      "falsePositive": false,
+      "evidenceLinks": [
+        {
+          "type": "并发测试",
+          "url": "tests/concurrency.md",
+          "description": "竞态条件测试"
+        }
+      ],
+      "entryExitCriteria": "已确认/待修复"
+    },
+    {
+      "id": "VULN-008",
+      "title": "订单服务中库存更新缺乏原子性",
+      "ruleId": "transaction-rollback",
+      "cvss": 7.0,
+      "severity": "高",
+      "status": "待修复",
+      "owner": "吴十",
+      "firstFound": "2025-10-02",
+      "slaThreshold": "72小时",
+      "escalationStatus": "正常",
+      "targetDate": "2025-10-05",
+      "relatedCommit": "#PR130",
+      "relatedTicket": "#TICKET463",
+      "priority": "高",
+      "businessImpact": "可能导致超卖问题",
+      "falsePositive": false,
+      "evidenceLinks": [
+        {
+          "type": "库存测试",
+          "url": "tests/inventory.pdf",
+          "description": "库存并发测试"
+        }
+      ],
+      "entryExitCriteria": "已确认/待修复"
+    }
+  ],
+  "evidenceLinkStandards": [
+    {
+      "type": "日志",
+      "formatRequirements": "结构化文本",
+      "storageLocation": "logs/",
+      "retentionPeriod": "90天",
+      "verificationMethod": "脚本校验存在性",
+      "requiredDescription": "时间范围、相关用户/请求ID"
+    },
+    {
+      "type": "PoC",
+      "formatRequirements": "Markdown文档",
+      "storageLocation": "poc/",
+      "retentionPeriod": "永久",
+      "verificationMethod": "脚本校验存在性",
+      "requiredDescription": "复现步骤、预期结果、实际结果"
+    },
+    {
+      "type": "测试报告",
+      "formatRequirements": "PDF/HTML",
+      "storageLocation": "reports/",
+      "retentionPeriod": "1年",
+      "verificationMethod": "脚本校验存在性",
+      "requiredDescription": "测试环境、测试数据、测试结论"
+    },
+    {
+      "type": "截图",
+      "formatRequirements": "PNG/JPG",
+      "storageLocation": "images/",
+      "retentionPeriod": "1年",
+      "verificationMethod": "脚本校验存在性",
+      "requiredDescription": "截图时间、关键区域标注"
+    },
+    {
+      "type": "视频",
+      "formatRequirements": "MP4",
+      "storageLocation": "videos/",
+      "retentionPeriod": "1年",
+      "verificationMethod": "脚本校验存在性",
+      "requiredDescription": "视频时长、关键时间点说明"
+    },
+    {
+      "type": "代码位置",
+      "formatRequirements": "Git链接",
+      "storageLocation": "N/A",
+      "retentionPeriod": "永久",
+      "verificationMethod": "脚本校验Git引用",
+      "requiredDescription": "提交哈希、文件路径、行号"
+    }
+  ],
+  "slaAndEscalationPath": [
+    {
+      "severity": "严重",
+      "slaProcessingTime": "24小时",
+      "escalation2h": "通知开发团队负责人",
+      "escalation4h": "通知技术负责人",
+      "escalation8h": "通知安全团队负责人"
+    },
+    {
+      "severity": "高",
+      "slaProcessingTime": "72小时",
+      "escalation2h": "通知开发团队负责人",
+      "escalation4h": "通知技术负责人",
+      "escalation8h": "通知安全团队负责人"
+    },
+    {
+      "severity": "中",
+      "slaProcessingTime": "7天",
+      "escalation2h": "通知开发团队负责人",
+      "escalation4h": "通知技术负责人",
+      "escalation8h": "通知安全团队负责人"
+    },
+    {
+      "severity": "低",
+      "slaProcessingTime": "14天",
+      "escalation2h": "通知开发团队负责人",
+      "escalation4h": "通知技术负责人",
+      "escalation8h": "通知安全团队负责人"
+    }
+  ],
+  "documentReferences": [
+    {
+      "name": "安全审计报告",
+      "url": "SECURITY_AUDIT_REPORT.md"
+    },
+    {
+      "name": "安全修复优先级",
+      "url": "SECURITY_FIX_PRIORITY.md"
+    },
+    {
+      "name": "安全检查清单",
+      "url": "SECURITY_CHECKLIST.md"
+    },
+    {
+      "name": "发布前安全门禁",
+      "url": "SECURITY_RELEASE_GATE.md"
+    }
+  ],
+  "updateHistory": [
+    {
+      "version": "1.0",
+      "date": "2025-10-02",
+      "updateContent": "初始版本",
+      "updatedBy": "安全团队"
+    }
+  ]
+}

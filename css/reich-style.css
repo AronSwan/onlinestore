@@ -1,0 +1,1497 @@
+/* ==========================================================================
+   REICH BRAND STYLE - 奢华品牌样式表
+   ========================================================================== */
+
+/* 全局链接样式重置 - 移除所有下划线 */
+a {
+  text-decoration: none !important;
+}
+
+a:hover,
+a:focus,
+a:active {
+  text-decoration: none !important;
+}
+
+/* ==========================================================================
+   11. 导航栏布局 - Gucci奢华感 (增强版)
+   ========================================================================== */
+
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background-color: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(15px);
+  z-index: 100;
+  transition: all 0.4s ease;
+  /* 添加微纹理背景增强奢华感 */
+  background-image:
+    linear-gradient(45deg, rgba(255, 255, 255, 0.9) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(255, 255, 255, 0.9) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.9) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.9) 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.75rem 2rem;
+  /* 增加内边距提升大气感 */
+  max-width: 1400px;
+  margin: 0 auto;
+  position: relative;
+}
+
+/* 在导航栏两侧添加装饰线条 */
+.header-content::before,
+.header-content::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 60px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--brand-gold), transparent);
+  opacity: 0.6;
+}
+
+.header-content::before {
+  left: 5%;
+}
+
+.header-content::after {
+  right: 5%;
+}
+
+/* Logo 样式 - 奢华感增强 */
+.logo a {
+  font-family: 'Playfair Display', 'Times New Roman', serif;
+  font-size: 2.2rem;
+  /* 增大字体尺寸 */
+  font-weight: 700;
+  color: var(--brand-black);
+  text-decoration: none;
+  letter-spacing: 3px;
+  /* 增加字间距 */
+  transition: color 0.8s ease, transform 0.8s ease, text-shadow 0.8s ease;
+  text-transform: uppercase;
+  position: relative;
+  /* 添加金色光晕效果 */
+  text-shadow: 0 0 1px rgba(212, 175, 55, 0.3);
+  transform: scale(1);
+}
+
+
+
+.logo a:hover {
+  color: var(--brand-gold);
+  text-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
+  transform: scale(1.00);
+}
+
+/* AI-generated: Enhanced smooth fade-out for REICH logo hover overlay
+   Source: Optimized by AI assistant for improved visual appeal; Timestamp: 2025-09-21 17:30:00 Asia/Shanghai */
+.logo-brand {
+  position: relative;
+  display: inline-block;
+}
+
+/* Enhanced glow layer with smoother transitions */
+.logo-brand::before {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  /* Enhanced multi-layer glow effect */
+  text-shadow:
+    0 0 8px rgba(212, 175, 55, 0.6),
+    0 0 16px rgba(212, 175, 55, 0.45),
+    0 0 24px rgba(212, 175, 55, 0.3),
+    0 0 32px rgba(212, 175, 55, 0.15);
+  opacity: 0;
+  transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  white-space: nowrap;
+  /* Add subtle blur for more natural glow */
+  filter: blur(0.5px);
+}
+
+/* Enhanced shimmer overlay with smoother animation */
+.logo-brand::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  color: transparent;
+  /* Enhanced gradient with more color depth */
+  background: linear-gradient(90deg,
+      var(--brand-black) 0%,
+      rgba(212, 175, 55, 0.8) 25%,
+      var(--brand-gold) 50%,
+      rgba(212, 175, 55, 0.8) 75%,
+      var(--brand-black) 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  /* Subtle glow effect */
+  text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+  opacity: 0;
+  transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* State-based animations with enhanced smoothness - 替代效果 */
+.logo-brand[data-state="hover"]::before {
+  opacity: 1;
+  transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.logo-brand[data-state="hover"]::after {
+  opacity: 1;
+  animation: logoShimmer 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.logo-brand[data-state="leaving"]::before {
+  opacity: 0;
+  animation: none !important;
+  transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.logo-brand[data-state="leaving"]::after {
+  opacity: 0;
+  animation: none !important;
+  transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 主导航菜单 */
+.main-nav {
+  display: flex;
+  align-items: center;
+}
+
+.main-nav ul {
+  display: flex;
+  gap: 2.5rem;
+  /* 增加间距提升大气感 */
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.nav-link {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 1rem;
+  /* 稍微增大字体 */
+  font-weight: 500;
+  color: var(--brand-black);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  /* 增加字间距 */
+  padding: 0.75rem 0;
+  /* 增加内边距 */
+  position: relative;
+  transition: color 0.8s ease, font-weight 0.8s ease;
+  /* 延长过渡时间 */
+}
+
+.nav-link:hover,
+.nav-link:focus {
+  color: var(--brand-gold);
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* 改进导航链接下划线效果 - 双线设计 */
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--brand-gold), transparent);
+  border-radius: 1px;
+  transition: width 0.8s ease, opacity 0.8s ease;
+  opacity: 0;
+}
+
+.nav-link::before {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--brand-gold);
+  border-radius: 1px;
+  transition: width 0.8s ease 0.2s, opacity 0.8s ease 0.2s;
+  opacity: 0;
+}
+
+.nav-link:hover::after,
+.nav-link:focus::after,
+.nav-link.active::after {
+  width: 100%;
+  opacity: 1;
+}
+
+.nav-link:hover::before,
+.nav-link:focus::before,
+.nav-link.active::before {
+  width: 100%;
+  opacity: 1;
+}
+
+.nav-link.active {
+  color: var(--brand-gold);
+  font-weight: 600;
+}
+
+nav ul li a:hover,
+nav ul li a:focus {
+  color: var(--brand-gold);
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+nav ul li a::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--brand-gold), transparent);
+  transition: width var(--brand-transition-fast);
+  border-radius: 1px;
+}
+
+nav ul li a:hover::after,
+nav ul li a:focus::after {
+  width: 100%;
+}
+
+/* 11. 导航栏布局 - Gucci奢华感 */
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background-color: rgba(255, 255, 255, 0.95);
+  padding: 1.25rem 0;
+  transition: all 0.4s ease-in-out;
+  backdrop-filter: blur(10px);
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+}
+
+/* Logo 样式 */
+.logo a {
+  font-family: var(--brand-font-primary);
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: var(--brand-black);
+  text-decoration: none;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+}
+
+.logo a:hover {
+  color: var(--brand-gold);
+  transform: scale(1.02);
+}
+
+/* 主导航样式 */
+.main-nav {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.main-nav ul {
+  display: flex;
+  gap: 1.5rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* 导航链接样式 */
+.nav-link {
+  position: relative;
+  font-family: var(--brand-font-secondary);
+  font-size: 0.95rem;
+  color: var(--brand-black);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0.5rem 0;
+  transition: all 0.3s ease;
+}
+
+/* 导航栏动画效果增强 */
+@keyframes navLinkGlow {
+  0% {
+    text-shadow: 0 0 5px rgba(212, 175, 55, 0.3);
+  }
+
+  50% {
+    text-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+  }
+
+  100% {
+    text-shadow: 0 0 5px rgba(212, 175, 55, 0.3);
+  }
+}
+
+.nav-link:hover {
+  animation: navLinkGlow 1.5s infinite;
+}
+
+/* Logo悬停动画增强 */
+/* AI-generated: Enhanced REICH logo shimmer animation with smoother motion
+   Source: Optimized by AI assistant for improved visual appeal; Timestamp: 2025-09-21 17:30:00 Asia/Shanghai */
+@keyframes logoShimmer {
+  0% {
+    background-position: -200% center;
+  }
+
+  100% {
+    background-position: 200% center;
+  }
+}
+
+/* AI-generated: New pulsing glow animation for REICH logo - 已移除
+   Source: Created by AI assistant for enhanced visual appeal; Timestamp: 2025-09-21 17:30:00 Asia/Shanghai */
+/*
+@keyframes logoGlowPulse {
+
+  0%,
+  100% {
+    filter: blur(0.5px) brightness(1);
+  }
+
+  50% {
+    filter: blur(0.8px) brightness(1.2);
+  }
+}
+*/
+
+.logo a:hover {
+  background: linear-gradient(90deg,
+      var(--brand-black) 0%,
+      var(--brand-gold) 50%,
+      var(--brand-black) 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: logoShimmer 2s linear infinite;
+}
+
+/* 导航栏状态管理系统 */
+.nav-link-luxury {
+  --transition-duration: 300ms;
+  --transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.nav-link-luxury::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition:
+    transform var(--transition-duration) var(--transition-easing),
+    opacity calc(var(--transition-duration) * 0.8) var(--transition-easing);
+  opacity: 0;
+}
+
+/* AI Minimal Fix: unify data-state hover and hover-active to match JS state manager
+   Source: js/navigation-state-manager.js (setHoverState -> data-state 'hover-active')
+   Timestamp: 2025-09-21 21:17:19 Asia/Shanghai
+   Author: Trae AI Assistant */
+.nav-link-luxury[data-state="hover"],
+.nav-link-luxury[data-state="hover-active"] {
+  color: var(--brand-gold);
+}
+
+.nav-link-luxury[data-state="hover"]::after,
+.nav-link-luxury[data-state="hover-active"]::after {
+  transform: scaleX(0.8);
+  opacity: 0.7;
+}
+
+.nav-link-luxury[data-state="active"] {
+  color: var(--brand-gold);
+}
+
+.nav-link-luxury[data-state="active"]::after {
+  transform: scaleX(1);
+  opacity: 1;
+}
+
+.nav-link-luxury[data-state="leaving"]::after {
+  transform: scaleX(0.5);
+  opacity: 0;
+  transition:
+    transform calc(var(--transition-duration) * 1.2) var(--transition-easing),
+    opacity var(--transition-duration) linear;
+}
+
+/* 用户菜单按钮悬停动画增强 - 移除脉动效果
+@keyframes userMenuPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.4);
+  }
+
+  70% {
+    box-shadow: 0 0 0 10px rgba(212, 175, 55, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(212, 175, 55, 0);
+  }
+}
+*/
+
+.user-menu-btn:hover,
+.login-btn:hover,
+.wishlist-btn:hover,
+.cart-button:hover {
+  /* animation: userMenuPulse 1.5s infinite; */
+  color: var(--brand-gold);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+}
+
+/* 购物车计数徽章动画增强 */
+@keyframes cartCountShine {
+  0% {
+    background: linear-gradient(135deg, var(--brand-gold), #d4af37);
+    box-shadow: 0 3px 10px rgba(212, 175, 55, 0.6);
+    transform: scale(1);
+  }
+
+  50% {
+    background: linear-gradient(135deg, #f0e68c, var(--brand-gold));
+    box-shadow: 0 5px 15px rgba(212, 175, 55, 0.8);
+    transform: scale(1.05);
+  }
+
+  100% {
+    background: linear-gradient(135deg, var(--brand-gold), #d4af37);
+    box-shadow: 0 3px 10px rgba(212, 175, 55, 0.6);
+    transform: scale(1);
+  }
+}
+
+.cart-count {
+  /* animation: cartCountShine 3s infinite; */
+  background: linear-gradient(135deg, var(--brand-gold), #d4af37);
+  box-shadow: 0 3px 10px rgba(212, 175, 55, 0.6);
+}
+
+.nav-link:hover::after {
+  width: 100%;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background-color: var(--brand-gold);
+  transition: width 0.3s ease;
+  border-radius: 1px;
+}
+
+.nav-link.active {
+  color: var(--brand-gold);
+}
+
+.nav-link.active::after {
+  width: 100%;
+  background-color: var(--brand-gold);
+}
+
+/* 导航栏用户菜单 - 模仿Gucci风格 */
+.user-menu {
+  display: flex;
+  align-items: center;
+  margin-left: 24px;
+  gap: 4px;
+}
+
+.user-menu-btn {
+  background: none;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  /* 添加金色边框 */
+  color: var(--brand-black);
+  cursor: pointer;
+  font-size: 1.1rem;
+  width: 42px;
+  /* 增大尺寸 */
+  height: 42px;
+  /* 增大尺寸 */
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.4s ease;
+  /* 延长过渡时间 */
+  position: relative;
+  overflow: hidden;
+}
+
+/* 添加背景渐变效果 */
+.user-menu-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.1) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.user-menu-btn:hover {
+  color: var(--brand-gold);
+  background-color: rgba(212, 175, 55, 0.05);
+  transform: scale(1.08);
+  /* 增强缩放效果 */
+  border-color: rgba(212, 175, 55, 0.5);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2);
+  /* 添加金色阴影 */
+}
+
+.user-menu-btn:hover::before {
+  opacity: 1;
+}
+
+/* UX Enhancement: Gold tooltip and focus-visible ring for user menu buttons
+   Inserted by AI assistant to enhance index page user-menu aesthetics
+   Timestamp: 2025-09-22 20:28 Asia/Shanghai; Source: 用户请求“提升index页面user-menu的美学体验” */
+.user-menu .user-menu-btn[data-tooltip] {
+  position: relative;
+}
+
+.user-menu .user-menu-btn[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%) translateY(6px);
+  padding: 6px 10px;
+  font-size: 12px;
+  line-height: 1;
+  letter-spacing: 0.4px;
+  color: var(--brand-black);
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.95), rgba(212, 175, 55, 0.80));
+  border: 1px solid rgba(212, 175, 55, 0.65);
+  border-radius: 999px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: 0 6px 18px rgba(212, 175, 55, 0.25);
+  z-index: var(--z-index-tooltip, 1060);
+  transition: opacity 200ms var(--easing-standard, ease), transform 200ms var(--easing-standard, ease);
+}
+
+.user-menu .user-menu-btn:hover::after,
+.user-menu .user-menu-btn:focus-visible::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.user-menu .user-menu-btn:focus-visible {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-shadow);
+  border-color: rgba(212, 175, 55, 0.6);
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .user-menu .user-menu-btn[data-tooltip]::after {
+    transition: none;
+  }
+
+  .user-menu .user-menu-btn:hover {
+    transform: none;
+  }
+}
+
+/* Hide tooltips on small screens to avoid overlap */
+@media (max-width: 768px) {
+  .user-menu .user-menu-btn[data-tooltip]::after {
+    display: none;
+  }
+}
+
+/* 登录按钮样式 - 增强奢华感 */
+.login-btn {
+  background: none;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  color: var(--brand-black);
+  cursor: pointer;
+  font-size: 1.1rem;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.1) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.login-btn:hover {
+  color: var(--brand-gold);
+  background-color: rgba(212, 175, 55, 0.05);
+  transform: scale(1.08);
+  border-color: rgba(212, 175, 55, 0.5);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2);
+}
+
+.login-btn:hover::before {
+  opacity: 1;
+}
+
+/* 愿望清单按钮样式 - 增强奢华感 */
+.wishlist-btn {
+  background: none;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  color: var(--brand-black);
+  cursor: pointer;
+  font-size: 1.1rem;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 移除过渡动画效果 */
+  position: relative;
+  overflow: hidden;
+}
+
+.wishlist-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.1) 0%, transparent 70%);
+  opacity: 0;
+  /* 移除过渡动画效果 */
+}
+
+.wishlist-btn:hover {
+  color: var(--brand-gold);
+  background-color: rgba(212, 175, 55, 0.05);
+  /* 移除缩放变换效果 */
+  border-color: rgba(212, 175, 55, 0.5);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2);
+}
+
+.wishlist-btn:hover::before {
+  opacity: 1;
+}
+
+/* 购物袋按钮样式 - 模仿Gucci风格 */
+.cart-button {
+  background: none;
+  border: none;
+  color: var(--brand-black);
+  cursor: pointer;
+  font-size: 16px;
+  width: auto;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  position: relative;
+  padding: 0;
+  margin: 0 0 0 8px;
+  font-weight: 400;
+  line-height: 72px;
+}
+
+.cart-button:hover {
+  color: var(--brand-gold);
+  transform: none;
+  border: none;
+  box-shadow: none;
+  background: none;
+}
+
+.cart-button::before {
+  display: none;
+}
+
+/* 购物车计数 - 模仿Gucci风格 */
+.cart-count {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: linear-gradient(135deg, var(--brand-gold), #d4af37);
+  color: white;
+  font-size: 0.8rem;
+  font-weight: bold;
+  font-family: 'Arial', sans-serif;
+  padding: 4px 8px;
+  border-radius: 50%;
+  min-width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  box-shadow: 0 3px 10px rgba(212, 175, 55, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.cart-btn:hover .cart-count {
+  transform: scale(1.15);
+  background-color: var(--brand-black);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* 购物车数量动画 - 已移除 */
+/* @keyframes cartBounce {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.3);
+  }
+}
+
+.cart-count.updated {
+  animation: cartBounce 0.4s ease;
+} */
+
+/* 用户菜单按钮 - 模仿Gucci风格 */
+.user-menu-btn {
+  background: none;
+  border: none;
+  color: var(--brand-black);
+  cursor: pointer;
+  font-size: 16px;
+  width: auto;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 移除过渡动画效果 */
+  position: relative;
+  padding: 0;
+  margin: 0 0 0 8px;
+  font-weight: 400;
+  line-height: 72px;
+}
+
+.user-menu-btn:hover {
+  color: var(--brand-gold);
+  border: none;
+  background: none;
+}
+
+.user-menu-btn:focus {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* 购物车计数徽章脉动动画 - 已移除
+@keyframes cartCountPulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.1);
+  }
+}
+*/
+
+/* 导航栏滚动效果 - 增强奢华感 */
+.header-scrolled {
+  padding: 1rem 0 !important;
+  background-color: rgba(255, 255, 255, 0.98) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2) !important;
+  /* 添加玻璃拟态效果 */
+  backdrop-filter: blur(15px) !important;
+  -webkit-backdrop-filter: blur(15px) !important;
+  /* 添加微纹理背景 */
+  background-image:
+    linear-gradient(45deg, rgba(255, 255, 255, 0.9) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(255, 255, 255, 0.9) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.9) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.9) 75%) !important;
+  background-size: 20px 20px !important;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px !important;
+}
+
+.header-scrolled .logo a {
+  font-size: 1.8rem !important;
+  letter-spacing: 2px !important;
+  /* 增强金色光晕效果 */
+  text-shadow: 0 0 8px rgba(212, 175, 55, 0.4) !important;
+}
+
+.header-scrolled .header-content {
+  padding: 1rem 2rem !important;
+}
+
+.header-scrolled .nav-link {
+  padding: 0.5rem 0 !important;
+  font-size: 0.95rem !important;
+  letter-spacing: 0.8px !important;
+}
+
+/* 导航栏滚动效果 - 模仿Gucci风格 */
+.header-scrolled .user-menu-btn,
+.header-scrolled .login-btn,
+.header-scrolled .wishlist-btn {
+  width: 38px !important;
+  height: 38px !important;
+  font-size: 1rem !important;
+}
+
+.header-scrolled .cart-button {
+  height: 64px !important;
+  line-height: 64px !important;
+  font-size: 14px !important;
+  margin-left: 20px !important;
+}
+
+.header-scrolled .cart-count {
+  top: -6px !important;
+  right: -6px !important;
+  min-width: 20px !important;
+  height: 20px !important;
+  font-size: 0.7rem !important;
+  border: 2px solid rgba(255, 255, 255, 0.9) !important;
+  /* 增强边框可见性 */
+  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.7) !important;
+  /* 增强阴影效果 */
+}
+
+.header-scrolled .nav-link {
+  color: var(--brand-gold) !important;
+}
+
+.header-scrolled .nav-link {
+  width: 100% !important;
+}
+
+/* 页面加载动画 */
+.header {
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: all 0.6s ease;
+}
+
+.header.loaded {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ==========================================================================
+   5. Hero区域样式
+   ========================================================================== */
+
+.hero {
+  position: relative;
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(245, 245, 245, 1) 100%);
+  margin-bottom: var(--brand-spacing-lg);
+  overflow: hidden;
+  box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.05);
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="none" stroke="%23D4AF37" stroke-width="0.5" opacity="0.1"/></svg>');
+  z-index: 1;
+}
+
+.hero-content {
+  text-align: center;
+  padding: var(--brand-spacing-lg);
+  position: relative;
+  z-index: 2;
+  max-width: 900px;
+  animation: fadeInUp 1s ease-out;
+}
+
+.hero h1 {
+  font-family: var(--brand-font-primary);
+  font-size: 3.5rem;
+  font-weight: normal;
+  color: var(--brand-black);
+  margin-bottom: var(--brand-spacing-md);
+  line-height: 1.2;
+  letter-spacing: 1px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.hero p {
+  font-family: var(--brand-font-secondary);
+  font-size: 1.1rem;
+  color: var(--brand-gray-dark);
+  margin-bottom: var(--brand-spacing-lg);
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
+
+.hero-accent {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.1) 0%, transparent 70%);
+  border-radius: 50%;
+  filter: blur(40px);
+  animation: float 6s ease-in-out infinite;
+}
+
+.hero-accent:nth-child(1) {
+  top: 20%;
+  left: 10%;
+  animation-delay: 0s;
+}
+
+.hero-accent:nth-child(2) {
+  top: 60%;
+  right: 15%;
+  animation-delay: 3s;
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==========================================================================
+   6. 区块标题样式
+   ========================================================================== */
+
+.section-title {
+  text-align: center;
+  margin-bottom: var(--brand-spacing-xl);
+  position: relative;
+}
+
+.section-title h2 {
+  font-family: var(--brand-font-primary);
+  font-size: 2.5rem;
+  font-weight: normal;
+  color: var(--brand-black);
+  margin-bottom: var(--brand-spacing-sm);
+  letter-spacing: 1px;
+}
+
+.section-title p {
+  font-family: var(--brand-font-secondary);
+  font-size: 1.1rem;
+  color: var(--brand-gray-dark);
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.section-title::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 2px;
+  background: var(--brand-gold);
+}
+
+/* ==========================================================================
+   7. 特色区块样式
+   ========================================================================== */
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--brand-spacing-lg);
+  padding: var(--brand-spacing-lg) 0;
+}
+
+.feature-item {
+  text-align: center;
+  padding: var(--brand-spacing-lg);
+  background: var(--brand-white);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: all var(--brand-transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--brand-gold);
+  transform: scaleX(0);
+  transition: transform var(--brand-transition-normal);
+}
+
+.feature-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.feature-item:hover::before {
+  transform: scaleX(1);
+}
+
+.feature-icon {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto var(--brand-spacing-md);
+  background: var(--brand-gold);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--brand-white);
+  font-size: 1.5rem;
+  transition: all var(--brand-transition-normal);
+}
+
+.feature-item:hover .feature-icon {
+  transform: scale(1.1);
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+}
+
+.feature-item h3 {
+  font-family: var(--brand-font-primary);
+  font-size: 1.3rem;
+  font-weight: normal;
+  color: var(--brand-black);
+  margin-bottom: var(--brand-spacing-sm);
+  letter-spacing: 0.5px;
+}
+
+.feature-item p {
+  font-family: var(--brand-font-secondary);
+  font-size: 0.95rem;
+  color: var(--brand-gray-dark);
+  line-height: 1.6;
+}
+
+/* ==========================================================================
+   8. 系列区块样式
+   ========================================================================== */
+
+.collection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: var(--brand-spacing-lg);
+  padding: var(--brand-spacing-lg) 0;
+}
+
+.collection-item {
+  position: relative;
+  background: var(--brand-white);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.1);
+  transition: all var(--brand-transition-normal);
+  cursor: pointer;
+}
+
+.collection-item:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.collection-image {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+  transition: transform var(--brand-transition-normal);
+}
+
+.collection-item:hover .collection-image {
+  transform: scale(1.05);
+}
+
+.collection-content {
+  padding: var(--brand-spacing-lg);
+  text-align: center;
+}
+
+.collection-content h3 {
+  font-family: var(--brand-font-primary);
+  font-size: 1.4rem;
+  font-weight: normal;
+  color: var(--brand-black);
+  margin-bottom: var(--brand-spacing-sm);
+  letter-spacing: 0.5px;
+}
+
+.collection-content p {
+  font-family: var(--brand-font-secondary);
+  font-size: 0.95rem;
+  color: var(--brand-gray-dark);
+  margin-bottom: var(--brand-spacing-md);
+  line-height: 1.6;
+}
+
+.collection-badge {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: var(--brand-gold);
+  color: var(--brand-white);
+  padding: var(--brand-spacing-xs) var(--brand-spacing-sm);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  z-index: 2;
+}
+
+/* ==========================================================================
+   9. 产品卡片样式
+   ========================================================================== */
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--brand-spacing-lg);
+  padding: var(--brand-spacing-lg) 0;
+}
+
+.product-card {
+  background: var(--brand-white);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.1);
+  transition: all var(--brand-transition-normal);
+  position: relative;
+}
+
+.product-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.product-image {
+  width: 100%;
+  height: 320px;
+  object-fit: cover;
+  transition: transform var(--brand-transition-normal);
+}
+
+.product-card:hover .product-image {
+  transform: scale(1.05);
+}
+
+.product-info {
+  padding: var(--brand-spacing-lg);
+}
+
+.product-name {
+  font-family: var(--brand-font-primary);
+  font-size: 1.2rem;
+  font-weight: normal;
+  color: var(--brand-black);
+  margin-bottom: var(--brand-spacing-xs);
+  letter-spacing: 0.5px;
+}
+
+.product-description {
+  font-family: var(--brand-font-secondary);
+  font-size: 0.9rem;
+  color: var(--brand-gray-dark);
+  margin-bottom: var(--brand-spacing-md);
+  line-height: 1.5;
+}
+
+.product-price {
+  font-family: var(--font-family-serif);
+  font-size: 1.1rem;
+  color: var(--gold-standard);
+  font-weight: var(--font-weight-light);
+  letter-spacing: var(--letter-spacing-normal);
+  margin-bottom: var(--brand-spacing-md);
+}
+
+.product-price .original {
+  text-decoration: line-through;
+  color: var(--brand-gray-medium);
+  margin-right: var(--brand-spacing-xs);
+  font-size: 0.9rem;
+}
+
+.product-badge {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  background: var(--brand-gold);
+  color: var(--brand-white);
+  padding: var(--brand-spacing-xs) var(--brand-spacing-sm);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  z-index: 2;
+}
+
+.product-badge.sale {
+  background: var(--brand-red);
+}
+
+.product-badge.new {
+  background: var(--brand-green);
+}
+
+.product-badge.limited {
+  background: linear-gradient(135deg, var(--brand-gold), var(--brand-gold-dark));
+}
+
+/* Reich产品卡片特殊样式 */
+.reich-product-card {
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  position: relative;
+}
+
+.reich-product-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--brand-gold);
+  opacity: 0;
+  transition: opacity var(--brand-transition-normal);
+}
+
+.reich-product-card:hover::before {
+  opacity: 1;
+}
+
+.reich-product-card .product-name {
+  font-family: var(--brand-font-primary);
+  font-size: 1.3rem;
+  color: var(--brand-black);
+  font-weight: normal;
+  letter-spacing: 0.5px;
+}
+
+.reich-product-card .product-price {
+  font-family: var(--font-family-serif);
+  font-size: 1.2rem;
+  color: var(--gold-standard);
+  font-weight: var(--font-weight-light);
+  letter-spacing: var(--letter-spacing-normal);
+}
+
+/* UX/DLS: New Arrivals unified styles and badge aliases
+   Inserted by AI assistant to consolidate index.html New Arrivals styles and tag naming
+   Timestamp: 2025-09-22 22:27:09 Asia/Shanghai; Source: 用户请求“确保新品上市区域样式一致并统一命名规范” */
+/* Section layout */
+.new-arrivals-section {
+  padding: var(--spacing-24) 0;
+  background-color: var(--bg-primary);
+}
+
+/* Grid layout */
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--spacing-xl);
+}
+
+/* Badge aliases: unify legacy classes to canonical product-badge semantics */
+.new-arrival,
+.reich-product-tag,
+.product-tag,
+.product-tag-new,
+.product-tag-limited {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  background: var(--brand-gold);
+  color: var(--brand-white);
+  padding: var(--brand-spacing-xs) var(--brand-spacing-sm);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  z-index: 2;
+}
+
+/* Variant mapping */
+.product-badge.new,
+.new-arrival,
+.product-tag-new {
+  background: var(--brand-green);
+}
+
+.product-badge.limited,
+.product-tag-limited,
+.reich-product-tag.product-tag-limited {
+  background: linear-gradient(135deg, var(--brand-gold), var(--brand-gold-dark));
+}
+
+/* Duplicate styles removed by AI assistant; Timestamp: 2025-09-22 22:27:09 Asia/Shanghai */
+
+/* Cleaned duplicate badge and price/description block by AI assistant; Timestamp: 2025-09-22 22:27:09 Asia/Shanghai; Source: 用户请求统一新品上市样式与命名 */
+
+/* Duplicate .product-badge block removed — Inserted by AI assistant; Timestamp: 2025-09-22 22:27:09 Asia/Shanghai */
+
+.product-badge.limited {
+  background: linear-gradient(135deg, var(--brand-gold), var(--brand-gold-dark));
+}
+
+/* Optional hot variant aligned to brand gold */
+.product-badge.hot {
+  background: var(--brand-gold);
+}
+
+.product-description {
+  font-family: var(--brand-font-secondary);
+  font-size: 0.9rem;
+  color: var(--brand-gray-dark);
+  margin-bottom: var(--brand-spacing-md);
+  line-height: 1.5;
+}
+
+.product-price {
+  font-family: var(--font-family-serif);
+  font-size: 1.1rem;
+  color: var(--gold-standard);
+  font-weight: var(--font-weight-light);
+  letter-spacing: var(--letter-spacing-normal);
+  margin-bottom: var(--brand-spacing-md);
+}
+
+.product-price .original {
+  text-decoration: line-through;
+  color: var(--brand-gray-medium);
+  margin-right: var(--brand-spacing-xs);
+  font-size: 0.9rem;
+}
+
+/* Duplicate .product-badge block removed — Inserted by AI assistant; Timestamp: 2025-09-22 22:27:09 Asia/Shanghai */
+
+.product-description {
+  font-family: var(--brand-font-secondary);
+  font-size: 0.9rem;
+  color: var(--brand-gray-dark);
+  margin-bottom: var(--brand-spacing-md);
+  line-height: 1.5;
+}
+
+.product-price {
+  font-family: var(--font-family-serif);
+  font-size: 1.1rem;
+  color: var(--gold-standard);
+  font-weight: var(--font-weight-light);
+  letter-spacing: var(--letter-spacing-normal);
+  margin-bottom: var(--brand-spacing-md);
+}
+
+.product-price .original {
+  text-decoration: line-through;
+  color: var(--brand-gray-medium);
+  margin-right: var(--brand-spacing-xs);
+  font-size: 0.9rem;
+}

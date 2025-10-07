@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: search-config
+  namespace: search
+data:
+  search.primary: "meilisearch"
+  search.fallback: "zincsearch"
+  meili.url: "http://meilisearch-service:7700"
+  zinc.url: "http://zincsearch-service:4080"
+  search.timeout: "5000"
+  search.retry.count: "3"
+  health.check.interval: "30000"

@@ -1,0 +1,27 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: search
+
+resources:
+- search-namespace.yaml
+- search-pvc.yaml
+- search-configmap.yaml
+- meilisearch-deployment.yaml
+- zincsearch-deployment.yaml
+
+# 在应用时生成密钥
+secretGenerator:
+- name: search-secrets
+  behavior: create
+  literals:
+  - meili-master-key=generated-master-key
+  - zinc-admin-user=admin
+  - zinc-admin-password=generated-password
+
+commonLabels:
+  app: search-engine
+  environment: production
+
+commonAnnotations:
+  description: "MeiliSearch + ZincSearch 高可用搜索服务"

@@ -1,0 +1,26 @@
+{
+  "presets": [
+    ["@babel/preset-env", {
+      "targets": {
+        "browsers": ["last 2 versions", "not dead", "not IE 11"]
+      },
+      "useBuiltIns": "usage",
+      "corejs": "3.22"
+    }]
+  ],
+  "plugins": [
+    "@babel/plugin-proposal-class-properties",
+    "@babel/plugin-proposal-private-methods",
+    "@babel/plugin-transform-runtime"
+  ],
+  "env": {
+    "development": {
+      "sourceMaps": true,
+      "retainLines": true
+    },
+    "production": {
+      "compact": true,
+      "comments": false
+    }
+  }
+}

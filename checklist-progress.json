@@ -1,0 +1,34 @@
+{
+  "metadata": {
+    "generated": "2025-09-24T12:58:25.210Z",
+    "checklist": "navigation-design-improvement-checklist.md"
+  },
+  "progress": {
+    "totalItems": 26,
+    "completed": 5,
+    "inProgress": 0,
+    "pending": 21,
+    "blocked": 0,
+    "sections": {
+      "代码优化建议": {
+        "total": 9,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 9
+      },
+      "功能扩展建议": {
+        "total": 12,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 12
+      },
+      "已完成任务": {
+        "total": 5,
+        "completed": 5,
+        "inProgress": 0,
+        "pending": 0
+      }
+    },
+    "lastUpdated": "2025-09-24T12:58:25.185Z"
+  }
+}

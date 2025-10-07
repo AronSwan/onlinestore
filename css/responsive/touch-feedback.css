@@ -1,0 +1,569 @@
+/**
+ * 触摸反馈效果样式
+ * 用于增强用户在触摸操作时的视觉反馈
+ * 创建时间：2025-09-23
+ * 来源：AI生成代码
+ */
+
+/* 基础触摸反馈效果 */
+.touch-feedback {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+/* 涟漪效果容器 */
+.ripple-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* 涟漪效果 */
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.6);
+  transform: scale(0);
+  animation: ripple-animation 0.6s ease-out;
+  pointer-events: none;
+}
+
+@keyframes ripple-animation {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* 按钮触摸反馈 */
+.btn-luxury:active,
+.btn-gucci:active,
+.btn-reich:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* 产品卡片触摸反馈 */
+.reich-product-card:active {
+  transform: scale(0.98);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* 导航链接触摸反馈 */
+.nav-link:active,
+.nav-link-luxury:active {
+  transform: scale(0.95);
+}
+
+/* 触摸高亮效果 */
+.touch-highlight {
+  position: relative;
+}
+
+.touch-highlight::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 215, 0, 0.3);
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.touch-highlight:active::after {
+  opacity: 1;
+}
+
+/* 触摸脉冲效果 - 移除脉动动画
+.pulse-effect {
+  position: relative;
+}
+
+.pulse-effect::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 215, 0, 0.5);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s, opacity 0.6s;
+}
+
+.pulse-effect:active::before {
+  width: 100px;
+  height: 100px;
+  opacity: 0;
+}
+*/
+
+/* 触摸效果 - 替代方案 */
+.pulse-effect {
+  position: relative;
+}
+
+.pulse-effect:active {
+  transform: scale(0.98);
+  transition: transform 0.1s ease;
+}
+
+/* 触摸滑动指示器 */
+.swipe-indicator {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+}
+
+.swipe-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.5);
+  transition: all 0.3s ease;
+}
+
+.swipe-dot.active {
+  background-color: #fff;
+  width: 24px;
+  border-radius: 4px;
+}
+
+/* 触摸加载反馈 */
+.touch-loading {
+  position: relative;
+  pointer-events: none;
+}
+
+.touch-loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.7);
+  border-radius: inherit;
+  z-index: 5;
+}
+
+.touch-loading::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 30px;
+  height: 30px;
+  margin: -15px 0 0 -15px;
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top-color: #d4af37;
+  animation: spin 1s ease-in-out infinite;
+  z-index: 6;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 触摸成功反馈 */
+.touch-success {
+  position: relative;
+}
+
+.touch-success::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #4CAF50;
+  font-size: 24px;
+  font-weight: bold;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 10;
+}
+
+.touch-success.show::after {
+  opacity: 1;
+}
+
+/* 触摸错误反馈 */
+.touch-error {
+  position: relative;
+}
+
+.touch-error::after {
+  content: '✗';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #F44336;
+  font-size: 24px;
+  font-weight: bold;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 10;
+}
+
+.touch-error.show::after {
+  opacity: 1;
+}
+
+/* 触摸提示气泡 */
+.touch-tooltip {
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  white-space: nowrap;
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.touch-tooltip.show {
+  opacity: 1;
+}
+
+.touch-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
+}
+
+/* 触摸手势指示 */
+.touch-gesture-hint {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 10px 15px;
+  border-radius: 20px;
+  font-size: 14px;
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.touch-gesture-hint.show {
+  opacity: 1;
+}
+
+/* 触摸振动反馈类（用于JavaScript触发） */
+.haptic-feedback {
+  /* 此类用于JavaScript识别并触发振动反馈 */
+  /* 保留一个实际样式以避免空规则集警告 */
+  position: relative;
+}
+
+/* 响应式触摸反馈 */
+@media (max-width: 768px) {
+  /* 增强移动设备上的触摸反馈效果 */
+  .btn-luxury:active,
+  .btn-gucci:active,
+  .btn-reich:active {
+    transform: scale(0.92);
+  }
+  
+  .reich-product-card:active {
+    transform: scale(0.96);
+  }
+  
+  /* 增大涟漪效果 */
+  .ripple {
+    animation-duration: 0.8s;
+  }
+  
+  /* 滑动操作样式 */
+  .swipeable {
+    touch-action: pan-y;
+    overflow-x: hidden;
+    position: relative;
+  }
+  
+  /* 滑动动画 */
+  .swipe-transition {
+    transition: transform 0.3s ease;
+  }
+}
+
+/* 涟漪动画定义 - 放在媒体查询外 */
+@keyframes ripple-animation {
+  to {
+    transform: scale(6);
+    opacity: 0;
+  }
+}
+
+@media (max-width: 575px) {
+  /* 在小屏幕设备上进一步增强触摸反馈 */
+  .btn-luxury:active,
+  .btn-gucci:active,
+  .btn-reich:active {
+    transform: scale(0.90);
+  }
+  
+  .reich-product-card:active {
+    transform: scale(0.94);
+  }
+  
+  /* 更明显的触摸高亮 */
+  .touch-highlight:active::after {
+    background-color: rgba(255, 215, 0, 0.4);
+  }
+  
+  /* 小屏幕上的滑动操作样式 */
+  .swipeable {
+    touch-action: pan-y;
+  }
+  
+  /* 增强小屏幕上的滑动动画 */
+  .swipe-transition {
+    transition: transform 0.25s ease-out;
+  }
+}
+
+/* 滑动删除样式 */
+.swipe-to-delete {
+  transition: transform 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  will-change: transform;
+}
+
+.swipe-to-delete.deleting {
+  transform: translateX(-150px);
+}
+
+/* 滑动操作按钮容器 */
+.swipe-actions-container {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  z-index: 1;
+}
+
+/* 删除按钮样式 */
+.delete-confirm-btn {
+  background-color: #ff4757;
+  color: white;
+  border: none;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  height: 100%;
+  min-width: 75px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.delete-confirm-btn:hover,
+.delete-confirm-btn:active {
+  background-color: #ff3742;
+  transform: translateX(0);
+}
+
+/* 收藏按钮样式 */
+.favorite-btn {
+  background-color: #f1f2f6;
+  color: #2f3542;
+  border: none;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  height: 100%;
+  min-width: 75px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.favorite-btn:hover,
+.favorite-btn:active {
+  background-color: #dfe4ea;
+}
+
+.favorite-btn.favorited {
+  background-color: #ff6b81;
+  color: white;
+}
+
+/* 长按效果样式 */
+.long-press-target {
+  transition: all 0.2s ease;
+}
+
+.long-press-target.long-pressing {
+  transform: scale(0.95);
+  opacity: 0.9;
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3);
+}
+
+/* 手势提示样式增强 */
+.touch-gesture-hint {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 10px 15px;
+  border-radius: 20px;
+  font-size: 14px;
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.touch-gesture-hint.show {
+  opacity: 1;
+  animation: hint-slide-up 0.3s ease-out;
+}
+
+@keyframes hint-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 产品图片缩放样式 */
+.reich-product-image-container {
+  transition: transform 0.3s ease;
+  transform-origin: center center;
+  overflow: hidden;
+  position: relative;
+}
+
+.reich-product-image {
+  transition: transform 0.3s ease;
+  transform-origin: center center;
+}
+
+/* 双指缩放支持 */
+.pinch-zoom-enabled {
+  touch-action: none;
+  user-select: none;
+}
+
+/* 水平滚动容器优化 */
+.horizontal-scroll,
+.carousel,
+.product-gallery {
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+}
+
+.horizontal-scroll > *,
+.carousel > *,
+.product-gallery > * {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+}
+
+/* 滚动条隐藏 */
+.horizontal-scroll::-webkit-scrollbar,
+.carousel::-webkit-scrollbar,
+.product-gallery::-webkit-scrollbar {
+  height: 4px;
+}
+
+.horizontal-scroll::-webkit-scrollbar-thumb,
+.carousel::-webkit-scrollbar-thumb,
+.product-gallery::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 2px;
+}
+
+.horizontal-scroll::-webkit-scrollbar-track,
+.carousel::-webkit-scrollbar-track,
+.product-gallery::-webkit-scrollbar-track {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  /* 增强移动设备上的手势反馈 */
+  .reich-product-card.swipe-to-delete.deleting {
+    transform: translateX(-150px);
+  }
+  
+  .swipe-actions-container {
+    height: 100%;
+  }
+  
+  .delete-confirm-btn,
+  .favorite-btn {
+    min-width: 75px;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 575px) {
+  /* 在小屏幕设备上进一步增强手势反馈 */
+  .reich-product-card.swipe-to-delete.deleting {
+    transform: translateX(-120px);
+  }
+  
+  .delete-confirm-btn,
+  .favorite-btn {
+    min-width: 60px;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  
+  .touch-gesture-hint {
+    bottom: 15px;
+    right: 15px;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // 渐进式严格化 - 阶段1
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    
+    // 阶段2 (后续启用)
+    // "strictBindCallApply": true,
+    // "strictFunctionTypes": true,
+    // "noImplicitReturns": true,
+    // "noImplicitThis": true,
+    
+    // 保持现有设置以避免大量错误
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": false,
+    "noFallthroughCasesInSwitch": false
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.spec.ts",
+    "**/*.test.ts"
+  ]
+}

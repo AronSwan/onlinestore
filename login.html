@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reich - 用户登录 | 奢华购物体验</title>
+    
+    <!-- 安全防护 -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:;">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    
+    <!-- 样式表 -->
+    <link rel="stylesheet" href="css/variables/complete-variables.css">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/components/buttons.css">
+    <link rel="stylesheet" href="css/components/luxury-components.css">
+    <link rel="stylesheet" href="css/components/login.css">
+    <link rel="stylesheet" href="css/responsive/enhanced-responsive.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 复选框测试脚本 -->
+    <script src="test-checkbox-function.js"></script>
+</head>
+
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar-luxury fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between h-16">
+                <a href="index.html" class="flex items-center space-x-2">
+                    <i class="fas fa-crown text-2xl text-primary"></i>
+                    <span class="text-xl font-serif font-bold text-primary">Reich</span>
+                </a>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="index.html" class="nav-link-luxury text-gray-600 hover:text-primary transition-colors">首页</a>
+                    <a href="#" class="nav-link-luxury text-gray-600 hover:text-primary transition-colors">商品</a>
+                    <a href="#" class="nav-link-luxury text-gray-600 hover:text-primary transition-colors">关于</a>
+                    <a href="#" class="nav-link-luxury text-gray-600 hover:text-primary transition-colors">联系</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="#" class="text-gray-600 hover:text-primary transition-colors">
+                        <i class="fas fa-search"></i>
+                    </a>
+                    <a href="#" class="text-gray-600 hover:text-primary transition-colors">
+                        <i class="fas fa-shopping-cart"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容 -->
+    <main class="login-container pt-16">
+        <div class="container mx-auto px-4 py-12">
+            <div class="max-w-md mx-auto">
+                <!-- 安全提示 -->
+                <div id="security-notice" class="security-notice hidden">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>为了您的账户安全，请在5次登录失败后等待15分钟</span>
+                </div>
+
+                <!-- 登录卡片 -->
+                <div class="login-card p-8">
+                    <!-- 标题 -->
+                    <div class="text-center mb-8">
+                        <h1 class="text-3xl font-serif font-bold text-primary mb-2">欢迎回来</h1>
+                        <p class="text-gray-600">登录您的Reich账户，享受专属服务</p>
+                    </div>
+
+                    <!-- 认证标签 -->
+                    <div class="auth-tabs flex mb-6" role="tablist" aria-label="登录注册选项">
+                        <button id="login-tab" class="auth-tab active flex-1 py-3 text-center font-medium" 
+                                role="tab" aria-selected="true" aria-controls="login-form-container">
+                            账户登录
+                        </button>
+                        <button id="register-tab" class="auth-tab flex-1 py-3 text-center font-medium"
+                                role="tab" aria-selected="false" aria-controls="register-form-container">
+                            注册账户
+                        </button>
+                    </div>
+
+                    <!-- 登录表单 -->
+                    <div id="login-form-container" role="tabpanel" aria-labelledby="login-tab">
+                        <form id="login-form" class="space-y-6" novalidate aria-label="用户登录表单">
+                            <input type="hidden" name="_token" id="csrf-token">
+                            
+                            <!-- 邮箱输入 -->
+                            <div>
+                                <label for="login-email" class="form-label">邮箱地址</label>
+                                <input 
+                                    type="email" 
+                                    id="login-email" 
+                                    name="email"
+                                    class="form-input" 
+                                    placeholder="请输入您的邮箱"
+                                    required
+                                    autocomplete="email"
+                                    aria-describedby="login-email-help"
+                                >
+                                <div id="login-email-help" class="sr-only">请输入有效的邮箱地址用于登录</div>
+                                <div id="login-email-error" class="invalid-feedback"></div>
+                            </div>
+
+                            <!-- 密码输入 -->
+                            <div>
+                                <label for="login-password" class="form-label">密码</label>
+                                <div class="relative">
+                                    <input 
+                                        type="password" 
+                                        id="login-password" 
+                                        name="password"
+                                        class="form-input pr-12" 
+                                        placeholder="请输入您的密码"
+                                        required
+                                        autocomplete="current-password"
+                                        aria-describedby="login-password-help"
+                                        minlength="6"
+                                    >
+                                    <div id="login-password-help" class="sr-only">请输入您的登录密码</div>
+                                    <button 
+                                        type="button" 
+                                        id="toggle-login-password"
+                                        class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                        aria-label="显示/隐藏密码"
+                                    >
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                <div id="login-password-error" class="invalid-feedback"></div>
+                            </div>
+
+                            <!-- 验证码容器 -->
+                            <div id="captcha-container" class="hidden">
+                                <label for="captcha-input" class="form-label">验证码 *</label>
+                                <div class="captcha-container">
+                                    <!-- 验证码将通过JavaScript动态生成 -->
+                                </div>
+                            </div>
+                            
+                            <!-- 记住我和忘记密码 -->
+                            <div class="flex items-center justify-between">
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="remember-me" class="mr-2">
+                                    <span class="text-sm text-gray-600">记住我</span>
+                                </label>
+                                <a href="#" class="text-sm text-secondary hover:underline">忘记密码？</a>
+                            </div>
+
+                            <!-- 登录按钮 -->
+                            <button type="submit" class="btn-luxury btn-primary w-full">
+                                <i class="fas fa-sign-in-alt mr-2"></i>
+                                登录
+                            </button>
+                        </form>
+
+                        <!-- 社交登录 -->
+                        <div class="mt-6">
+                            <div class="relative">
+                                <div class="absolute inset-0 flex items-center">
+                                    <div class="w-full border-t border-gray-300"></div>
+                                </div>
+                                <div class="relative flex justify-center text-sm">
+                                    <span class="px-2 bg-white text-gray-500">或使用以下方式登录</span>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 space-y-3">
+                                <a href="#" id="casdoor-login" class="social-btn w-full">
+                                    <i class="fas fa-shield-alt text-blue-600"></i>
+                                    <span>Casdoor 统一登录</span>
+                                </a>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <a href="#" class="social-btn">
+                                        <i class="fab fa-google text-red-500"></i>
+                                        <span>Google</span>
+                                    </a>
+                                    <a href="#" class="social-btn">
+                                        <i class="fab fa-github text-gray-800"></i>
+                                        <span>GitHub</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 注册表单 -->
+                    <div id="register-form-container" class="hidden" role="tabpanel" aria-labelledby="register-tab">
+                        <form id="register-form" class="space-y-6" novalidate aria-label="用户注册表单">
+                            <input type="hidden" name="_token" id="register-csrf-token">
+                            
+                            <div>
+                                <label for="register-username" class="form-label">用户名</label>
+                                <input 
+                                    type="text" 
+                                    id="register-username" 
+                                    name="username"
+                                    class="form-input" 
+                                    placeholder="请输入用户名（3-20个字符）"
+                                    required
+                                    minlength="3"
+                                    maxlength="20"
+                                    aria-describedby="register-username-help"
+                                    pattern="^[a-zA-Z0-9_\u4e00-\u9fa5]{3,20}$"
+                                >
+                                <div id="register-username-help" class="sr-only">用户名长度3-20个字符，支持字母、数字、下划线和中文</div>
+                                <div id="register-username-error" class="invalid-feedback"></div>
+                            </div>
+
+                            <div>
+                                <label for="register-email" class="form-label">邮箱地址</label>
+                                <input 
+                                    type="email" 
+                                    id="register-email" 
+                                    name="email"
+                                    class="form-input" 
+                                    placeholder="请输入您的邮箱"
+                                    required
+                                    aria-describedby="register-email-help"
+                                >
+                                <div id="register-email-help" class="sr-only">请输入有效的邮箱地址用于注册</div>
+                                <div id="register-email-error" class="invalid-feedback"></div>
+                            </div>
+
+                            <div>
+                                <label for="register-password" class="form-label">密码</label>
+                                <div class="relative">
+                                    <input 
+                                        type="password" 
+                                        id="register-password" 
+                                        name="password"
+                                        class="form-input pr-12" 
+                                        placeholder="请输入密码（至少8位）"
+                                        required
+                                        minlength="8"
+                                        aria-describedby="register-password-help"
+                                        pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+                                    >
+                                    <div id="register-password-help" class="sr-only">密码至少8位，建议包含大小写字母、数字和特殊字符</div>
+                                    <button 
+                                        type="button" 
+                                        id="toggle-register-password"
+                                        class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                        aria-label="显示/隐藏密码"
+                                    >
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                <div id="register-password-error" class="invalid-feedback"></div>
+                                <!-- 密码强度指示器 -->
+                                <div id="password-strength" class="mt-2 hidden">
+                                    <div class="text-xs text-gray-600 mb-1">密码强度：</div>
+                                    <div class="flex space-x-1">
+                                        <div class="strength-bar flex-1 h-1 bg-gray-200 rounded"></div>
+                                        <div class="strength-bar flex-1 h-1 bg-gray-200 rounded"></div>
+                                        <div class="strength-bar flex-1 h-1 bg-gray-200 rounded"></div>
+                                        <div class="strength-bar flex-1 h-1 bg-gray-200 rounded"></div>
+                                    </div>
+                                    <div id="password-strength-text" class="text-xs mt-1"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="confirm-password" class="form-label">确认密码</label>
+                                <input 
+                                    type="password" 
+                                    id="confirm-password" 
+                                    name="confirmPassword"
+                                    class="form-input" 
+                                    placeholder="请再次输入密码"
+                                    required
+                                    aria-describedby="confirm-password-help"
+                                >
+                                <div id="confirm-password-help" class="sr-only">请再次输入密码以确认</div>
+                                <div id="confirm-password-error" class="invalid-feedback"></div>
+                            </div>
+
+                            <div>
+                                <label class="flex items-start">
+                                    <input type="checkbox" id="agree-terms" class="mt-1 mr-2" required 
+                                           aria-describedby="terms-description">
+                                    <span id="terms-description" class="text-sm text-gray-600">
+                                        我已阅读并同意 
+                                        <a href="/terms" class="text-secondary hover:underline" target="_blank" 
+                                           aria-label="服务条款（在新窗口打开）">服务条款</a> 
+                                        和 
+                                        <a href="/privacy" class="text-secondary hover:underline" target="_blank"
+                                           aria-label="隐私政策（在新窗口打开）">隐私政策</a>
+                                    </span>
+                                </label>
+                                <div id="terms-error" class="invalid-feedback" role="alert" aria-live="polite"></div>
+                            </div>
+
+                            <button type="submit" class="btn-luxury btn-primary w-full">
+                                <i class="fas fa-user-plus mr-2"></i>
+                                注册账户
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 返回首页 -->
+                <div class="text-center mt-6">
+                    <a href="index.html" class="text-gray-600 hover:text-primary transition-colors">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        返回首页
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 通知容器 -->
+    <div id="notification-container"></div>
+
+    <!-- JavaScript -->
+    <script type="module" src="js/main.js"></script>
+    <script type="module" src="js/auth.js"></script>
+    <script src="js/advanced-email-verifier.js"></script>
+    <script src="js/login-utils.js"></script>
+    <script src="js/login-enhanced.js"></script>
+    <script src="js/email-verification.js"></script>
+    <script src="js/oauth-handler.js"></script>
+    
+    <script>
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化CSRF令牌
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            if (csrfToken) {
+                document.getElementById('csrf-token').value = csrfToken;
+                document.getElementById('register-csrf-token').value = csrfToken;
+            }
+
+            // 初始化工具函数
+            LoginUtils.initPasswordToggle();
+            LoginUtils.initTabSwitching();
+            LoginUtils.initRealTimeValidation();
+            
+            // 初始化OAuth处理器
+            if (typeof OAuthHandler !== 'undefined') {
+                new OAuthHandler();
+            }
+            
+            // 初始化邮箱验证
+            if (typeof EmailVerification !== 'undefined') {
+                new EmailVerification();
+            }
+
+            // 为表单添加无障碍访问支持
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                form.setAttribute('novalidate', 'true');
+                
+                // 为必填字段添加aria-required
+                const requiredFields = form.querySelectorAll('[required]');
+                requiredFields.forEach(field => {
+                    field.setAttribute('aria-required', 'true');
+                });
+            });
+
+            // 键盘导航支持
+            document.addEventListener('keydown', function(e) {
+                // ESC键关闭通知
+                if (e.key === 'Escape') {
+                    const notifications = document.querySelectorAll('.notification.show');
+                    notifications.forEach(notification => notification.remove());
+                }
+            });
+        });
+    </script>
+</body>
+</html>

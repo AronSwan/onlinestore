@@ -1,0 +1,20 @@
+{
+  "title": "业务概览",
+  "panels": [
+    {
+      "title": "实时订单量",
+      "type": "graph",
+      "targets": [{
+        "expr": "rate(orders_created_total[1m])",
+        "legendFormat": "创建订单"
+      }]
+    },
+    {
+      "title": "用户活跃度",
+      "type": "heatmap",
+      "targets": [{
+        "expr": "sum by (user_type) (rate(user_actions_total[1m]))"
+      }]
+    }
+  ]
+}

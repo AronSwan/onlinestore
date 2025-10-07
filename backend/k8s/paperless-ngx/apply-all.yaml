@@ -1,0 +1,314 @@
+# 用途：Paperless-NGX一键部署配置
+# 依赖文件：deployment.yaml, service.yaml, postgresql.yaml, redis.yaml, ingress.yaml, storage.yaml, secrets.yaml
+# 作者：AI助手
+# 时间：2025-09-30 15:45:00
+
+---
+# 创建命名空间
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: paperless
+  labels:
+    name: paperless
+    environment: production
+
+---
+# 存储配置
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: paperless-data-pvc
+  namespace: paperless
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: fast-ssd
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: paperless-media-pvc
+  namespace: paperless
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: fast-ssd
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: paperless-export-pvc
+  namespace: paperless
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: fast-ssd
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: paperless-consume-pvc
+  namespace: paperless
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: fast-ssd
+
+---
+# PostgreSQL数据存储
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgresql-data-pvc
+  namespace: paperless
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: fast-ssd
+
+---
+# Redis数据存储
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-data-pvc
+  namespace: paperless
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: fast-ssd
+
+---
+# 密钥配置
+apiVersion: v1
+kind: Secret
+metadata:
+  name: paperless-secrets
+  namespace: paperless
+type: Opaque
+data:
+  db-username: cGFwZXJsZXNz
+  db-password: c2VjdXJlLXBhc3N3b3JkLTEyMw==
+  redis-password: cmVkaXMtc2VjdXJlLXBhc3N3b3Jk
+  secret-key: c3VwZXItc2VjdXJlLXBhcGVybGVzcy1zZWNyZXQta2V5LWZvci1wcm9kdWN0aW9u
+  api-key: cGFwZXJsZXNzLWFwaS1rZXktZm9yLWludGVncmF0aW9u
+
+---
+# PostgreSQL部署
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paperless-postgresql
+  namespace: paperless
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: paperless-postgresql
+  template:
+    metadata:
+      labels:
+        app: paperless-postgresql
+    spec:
+      containers:
+      - name: postgresql
+        image: postgres:15
+        env:
+        - name: POSTGRES_DB
+          value: "paperless"
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: paperless-secrets
+              key: db-username
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: paperless-secrets
+              key: db-password
+        volumeMounts:
+        - name: postgresql-data
+          mountPath: /var/lib/postgresql/data
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "200m"
+      volumes:
+      - name: postgresql-data
+        persistentVolumeClaim:
+          claimName: postgresql-data-pvc
+
+---
+# Redis部署
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paperless-redis
+  namespace: paperless
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: paperless-redis
+  template:
+    metadata:
+      labels:
+        app: paperless-redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        command:
+        - redis-server
+        - --appendonly yes
+        - --requirepass $(REDIS_PASSWORD)
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: paperless-secrets
+              key: redis-password
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "50m"
+          limits:
+            memory: "256Mi"
+            cpu: "100m"
+      volumes:
+      - name: redis-data
+        persistentVolumeClaim:
+          claimName: redis-data-pvc
+
+---
+# Paperless-NGX部署
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paperless-ngx
+  namespace: paperless
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: paperless-ngx
+  template:
+    metadata:
+      labels:
+        app: paperless-ngx
+    spec:
+      containers:
+      - name: paperless-ngx
+        image: ghcr.io/paperless-ngx/paperless-ngx:latest
+        env:
+        - name: PAPERLESS_REDIS
+          value: "redis://paperless-redis:6379"
+        - name: PAPERLESS_DBHOST
+          value: "paperless-postgresql"
+        - name: PAPERLESS_DBNAME
+          value: "paperless"
+        - name: PAPERLESS_DBUSER
+          valueFrom:
+            secretKeyRef:
+              name: paperless-secrets
+              key: db-username
+        - name: PAPERLESS_DBPASS
+          valueFrom:
+            secretKeyRef:
+              name: paperless-secrets
+              key: db-password
+        - name: PAPERLESS_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: paperless-secrets
+              key: secret-key
+        - name: PAPERLESS_URL
+          value: "https://paperless.caddy-shopping.com"
+        volumeMounts:
+        - name: paperless-data
+          mountPath: /usr/src/paperless/data
+        - name: paperless-media
+          mountPath: /usr/src/paperless/media
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+      volumes:
+      - name: paperless-data
+        persistentVolumeClaim:
+          claimName: paperless-data-pvc
+      - name: paperless-media
+        persistentVolumeClaim:
+          claimName: paperless-media-pvc
+
+---
+# 服务配置
+apiVersion: v1
+kind: Service
+metadata:
+  name: paperless-ngx-service
+  namespace: paperless
+spec:
+  selector:
+    app: paperless-ngx
+  ports:
+  - port: 8000
+    targetPort: 8000
+
+---
+# Ingress配置
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: paperless-ngx-ingress
+  namespace: paperless
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  tls:
+  - hosts:
+    - paperless.caddy-shopping.com
+    secretName: paperless-tls-secret
+  rules:
+  - host: paperless.caddy-shopping.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: paperless-ngx-service
+            port:
+              number: 8000

@@ -1,0 +1,307 @@
+/* ==========================================================================
+ * 增强版导航栏高亮与动画效果
+ * 功能：提供明显的悬停高亮和平滑的下划线动画效果
+ * 更新时间: 2025-06-18
+ * 来源: AI assistant - 优化用户交互体验
+ * ========================================================================== */
+
+/* 导航高亮效果变量定义 */
+:root {
+    /* 高亮颜色系统 - 奢华金色主题 */
+    --nav-highlight-gold: rgba(212, 175, 55, 0.15);
+    /* 基础高亮背景 */
+    --nav-highlight-gold-hover: rgba(212, 175, 55, 0.25);
+    /* 悬停高亮背景 */
+    --nav-highlight-gold-active: rgba(212, 175, 55, 0.35);
+    /* 激活高亮背景 */
+    --nav-highlight-text: #d4af37;
+    /* 高亮文字颜色 */
+    --nav-highlight-text-hover: #b8860b;
+    /* 悬停文字颜色 */
+
+    /* 下划线动画变量 */
+    --nav-underline-color-gold: #d4af37;
+    --nav-underline-color-hover: #b8860b;
+    --nav-underline-thickness: 3px;
+    --nav-underline-thickness-hover: 4px;
+    --nav-underline-transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --nav-underline-transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* 按钮变换效果 */
+    --nav-button-scale: 1.05;
+    --nav-button-scale-hover: 1.08;
+    --nav-button-translate: translateY(-2px);
+    --nav-button-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --nav-button-shadow-hover: 0 6px 20px rgba(212, 175, 55, 0.3);
+
+    /* 动画时序 */
+    --nav-animation-delay: 0ms;
+    --nav-animation-duration: 300ms;
+}
+
+/* 基础导航链接样式增强 */
+.navbar-luxury .nav-link-luxury {
+    position: relative;
+    display: inline-block;
+    padding: 0.75rem 1.25rem;
+    margin: 0 0.5rem;
+    text-decoration: none;
+    color: var(--text-primary, #333);
+    font-weight: 500;
+    font-size: 0.95rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    border-radius: 8px;
+    transition: all var(--nav-underline-transition);
+    
+    overflow: hidden;
+    z-index: 1;
+}
+
+/* 导航链接悬停状态 - 统一管理，确保同一时间只有一个悬停效果 */
+.navbar-luxury .nav-link-luxury.hover-state {
+    color: var(--nav-highlight-text, #d4af37);
+    background-color: var(--nav-highlight-gold-hover, rgba(212, 175, 55, 0.25));
+    transform: var(--nav-button-translate) scale(var(--nav-button-scale));
+    box-shadow: var(--nav-button-shadow);
+}
+
+/* 导航链接激活状态 - 统一管理，确保同一时间只有一个激活状态 */
+.navbar-luxury .nav-link-luxury.active-state {
+    color: var(--nav-highlight-text, #d4af37);
+    background-color: var(--nav-highlight-gold-active, rgba(212, 175, 55, 0.35));
+    transform: var(--nav-button-translate) scale(var(--nav-button-scale));
+    box-shadow: var(--nav-button-shadow-hover);
+    font-weight: 600;
+}
+
+/* 导航链接焦点状态 - 可访问性优化（焦点边框效果已移除） */
+.navbar-luxury .nav-link-luxury:focus-visible {
+    background-color: var(--nav-highlight-gold, rgba(212, 175, 55, 0.15));
+    outline: 2px solid var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset);
+    box-shadow: var(--focus-shadow);
+}
+
+/* 下划线动画效果 - 黄金奢华版 */
+.navbar-luxury .nav-link-luxury::before {
+    content: '';
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    width: 0;
+    height: var(--nav-underline-thickness, 3px);
+    background: linear-gradient(90deg,
+            transparent,
+            var(--nav-underline-color-gold, #d4af37) 20%,
+            var(--nav-underline-color-gold, #d4af37) 80%,
+            transparent);
+    border-radius: 2px;
+    transform: translateX(-50%) scaleX(0);
+    transform-origin: center;
+    transition: all var(--nav-underline-transition);
+    z-index: 2;
+    opacity: 0;
+}
+
+/* 下划线悬停状态 - 统一管理悬停动画 */
+.navbar-luxury .nav-link-luxury.hover-state::before {
+    width: 80%;
+    transform: translateX(-50%) scaleX(1);
+    opacity: 1;
+    height: var(--nav-underline-thickness-hover, 4px);
+}
+
+/* 下划线激活状态 - 统一管理激活动画 */
+.navbar-luxury .nav-link-luxury.active-state::before {
+    width: 90%;
+    transform: translateX(-50%) scaleX(1);
+    opacity: 1;
+    height: var(--nav-underline-thickness-hover, 4px);
+    background: linear-gradient(90deg,
+            var(--nav-underline-color-gold, #d4af37),
+            var(--nav-underline-color-hover, #b8860b),
+            var(--nav-underline-color-gold, #d4af37));
+}
+
+/* 发光效果 - 已在最新版本中移除，保持界面简洁性 */
+/*
+.navbar-luxury .nav-link-luxury::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    width: 0;
+    height: 1px;
+    background: var(--nav-highlight-glow, rgba(212, 175, 55, 0.4));
+    border-radius: 50%;
+    transform: translateX(-50%);
+    transition: all var(--nav-underline-transition);
+    filter: blur(var(--nav-underline-glow-size, 6px));
+    opacity: 0;
+    z-index: 1;
+}
+
+.navbar-luxury .nav-link-luxury.hover-state::after,
+.navbar-luxury .nav-link-luxury.active-state::after {
+    width: 100%;
+    opacity: 0.6;
+}
+*/
+
+/* 点击波纹效果 - 增强交互反馈 */
+.navbar-luxury .nav-link-luxury:active {
+    transform: var(--nav-button-translate) scale(0.98);
+    transition: all var(--nav-underline-transition-fast);
+}
+
+/* 波纹动画 */
+@keyframes navRipple {
+    0% {
+        transform: scale(0);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(4);
+        opacity: 0;
+    }
+}
+
+.navbar-luxury .nav-link-luxury.ripple::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    background: radial-gradient(circle, var(--nav-highlight-gold, rgba(212, 175, 55, 0.6)) 0%, transparent 70%);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: navRipple 0.6s ease-out;
+    pointer-events: none;
+}
+
+/* 进入动画 - 页面加载时的优雅呈现 */
+@keyframes navFadeInUp {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.navbar-luxury .nav-link-luxury {
+    animation: navFadeInUp 0.6s ease-out forwards;
+}
+
+/* 为每个导航链接设置不同的延迟 */
+.navbar-luxury .nav-link-luxury:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.navbar-luxury .nav-link-luxury:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.navbar-luxury .nav-link-luxury:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.navbar-luxury .nav-link-luxury:nth-child(4) {
+    animation-delay: 0.4s;
+}
+
+.navbar-luxury .nav-link-luxury:nth-child(5) {
+    animation-delay: 0.5s;
+}
+
+/* 响应式设计 - 移动设备优化 */
+@media (max-width: 768px) {
+    .navbar-luxury .nav-link-luxury {
+        padding: 0.625rem 1rem;
+        margin: 0.25rem 0;
+        font-size: 0.875rem;
+        border-radius: 6px;
+    }
+
+    /* 移动设备上的简化动画 */
+    .navbar-luxury .nav-link-luxury:hover {
+        transform: var(--nav-button-translate) scale(1.02);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* 移动设备上的下划线优化 */
+    .navbar-luxury .nav-link-luxury::before {
+        height: 2px;
+        bottom: 2px;
+    }
+
+    .navbar-luxury .nav-link-luxury:hover::before,
+    .navbar-luxury .nav-link-luxury.active::before {
+        height: 2.5px;
+    }
+
+    /* 移动设备上的发光效果已移除 */
+    /* .navbar-luxury .nav-link-luxury::after {
+        filter: blur(3px);
+    } */
+}
+
+/* 暗色模式支持 */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --nav-highlight-gold: rgba(212, 175, 55, 0.2);
+        --nav-highlight-gold-hover: rgba(212, 175, 55, 0.3);
+        --nav-highlight-gold-active: rgba(212, 175, 55, 0.4);
+        --nav-highlight-text: #f4e4c1;
+        --nav-highlight-text-hover: #daa520;
+    }
+    
+    /* 暗色模式下的发光效果已移除 */
+    /*
+    .dark-mode .navbar-luxury .nav-link-luxury::after {
+        background: var(--nav-highlight-glow, rgba(255, 215, 0, 0.3));
+        filter: blur(var(--nav-underline-glow-size, 6px));
+    }
+    */
+}
+
+/* 高性能模式 - 减少动画以提升性能 */
+@media (prefers-reduced-motion: reduce) {
+    .navbar-luxury .nav-link-luxury {
+        transition: none;
+    }
+
+    .navbar-luxury .nav-link-luxury::before,
+    .navbar-luxury .nav-link-luxury::after {
+        transition: none;
+    }
+
+    .navbar-luxury .nav-link-luxury {
+        animation: none;
+    }
+
+    /* 高性能模式 - 发光效果已完全移除 */
+    .performance-mode .navbar-luxury .nav-link-luxury::after {
+        display: none;
+    }
+}
+
+/* 打印样式 */
+@media print {
+    .navbar-luxury .nav-link-luxury {
+        background: none !important;
+        box-shadow: none !important;
+        transform: none !important;
+    }
+
+    .navbar-luxury .nav-link-luxury::before,
+    .navbar-luxury .nav-link-luxury::after {
+        display: none !important;
+    }
+}

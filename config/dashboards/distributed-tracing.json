@@ -1,0 +1,524 @@
+{
+  "dashboard": {
+    "id": "distributed-tracing",
+    "title": "分布式追踪监控",
+    "description": "分布式追踪数据监控和分析仪表板",
+    "tags": ["tracing", "performance", "monitoring"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": "tracing-overview",
+        "title": "追踪概览",
+        "type": "stat",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 0
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT count(*) as total_traces FROM request-traces WHERE timestamp >= now() - INTERVAL '1 hour'",
+            "datasource": "openobserve",
+            "format": "time_series"
+          },
+          {
+            "refId": "B",
+            "query": "SELECT count(*) as error_traces FROM request-traces WHERE timestamp >= now() - INTERVAL '1 hour' AND status_code >= 400",
+            "datasource": "openobserve",
+            "format": "time_series"
+          },
+          {
+            "refId": "C",
+            "query": "SELECT avg(duration) as avg_duration FROM request-traces WHERE timestamp >= now() - INTERVAL '1 hour'",
+            "datasource": "openobserve",
+            "format": "time_series"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "displayMode": "list",
+              "orientation": "horizontal"
+            },
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "displayMode": "list",
+          "orientation": "horizontal"
+        }
+      },
+      {
+        "id": "trace-duration-histogram",
+        "title": "追踪持续时间分布",
+        "type": "histogram",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 0
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT duration FROM request-traces WHERE timestamp >= now() - INTERVAL '1 hour' AND duration IS NOT NULL",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              },
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        }
+      },
+      {
+        "id": "service-dependency-graph",
+        "title": "服务依赖关系图",
+        "type": "nodeGraph",
+        "gridPos": {
+          "h": 12,
+          "w": 24,
+          "x": 0,
+          "y": 8
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT service_name, span_name, parent_span_id, trace_id FROM request-traces WHERE timestamp >= now() - INTERVAL '1 hour' LIMIT 1000",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            },
+            "mappings": []
+          },
+          "overrides": []
+        },
+        "options": {
+          "nodes": {
+            "shape": "circle"
+          },
+          "edges": {
+            "smooth": true
+          }
+        }
+      },
+      {
+        "id": "error-rate-by-service",
+        "title": "服务错误率",
+        "type": "pie",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 20
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT service_name, count(*) as error_count FROM request-traces WHERE timestamp >= now() - INTERVAL '1 hour' AND status_code >= 400 GROUP BY service_name",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            },
+            "mappings": []
+          },
+          "overrides": []
+        },
+        "options": {
+          "displayMode": "list",
+          "orientation": "horizontal"
+        }
+      },
+      {
+        "id": "slow-operations",
+        "title": "慢操作TOP10",
+        "type": "table",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 20
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT service_name, span_name, avg(duration) as avg_duration, count(*) as count FROM request-traces WHERE timestamp >= now() - INTERVAL '1 hour' AND duration > 1000 GROUP BY service_name, span_name ORDER BY avg_duration DESC LIMIT 10",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "custom": {
+              "align": "auto",
+              "displayMode": "auto"
+            },
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "avg_duration"
+              },
+              "properties": [
+                {
+                  "id": "custom.displayMode",
+                  "value": "color-background"
+                },
+                {
+                  "id": "thresholds",
+                  "value": {
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      },
+                      {
+                        "color": "yellow",
+                        "value": 1000
+                      },
+                      {
+                        "color": "red",
+                        "value": 5000
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "showHeader": true
+        }
+      },
+      {
+        "id": "trace-timeline",
+        "title": "追踪时间线",
+        "type": "timeline",
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 28
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT trace_id, span_name, start_time, end_time, duration FROM request-traces WHERE timestamp >= now() - INTERVAL '1 hour' ORDER BY start_time DESC LIMIT 100",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            },
+            "mappings": []
+          },
+          "overrides": []
+        },
+        "options": {
+          "timeZone": "browser",
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom"
+          }
+        }
+      },
+      {
+        "id": "service-performance-metrics",
+        "title": "服务性能指标",
+        "type": "timeseries",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 36
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT time_bucket('1 minute', timestamp) as time, service_name, avg(duration) as avg_duration FROM request-traces WHERE timestamp >= now() - INTERVAL '1 hour' GROUP BY time, service_name ORDER BY time",
+            "datasource": "openobserve",
+            "format": "time_series"
+          },
+          {
+            "refId": "B",
+            "query": "SELECT time_bucket('1 minute', timestamp) as time, service_name, percentile_cont(0.95) WITHIN GROUP (ORDER BY duration) as p95_duration FROM request-traces WHERE timestamp >= now() - INTERVAL '1 hour' GROUP BY time, service_name ORDER BY time",
+            "datasource": "openobserve",
+            "format": "time_series"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              },
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom"
+          },
+          "tooltip": {
+            "mode": "single"
+          }
+        }
+      },
+      {
+        "id": "trace-search",
+        "title": "追踪搜索",
+        "type": "table",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 36
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT trace_id, service_name, span_name, status_code, duration, timestamp FROM request-traces WHERE timestamp >= now() - INTERVAL '1 hour' ORDER BY timestamp DESC LIMIT 50",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "custom": {
+              "align": "auto",
+              "displayMode": "auto"
+            },
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "trace_id"
+              },
+              "properties": [
+                {
+                  "id": "custom.displayMode",
+                  "value": "color-background"
+                },
+                {
+                  "id": "links",
+                  "value": [
+                    {
+                      "title": "查看追踪详情",
+                      "url": "/d/distributed-tracing-detail?traceId=${__value.raw}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "status_code"
+              },
+              "properties": [
+                {
+                  "id": "custom.displayMode",
+                  "value": "color-background"
+                },
+                {
+                  "id": "thresholds",
+                  "value": {
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      },
+                      {
+                        "color": "yellow",
+                        "value": 400
+                      },
+                      {
+                        "color": "red",
+                        "value": 500
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "showHeader": true
+        }
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "30s"
+  }
+}

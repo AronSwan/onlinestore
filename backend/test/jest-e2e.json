@@ -1,0 +1,28 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": "..",
+  "testMatch": ["**/*.e2e-spec.ts", "**/*.e2e-spec.js"],
+  "transform": {
+    "^.+\\.(ts|tsx)$": "ts-jest"
+  },
+  "collectCoverageFrom": [
+    "**/*.(t|j)s",
+    "!**/*.e2e-spec.ts",
+    "!**/*.e2e-spec.js"
+  ],
+  "coverageDirectory": "../coverage-e2e",
+  "testEnvironment": "node",
+  "moduleNameMapper": {
+    "^src/(.*)$": "<rootDir>/src/$1",
+    "^uuid$": "<rootDir>/test/mocks/uuid.js"
+  },
+  "setupFilesAfterEnv": ["<rootDir>/test/setup.ts"],
+  "transformIgnorePatterns": [
+    "node_modules/(?!(@so-ric/colorspace|color-string)/)"
+  ],
+  "globals": {
+    "ts-jest": {
+      "useESM": true
+    }
+  }
+}

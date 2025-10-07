@@ -1,0 +1,15 @@
+# 用途：定义PodDisruptionBudget，确保在维护期间保持最小可用实例数
+# 依赖文件：deployment.yaml
+# 作者：后端开发团队
+# 时间：2025-09-30 11:30:00
+
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: caddy-shopping-backend-pdb
+  namespace: caddy-shopping
+spec:
+  minAvailable: 3  # 确保至少3个Pod始终可用
+  selector:
+    matchLabels:
+      app: caddy-shopping-backend

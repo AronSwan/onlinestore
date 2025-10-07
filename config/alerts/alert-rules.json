@@ -1,0 +1,166 @@
+{
+  "name": "caddy-shopping-alerts",
+  "description": "Caddy购物网站告警规则",
+  "rules": [
+    {
+      "name": "HighCPUUsage",
+      "description": "CPU使用率过高",
+      "condition": {
+        "query": "SELECT rate(cpu_usage) FROM system-metrics WHERE time > NOW() - 5m",
+        "operator": ">",
+        "threshold": 80,
+        "aggregation": "avg"
+      },
+      "severity": "warning",
+      "for": "2m",
+      "labels": {
+        "service": "system",
+        "component": "cpu"
+      },
+      "annotations": {
+        "summary": "高CPU使用率告警",
+        "description": "CPU使用率超过80%，当前值: {{value}}%"
+      }
+    },
+    {
+      "name": "HighMemoryUsage",
+      "description": "内存使用率过高",
+      "condition": {
+        "query": "SELECT (1 - (memory_available / memory_total)) * 100 FROM system-metrics WHERE time > NOW() - 5m",
+        "operator": ">",
+        "threshold": 85,
+        "aggregation": "avg"
+      },
+      "severity": "warning",
+      "for": "2m",
+      "labels": {
+        "service": "system",
+        "component": "memory"
+      },
+      "annotations": {
+        "summary": "高内存使用率告警",
+        "description": "内存使用率超过85%，当前值: {{value}}%"
+      }
+    },
+    {
+      "name": "HighDiskUsage",
+      "description": "磁盘使用率过高",
+      "condition": {
+        "query": "SELECT (1 - (disk_available / disk_total)) * 100 FROM system-metrics WHERE time > NOW() - 5m",
+        "operator": ">",
+        "threshold": 90,
+        "aggregation": "avg"
+      },
+      "severity": "critical",
+      "for": "1m",
+      "labels": {
+        "service": "system",
+        "component": "disk"
+      },
+      "annotations": {
+        "summary": "高磁盘使用率告警",
+        "description": "磁盘使用率超过90%，当前值: {{value}}%"
+      }
+    },
+    {
+      "name": "HighErrorRate",
+      "description": "应用错误率过高",
+      "condition": {
+        "query": "SELECT count(*) FROM application-logs WHERE level = \"error\" AND time > NOW() - 5m",
+        "operator": ">",
+        "threshold": 10,
+        "aggregation": "count"
+      },
+      "severity": "warning",
+      "for": "3m",
+      "labels": {
+        "service": "application",
+        "component": "error_rate"
+      },
+      "annotations": {
+        "summary": "应用错误率过高",
+        "description": "过去5分钟内错误日志数量: {{value}}"
+      }
+    },
+    {
+      "name": "HighResponseTime",
+      "description": "应用响应时间过长",
+      "condition": {
+        "query": "SELECT avg(response_time) FROM application-logs WHERE time > NOW() - 5m",
+        "operator": ">",
+        "threshold": 1000,
+        "aggregation": "avg"
+      },
+      "severity": "warning",
+      "for": "2m",
+      "labels": {
+        "service": "application",
+        "component": "response_time"
+      },
+      "annotations": {
+        "summary": "应用响应时间过长",
+        "description": "平均响应时间超过1秒，当前值: {{value}}ms"
+      }
+    },
+    {
+      "name": "ApplicationDown",
+      "description": "应用服务不可用",
+      "condition": {
+        "query": "SELECT count(*) FROM application-logs WHERE time > NOW() - 2m",
+        "operator": "<",
+        "threshold": 1,
+        "aggregation": "count"
+      },
+      "severity": "critical",
+      "for": "1m",
+      "labels": {
+        "service": "application",
+        "component": "availability"
+      },
+      "annotations": {
+        "summary": "应用服务不可用",
+        "description": "过去2分钟内没有收到应用日志，服务可能已停止"
+      }
+    },
+    {
+      "name": "HighLoginFailureRate",
+      "description": "登录失败率过高",
+      "condition": {
+        "query": "SELECT count(*) FROM business-events WHERE event_name = \"login_failure\" AND time > NOW() - 5m",
+        "operator": ">",
+        "threshold": 5,
+        "aggregation": "count"
+      },
+      "severity": "warning",
+      "for": "3m",
+      "labels": {
+        "service": "business",
+        "component": "authentication"
+      },
+      "annotations": {
+        "summary": "登录失败率过高",
+        "description": "过去5分钟内登录失败次数: {{value}}"
+      }
+    },
+    {
+      "name": "UnusualOrderVolume",
+      "description": "订单量异常",
+      "condition": {
+        "query": "SELECT count(*) FROM business-events WHERE event_name = \"order_created\" AND time > NOW() - 1h",
+        "operator": "<",
+        "threshold": 1,
+        "aggregation": "count"
+      },
+      "severity": "warning",
+      "for": "30m",
+      "labels": {
+        "service": "business",
+        "component": "orders"
+      },
+      "annotations": {
+        "summary": "订单量异常",
+        "description": "过去1小时订单量异常低: {{value}}"
+      }
+    }
+  ]
+}

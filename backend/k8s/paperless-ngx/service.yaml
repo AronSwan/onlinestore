@@ -1,0 +1,51 @@
+# 用途：Paperless-NGX Kubernetes服务配置
+# 依赖文件：deployment.yaml
+# 作者：AI助手
+# 时间：2025-09-30 15:22:00
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: paperless-ngx-service
+  namespace: paperless
+  labels:
+    app: paperless-ngx
+spec:
+  selector:
+    app: paperless-ngx
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8000
+    protocol: TCP
+  type: ClusterIP
+
+---
+# Redis服务配置
+apiVersion: v1
+kind: Service
+metadata:
+  name: paperless-redis
+  namespace: paperless
+spec:
+  selector:
+    app: paperless-redis
+  ports:
+  - port: 6379
+    targetPort: 6379
+  type: ClusterIP
+
+---
+# PostgreSQL服务配置
+apiVersion: v1
+kind: Service
+metadata:
+  name: paperless-postgresql
+  namespace: paperless
+spec:
+  selector:
+    app: paperless-postgresql
+  ports:
+  - port: 5432
+    targetPort: 5432
+  type: ClusterIP

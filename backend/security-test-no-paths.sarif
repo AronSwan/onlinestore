@@ -1,0 +1,702 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "security-check",
+          "version": "1.0.0",
+          "informationUri": "https://github.com/example/repo/blob/main/SECURITY_CHECKLIST.md",
+          "rules": [
+            {
+              "id": "jwt-expiration",
+              "name": "JWT令牌过期时间检查",
+              "shortDescription": {
+                "text": "检查JWT令牌是否包含过期时间"
+              },
+              "fullDescription": {
+                "text": "检查JWT令牌是否包含过期时间"
+              },
+              "helpUri": "https://github.com/example/repo/blob/main/SECURITY_CHECKLIST.md#jwt-expiration",
+              "properties": {
+                "category": "auth",
+                "severity": "medium",
+                "standards": [
+                  "OWASP ASVS 2.1.1",
+                  "OWASP ASVS 2.1.3",
+                  "NIST SP 800-63B 5.1.1.2"
+                ],
+                "weight": 2
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              }
+            },
+            {
+              "id": "jwt-secret-strength",
+              "name": "JWT密钥强度检查",
+              "shortDescription": {
+                "text": "检查JWT密钥是否足够强"
+              },
+              "fullDescription": {
+                "text": "检查JWT密钥是否足够强"
+              },
+              "helpUri": "https://github.com/example/repo/blob/main/SECURITY_CHECKLIST.md#jwt-secret-strength",
+              "properties": {
+                "category": "auth",
+                "severity": "high",
+                "standards": [
+                  "OWASP ASVS 2.1.4",
+                  "NIST SP 800-63B 5.1.1.2",
+                  "PCI DSS 3.2.1 3.5.1"
+                ],
+                "weight": 3
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            },
+            {
+              "id": "jwt-format-validation",
+              "name": "JWT格式验证检查",
+              "shortDescription": {
+                "text": "检查JWT认证守卫是否正确验证令牌格式"
+              },
+              "fullDescription": {
+                "text": "检查JWT认证守卫是否正确验证令牌格式"
+              },
+              "helpUri": "https://github.com/example/repo/blob/main/SECURITY_CHECKLIST.md#jwt-format-validation",
+              "properties": {
+                "category": "auth",
+                "severity": "high",
+                "standards": [
+                  "OWASP ASVS 2.1.2",
+                  "NIST SP 800-63B 5.1.1.2"
+                ],
+                "weight": 3
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            },
+            {
+              "id": "jwt-refresh-mechanism",
+              "name": "JWT刷新机制检查",
+              "shortDescription": {
+                "text": "检查是否实现了JWT令牌刷新机制"
+              },
+              "fullDescription": {
+                "text": "检查是否实现了JWT令牌刷新机制"
+              },
+              "helpUri": "https://github.com/example/repo/blob/main/SECURITY_CHECKLIST.md#jwt-refresh-mechanism",
+              "properties": {
+                "category": "auth",
+                "severity": "critical",
+                "standards": [
+                  "OWASP ASVS 2.1.5",
+                  "NIST SP 800-63B 5.1.1.3"
+                ],
+                "weight": 4
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            },
+            {
+              "id": "jwt-minimal-payload",
+              "name": "JWT最小载荷检查",
+              "shortDescription": {
+                "text": "检查JWT令牌是否只包含最小必要信息"
+              },
+              "fullDescription": {
+                "text": "检查JWT令牌是否只包含最小必要信息"
+              },
+              "helpUri": "https://github.com/example/repo/blob/main/SECURITY_CHECKLIST.md#jwt-minimal-payload",
+              "properties": {
+                "category": "auth",
+                "severity": "critical",
+                "standards": [
+                  "OWASP ASVS 2.1.6",
+                  "NIST SP 800-63B 5.1.1.2"
+                ],
+                "weight": 4
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            },
+            {
+              "id": "roles-guard",
+              "name": "角色守卫检查",
+              "shortDescription": {
+                "text": "检查角色守卫是否正确验证用户角色"
+              },
+              "fullDescription": {
+                "text": "检查角色守卫是否正确验证用户角色"
+              },
+              "helpUri": "https://github.com/example/repo/blob/main/SECURITY_CHECKLIST.md#roles-guard",
+              "properties": {
+                "category": "auth",
+                "severity": "high",
+                "standards": [
+                  "OWASP ASVS 1.5.3",
+                  "NIST SP 800-53: AC-2, AC-3, AC-6"
+                ],
+                "weight": 3
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            },
+            {
+              "id": "input-length-validation",
+              "name": "输入长度限制检查",
+              "shortDescription": {
+                "text": "检查是否验证了输入长度限制"
+              },
+              "fullDescription": {
+                "text": "检查是否验证了输入长度限制"
+              },
+              "helpUri": "https://github.com/example/repo/blob/main/SECURITY_CHECKLIST.md#input-length-validation",
+              "properties": {
+                "category": "input-validation",
+                "severity": "medium",
+                "standards": [
+                  "OWASP ASVS 4.1",
+                  "OWASP ASVS 4.2",
+                  "NIST SP 800-53: SI-10"
+                ],
+                "weight": 2
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              }
+            },
+            {
+              "id": "input-validation",
+              "name": "输入验证检查",
+              "shortDescription": {
+                "text": "检查控制器是否实现了输入验证"
+              },
+              "fullDescription": {
+                "text": "检查控制器是否实现了输入验证"
+              },
+              "helpUri": "https://github.com/example/repo/blob/main/SECURITY_CHECKLIST.md#input-validation",
+              "properties": {
+                "category": "input-validation",
+                "severity": "high",
+                "standards": [
+                  "OWASP ASVS 4.1",
+                  "OWASP ASVS 4.2",
+                  "NIST SP 800-53 SI-10"
+                ],
+                "weight": 3
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            },
+            {
+              "id": "sql-injection-protection",
+              "name": "SQL注入防护检查",
+              "shortDescription": {
+                "text": "检查是否防止了SQL注入"
+              },
+              "fullDescription": {
+                "text": "检查是否防止了SQL注入"
+              },
+              "helpUri": "https://github.com/example/repo/blob/main/SECURITY_CHECKLIST.md#sql-injection-protection",
+              "properties": {
+                "category": "input-validation",
+                "severity": "critical",
+                "standards": [
+                  "OWASP ASVS 5.2.2",
+                  "OWASP ASVS 5.2.3",
+                  "NIST SP 800-53 SI-10",
+                  "PCI DSS 3.2.1 6.5.1"
+                ],
+                "weight": 4
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            },
+            {
+              "id": "password-field-exclusion",
+              "name": "密码字段排除检查",
+              "shortDescription": {
+                "text": "检查用户实体密码字段是否被排除"
+              },
+              "fullDescription": {
+                "text": "检查用户实体密码字段是否被排除"
+              },
+              "helpUri": "https://github.com/example/repo/blob/main/SECURITY_CHECKLIST.md#password-field-exclusion",
+              "properties": {
+                "category": "data-security",
+                "severity": "high",
+                "standards": [
+                  "OWASP ASVS 3.4.1",
+                  "NIST SP 800-53 AC-2",
+                  "PCI DSS 3.2.1 3.5.1"
+                ],
+                "weight": 3
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            },
+            {
+              "id": "security-headers",
+              "name": "安全响应头检查",
+              "shortDescription": {
+                "text": "检查是否启用Helmet或安全响应头设置"
+              },
+              "fullDescription": {
+                "text": "检查是否启用Helmet或安全响应头设置"
+              },
+              "helpUri": "https://github.com/example/repo/blob/main/SECURITY_CHECKLIST.md#security-headers",
+              "properties": {
+                "category": "web-security",
+                "severity": "high",
+                "standards": [
+                  "OWASP ASVS 10.2.1",
+                  "OWASP ASVS 10.2.2",
+                  "NIST SP 800-53 SC-7",
+                  "PCI DSS 3.2.1 6.5.4"
+                ],
+                "weight": 3
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            },
+            {
+              "id": "cors-config",
+              "name": "CORS配置检查",
+              "shortDescription": {
+                "text": "检查是否启用合理的CORS配置"
+              },
+              "fullDescription": {
+                "text": "检查是否启用合理的CORS配置"
+              },
+              "helpUri": "https://github.com/example/repo/blob/main/SECURITY_CHECKLIST.md#cors-config",
+              "properties": {
+                "category": "web-security",
+                "severity": "medium",
+                "standards": [
+                  "OWASP ASVS 10.3.1",
+                  "NIST SP 800-53 AC-4"
+                ],
+                "weight": 2
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              }
+            },
+            {
+              "id": "csrf-protection",
+              "name": "CSRF防护检查",
+              "shortDescription": {
+                "text": "检查是否启用CSRF防护（适用于cookie/session场景）"
+              },
+              "fullDescription": {
+                "text": "检查是否启用CSRF防护（适用于cookie/session场景）"
+              },
+              "helpUri": "https://github.com/example/repo/blob/main/SECURITY_CHECKLIST.md#csrf-protection",
+              "properties": {
+                "category": "web-security",
+                "severity": "medium",
+                "standards": [],
+                "weight": 2
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              }
+            },
+            {
+              "id": "password-hash",
+              "name": "密码哈希检查",
+              "shortDescription": {
+                "text": "检查是否使用bcrypt等算法对密码进行哈希"
+              },
+              "fullDescription": {
+                "text": "检查是否使用bcrypt等算法对密码进行哈希"
+              },
+              "helpUri": "https://github.com/example/repo/blob/main/SECURITY_CHECKLIST.md#password-hash",
+              "properties": {
+                "category": "data-security",
+                "severity": "critical",
+                "standards": [],
+                "weight": 4
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            },
+            {
+              "id": "audit-logging",
+              "name": "审计日志检查",
+              "shortDescription": {
+                "text": "检查是否实现审计拦截器/服务并在主入口注册"
+              },
+              "fullDescription": {
+                "text": "检查是否实现审计拦截器/服务并在主入口注册"
+              },
+              "helpUri": "https://github.com/example/repo/blob/main/SECURITY_CHECKLIST.md#audit-logging",
+              "properties": {
+                "category": "logging",
+                "severity": "high",
+                "standards": [],
+                "weight": 3
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            },
+            {
+              "id": "database-indexes",
+              "name": "数据库索引检查",
+              "shortDescription": {
+                "text": "检查实体是否定义了必要的数据库索引"
+              },
+              "fullDescription": {
+                "text": "检查实体是否定义了必要的数据库索引"
+              },
+              "helpUri": "https://github.com/example/repo/blob/main/SECURITY_CHECKLIST.md#database-indexes",
+              "properties": {
+                "category": "database",
+                "severity": "medium",
+                "standards": [],
+                "weight": 2
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              }
+            },
+            {
+              "id": "transaction-usage",
+              "name": "事务使用检查",
+              "shortDescription": {
+                "text": "检查关键操作是否使用了事务"
+              },
+              "fullDescription": {
+                "text": "检查关键操作是否使用了事务"
+              },
+              "helpUri": "https://github.com/example/repo/blob/main/SECURITY_CHECKLIST.md#transaction-usage",
+              "properties": {
+                "category": "database",
+                "severity": "medium",
+                "standards": [],
+                "weight": 2
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              }
+            },
+            {
+              "id": "transaction-rollback",
+              "name": "事务回滚检查",
+              "shortDescription": {
+                "text": "检查是否处理了事务回滚"
+              },
+              "fullDescription": {
+                "text": "检查是否处理了事务回滚"
+              },
+              "helpUri": "https://github.com/example/repo/blob/main/SECURITY_CHECKLIST.md#transaction-rollback",
+              "properties": {
+                "category": "database",
+                "severity": "high",
+                "standards": [
+                  "OWASP ASVS 6.2.3",
+                  "NIST SP 800-53: AC-4"
+                ],
+                "weight": 3
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            },
+            {
+              "id": "session-management",
+              "name": "会话管理检查",
+              "shortDescription": {
+                "text": "检查是否实现了会话超时机制"
+              },
+              "fullDescription": {
+                "text": "检查是否实现了会话超时机制"
+              },
+              "helpUri": "https://github.com/example/repo/blob/main/SECURITY_CHECKLIST.md#session-management",
+              "properties": {
+                "category": "auth",
+                "severity": "critical",
+                "standards": [],
+                "weight": 4
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            },
+            {
+              "id": "rate-limiting",
+              "name": "速率限制检查",
+              "shortDescription": {
+                "text": "检查是否实现了API速率限制"
+              },
+              "fullDescription": {
+                "text": "检查是否实现了API速率限制"
+              },
+              "helpUri": "https://github.com/example/repo/blob/main/SECURITY_CHECKLIST.md#rate-limiting",
+              "properties": {
+                "category": "web-security",
+                "severity": "medium",
+                "standards": [],
+                "weight": 2
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              }
+            },
+            {
+              "id": "ssrf-protection",
+              "name": "SSRF防护检查",
+              "shortDescription": {
+                "text": "检查是否防止了服务端请求伪造(SSRF)"
+              },
+              "fullDescription": {
+                "text": "检查是否防止了服务端请求伪造(SSRF)"
+              },
+              "helpUri": "https://github.com/example/repo/blob/main/SECURITY_CHECKLIST.md#ssrf-protection",
+              "properties": {
+                "category": "web-security",
+                "severity": "critical",
+                "standards": [],
+                "weight": 4
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            },
+            {
+              "id": "dependency-vulnerability",
+              "name": "依赖项漏洞检查",
+              "shortDescription": {
+                "text": "检查依赖项是否存在已知漏洞"
+              },
+              "fullDescription": {
+                "text": "检查依赖项是否存在已知漏洞"
+              },
+              "helpUri": "https://github.com/example/repo/blob/main/SECURITY_CHECKLIST.md#dependency-vulnerability",
+              "properties": {
+                "category": "supply-chain",
+                "severity": "high",
+                "standards": [],
+                "weight": 3
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            },
+            {
+              "id": "file-upload-security",
+              "name": "文件上传安全检查",
+              "shortDescription": {
+                "text": "检查文件上传功能的安全性"
+              },
+              "fullDescription": {
+                "text": "检查文件上传功能的安全性"
+              },
+              "helpUri": "https://github.com/example/repo/blob/main/SECURITY_CHECKLIST.md#file-upload-security",
+              "properties": {
+                "category": "web-security",
+                "severity": "critical",
+                "standards": [
+                  "OWASP ASVS 10.4.1",
+                  "OWASP ASVS 10.4.2",
+                  "NIST SP 800-53 AC-3",
+                  "PCI DSS 3.2.1 6.5.8"
+                ],
+                "weight": 4
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            },
+            {
+              "id": "path-traversal-protection",
+              "name": "路径遍历防护检查",
+              "shortDescription": {
+                "text": "检查是否防止了路径遍历攻击"
+              },
+              "fullDescription": {
+                "text": "检查是否防止了路径遍历攻击"
+              },
+              "helpUri": "https://github.com/example/repo/blob/main/SECURITY_CHECKLIST.md#path-traversal-protection",
+              "properties": {
+                "category": "web-security",
+                "severity": "critical",
+                "standards": [
+                  "OWASP ASVS 5.5.1",
+                  "NIST SP 800-53 AC-3",
+                  "PCI DSS 3.2.1 6.5.5"
+                ],
+                "weight": 4
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            },
+            {
+              "id": "evidence-validation",
+              "name": "证据有效性检查",
+              "shortDescription": {
+                "text": "检查漏洞追踪表中的证据链接是否有效"
+              },
+              "fullDescription": {
+                "text": "检查漏洞追踪表中的证据链接是否有效"
+              },
+              "helpUri": "https://github.com/example/repo/blob/main/SECURITY_CHECKLIST.md#evidence-validation",
+              "properties": {
+                "category": "audit",
+                "severity": "medium",
+                "standards": [
+                  "ISO/IEC 27001 A.12.2.1",
+                  "NIST SP 800-53 AU-6"
+                ],
+                "weight": 2
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "jwt-expiration",
+          "level": "warning",
+          "message": {
+            "text": "JWT令牌未包含过期时间",
+            "markdown": "❌ **FAIL** - JWT令牌未包含过期时间"
+          },
+          "kind": "fail",
+          "properties": {
+            "severity": "medium",
+            "weight": 2,
+            "exemption": false
+          }
+        },
+        {
+          "ruleId": "jwt-secret-strength",
+          "level": "error",
+          "message": {
+            "text": "JWT密钥长度不足64字符",
+            "markdown": "❌ **FAIL** - JWT密钥长度不足64字符"
+          },
+          "kind": "fail",
+          "properties": {
+            "severity": "high",
+            "weight": 3,
+            "exemption": false
+          }
+        },
+        {
+          "ruleId": "jwt-format-validation",
+          "level": "error",
+          "message": {
+            "text": "JWT格式验证未正确实现",
+            "markdown": "❌ **FAIL** - JWT格式验证未正确实现"
+          },
+          "kind": "fail",
+          "properties": {
+            "severity": "high",
+            "weight": 3,
+            "exemption": false
+          }
+        },
+        {
+          "ruleId": "jwt-refresh-mechanism",
+          "level": "note",
+          "message": {
+            "text": "JWT刷新机制已实现",
+            "markdown": "✅ **PASS** - JWT刷新机制已实现"
+          },
+          "kind": "pass",
+          "properties": {
+            "severity": "critical",
+            "weight": 4,
+            "exemption": false
+          }
+        },
+        {
+          "ruleId": "jwt-minimal-payload",
+          "level": "error",
+          "message": {
+            "text": "JWT载荷包含敏感信息",
+            "markdown": "❌ **FAIL** - JWT载荷包含敏感信息"
+          },
+          "kind": "fail",
+          "properties": {
+            "severity": "critical",
+            "weight": 4,
+            "exemption": false
+          }
+        },
+        {
+          "ruleId": "session-management",
+          "level": "note",
+          "message": {
+            "text": "已实现会话超时机制",
+            "markdown": "✅ **PASS** - 已实现会话超时机制"
+          },
+          "kind": "pass",
+          "properties": {
+            "severity": "critical",
+            "weight": 4,
+            "exemption": false
+          }
+        },
+        {
+          "ruleId": "roles-guard",
+          "level": "error",
+          "message": {
+            "text": "角色守卫未正确实现角色验证",
+            "markdown": "❌ **FAIL** - 角色守卫未正确实现角色验证"
+          },
+          "kind": "fail",
+          "properties": {
+            "severity": "high",
+            "weight": 3,
+            "exemption": false
+          }
+        }
+      ],
+      "invocations": [
+        {
+          "executionSuccessful": true,
+          "startTimeUtc": "2025-10-03T16:22:06.711Z",
+          "endTimeUtc": "2025-10-03T16:22:07.002Z",
+          "properties": {
+            "environment": "development",
+            "startTime": "2025-10-03T16:22:06.711Z",
+            "endTime": "2025-10-03T16:22:07.002Z",
+            "durationMs": 291,
+            "envFile": ".env",
+            "summary": {
+              "total": 7,
+              "passed": 2,
+              "failed": 5,
+              "severityBreakdown": {
+                "critical": 3,
+                "high": 3,
+                "medium": 1,
+                "low": 0
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

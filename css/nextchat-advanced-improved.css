@@ -1,0 +1,773 @@
+/**
+ * NextChat Advanced - Improved Styles
+ * Separated from JS for better maintainability
+ * Version: 3.0.0
+ * Date: 2025-09-18
+ * Modified for Gucci-style non-intrusive layout
+ */
+
+/* CSS变量定义 - 基于Gucci风格 */
+:root {
+  --nextchat-primary: #8c1c13; /* Gucci red */
+  --nextchat-primary-hover: #6e160f; /* Darker red */
+  --nextchat-secondary: #d4af37; /* Gold accent */
+  --nextchat-white: #ffffff;
+  --nextchat-black: #000000;
+  --nextchat-gray-light: #f8f8f8;
+  --nextchat-gray: #ddd;
+  --nextchat-gray-dark: #666;
+  --nextchat-success: #4ade80;
+  --nextchat-warning: #ffc107;
+  --nextchat-danger: #dc3545;
+  
+  --nextchat-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --nextchat-shadow-md: 0 4px 12px rgba(140, 28, 19, 0.3);
+  --nextchat-shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.15);
+  
+  --nextchat-radius-sm: 8px;
+  --nextchat-radius-md: 16px;
+  --nextchat-radius-lg: 24px;
+  --nextchat-radius-full: 50%;
+  
+  --nextchat-transition-fast: 0.2s ease;
+  --nextchat-transition-normal: 0.3s ease;
+  --nextchat-transition-slow: 0.5s ease;
+  
+  --nextchat-z-launcher: 9999;
+  --nextchat-z-window: 10000;
+  --nextchat-z-tooltip: 10001;
+}
+
+/* 基础容器样式 - 非内嵌式悬浮设计 */
+.nextchat-advanced-container {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  z-index: var(--nextchat-z-launcher);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* 启动器样式 */
+.nextchat-launcher {
+  position: relative;
+}
+
+/* 启动器样式 - Gucci风格精致按钮 */
+.launcher-button {
+  width: 65px;
+  height: 65px;
+  border-radius: var(--nextchat-radius-full);
+  background: linear-gradient(135deg, var(--nextchat-primary), var(--nextchat-primary-hover));
+  border: 2px solid var(--nextchat-white);
+  cursor: pointer;
+  box-shadow: var(--nextchat-shadow-md);
+  transition: all var(--nextchat-transition-normal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--nextchat-white);
+
+}
+
+.launcher-button:hover {
+  transform: scale(1.05);
+  box-shadow: var(--nextchat-shadow-lg);
+}
+
+.launcher-button:focus {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-shadow);
+}
+
+/* 键盘激活状态 - 替代效果 */
+.keyboard-active .launcher-button {
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.8), 0 0 0 6px rgba(140, 28, 19, 0.3);
+}
+
+/* 键盘激活状态 - 替代效果 */
+.keyboard-active .launcher-button {
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.8), 0 0 0 6px rgba(140, 28, 19, 0.3);
+}
+
+/* 聊天窗口样式 - 非内嵌式悬浮设计 */
+.nextchat-window {
+  position: absolute;
+  bottom: 100px;
+  right: 0;
+  width: 420px;
+  height: 580px;
+  background: var(--nextchat-white);
+  border-radius: var(--nextchat-radius-lg);
+  box-shadow: var(--nextchat-shadow-lg);
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: var(--nextchat-z-window);
+  border: 1px solid #e5e5e5;
+}
+
+.nextchat-window.active {
+  display: flex;
+  animation: slideInUp 0.3s ease;
+}
+
+/* 聊天头部 - 高端品牌风格 */
+.chat-header {
+  padding: 22px 24px;
+  background: linear-gradient(135deg, var(--nextchat-primary), var(--nextchat-primary-hover));
+  color: var(--nextchat-white);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--nextchat-radius-full);
+  background: var(--nextchat-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--nextchat-primary);
+  font-weight: bold;
+  font-size: 18px;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: none;
+}
+
+.header-info h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.5px;
+}
+
+.status {
+  font-size: 12px;
+  opacity: 0.9;
+  margin: 0;
+}
+
+.status.online::before {
+  content: '● ';
+  color: var(--nextchat-success);
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: var(--nextchat-radius-full);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  /* 移除过渡动画效果 */
+  color: var(--nextchat-white);
+}
+
+.action-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.action-btn:focus {
+  background: rgba(255, 255, 255, 0.4);
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-shadow);
+}
+
+/* 消息区域 - 精致滚动体验 */
+.chat-messages {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  background: var(--nextchat-white);
+  scroll-behavior: smooth;
+  position: relative;
+}
+
+.chat-messages::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+  background: var(--nextchat-gray-light);
+  border-radius: 4px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background: var(--nextchat-gray);
+  border-radius: 4px;
+  transition: background var(--nextchat-transition-fast);
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+  background: var(--nextchat-gray-dark);
+}
+
+/* 消息样式 - 高端对话体验 */
+.message {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 22px;
+  animation: fadeIn 0.3s ease;
+}
+
+.message.user-message {
+  flex-direction: row-reverse;
+}
+
+.message-avatar img {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--nextchat-radius-full);
+  object-fit: cover;
+}
+
+.message-content {
+  max-width: 75%;
+  display: flex;
+  flex-direction: column;
+}
+
+.user-message .message-content {
+  align-items: flex-end;
+}
+
+.message-bubble {
+  background: var(--nextchat-white);
+  padding: 14px 18px;
+  border-radius: 20px;
+  box-shadow: var(--nextchat-shadow-sm);
+  word-wrap: break-word;
+  position: relative;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.message-bubble p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.user-message .message-bubble {
+  background: var(--nextchat-primary);
+  color: var(--nextchat-white);
+  box-shadow: 0 2px 8px rgba(140, 28, 19, 0.15);
+}
+
+.message-time {
+  font-size: 11px;
+  color: var(--nextchat-gray-dark);
+  margin-top: 5px;
+  padding: 0 6px;
+}
+
+.user-message .message-time {
+  text-align: right;
+}
+
+.message-image {
+  max-width: 180px;
+  border-radius: 12px;
+  margin: 8px 0;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 输入区域 - 精致交互设计 */
+.chat-input-container {
+  padding: 18px 20px;
+  background: var(--nextchat-white);
+  border-top: 1px solid var(--nextchat-gray);
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.input-wrapper {
+  flex: 1;
+  position: relative;
+}
+
+.chat-input {
+  width: 100%;
+  min-height: 44px;
+  max-height: 120px;
+  padding: 12px 18px;
+  border: 1px solid var(--nextchat-gray);
+  border-radius: 22px;
+  font-size: 15px;
+  line-height: 1.5;
+  resize: none;
+
+  background: var(--nextchat-white);
+  transition: border-color var(--nextchat-transition-fast), box-shadow var(--nextchat-transition-fast);
+}
+
+.chat-input:focus {
+  border-color: var(--nextchat-primary);
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-shadow);
+}
+
+.chat-input::placeholder {
+  color: var(--nextchat-gray-dark);
+}
+
+.send-btn {
+  background: var(--nextchat-primary);
+  color: var(--nextchat-white);
+  border: none;
+  border-radius: var(--nextchat-radius-full);
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--nextchat-transition-fast);
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(140, 28, 19, 0.2);
+}
+
+.send-btn:hover {
+  background: var(--nextchat-primary-hover);
+}
+
+.send-btn:focus {
+  background: var(--nextchat-primary-hover);
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-shadow);
+}
+
+.send-btn:disabled {
+  background: var(--nextchat-gray);
+  cursor: not-allowed;
+}
+
+/* 语音录制区域 - 精致交互体验 */
+.voice-recorder {
+  padding: 18px 20px;
+  background: var(--nextchat-gray-light);
+  border-top: 1px solid var(--nextchat-gray);
+  flex-shrink: 0;
+}
+
+.recorder-controls {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  justify-content: center;
+}
+
+.record-btn {
+  width: 65px;
+  height: 65px;
+  border-radius: var(--nextchat-radius-full);
+  background: var(--nextchat-primary);
+  color: var(--nextchat-white);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--nextchat-transition-normal);
+  box-shadow: 0 3px 12px rgba(140, 28, 19, 0.2);
+}
+
+.record-btn:hover {
+  transform: scale(1.05);
+}
+
+.record-btn:focus {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-shadow);
+}
+
+/* 录音按钮 - 移除脉动动画
+.record-btn.recording {
+  background-color: var(--nextchat-danger);
+  animation: pulse 1.5s infinite;
+}
+
+/* pulse关键帧动画 - 移除
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+*/
+
+/* 录音按钮 - 替代效果 */
+.record-btn.recording {
+  background-color: var(--nextchat-danger);
+}
+
+.recording-status {
+  font-size: 14px;
+  color: var(--nextchat-gray-dark);
+  font-weight: 500;
+}
+
+/* 图片上传区域 - 精致交互体验 */
+.image-upload-area {
+  padding: 18px 20px;
+  background: var(--nextchat-gray-light);
+  border-top: 1px solid var(--nextchat-gray);
+  flex-shrink: 0;
+}
+
+.upload-zone {
+  border: 2px dashed var(--nextchat-gray);
+  border-radius: var(--nextchat-radius-md);
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--nextchat-transition-fast);
+  background: var(--nextchat-white);
+}
+
+.upload-zone:hover,
+.upload-zone.drag-over {
+  border-color: var(--nextchat-primary);
+  background: rgba(140, 28, 19, 0.05);
+}
+
+.upload-placeholder {
+  color: var(--nextchat-gray-dark);
+}
+
+.upload-placeholder svg {
+  margin-bottom: 12px;
+  opacity: 0.6;
+}
+
+.upload-placeholder p {
+  margin: 8px 0 4px;
+  font-weight: 500;
+}
+
+.upload-hint {
+  font-size: 12px;
+  opacity: 0.8;
+  margin: 0;
+}
+
+.image-preview {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.preview-image {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: var(--nextchat-radius-sm);
+  border: 2px solid var(--nextchat-gray);
+  transition: border-color var(--nextchat-transition-fast);
+}
+
+.preview-image:hover {
+  border-color: var(--nextchat-primary);
+}
+
+/* 动画效果 */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 工具提示 */
+.nextchat-tooltip {
+  position: absolute;
+  bottom: 70px;
+  right: 0;
+  background: rgba(0, 0, 0, 0.8);
+  color: var(--nextchat-white);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: var(--nextchat-z-tooltip);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all var(--nextchat-transition-normal);
+  pointer-events: none;
+}
+
+.nextchat-tooltip.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 状态指示器 */
+.status-indicator {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--nextchat-radius-full);
+  margin-right: 6px;
+}
+
+/* 在线状态指示器 - 移除闪烁动画
+.status-indicator.online {
+  background: var(--nextchat-success);
+  animation: blink 2s infinite;
+}
+*/
+
+/* 在线状态指示器 - 替代效果 */
+.status-indicator.online {
+  background: var(--nextchat-success);
+}
+
+.status-indicator.offline {
+  background: var(--nextchat-gray);
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.3; }
+}
+
+/* 加载状态 */
+.loading-dots {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.loading-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--nextchat-gray-dark);
+  margin: 0 2px;
+  opacity: 0.6;
+}
+
+.loading-dots span:nth-child(1) {
+  opacity: 1;
+}
+
+.loading-dots span:nth-child(2) {
+  opacity: 0.7;
+}
+
+.loading-dots span:nth-child(3) {
+  opacity: 0.4;
+}
+
+.loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+.loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes loading {
+  0%, 80%, 100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .nextchat-advanced-container {
+    bottom: 10px;
+    right: 10px;
+  }
+  
+  .nextchat-window {
+    width: calc(100vw - 20px);
+    height: calc(100vh - 100px);
+    bottom: 70px;
+    right: -10px;
+    border-radius: var(--nextchat-radius-md) var(--nextchat-radius-md) 0 0;
+  }
+  
+  .launcher-button {
+    width: 55px;
+    height: 55px;
+  }
+}
+
+@media (max-width: 480px) {
+  .nextchat-window {
+    width: 100vw;
+    height: 100vh;
+    bottom: 0;
+    right: 0;
+    border-radius: 0;
+    position: fixed;
+  }
+  
+  .nextchat-advanced-container {
+    bottom: 15px;
+    right: 15px;
+  }
+  
+  .chat-messages {
+    padding: 16px;
+  }
+  
+  .message {
+    margin-bottom: 16px;
+  }
+  
+  .message-content {
+    max-width: 85%;
+  }
+}
+
+/* 高对比度模式支持 */
+@media (prefers-contrast: high) {
+  .launcher-button {
+    border: 2px solid var(--nextchat-white);
+  }
+  
+  .message-bubble {
+    border: 1px solid var(--nextchat-gray);
+  }
+  
+  .chat-input {
+    border-width: 2px;
+  }
+}
+
+/* 减少动画模式支持 - 移除脉动动画
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .keyboard-pulse,
+  .pulse,
+  .loading,
+  .blink {
+    animation: none !important;
+  }
+}
+*/
+
+/* 减少动画模式支持 - 简化版本 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 深色模式支持 */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --nextchat-white: #1a1a1a;
+    --nextchat-black: #ffffff;
+    --nextchat-gray-light: #2d2d2d;
+    --nextchat-gray: #404040;
+    --nextchat-gray-dark: #cccccc;
+  }
+  
+  .nextchat-window {
+    background: var(--nextchat-white);
+    border: 1px solid var(--nextchat-gray);
+  }
+  
+  .chat-messages {
+    background: var(--nextchat-gray-light);
+  }
+  
+  .message-bubble {
+    background: var(--nextchat-gray);
+    color: var(--nextchat-black);
+  }
+  
+  .user-message .message-bubble {
+    background: var(--nextchat-primary);
+    color: var(--nextchat-white);
+  }
+}
+
+/* 打印样式 */
+@media print {
+  .nextchat-advanced-container {
+    display: none !important;
+  }
+}
+
+/* 焦点管理 */
+.nextchat-window:focus-within {
+  box-shadow: var(--nextchat-shadow-lg), 0 0 0 3px rgba(140, 28, 19, 0.2);
+}
+
+/* 错误状态 */
+.error-message .message-bubble {
+  background: rgba(220, 53, 69, 0.1);
+  border-left: 4px solid var(--nextchat-danger);
+  color: var(--nextchat-danger);
+}
+
+/* 成功状态 */
+.success-message .message-bubble {
+  background: rgba(74, 222, 128, 0.1);
+  border-left: 4px solid var(--nextchat-success);
+  color: #059669;
+}
+
+/* 警告状态 */
+.warning-message .message-bubble {
+  background: rgba(255, 193, 7, 0.1);
+  border-left: 4px solid var(--nextchat-warning);
+  color: #d97706;
+}

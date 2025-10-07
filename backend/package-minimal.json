@@ -1,0 +1,12 @@
+{
+  "name": "caddy-style-shopping-backend-optimized",
+  "version": "1.0.0",
+  "description": "优化版购物网站后端服务 - 展示安全加固、健康检查、日志结构化等功能",
+  "main": "dist/main-minimal.js",
+  "scripts": {
+    "build:minimal": "nest build --webpack --webpackPath webpack-minimal.config.js",
+    "start:minimal": "node dist/main-minimal",
+    "start:minimal:dev": "nest start --watch --entryFile main-minimal",
+    "test:minimal": "jest --testPathPattern=minimal"
+  }
+}

@@ -1,0 +1,25 @@
+{ 
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "noImplicitAny": false,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": "..",
+    "paths": {
+      "puppeteer-core": ["./node_modules/puppeteer-core"]
+    }
+  },
+  "include": [
+    "./update_hex.js"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

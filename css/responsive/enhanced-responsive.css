@@ -1,0 +1,262 @@
+/* Enhanced Responsive Design for Login System */
+
+/* 基础响应式断点 */
+@media (max-width: 1200px) {
+    .login-container {
+        padding: var(--spacing-8) var(--spacing-4);
+    }
+}
+
+@media (max-width: 992px) {
+    .login-card {
+        max-width: 500px;
+        margin: 0 auto;
+    }
+    
+    .social-btn {
+        font-size: var(--text-sm);
+    }
+}
+
+@media (max-width: 768px) {
+    .login-container {
+        padding: var(--spacing-6) var(--spacing-3);
+    }
+    
+    .login-card {
+        margin: var(--spacing-4);
+        padding: var(--spacing-6) !important;
+    }
+    
+    .auth-tabs {
+        font-size: var(--text-sm);
+    }
+    
+    .form-input {
+        padding: var(--spacing-3);
+        font-size: var(--text-sm);
+    }
+    
+    .notification {
+        right: var(--spacing-4);
+        left: var(--spacing-4);
+        max-width: none;
+        font-size: var(--text-sm);
+    }
+    
+    .social-btn {
+        padding: var(--spacing-2) var(--spacing-3);
+        font-size: var(--text-xs);
+    }
+}
+
+@media (max-width: 480px) {
+    .login-container {
+        padding: var(--spacing-4) var(--spacing-2);
+    }
+    
+    .login-card {
+        margin: var(--spacing-2);
+        padding: var(--spacing-4) !important;
+        border-radius: var(--radius-lg);
+    }
+    
+    .login-card h1 {
+        font-size: 1.75rem;
+    }
+    
+    .auth-tab {
+        padding: var(--spacing-2);
+        font-size: var(--text-xs);
+    }
+    
+    .form-input {
+        padding: var(--spacing-2) var(--spacing-3);
+    }
+    
+    .btn-luxury {
+        padding: var(--spacing-3);
+        font-size: var(--text-sm);
+    }
+    
+    .social-btn {
+        padding: var(--spacing-2);
+        font-size: var(--text-xs);
+    }
+    
+    .notification {
+        top: var(--spacing-4);
+        right: var(--spacing-2);
+        left: var(--spacing-2);
+        padding: var(--spacing-3);
+    }
+}
+
+/* 超小屏幕优化 */
+@media (max-width: 360px) {
+    .login-card {
+        margin: var(--spacing-1);
+        padding: var(--spacing-3) !important;
+    }
+    
+    .login-card h1 {
+        font-size: 1.5rem;
+    }
+    
+    .form-input {
+        font-size: var(--text-xs);
+    }
+    
+    .social-btn span {
+        display: none;
+    }
+    
+    .social-btn {
+        justify-content: center;
+        min-width: 44px;
+    }
+}
+
+/* 横屏模式优化 */
+@media (max-height: 600px) and (orientation: landscape) {
+    .login-container {
+        padding: var(--spacing-4);
+    }
+    
+    .login-card {
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    .login-card h1 {
+        font-size: 1.5rem;
+        margin-bottom: var(--spacing-2);
+    }
+    
+    .login-card p {
+        font-size: var(--text-sm);
+        margin-bottom: var(--spacing-4);
+    }
+}
+
+/* 高分辨率屏幕优化 */
+@media (min-width: 1400px) {
+    .login-card {
+        max-width: 480px;
+        padding: var(--spacing-10);
+    }
+    
+    .form-input {
+        padding: var(--spacing-4) var(--spacing-5);
+        font-size: var(--text-lg);
+    }
+    
+    .btn-luxury {
+        padding: var(--spacing-4) var(--spacing-6);
+        font-size: var(--text-lg);
+    }
+}
+
+/* 触摸设备优化 */
+@media (hover: none) and (pointer: coarse) {
+    .form-input {
+        min-height: 44px;
+    }
+    
+    .btn-luxury {
+        min-height: 44px;
+    }
+    
+    .social-btn {
+        min-height: 44px;
+    }
+    
+    .auth-tab {
+        min-height: 44px;
+    }
+}
+
+/* 打印样式 */
+@media print {
+    .login-container {
+        background: white !important;
+    }
+    
+    .login-card {
+        box-shadow: none !important;
+        border: 1px solid #000 !important;
+    }
+    
+    .social-btn,
+    .notification,
+    nav {
+        display: none !important;
+    }
+}
+
+/* 减少动画偏好 */
+@media (prefers-reduced-motion: reduce) {
+    .form-input,
+    .btn-luxury,
+    .social-btn,
+    .auth-tab,
+    .notification {
+        transition: none !important;
+        animation: none !important;
+    }
+}
+
+/* 高对比度模式 */
+@media (prefers-contrast: high) {
+    .form-input {
+        border-width: 2px;
+    }
+    
+    .form-input:focus {
+        border-width: 3px;
+    }
+    
+    .btn-luxury {
+        border-width: 2px;
+    }
+}
+
+/* 暗色模式支持 */
+@media (prefers-color-scheme: dark) {
+    .login-container {
+        background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+    }
+    
+    .login-card {
+        background: #374151;
+        border-color: #4b5563;
+    }
+    
+    .form-input {
+        background: #4b5563;
+        border-color: #6b7280;
+        color: #f9fafb;
+    }
+    
+    .form-input:focus {
+        border-color: var(--brand-gold);
+    }
+    
+    .form-label {
+        color: #f9fafb;
+    }
+    
+    .social-btn {
+        background: #4b5563;
+        border-color: #6b7280;
+        color: #f9fafb;
+    }
+    
+    .auth-tab {
+        color: #d1d5db;
+    }
+    
+    .auth-tab.active {
+        color: var(--brand-gold);
+    }
+}

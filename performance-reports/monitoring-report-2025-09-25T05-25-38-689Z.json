@@ -1,0 +1,82 @@
+{
+  "timestamp": "2025-09-25T05:25:38.689Z",
+  "performance": {
+    "overall": {
+      "passed": 18,
+      "total": 19,
+      "percentage": "94.7"
+    },
+    "categories": {
+      "css": {
+        "passed": 5,
+        "total": 5,
+        "details": [
+          "✅ 找到2个CSS预加载标签",
+          "✅ 找到性能优化CSS文件: css/components/visibility-optimization.css",
+          "✅ 找到性能优化CSS文件: css/responsive/touch-optimization.css",
+          "✅ CSS文件存在: css/components/visibility-optimization.css",
+          "✅ CSS文件存在: css/responsive/touch-optimization.css"
+        ]
+      },
+      "javascript": {
+        "passed": 3,
+        "total": 3,
+        "details": [
+          "✅ 找到5个延迟加载脚本",
+          "✅ 找到触摸优化JS文件: js/touch-optimization.js",
+          "✅ JS文件存在: js/touch-optimization.js"
+        ]
+      },
+      "images": {
+        "passed": 3,
+        "total": 3,
+        "details": [
+          "✅ 找到4个懒加载图片",
+          "✅ 找到1个高优先级图片",
+          "✅ 找到1个高优先级获取图片"
+        ]
+      },
+      "performance": {
+        "passed": 3,
+        "total": 4,
+        "details": [
+          "✅ 找到3个预加载资源",
+          "✅ 找到关键CSS文件",
+          "✅ 找到1个压缩文件",
+          "❌ 未找到现代图片格式"
+        ]
+      },
+      "touch": {
+        "passed": 4,
+        "total": 4,
+        "details": [
+          "✅ 找到触摸优化CSS文件引用",
+          "✅ 找到触摸优化JS文件引用",
+          "✅ 触摸优化CSS文件存在",
+          "✅ 触摸优化JS文件存在"
+        ]
+      }
+    }
+  },
+  "status": "EXCELLENT",
+  "recommendations": [
+    {
+      "category": "performance",
+      "priority": "HIGH",
+      "suggestion": "考虑使用更多现代图片格式（WebP/AVIF）以提升性能指标"
+    },
+    {
+      "category": "general",
+      "priority": "MEDIUM",
+      "suggestion": "持续监控性能指标，定期进行优化调整"
+    }
+  ],
+  "trends": {
+    "currentScore": 94.7,
+    "averageScore": "94.7",
+    "trend": "STABLE",
+    "historicalScores": [
+      "94.7"
+    ]
+  }
+}

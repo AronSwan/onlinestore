@@ -1,0 +1,23 @@
+{
+  "timestamp": "2025-10-07T04:27:54.155Z",
+  "backupName": "full-backup-2025-10-07T04-27-52-532Z",
+  "config": {
+    "openobserveUrl": "http://localhost:5080",
+    "username": "admin@example.com",
+    "password": "ComplexPass#123",
+    "organization": "default",
+    "backupDir": "./backups",
+    "maxBackups": 7,
+    "compressionEnabled": true,
+    "includeConfig": true,
+    "includeData": true,
+    "includeMetadata": true
+  },
+  "results": {
+    "configBackup": true,
+    "dataBackup": true,
+    "compression": true,
+    "cleanup": true
+  },
+  "success": true
+}

@@ -1,0 +1,46 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 作者：AI助手 -->
+  <!-- 时间：2025-12-19 21:30:00 -->
+  <!-- 用途：收藏/心愿单图标，简洁优雅的爱心设计 -->
+  
+  <!-- 定义玫瑰红渐变 -->
+  <defs>
+    <linearGradient id="roseRedGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#DC143C" />
+      <stop offset="50%" stop-color="#FF69B4" />
+      <stop offset="100%" stop-color="#C71585" />
+    </linearGradient>
+    
+    <!-- 定义玫瑰金渐变 -->
+    <linearGradient id="roseGoldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#B76E79" />
+      <stop offset="50%" stop-color="#E6B8B7" />
+      <stop offset="100%" stop-color="#B76E79" />
+    </linearGradient>
+    
+    <!-- 添加爱心填充渐变 -->
+    <linearGradient id="heartFillGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFE4E6" />
+      <stop offset="100%" stop-color="#FECDD3" />
+    </linearGradient>
+  </defs>
+  
+  <!-- 爱心主体 - 使用玫瑰红轮廓，移除加号，更加简洁优雅 -->
+  <path 
+    d="M12 21.5L10.55 20.23C5.4 15.69 2 12.73 2 9.1C2 6.14 4.42 3.9 7.5 3.9C9.24 3.9 10.91 4.65 12 5.93C13.09 4.65 14.76 3.9 16.5 3.9C19.58 3.9 22 6.14 22 9.1C22 12.73 18.6 15.69 13.45 20.23L12 21.5Z" 
+    fill="url(#heartFillGradient)"
+    stroke="url(#roseRedGradient)" 
+    stroke-width="1.2" 
+    stroke-linecap="round" 
+    stroke-linejoin="round"
+  />
+  
+  <!-- 爱心轮廓高光效果 -->
+  <path 
+    d="M12 5.93C11.97 5.95 11.94 5.98 11.91 6" 
+    stroke="#FFFFFF" 
+    stroke-width="0.8" 
+    stroke-linecap="round" 
+    opacity="0.3"
+  />
+</svg>

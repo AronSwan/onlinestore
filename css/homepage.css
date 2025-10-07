@@ -1,631 +1,189 @@
-/* @ai-generated: 首页特定样式文件
-   Source: AI Assistant
-   Timestamp: 2025-11-20
-   基于Gucci风格的首页豪华设计 */
+/*******************************************************************
+ * REICH STYLE - 首页专用样式 (优化版)
+ * 版本: 2.1.0
+ * 作者: AI品牌设计团队
+ * 描述: 整合index.html内联样式后的首页样式
+ *******************************************************************/
 
-/* ==========================================================================
-   导入基础样式
-   ========================================================================== */
-
-@import url('./gucci-style.css');
-
-/* ==========================================================================
-   首页英雄区域样式
-   ========================================================================== */
-
-.hero-section {
-  position: relative;
-  height: 90vh;
-  min-height: 600px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  background-color: var(--gucci-black, #000000);
-}
-
-.hero-content {
-  position: relative;
-  z-index: 2;
-  max-width: 800px;
-  padding: 0 var(--gucci-spacing-md, 2rem);
-}
-
-.hero-title {
-  font-family: var(--gucci-font-primary, 'Times New Roman', serif);
-  font-size: 3.5rem;
-  font-weight: 700;
-  color: var(--gucci-white, #FFFFFF);
-  line-height: 1.2;
-  margin-bottom: var(--gucci-spacing-md, 2rem);
-  text-transform: uppercase;
-  letter-spacing: 2px;
-}
-
-.hero-subtitle {
-  font-family: var(--gucci-font-secondary, 'Helvetica Neue', Arial, sans-serif);
-  font-size: 1.2rem;
-  color: var(--gucci-gold-light, #F0E68C);
-  margin-bottom: var(--gucci-spacing-lg, 4rem);
-  max-width: 500px;
-  line-height: 1.6;
-}
-
-.hero-image {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 60%;
-  height: 100%;
-  object-fit: cover;
-  z-index: 1;
-}
-
-.hero-gradient-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, var(--gucci-black, #000000) 0%, transparent 100%);
-  z-index: 1;
-}
-
-.hero-cta {
-  display: flex;
-  gap: var(--gucci-spacing-md, 2rem);
-}
-
-/* ==========================================================================
-   品牌亮点区域
-   ========================================================================== */
-
-.highlights-section {
-  padding: var(--gucci-spacing-xl, 8rem) 0;
-  background-color: var(--gucci-white, #FFFFFF);
-}
-
-.highlights-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: var(--gucci-spacing-lg, 4rem);
-}
-
-.highlight-card {
-  text-align: center;
-  transition: transform var(--gucci-transition-normal, 0.3s ease);
-}
-
-.highlight-card:hover {
-  transform: translateY(-10px);
-}
-
-.highlight-icon {
-  width: 80px;
-  height: 80px;
-  margin: 0 auto var(--gucci-spacing-md, 2rem);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--gucci-gray-light, #F5F5F5);
-  border-radius: 50%;
-  color: var(--gucci-gold, #D4AF37);
-  font-size: 2rem;
-}
-
-.highlight-title {
-  font-family: var(--gucci-font-primary, 'Times New Roman', serif);
-  font-size: 1.5rem;
-  margin-bottom: var(--gucci-spacing-sm, 1rem);
-  color: var(--gucci-black, #000000);
-}
-
-.highlight-description {
-  color: var(--gucci-gray-dark, #808080);
-  line-height: 1.6;
-}
-
-/* ==========================================================================
-   精选系列区域
-   ========================================================================== */
-
-.collections-section {
-  padding: var(--gucci-spacing-xl, 8rem) 0;
-  background-color: var(--gucci-gray-light, #F5F5F5);
-}
-
-.section-header {
-  text-align: center;
-  margin-bottom: var(--gucci-spacing-xl, 8rem);
-}
-
-.section-heading {
-  font-family: var(--gucci-font-primary, 'Times New Roman', serif);
-  font-size: 2.5rem;
-  color: var(--gucci-black, #000000);
-  margin-bottom: var(--gucci-spacing-sm, 1rem);
-}
-
-.section-subheading {
-  font-family: var(--gucci-font-secondary, 'Helvetica Neue', Arial, sans-serif);
-  font-size: 1rem;
-  color: var(--gucci-gray-dark, #808080);
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-.collections-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: var(--gucci-spacing-md, 2rem);
-}
-
-.collection-card {
-  position: relative;
-  height: 600px;
-  overflow: hidden;
-  border-radius: 4px;
-}
-
-.collection-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform var(--gucci-transition-slow, 0.5s ease);
-}
-
-.collection-card:hover .collection-image {
-  transform: scale(1.05);
-}
-
-.collection-overlay {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  padding: var(--gucci-spacing-lg, 4rem) var(--gucci-spacing-md, 2rem);
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
-  color: var(--gucci-white, #FFFFFF);
-  transition: all var(--gucci-transition-normal, 0.3s ease);
-}
-
-.collection-card:hover .collection-overlay {
-  padding-top: var(--gucci-spacing-md, 2rem);
-}
-
-.collection-title {
-  font-family: var(--gucci-font-primary, 'Times New Roman', serif);
-  font-size: 1.8rem;
-  margin-bottom: var(--gucci-spacing-xs, 0.5rem);
-}
-
-.collection-description {
-  font-family: var(--gucci-font-secondary, 'Helvetica Neue', Arial, sans-serif);
-  font-size: 1rem;
-  margin-bottom: var(--gucci-spacing-sm, 1rem);
-  opacity: 0;
-  transform: translateY(20px);
-  transition: all var(--gucci-transition-normal, 0.3s ease);
+/* 导航栏样式 - Gucci奢华美学 */
+.header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background-color: transparent;
+    padding: 25px 0;
+    transition: all 0.3s ease;
+    font-family: var(--font-family-luxury);
 }
 
-.collection-card:hover .collection-description {
-  opacity: 1;
-  transform: translateY(0);
+/* 导航栏修复 */
+.navbar-luxury {
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    will-change: transform, opacity;
 }
 
-.collection-link {
-  display: inline-flex;
-  align-items: center;
-  color: var(--gucci-gold, #D4AF37);
-  text-decoration: none;
-  font-family: var(--gucci-font-secondary, 'Helvetica Neue', Arial, sans-serif);
-  font-size: 0.9rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  opacity: 0;
-  transform: translateY(20px);
-  transition: all var(--gucci-transition-normal, 0.3s ease);
-  transition-delay: 0.1s;
+/* 字体高亮与下划线动画同步 */
+.nav-link-luxury {
+    --underline-delay: 300ms; /* 控制字体和下划线延迟时间 */
+    transition: color 0.3s ease var(--underline-delay);
 }
 
-.collection-card:hover .collection-link {
-  opacity: 1;
-  transform: translateY(0);
+.nav-link-luxury::after {
+    transition-delay: var(--underline-delay);
 }
 
-.collection-link::after {
-  content: '→';
-  margin-left: 0.5rem;
-  transition: transform var(--gucci-transition-fast, 0.2s ease);
+.nav-link-luxury:hover,
+.nav-link-luxury.active {
+    transition-delay: 0ms; /* hover/active状态立即响应 */
 }
 
-.collection-link:hover::after {
-  transform: translateX(5px);
+/* 防止导航栏消失 */
+.header.scrolled .navbar-luxury {
+    transform: none !important;
 }
 
-/* ==========================================================================
-   新品上市区域
-   ========================================================================== */
-
-.new-arrivals-section {
-  padding: var(--gucci-spacing-xl, 8rem) 0;
-  background-color: var(--gucci-white, #FFFFFF);
-}
-
-.products-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: var(--gucci-spacing-lg, 4rem);
-}
-
-.product-card {
-  position: relative;
-  overflow: hidden;
-  transition: all var(--gucci-transition-normal, 0.3s ease);
-}
-
-.product-card:hover {
-  transform: translateY(-10px);
-}
-
-.product-image-container {
-  position: relative;
-  height: 400px;
-  overflow: hidden;
-  margin-bottom: var(--gucci-spacing-sm, 1rem);
-}
-
-.product-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform var(--gucci-transition-slow, 0.5s ease);
-}
-
-.product-card:hover .product-image {
-  transform: scale(1.05);
-}
-
-.product-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.1);
-  opacity: 0;
-  transition: opacity var(--gucci-transition-normal, 0.3s ease);
-}
-
-.product-card:hover .product-overlay {
-  opacity: 1;
-}
-
-.product-actions {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: var(--gucci-spacing-xs, 0.5rem);
-  opacity: 0;
-  transition: all var(--gucci-transition-normal, 0.3s ease);
-}
-
-.product-card:hover .product-actions {
-  opacity: 1;
-}
-
-.product-action-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background-color: var(--gucci-white, #FFFFFF);
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all var(--gucci-transition-fast, 0.2s ease);
-  color: var(--gucci-black, #000000);
-}
-
-.product-action-btn:hover {
-  background-color: var(--gucci-gold, #D4AF37);
-  color: var(--gucci-white, #FFFFFF);
-}
-
-.product-category {
-  font-family: var(--gucci-font-secondary, 'Helvetica Neue', Arial, sans-serif);
-  font-size: 0.9rem;
-  color: var(--gucci-gray-dark, #808080);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 0.5rem;
-}
-
-.product-title {
-  font-family: var(--gucci-font-primary, 'Times New Roman', serif);
-  font-size: 1.2rem;
-  color: var(--gucci-black, #000000);
-  margin-bottom: 0.5rem;
-}
-
-.product-price {
-  font-family: var(--gucci-font-primary, 'Times New Roman', serif);
-  font-size: 1.1rem;
-  color: var(--gucci-black, #000000);
-}
-
-/* ==========================================================================
-   VIP专区
-   ========================================================================== */
-
-.vip-section {
-  padding: var(--gucci-spacing-xl, 8rem) 0;
-  background-color: var(--gucci-black, #000000);
-  color: var(--gucci-white, #FFFFFF);
-}
-
-.vip-content {
-  max-width: 900px;
-  margin: 0 auto;
-  text-align: center;
-}
-
-.vip-title {
-  font-family: var(--gucci-font-primary, 'Times New Roman', serif);
-  font-size: 2.5rem;
-  margin-bottom: var(--gucci-spacing-md, 2rem);
-}
-
-.vip-subtitle {
-  font-family: var(--gucci-font-secondary, 'Helvetica Neue', Arial, sans-serif);
-  font-size: 1.2rem;
-  margin-bottom: var(--gucci-spacing-lg, 4rem);
-  color: var(--gucci-gold-light, #F0E68C);
-  line-height: 1.6;
-}
-
-.vip-benefits {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: var(--gucci-spacing-md, 2rem);
-  margin-bottom: var(--gucci-spacing-lg, 4rem);
+/* 平滑过渡效果 */
+.navbar-luxury.scrolled {
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    backdrop-filter: blur(10px);
 }
 
-.vip-benefit {
-  padding: var(--gucci-spacing-md, 2rem);
-  background-color: rgba(255, 255, 255, 0.05);
-  border-radius: 4px;
-  transition: all var(--gucci-transition-normal, 0.3s ease);
+.header.scrolled {
+    background-color: rgba(245, 245, 220, 0.98);
+    padding: 15px 0;
+    backdrop-filter: blur(10px);
 }
 
-.vip-benefit:hover {
-  background-color: rgba(212, 175, 55, 0.1);
-  transform: translateY(-5px);
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.vip-benefit-icon {
-  font-size: 2rem;
-  margin-bottom: var(--gucci-spacing-sm, 1rem);
-  color: var(--gucci-gold, #D4AF37);
+.logo-link {
+    font-family: var(--font-family-luxury);
+    font-size: 2.2rem;
+    font-weight: var(--font-weight-light);
+    letter-spacing: 3px;
+    color: var(--gold-rich);
+    transition: all 0.3s ease;
+    text-decoration: none;
 }
 
-.vip-benefit-title {
-  font-family: var(--gucci-font-primary, 'Times New Roman', serif);
-  font-size: 1.3rem;
-  margin-bottom: var(--gucci-spacing-xs, 0.5rem);
+.logo-link:hover {
+    color: var(--gold-standard);
+    text-shadow: 0 2px 10px rgba(212, 175, 55, 0.3);
 }
 
-.vip-benefit-description {
-  font-family: var(--gucci-font-secondary, 'Helvetica Neue', Arial, sans-serif);
-  font-size: 0.9rem;
-  color: var(--gucci-gray, #E0E0E0);
-  line-height: 1.6;
+.nav-menu {
+    display: flex;
+    gap: var(--spacing-lg);
+    list-style: none;
+    padding: 0;
+    margin: 0;
 }
 
-/* ==========================================================================
-   私人定制区域
-   ========================================================================== */
-
-.customization-section {
-  padding: var(--gucci-spacing-xl, 8rem) 0;
-  background-color: var(--gucci-white, #FFFFFF);
-}
-
-.customization-content {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--gucci-spacing-xl, 8rem);
-  align-items: center;
-}
-
-.customization-image {
-  width: 100%;
-  height: auto;
-  border-radius: 4px;
-}
-
-.customization-title {
-  font-family: var(--gucci-font-primary, 'Times New Roman', serif);
-  font-size: 2.5rem;
-  margin-bottom: var(--gucci-spacing-md, 2rem);
-  color: var(--gucci-black, #000000);
+.nav-link {
+    font-family: var(--font-family-serif);
+    font-size: 1.1rem;
+    font-weight: var(--font-weight-light);
+    letter-spacing: var(--letter-spacing-wide);
+    text-transform: uppercase;
+    color: var(--dark-elegant);
+    transition: all 0.3s ease;
+    position: relative;
+    padding: 8px 0;
 }
 
-.customization-description {
-  font-family: var(--gucci-font-secondary, 'Helvetica Neue', Arial, sans-serif);
-  font-size: 1.1rem;
-  color: var(--gucci-gray-dark, #808080);
-  margin-bottom: var(--gucci-spacing-lg, 4rem);
-  line-height: 1.6;
+.nav-link:hover {
+    color: var(--gold-rich);
 }
 
-.customization-options {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--gucci-spacing-md, 2rem);
-  margin-bottom: var(--gucci-spacing-lg, 4rem);
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(to right, var(--gold-pale), var(--gold-rich));
+    transition: width 0.3s ease;
 }
 
-.customization-option {
-  display: flex;
-  gap: var(--gucci-spacing-md, 2rem);
-  align-items: flex-start;
+.nav-link:hover::after {
+    width: 100%;
 }
-
-.customization-option-icon {
-  font-size: 1.5rem;
-  color: var(--gucci-gold, #D4AF37);
-  flex-shrink: 0;
-  margin-top: 5px;
-}
-
-.customization-option-content h4 {
-  font-family: var(--gucci-font-primary, 'Times New Roman', serif);
-  font-size: 1.2rem;
-  margin-bottom: 0.5rem;
-  color: var(--gucci-black, #000000);
-}
-
-.customization-option-content p {
-  font-family: var(--gucci-font-secondary, 'Helvetica Neue', Arial, sans-serif);
-  font-size: 0.9rem;
-  color: var(--gucci-gray-dark, #808080);
-  line-height: 1.6;
-}
-
-/* ==========================================================================
-   响应式设计
-   ========================================================================== */
 
-@media (max-width: 1200px) {
-  .hero-title {
-    font-size: 3rem;
-  }
-  
-  .hero-image {
-    width: 50%;
-  }
-  
-  .customization-content {
-    gap: var(--gucci-spacing-lg, 4rem);
-  }
+.user-menu {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
 }
 
-@media (max-width: 992px) {
-  .hero-section {
-    height: auto;
-    min-height: 0;
-    padding: var(--gucci-spacing-xl, 8rem) 0;
-  }
-  
-  .hero-image {
-    display: none;
-  }
-  
-  .hero-gradient-overlay {
+.btn-login,
+.action-btn {
     background: none;
-  }
-  
-  .hero-content {
-    max-width: 100%;
-    text-align: center;
-  }
-  
-  .hero-cta {
+    border: none;
+    color: var(--text-primary);
+    padding: 8px;
+    /* 移除过渡动画效果 */
+}
+
+.btn-login:hover,
+.action-btn:hover {
+    color: var(--brand-gold);
+}
+
+.cart-button {
+    position: relative;
+}
+
+.cart-count {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 24px; /* 增加宽度 */
+    height: 24px; /* 增加高度 */
+    background-color: var(--brand-gold);
+    color: var(--brand-black);
+    border-radius: 50%;
+    font-size: 0.8rem; /* 增大字体 */
+    font-weight: 600;
+    display: flex;
+    align-items: center;
     justify-content: center;
-  }
-  
-  .collections-grid {
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  }
-  
-  .customization-content {
-    grid-template-columns: 1fr;
-  }
-  
-  .customization-image {
-    order: 1;
-  }
-  
-  .customization-text {
-    order: 2;
-  }
+    border: 2px solid rgba(255, 255, 255, 0.8); /* 添加边框 */
+    box-shadow: 0 3px 8px rgba(212, 175, 55, 0.5); /* 添加阴影 */
+    text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5); /* 添加文字阴影 */
+}
+
+/* 响应式设计 */
+@media (max-width: 1024px) {
+    .nav-menu {
+        gap: var(--spacing-md);
+    }
 }
 
 @media (max-width: 768px) {
-  .hero-title {
-    font-size: 2.5rem;
-  }
-  
-  .section-heading {
-    font-size: 2rem;
-  }
-  
-  .collection-card {
-    height: 400px;
-  }
-  
-  .vip-benefits {
-    grid-template-columns: 1fr;
-  }
+    .header-content {
+        flex-direction: column;
+        gap: var(--spacing-md);
+    }
+
+    .nav-menu {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
 }
 
-@media (max-width: 576px) {
-  .hero-title {
-    font-size: 2rem;
-  }
-  
-  .hero-subtitle {
-    font-size: 1rem;
-  }
-  
-  .hero-cta {
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  .section-heading {
-    font-size: 1.8rem;
-  }
-  
-  .collection-card {
-    height: 300px;
-  }
-  
-  .product-image-container {
-    height: 300px;
-  }
-}
+@media (max-width: 480px) {
+    .logo-link {
+        font-size: 1.5rem;
+    }
 
-/* ==========================================================================
-   动画效果
-   ========================================================================== */
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.fade-in {
-  animation: fadeIn 0.8s ease-out forwards;
-}
-
-.delay-1 {
-  animation-delay: 0.2s;
-}
-
-.delay-2 {
-  animation-delay: 0.4s;
-}
-
-.delay-3 {
-  animation-delay: 0.6s;
+    .nav-link {
+        font-size: 0.875rem;
+    }
 }

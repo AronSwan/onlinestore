@@ -1,0 +1,126 @@
+# 开发环境 Docker Compose 配置
+version: '3.8'
+
+services:
+  # 前端开发服务 (热重载)
+  frontend-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: shopping-frontend-dev
+    ports:
+      - "3001:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true
+    networks:
+      - shopping-network
+    command: npm run dev
+
+  # 后端开发服务 (热重载)
+  backend-dev:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: shopping-backend-dev
+    ports:
+      - "3000:3000"
+      - "9229:9229" # Node.js 调试端口
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@postgres-dev:5432/${POSTGRES_DB}
+      - REDIS_URL=redis://redis-dev:6379
+      - EMAIL_VERIFIER_API_URL=http://email-verifier-dev:8080
+    networks:
+      - shopping-network
+    depends_on:
+      - postgres-dev
+      - redis-dev
+    command: npm run start:dev
+
+  # 开发数据库
+  postgres-dev:
+    image: postgres:15-alpine
+    container_name: shopping-postgres-dev
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-shopping_db}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - shopping-network
+    ports:
+      - "5433:5432"
+
+  # 开发 Redis
+  redis-dev:
+    image: redis:7-alpine
+    container_name: shopping-redis-dev
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_dev_data:/data
+    networks:
+      - shopping-network
+    ports:
+      - "6380:6379"
+
+  # 开发邮箱验证服务
+  email-verifier-dev:
+    build:
+      context: ./docker/email-verifier
+      dockerfile: Dockerfile
+    container_name: shopping-email-verifier-dev
+    environment:
+      - PORT=8080
+      - ENABLE_SMTP_CHECK=false
+      - LOG_LEVEL=debug
+    networks:
+      - shopping-network
+    ports:
+      - "8081:8080"
+
+  # 数据库管理工具
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: shopping-pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@example.com
+      - PGADMIN_DEFAULT_PASSWORD=admin123
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - shopping-network
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres-dev
+
+  # Redis 管理工具
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: shopping-redis-commander
+    environment:
+      - REDIS_HOSTS=local:redis-dev:6379
+    networks:
+      - shopping-network
+    ports:
+      - "8082:8081"
+    depends_on:
+      - redis-dev
+
+volumes:
+  postgres_dev_data:
+  redis_dev_data:
+  pgadmin_data:
+
+networks:
+  shopping-network:
+    driver: bridge

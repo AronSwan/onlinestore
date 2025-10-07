@@ -1,0 +1,60 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 作者：AI助手 -->
+  <!-- 时间：2025-12-19 21:30:00 -->
+  <!-- 用途：购物袋图标，Gucci风格配色设计 -->
+  
+  <!-- 定义24k金色渐变 -->
+  <defs>
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFD700" />
+      <stop offset="50%" stop-color="#FFEC8B" />
+      <stop offset="100%" stop-color="#D4AF37" />
+    </linearGradient>
+    
+    <!-- 定义玫瑰金渐变 -->
+    <linearGradient id="roseGoldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#B76E79" />
+      <stop offset="50%" stop-color="#E6B8B7" />
+      <stop offset="100%" stop-color="#B76E79" />
+    </linearGradient>
+    
+    <!-- 黑色购物袋填充 -->
+    <linearGradient id="blackBagFill" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#000000" />
+      <stop offset="100%" stop-color="#333333" />
+    </linearGradient>
+  </defs>
+  
+  <!-- 购物袋主体 - 半透明填充，让数字可见 -->
+  <path 
+    d="M4 6H20C21.1046 6 22 6.89543 22 8V20C22 21.1046 21.1046 22 20 22H4C2.89543 22 2 21.1046 2 20V8C2 6.89543 2.89543 6 4 6Z" 
+    fill="rgba(0, 0, 0, 0.3)"
+    stroke="#000000" 
+    stroke-width="1.2" 
+    stroke-linecap="round" 
+    stroke-linejoin="round"
+  />
+  
+  <!-- 提手（24k金色配色） -->
+  <path 
+    d="M8 6V4C8 2.89543 8.89543 2 10 2H14C15.1046 2 16 2.89543 16 4V6" 
+    stroke="url(#goldGradient)" 
+    stroke-width="1.8" 
+    stroke-linecap="round" 
+    stroke-linejoin="round" 
+    fill="none"
+  />
+  
+  <!-- 数量显示 - 使用纯白色，提高在黑色半透明袋体中的可见性 -->
+  <text 
+    x="50%" 
+    y="54%" 
+    text-anchor="middle" 
+    dominant-baseline="central" 
+    font-family="Times New Roman, serif" 
+    font-size="52%" 
+    font-weight="bold"
+    fill="#FFFFFF"
+    class="count-text"
+  >0</text>
+</svg>

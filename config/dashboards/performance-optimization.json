@@ -1,0 +1,712 @@
+{
+  "dashboard": {
+    "id": "performance-optimization",
+    "title": "性能优化监控",
+    "description": "系统性能监控和优化建议仪表板",
+    "tags": ["performance", "optimization", "monitoring"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": "performance-overview",
+        "title": "性能概览",
+        "type": "stat",
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT AVG(cpu.usage) as avg_cpu_usage FROM performance-metrics WHERE timestamp >= now() - INTERVAL '5 minutes'",
+            "datasource": "openobserve",
+            "format": "time_series"
+          },
+          {
+            "refId": "B",
+            "query": "SELECT AVG(memory.usage) as avg_memory_usage FROM performance-metrics WHERE timestamp >= now() - INTERVAL '5 minutes'",
+            "datasource": "openobserve",
+            "format": "time_series"
+          },
+          {
+            "refId": "C",
+            "query": "SELECT AVG(disk.usage) as avg_disk_usage FROM performance-metrics WHERE timestamp >= now() - INTERVAL '5 minutes'",
+            "datasource": "openobserve",
+            "format": "time_series"
+          },
+          {
+            "refId": "D",
+            "query": "SELECT COUNT(*) as optimization_count FROM optimization-recommendations WHERE timestamp >= now() - INTERVAL '1 hour'",
+            "datasource": "openobserve",
+            "format": "time_series"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "displayMode": "list",
+              "orientation": "horizontal"
+            },
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "displayMode": "list",
+          "orientation": "horizontal"
+        }
+      },
+      {
+        "id": "resource-usage",
+        "title": "资源使用趋势",
+        "type": "timeseries",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT time_bucket('1 minute', timestamp) as time, AVG(cpu.usage) as cpu_usage, AVG(memory.usage) as memory_usage, AVG(disk.usage) as disk_usage FROM performance-metrics WHERE timestamp >= now() - INTERVAL '1 hour' GROUP BY time ORDER BY time",
+            "datasource": "openobserve",
+            "format": "time_series"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              },
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom"
+          },
+          "tooltip": {
+            "mode": "single"
+          }
+        }
+      },
+      {
+        "id": "optimization-recommendations",
+        "title": "优化建议统计",
+        "type": "pie",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT recommendations.type as optimization_type, COUNT(*) as count FROM optimization-recommendations WHERE timestamp >= now() - INTERVAL '24 hours' CROSS JOIN UNNEST(recommendations) as recommendations GROUP BY optimization_type",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            },
+            "mappings": []
+          },
+          "overrides": []
+        },
+        "options": {
+          "displayMode": "list",
+          "orientation": "horizontal"
+        }
+      },
+      {
+        "id": "performance-alerts",
+        "title": "性能警报",
+        "type": "table",
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 16
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT timestamp, alerts.type as alert_type, alerts.severity, alerts.message, alerts.value, alerts.threshold FROM optimization-recommendations WHERE timestamp >= now() - INTERVAL '24 hours' CROSS JOIN UNNEST(alerts) as alerts ORDER BY timestamp DESC LIMIT 20",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "custom": {
+              "align": "auto",
+              "displayMode": "auto"
+            },
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "severity"
+              },
+              "properties": [
+                {
+                  "id": "custom.displayMode",
+                  "value": "color-background"
+                },
+                {
+                  "id": "thresholds",
+                  "value": {
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      },
+                      {
+                        "color": "yellow",
+                        "value": "warning"
+                      },
+                      {
+                        "color": "red",
+                        "value": "critical"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "showHeader": true
+        }
+      },
+      {
+        "id": "network-usage",
+        "title": "网络使用情况",
+        "type": "timeseries",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 24
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT time_bucket('1 minute', timestamp) as time, AVG(network.bytesIn) as avg_bytes_in, AVG(network.bytesOut) as avg_bytes_out FROM performance-metrics WHERE timestamp >= now() - INTERVAL '1 hour' GROUP BY time ORDER BY time",
+            "datasource": "openobserve",
+            "format": "time_series"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              },
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom"
+          },
+          "tooltip": {
+            "mode": "single"
+          }
+        }
+      },
+      {
+        "id": "query-performance",
+        "title": "查询性能分析",
+        "type": "table",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 24
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT query, AVG(duration) as avg_duration, COUNT(*) as execution_count, MAX(duration) as max_duration FROM query-log WHERE timestamp >= now() - INTERVAL '1 hour' GROUP BY query ORDER BY avg_duration DESC LIMIT 10",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "custom": {
+              "align": "auto",
+              "displayMode": "auto"
+            },
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "avg_duration"
+              },
+              "properties": [
+                {
+                  "id": "custom.displayMode",
+                  "value": "color-background"
+                },
+                {
+                  "id": "thresholds",
+                  "value": {
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      },
+                      {
+                        "color": "yellow",
+                        "value": 1000
+                      },
+                      {
+                        "color": "red",
+                        "value": 2000
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "showHeader": true
+        }
+      },
+      {
+        "id": "cache-performance",
+        "title": "缓存性能分析",
+        "type": "stat",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 32
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT COUNT(CASE WHEN cached = true THEN 1 END) * 100.0 / COUNT(*) as cache_hit_rate FROM query-log WHERE timestamp >= now() - INTERVAL '1 hour'",
+            "datasource": "openobserve",
+            "format": "time_series"
+          },
+          {
+            "refId": "B",
+            "query": "SELECT COUNT(CASE WHEN cached = true THEN 1 END) as cached_queries, COUNT(*) as total_queries FROM query-log WHERE timestamp >= now() - INTERVAL '1 hour'",
+            "datasource": "openobserve",
+            "format": "time_series"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "displayMode": "list",
+              "orientation": "horizontal"
+            },
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "displayMode": "list",
+          "orientation": "horizontal"
+        }
+      },
+      {
+        "id": "optimization-actions",
+        "title": "优化建议详情",
+        "type": "table",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 32
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT timestamp, recommendations.type as optimization_type, recommendations.priority, recommendations.title, recommendations.description FROM optimization-recommendations WHERE timestamp >= now() - INTERVAL '24 hours' CROSS JOIN UNNEST(recommendations) as recommendations ORDER BY timestamp DESC LIMIT 20",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "custom": {
+              "align": "auto",
+              "displayMode": "auto"
+            },
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "priority"
+              },
+              "properties": [
+                {
+                  "id": "custom.displayMode",
+                  "value": "color-background"
+                },
+                {
+                  "id": "thresholds",
+                  "value": {
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      },
+                      {
+                        "color": "yellow",
+                        "value": "medium"
+                      },
+                      {
+                        "color": "red",
+                        "value": "high"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "showHeader": true
+        }
+      },
+      {
+        "id": "resource-distribution",
+        "title": "资源使用分布",
+        "type": "heatmap",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 40
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT time_bucket('10 minute', timestamp) as time_bucket, cpu.usage as cpu_usage, memory.usage as memory_usage FROM performance-metrics WHERE timestamp >= now() - INTERVAL '2 hours'",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            },
+            "mappings": []
+          },
+          "overrides": []
+        },
+        "options": {
+          "displayMode": "list",
+          "orientation": "horizontal"
+        }
+      },
+      {
+        "id": "optimization-timeline",
+        "title": "优化时间线",
+        "type": "timeline",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 40
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT timestamp, recommendations.type as optimization_type, recommendations.priority FROM optimization-recommendations WHERE timestamp >= now() - INTERVAL '24 hours' CROSS JOIN UNNEST(recommendations) as recommendations ORDER BY timestamp",
+            "datasource": "openobserve",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            },
+            "mappings": []
+          },
+          "overrides": []
+        },
+        "options": {
+          "displayMode": "list",
+          "orientation": "horizontal"
+        }
+      },
+      {
+        "id": "performance-trends",
+        "title": "性能趋势分析",
+        "type": "timeseries",
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 48
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "SELECT time_bucket('30 minute', timestamp) as time, AVG(cpu.usage) as avg_cpu, AVG(memory.usage) as avg_memory, AVG(disk.usage) as avg_disk, COUNT(*) as data_points FROM performance-metrics WHERE timestamp >= now() - INTERVAL '24 hours' GROUP BY time ORDER BY time",
+            "datasource": "openobserve",
+            "format": "time_series"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              },
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom"
+          },
+          "tooltip": {
+            "mode": "single"
+          }
+        }
+      }
+    ],
+    "time": {
+      "from": "now-24h",
+      "to": "now"
+    },
+    "refresh": "1m"
+  }
+}

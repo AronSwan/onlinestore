@@ -1,0 +1,190 @@
+name: Backend CI
+
+on:
+  push:
+    branches: ["main", "master"]
+    paths: ["backend/**"]
+  pull_request:
+    branches: ["*"]
+    paths: ["backend/**"]
+
+jobs:
+  build-test-audit:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Create .env from example
+        run: cp .env.example .env
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint --if-present
+
+      - name: Build
+        run: npm run build
+
+      - name: Unit tests
+        run: npm test -- --ci
+
+      - name: Kubernetes self-check
+        run: node kubernetes-test.js
+
+      - name: Basic security audit
+        run: |
+          npm audit --audit-level=moderate || true
+
+  security-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Create .env from example
+        run: cp .env.example .env
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run security checks
+        run: npm run security:check -- --ci --format=json --output=security-report.json --fail-on=critical
+        continue-on-error: true
+
+      - name: Generate SARIF report
+        run: npm run security:check -- --ci --format=sarif --output=security-results.sarif
+        continue-on-error: true
+
+      - name: Upload security report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-artifacts
+          path: |
+            backend/security-report.json
+            backend/security-results.sarif
+          retention-days: 90
+          if-no-files-found: warn
+
+      - name: Check for high security issues
+        run: |
+          if [ -f "security-report.json" ]; then
+            # 检查是否有高危问题
+            HIGH_COUNT=$(jq -r '.results[] | select(.severity == "high" and .passed == false) | .id' security-report.json | wc -l)
+            
+            echo "High issues: $HIGH_COUNT"
+            
+            # 如果有高危问题，则警告但继续
+            if [ "$HIGH_COUNT" -gt 0 ]; then
+              echo "⚠️ 发现 $HIGH_COUNT 个高危安全问题，请及时修复"
+            fi
+          else
+            echo "⚠️ 安全报告文件不存在，可能安全检查执行失败"
+          fi
+
+  security-check-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Create .env from example
+        run: cp .env.example .env
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run security check tests
+        run: npm run security:check:test:ci
+
+  codeql-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'javascript' ]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          source-root: backend/src
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{matrix.language}}"
+
+  risk-heatmap:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Create .env from example
+        run: cp .env.example .env
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate risk heatmap
+        run: npm run security:heatmap:v2
+
+      - name: Upload risk heatmap
+        uses: actions/upload-artifact@v4
+        with:
+          name: risk-heatmap
+          path: backend/docs/security-risk-heatmap.svg
+          retention-days: 30

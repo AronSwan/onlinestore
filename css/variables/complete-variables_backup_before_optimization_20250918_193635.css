@@ -1,0 +1,257 @@
+/* ==========================================================================
+   Complete CSS Variables System
+   Author: Reich Design Team
+   Description: Unified variables system for Reich luxury brand
+   ========================================================================== */
+
+/* -------------------------------
+   Brand Colors System
+   ------------------------------- */
+:root {
+  /* Primary Colors */
+  --brand-primary: #000000; /* Black - Main brand color */
+  --brand-primary-light: #222222;
+  --brand-primary-dark: #000000;
+
+  /* Accent Colors */
+  --brand-accent: #D4AF37; /* Gold - Luxury accent color */
+  --brand-accent-light: #F0E68C; /* Light gold */
+  --brand-accent-dark: #B8860B; /* Dark gold */
+  
+  /* Secondary Colors */
+  --brand-secondary: #FFFFFF; /* White */
+  --brand-secondary-light: #F8F8F8;
+  --brand-secondary-dark: #E0E0E0;
+
+  /* Success/Error States */
+  --brand-success: #28a745;
+  --brand-error: #dc3545;
+  --brand-warning: #ffc107;
+  --brand-info: #17a2b8;
+
+  /* Social Media Colors */
+  --brand-social-facebook: #3b5998;
+  --brand-social-twitter: #1da1f2;
+  --brand-social-instagram: #c32aa3;
+  --brand-social-weibo: #e6162d;
+  --brand-social-wechat: #07c160;
+
+  /* Luxury Color Palette */
+  --brand-gold: #D4AF37;
+  --brand-gold-light: #F0E68C;
+  --brand-gold-dark: #B8860B;
+  --brand-gold-100: #F9F2D9;
+  --brand-gold-200: #F3E6B3;
+  --brand-gold-300: #ECD98C;
+  --brand-gold-400: #E5CC66;
+  --brand-gold-500: #D4AF37;
+  --brand-gold-600: #B8860B;
+  --brand-gold-700: #8B6914;
+  --brand-gold-800: #664D12;
+  --brand-gold-900: #3D2911;
+
+  --brand-black: #000000;
+  --brand-white: #FFFFFF;
+  --brand-gray: #808080;
+  --brand-gray-light: #F5F5F5;
+  --brand-gray-dark: #333333;
+  --brand-red: #FF0000;
+  --brand-green: #008000;
+
+  /* Text Colors */
+  --text-primary: #000000;
+  --text-secondary: #808080;
+  --text-light: #FFFFFF;
+  --text-muted: #999999;
+  
+  /* Background Colors */
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F5F5F5;
+  --bg-dark: #000000;
+  --bg-accent: #D4AF37;
+  
+  /* Border Colors */
+  --border-primary: #E0E0E0;
+  --border-accent: #D4AF37;
+  --border-light: #F5F5F5;
+  --border-dark: #333333;
+  
+  /* Focus States */
+  --focus-primary: #D4AF37;
+  --focus-secondary: #F0E68C;
+  
+  /* Gradients */
+  --gradient-gold: linear-gradient(135deg, var(--brand-gold-light), var(--brand-gold), var(--brand-gold-dark));
+  --gradient-black-gold: linear-gradient(135deg, var(--brand-black), var(--brand-gold));
+  --gradient-white-gold: linear-gradient(135deg, var(--brand-white), var(--brand-gold-light));
+  --gradient-dark: linear-gradient(135deg, var(--brand-gray-dark), var(--brand-black));
+  --gradient-light: linear-gradient(135deg, var(--brand-white), var(--brand-gray-light));
+  
+  /* Shadows */
+  --shadow-light: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-medium: 0 4px 8px rgba(0, 0, 0, 0.1);
+  --shadow-heavy: 0 10px 20px rgba(0, 0, 0, 0.15);
+  --shadow-gold: 0 5px 15px rgba(212, 175, 55, 0.2);
+  --shadow-luxury: 0 15px 30px rgba(0, 0, 0, 0.2);
+  
+  /* Font System */
+  --brand-font-primary: 'Playfair Display', serif; /* Main display font */
+  --brand-font-secondary: 'Inter', sans-serif; /* Secondary text font */
+  --brand-font-mono: 'Courier New', monospace; /* Monospace for code */
+  
+  /* Font Sizes - Using REM units for responsive design */
+  --font-size-xs: 0.75rem; /* 12px */
+  --font-size-sm: 0.875rem; /* 14px */
+  --font-size-base: 1rem; /* 16px */
+  --font-size-lg: 1.125rem; /* 18px */
+  --font-size-xl: 1.25rem; /* 20px */
+  --font-size-2xl: 1.5rem; /* 24px */
+  --font-size-3xl: 1.875rem; /* 30px */
+  --font-size-4xl: 2.25rem; /* 36px */
+  --font-size-5xl: 3rem; /* 48px */
+  --font-size-6xl: 3.75rem; /* 60px */
+  --font-size-7xl: 4.5rem; /* 72px */
+  
+  /* Font Weights */
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-black: 900;
+  
+  /* Line Heights */
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.8;
+  
+  /* Letter Spacing */
+  --letter-spacing-tight: -0.025em;
+  --letter-spacing-normal: 0em;
+  --letter-spacing-wide: 0.05em;
+  --letter-spacing-wider: 0.1em;
+  
+  /* Spacing System - Using consistent spacing units */
+  --spacing-0: 0;
+  --spacing-1: 0.25rem; /* 4px */
+  --spacing-2: 0.5rem; /* 8px */
+  --spacing-3: 0.75rem; /* 12px */
+  --spacing-4: 1rem; /* 16px */
+  --spacing-5: 1.25rem; /* 20px */
+  --spacing-6: 1.5rem; /* 24px */
+  --spacing-8: 2rem; /* 32px */
+  --spacing-10: 2.5rem; /* 40px */
+  --spacing-12: 3rem; /* 48px */
+  --spacing-16: 4rem; /* 64px */
+  --spacing-20: 5rem; /* 80px */
+  --spacing-24: 6rem; /* 96px */
+  --spacing-32: 8rem; /* 128px */
+  --spacing-40: 10rem; /* 160px */
+  --spacing-48: 12rem; /* 192px */
+  --spacing-56: 14rem; /* 224px */
+  --spacing-64: 16rem; /* 256px */
+  
+  /* Alias for spacing to improve readability */
+  --padding-xs: var(--spacing-1);
+  --padding-sm: var(--spacing-2);
+  --padding-md: var(--spacing-4);
+  --padding-lg: var(--spacing-6);
+  --padding-xl: var(--spacing-8);
+  --padding-2xl: var(--spacing-12);
+  
+  --margin-xs: var(--spacing-1);
+  --margin-sm: var(--spacing-2);
+  --margin-md: var(--spacing-4);
+  --margin-lg: var(--spacing-6);
+  --margin-xl: var(--spacing-8);
+  --margin-2xl: var(--spacing-12);
+  
+  --gap-xs: var(--spacing-1);
+  --gap-sm: var(--spacing-2);
+  --gap-md: var(--spacing-4);
+  --gap-lg: var(--spacing-6);
+  --gap-xl: var(--spacing-8);
+  
+  /* Border Radius */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-3xl: 24px;
+  --radius-full: 9999px;
+  
+  /* Box Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+  --shadow-none: none;
+  
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+  --transition-transform: transform 0.3s ease;
+  --transition-opacity: opacity 0.3s ease;
+  --transition-color: color 0.3s ease;
+  --transition-background: background-color 0.3s ease;
+  --transition-border: border-color 0.3s ease;
+  
+  /* Alias for transitions to improve readability */
+  --duration-fast: var(--transition-fast);
+  --duration-normal: var(--transition-normal);
+  --duration-slow: var(--transition-slow);
+  
+  /* Z-index */
+  --z-index-dropdown: 1000;
+  --z-index-sticky: 1020;
+  --z-index-fixed: 1030;
+  --z-index-modal-backdrop: 1040;
+  --z-index-modal: 1050;
+  --z-index-popover: 1060;
+  --z-index-tooltip: 1070;
+  --z-index-notification: 1080;
+  --z-index-loader: 1090;
+  --z-index-max: 9999;
+  
+  /* Animations */
+  --animation-duration-fast: 0.2s;
+  --animation-duration-normal: 0.4s;
+  --animation-duration-slow: 0.6s;
+  
+  /* Container Widths */
+  --container-width-sm: 540px;
+  --container-width-md: 720px;
+  --container-width-lg: 960px;
+  --container-width-xl: 1140px;
+  --container-width-2xl: 1320px;
+  
+  /* Breakpoints - Using Bootstrap-like breakpoints */
+  --breakpoint-xs: 0;
+  --breakpoint-sm: 576px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 992px;
+  --breakpoint-xl: 1200px;
+  --breakpoint-2xl: 1400px;
+  
+  /* Accessibility */
+  --focus-outline-width: 2px;
+  --focus-outline-style: solid;
+  --focus-outline-color: var(--brand-gold);
+  --focus-outline-offset: 2px;
+  
+  /* Print Styles */
+  --print-page-margin: 1cm;
+  --print-font-size: 12pt;
+}
+
+/* -------------------------------
+   Dark Mode Variables (Future Enhancement)
+   ------------------------------- */
+@media (prefers-color-scheme: dark) {
+  /* Dark mode variables can be defined here */
+  /* This is a placeholder for future implementation */
+}

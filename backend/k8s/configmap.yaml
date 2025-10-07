@@ -1,0 +1,63 @@
+# 用途：定义Kubernetes配置映射，用于分布式环境下的集中配置管理
+# 依赖文件：无
+# 作者：后端开发团队
+# 更新：AI助手 - 增强分布式部署配置管理
+# 时间：2025-09-26 18:50:00
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: caddy-shopping-backend-config
+  namespace: default
+  labels:
+    app: caddy-shopping-backend
+    version: "1.0.0"
+data:
+  # 应用配置
+  NODE_ENV: "production"
+  PORT: "3000"
+  LOG_LEVEL: "info"
+  
+  # 数据库配置
+  DATABASE_HOST: "postgres-service"
+  DATABASE_PORT: "5432"
+  DATABASE_NAME: "caddy_shopping"
+  
+  # Redis配置
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  
+  # JWT配置
+  JWT_SECRET: "your-jwt-secret-key-here"
+  JWT_EXPIRES_IN: "7d"
+  
+  # CORS配置
+  CORS_ORIGIN: "*"
+  
+  # 限流配置 - 针对持续1.5k并发优化
+  THROTTLE_TTL: "60"
+  THROTTLE_LIMIT: "5000"
+  # 全局API限流
+  GLOBAL_RATE_LIMIT: "10000"
+  GLOBAL_RATE_LIMIT_TTL: "60"
+  # 认证接口限流
+  AUTH_RATE_LIMIT: "1500"
+  AUTH_RATE_LIMIT_TTL: "60"
+  
+  # 健康检查配置 - 分布式环境优化
+  HEALTH_CHECK_TIMEOUT: "3000"
+  HEALTH_CHECK_INTERVAL: "10000"
+  
+  # 集群配置
+  CLUSTER_ENABLED: "true"
+  CLUSTER_WORKERS: "6"
+  CLUSTER_RESTART_POLICY: "graceful"
+  
+  # 分布式跟踪配置
+  TRACING_ENABLED: "true"
+  TRACING_SERVICE_NAME: "caddy-shopping-backend"
+  
+  # 性能优化配置 - 针对持续1.5k并发
+  DB_POOL_SIZE: "300"
+  REDIS_POOL_SIZE: "150"
+  CACHE_TTL: "3600"

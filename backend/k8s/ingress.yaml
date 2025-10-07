@@ -1,0 +1,50 @@
+# 用途：定义Kubernetes Ingress配置，用于分布式环境下的负载均衡和流量管理
+# 依赖文件：service.yaml
+# 作者：后端开发团队
+# 更新：AI助手 - 增强分布式部署负载均衡配置
+# 时间：2025-09-26 18:30:00
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: caddy-shopping-backend-ingress
+  namespace: default
+  annotations:
+    # 使用nginx ingress controller
+    kubernetes.io/ingress.class: "nginx"
+    # SSL重定向
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    # 启用CORS
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    # 代理设置
+    nginx.ingress.kubernetes.io/proxy-body-size: "20m" # 增加请求体大小限制
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120" # 增加超时时间
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "120" # 增加超时时间
+    # 负载均衡算法 - 使用一致性哈希算法，提高分布式环境下的会话稳定性
+    nginx.ingress.kubernetes.io/upstream-hash-by: "$client_real_ip"
+    # 健康检查配置
+    nginx.ingress.kubernetes.io/health-check-path: "/health"
+    nginx.ingress.kubernetes.io/health-check-interval: "3s"
+    nginx.ingress.kubernetes.io/health-check-timeout: "2s"
+    nginx.ingress.kubernetes.io/health-check-fail-count: "2"
+    # 限流配置 - 分布式环境下的细粒度限流
+    nginx.ingress.kubernetes.io/limit-rps: "10000" # 每秒请求数限制
+    nginx.ingress.kubernetes.io/limit-burst-multiplier: "5" # 突发流量倍数
+    nginx.ingress.kubernetes.io/limit-conn: "5000" # 并发连接数限制
+spec:
+  tls:
+  - hosts:
+    - api.caddy-shopping.com
+    secretName: caddy-shopping-tls
+  rules:
+  - host: api.caddy-shopping.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: caddy-shopping-backend-service
+            port:
+              number: 80

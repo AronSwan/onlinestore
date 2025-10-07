@@ -1,0 +1,940 @@
+/**
+ * NextChatAdvanced 样式文件 - 优化版本
+ * 提供现代化的UI样式，支持暗色模式
+ */
+
+/* 基础样式 */
+.nextchat-launcher {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: #4F46E5;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.nextchat-launcher:hover {
+  background-color: #4338CA;
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.nextchat-launcher:active {
+  transform: scale(0.95);
+}
+
+.nextchat-launcher svg {
+  width: 30px;
+  height: 30px;
+}
+
+.nextchat-launcher.nextchat-active {
+  background-color: #EF4444;
+}
+
+.nextchat-launcher.nextchat-active:hover {
+  background-color: #DC2626;
+}
+
+/* 聊天窗口 */
+.nextchat-chat-window {
+  position: fixed;
+  bottom: 90px;
+  right: 20px;
+  width: 380px;
+  height: 600px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.3s ease;
+  z-index: 999;
+}
+
+.nextchat-chat-window.nextchat-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.nextchat-chat-window.nextchat-blur {
+  filter: blur(2px);
+}
+
+/* 头部 */
+.nextchat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background-color: #4F46E5;
+  color: white;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+.nextchat-title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.nextchat-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* 按钮样式 */
+.nextchat-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nextchat-button:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.nextchat-button:active {
+  transform: scale(0.95);
+}
+
+.nextchat-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* .nextchat-button.nextchat-recording {
+  background-color: #EF4444;
+  animation: pulse 1.5s infinite;
+}
+
+/* pulse关键帧动画 - 移除
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+} */
+
+/* 录音按钮样式 - 移除脉动动画 */
+.nextchat-button.nextchat-recording {
+  background-color: #EF4444;
+}
+
+.nextchat-button.nextchat-active {
+  background-color: rgba(255, 255, 255, 0.4);
+}
+
+/* 消息容器 */
+.nextchat-messages-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  background-color: #F9FAFB;
+}
+
+.nextchat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 消息样式 */
+.nextchat-message {
+  display: flex;
+  flex-direction: column;
+  max-width: 80%;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.nextchat-user-message {
+  align-self: flex-end;
+}
+
+.nextchat-ai-message {
+  align-self: flex-start;
+}
+
+.nextchat-processing-message {
+  align-self: flex-start;
+}
+
+.nextchat-message-content {
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+
+.nextchat-user-message .nextchat-message-content {
+  background-color: #4F46E5;
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.nextchat-ai-message .nextchat-message-content {
+  background-color: white;
+  color: #1F2937;
+  border: 1px solid #E5E7EB;
+  border-bottom-left-radius: 4px;
+}
+
+.nextchat-processing-message .nextchat-message-content {
+  background-color: #F3F4F6;
+  color: #6B7280;
+  border: 1px solid #E5E7EB;
+  border-bottom-left-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nextchat-message-timestamp {
+  font-size: 11px;
+  color: #9CA3AF;
+  margin-top: 4px;
+  align-self: flex-end;
+}
+
+.nextchat-user-message .nextchat-message-timestamp {
+  align-self: flex-end;
+  margin-right: 4px;
+}
+
+.nextchat-ai-message .nextchat-message-timestamp,
+.nextchat-processing-message .nextchat-message-timestamp {
+  align-self: flex-start;
+  margin-left: 4px;
+}
+
+/* 加载指示器 */
+.nextchat-loading-indicator {
+  display: flex;
+  gap: 4px;
+}
+
+.nextchat-loading-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #9CA3AF;
+  animation: loading 1.4s infinite ease-in-out both;
+}
+
+.nextchat-loading-dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.nextchat-loading-dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes loading {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+/* 输入区域 */
+.nextchat-input-container {
+  display: flex;
+  padding: 16px;
+  background-color: white;
+  border-top: 1px solid #E5E7EB;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  gap: 8px;
+}
+
+.nextchat-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid #E5E7EB;
+  border-radius: 24px;
+  font-size: 14px;
+  resize: none;
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  transition: border-color 0.2s ease;
+  max-height: 120px;
+  min-height: 20px;
+  font-family: inherit;
+}
+
+.nextchat-input:focus {
+  border-color: #4F46E5;
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-shadow);
+}
+
+.nextchat-send-button {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: #4F46E5;
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.nextchat-send-button:hover {
+  background-color: #4338CA;
+}
+
+.nextchat-send-button:active {
+  transform: scale(0.95);
+}
+
+.nextchat-send-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* 图片上传 */
+.nextchat-image-upload {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.3s ease;
+  z-index: 10;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.nextchat-image-upload.nextchat-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.nextchat-image-upload-header {
+  padding: 16px;
+  background-color: #4F46E5;
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.nextchat-image-upload-content {
+  flex: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+.nextchat-image-upload-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  border: 2px dashed #D1D5DB;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: #F9FAFB;
+}
+
+.nextchat-image-upload-area:hover {
+  border-color: #4F46E5;
+  background-color: #F3F4F6;
+}
+
+.nextchat-image-upload-area.nextchat-drag-over {
+  border-color: #4F46E5;
+  background-color: #EEF2FF;
+}
+
+.nextchat-image-upload-icon {
+  margin-bottom: 16px;
+  color: #9CA3AF;
+}
+
+.nextchat-image-upload-icon svg {
+  width: 48px;
+  height: 48px;
+}
+
+.nextchat-image-upload-text {
+  font-size: 16px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.nextchat-image-upload-hint {
+  font-size: 14px;
+  color: #6B7280;
+}
+
+/* 图片预览 */
+.nextchat-image-preview-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.nextchat-image-preview {
+  display: flex;
+  flex-direction: column;
+  background-color: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.nextchat-preview-image {
+  width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+}
+
+.nextchat-preview-filename {
+  padding: 8px 12px;
+  font-size: 14px;
+  color: #4B5563;
+  background-color: #F3F4F6;
+  border-top: 1px solid #E5E7EB;
+}
+
+.nextchat-preview-actions {
+  display: flex;
+  padding: 8px;
+  gap: 8px;
+  background-color: white;
+  border-top: 1px solid #E5E7EB;
+}
+
+.nextchat-preview-send,
+.nextchat-preview-delete {
+  flex: 1;
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.nextchat-preview-send {
+  background-color: #4F46E5;
+  color: white;
+}
+
+.nextchat-preview-send:hover {
+  background-color: #4338CA;
+}
+
+.nextchat-preview-delete {
+  background-color: #F3F4F6;
+  color: #4B5563;
+}
+
+.nextchat-preview-delete:hover {
+  background-color: #E5E7EB;
+}
+
+/* 消息中的图片 */
+.nextchat-message-image-container {
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.nextchat-message-image {
+  width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.nextchat-message-filename {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  margin-top: 4px;
+}
+
+.nextchat-user-message .nextchat-message-filename {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.nextchat-ai-message .nextchat-message-filename {
+  color: #6B7280;
+}
+
+.nextchat-message-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.nextchat-message-image-container:hover .nextchat-message-actions {
+  opacity: 1;
+}
+
+.nextchat-message-download {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.nextchat-message-download:hover {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.nextchat-message-download svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* 通知 */
+.nextchat-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 2000;
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: all 0.3s ease;
+}
+
+.nextchat-notification.nextchat-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.nextchat-notification.nextchat-info {
+  background-color: #EBF8FF;
+  color: #2B6CB0;
+  border-left: 4px solid #3182CE;
+}
+
+.nextchat-notification.nextchat-success {
+  background-color: #F0FFF4;
+  color: #2F855A;
+  border-left: 4px solid #38A169;
+}
+
+.nextchat-notification.nextchat-warning {
+  background-color: #FFFBEB;
+  color: #B7791F;
+  border-left: 4px solid #D69E2E;
+}
+
+.nextchat-notification.nextchat-error {
+  background-color: #FED7D7;
+  color: #C53030;
+  border-left: 4px solid #E53E3E;
+}
+
+/* 语音控制面板 */
+.nextchat-voice-control-panel {
+  position: fixed;
+  bottom: 90px;
+  right: 420px;
+  width: 300px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  padding: 16px;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.3s ease;
+  z-index: 998;
+}
+
+.nextchat-voice-control-panel.nextchat-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.nextchat-voice-control-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1F2937;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.nextchat-voice-select-container {
+  margin-bottom: 16px;
+}
+
+.nextchat-voice-select-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #4B5563;
+  margin-bottom: 8px;
+}
+
+.nextchat-voice-select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: white;
+  color: #1F2937;
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  transition: border-color 0.2s ease;
+}
+
+.nextchat-voice-select:focus {
+  border-color: #4F46E5;
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-shadow);
+}
+
+.nextchat-speech-rate-container {
+  margin-bottom: 16px;
+}
+
+.nextchat-speech-rate-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #4B5563;
+  margin-bottom: 8px;
+}
+
+.nextchat-speech-rate-slider {
+  width: 100%;
+  margin-bottom: 4px;
+}
+
+.nextchat-speech-rate-value {
+  font-size: 12px;
+  color: #6B7280;
+  text-align: right;
+}
+
+.nextchat-auto-speak-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.nextchat-auto-speak-toggle {
+  margin-right: 8px;
+}
+
+.nextchat-auto-speak-label {
+  font-size: 14px;
+  color: #4B5563;
+  cursor: pointer;
+}
+
+.nextchat-voice-control-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.nextchat-speak-button,
+.nextchat-stop-button {
+  flex: 1;
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.nextchat-speak-button {
+  background-color: #4F46E5;
+  color: white;
+}
+
+.nextchat-speak-button:hover {
+  background-color: #4338CA;
+}
+
+.nextchat-stop-button {
+  background-color: #F3F4F6;
+  color: #4B5563;
+}
+
+.nextchat-stop-button:hover {
+  background-color: #E5E7EB;
+}
+
+/* 错误消息 */
+.nextchat-error-message {
+  color: #EF4444;
+  font-size: 12px;
+  text-align: center;
+}
+
+/* 暗色模式 */
+@media (prefers-color-scheme: dark) {
+  .nextchat-chat-window {
+    background-color: #1F2937;
+  }
+
+  .nextchat-messages-container {
+    background-color: #111827;
+  }
+
+  .nextchat-input-container {
+    background-color: #1F2937;
+    border-top-color: #374151;
+  }
+
+  .nextchat-input {
+    background-color: #111827;
+    border-color: #374151;
+    color: #F9FAFB;
+  }
+
+  .nextchat-input:focus {
+    border-color: #6366F1;
+  }
+
+  .nextchat-ai-message .nextchat-message-content {
+    background-color: #374151;
+    color: #F9FAFB;
+    border-color: #4B5563;
+  }
+
+  .nextchat-processing-message .nextchat-message-content {
+    background-color: #374151;
+    color: #D1D5DB;
+    border-color: #4B5563;
+  }
+
+  .nextchat-message-timestamp {
+    color: #6B7280;
+  }
+
+  .nextchat-image-upload {
+    background-color: #1F2937;
+  }
+
+  .nextchat-image-upload-area {
+    border-color: #4B5563;
+    background-color: #111827;
+  }
+
+  .nextchat-image-upload-area:hover {
+    border-color: #6366F1;
+    background-color: #1F2937;
+  }
+
+  .nextchat-image-upload-area.nextchat-drag-over {
+    border-color: #6366F1;
+    background-color: #1E3A8A;
+  }
+
+  .nextchat-image-upload-text {
+    color: #F9FAFB;
+  }
+
+  .nextchat-image-upload-hint {
+    color: #9CA3AF;
+  }
+
+  .nextchat-image-preview {
+    background-color: #111827;
+    border-color: #374151;
+  }
+
+  .nextchat-preview-filename {
+    background-color: #1F2937;
+    border-top-color: #374151;
+    color: #D1D5DB;
+  }
+
+  .nextchat-preview-actions {
+    background-color: #1F2937;
+    border-top-color: #374151;
+  }
+
+  .nextchat-preview-delete {
+    background-color: #374151;
+    color: #D1D5DB;
+  }
+
+  .nextchat-preview-delete:hover {
+    background-color: #4B5563;
+  }
+
+  .nextchat-message-filename {
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .nextchat-ai-message .nextchat-message-filename {
+    color: #9CA3AF;
+  }
+
+  .nextchat-voice-control-panel {
+    background-color: #1F2937;
+  }
+
+  .nextchat-voice-control-title {
+    color: #F9FAFB;
+    border-bottom-color: #374151;
+  }
+
+  .nextchat-voice-select-label,
+  .nextchat-speech-rate-label,
+  .nextchat-auto-speak-label {
+    color: #D1D5DB;
+  }
+
+  .nextchat-voice-select {
+    background-color: #111827;
+    border-color: #374151;
+    color: #F9FAFB;
+  }
+
+  .nextchat-voice-select:focus {
+    border-color: #6366F1;
+  }
+
+  .nextchat-speech-rate-value {
+    color: #9CA3AF;
+  }
+
+  .nextchat-stop-button {
+    background-color: #374151;
+    color: #D1D5DB;
+  }
+
+  .nextchat-stop-button:hover {
+    background-color: #4B5563;
+  }
+
+  .nextchat-notification.nextchat-info {
+    background-color: #1E3A8A;
+    color: #BFDBFE;
+    border-left-color: #3B82F6;
+  }
+
+  .nextchat-notification.nextchat-success {
+    background-color: #064E3B;
+    color: #A7F3D0;
+    border-left-color: #10B981;
+  }
+
+  .nextchat-notification.nextchat-warning {
+    background-color: #78350F;
+    color: #FDE68A;
+    border-left-color: #F59E0B;
+  }
+
+  .nextchat-notification.nextchat-error {
+    background-color: #7F1D1D;
+    color: #FECACA;
+    border-left-color: #EF4444;
+  }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .nextchat-chat-window {
+    width: calc(100vw - 40px);
+    height: calc(100vh - 120px);
+    bottom: 80px;
+    right: 20px;
+  }
+
+  .nextchat-voice-control-panel {
+    width: calc(100vw - 60px);
+    right: 20px;
+    bottom: calc(100vh - 220px);
+  }
+}
+
+@media (max-width: 480px) {
+  .nextchat-chat-window {
+    width: calc(100vw - 20px);
+    height: calc(100vh - 80px);
+    bottom: 70px;
+    right: 10px;
+  }
+
+  .nextchat-voice-control-panel {
+    width: calc(100vw - 40px);
+    right: 10px;
+    bottom: calc(100vh - 220px);
+  }
+}

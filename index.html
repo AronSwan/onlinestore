@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- SEO 优化 -->
+    <title>Reich - 奢华购物体验 | 2025秋冬系列 | 顶级奢侈品牌</title>
+    <meta name="description" content="Reich奢华购物体验 - 探索2025秋冬系列，女士手袋、男士西装、奢华配饰。创立于1920年的顶级奢侈品牌，融合传统工艺与现代设计。">
+    <meta name="keywords" content="Reich,奢侈品,奢华购物,女士手袋,男士西装,配饰,2025秋冬系列,高端品牌">
+    <meta name="author" content="Reich">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://reich.com/">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://reich.com/">
+    <meta property="og:title" content="Reich - 奢华购物体验 | 2025秋冬系列">
+    <meta property="og:description" content="探索Reich全新秋冬系列，融合经典与现代，展现无与伦比的奢华体验。">
+    <meta property="og:image" content="https://reich.com/images/hero/hero-main.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:site_name" content="Reich">
+    <meta property="og:locale" content="zh_CN">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://reich.com/">
+    <meta property="twitter:title" content="Reich - 奢华购物体验">
+    <meta property="twitter:description" content="探索Reich全新秋冬系列，融合经典与现代，展现无与伦比的奢华体验。">
+    <meta property="twitter:image" content="https://reich.com/images/hero/hero-main.jpg">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
+    
+    <!-- 关键资源预加载 -->
+    <link rel="preload" href="css/variables/complete-variables.css" as="style">
+    <link rel="preload" href="css/main.css" as="style">
+    <link rel="preload" href="js/navigation.js" as="script">
+    <link rel="preload" href="images/hero/hero-main.webp" as="image" type="image/webp">
+    
+    <!-- DNS 预解析 -->
+    <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="//cdn.tailwindcss.com">
+    
+    <!-- 预连接关键第三方域名 -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin>
+    <!-- CSS变量系统 - 必须在其他样式之前加载 -->
+    <link rel="stylesheet" href="css/variables/complete-variables.css">
+    <!-- 主样式表 -->
+    <link rel="stylesheet" href="css/main.css">
+    <!-- 奢华组件样式 -->
+    <link rel="stylesheet" href="css/components/luxury-components.css">
+    <!-- 导航下划线效果 -->
+    <link rel="stylesheet" href="css/components/nav-underline.css">
+    <!-- 响应式设计 -->
+    <link rel="stylesheet" href="css/responsive/enhanced-responsive.css">
+    <link rel="stylesheet" href="css/responsive/mobile-navigation.css">
+    <!-- 性能优化组件 -->
+    <link rel="stylesheet" href="css/components/visibility-optimization.css">
+    <link rel="stylesheet" href="css/responsive/touch-optimization.css">
+    <!-- 产品搜索功能 -->
+    <link rel="stylesheet" href="css/product-search.css">
+    <!-- 增强搜索组件样式 -->
+    <link rel="stylesheet" href="css/product-search-enhanced.css">
+    <!-- 引入Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <!-- 引入Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 配置Tailwind自定义样式 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: 'var(--brand-black)',
+                        secondary: 'var(--brand-gold)',
+                        accent: 'var(--brand-red)',
+                        dark: 'var(--bg-dark)',
+                    },
+                    fontFamily: {
+                        sans: ['var(--brand-font-secondary)', 'Arial', 'sans-serif'],
+                        serif: ['var(--brand-font-primary)', 'serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    <!-- 自定义工具类 -->
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow {
+                text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+            }
+            .transition-custom {
+                transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            }
+        }
+    </style>
+    <!-- 结构化数据 -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Reich",
+        "url": "https://reich.com/",
+        "description": "Reich奢华购物体验 - 探索2025秋冬系列，女士手袋、男士西装、奢华配饰",
+        "publisher": {
+            "@type": "Organization",
+            "name": "Reich",
+            "logo": {
+                "@type": "ImageObject",
+                "url": "https://reich.com/images/logo.png"
+            }
+        },
+        "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://reich.com/search?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+        }
+    }
+    </script>
+    
+    <!-- 作者：AI助手 -->
+    <!-- 时间：2025-09-30 16:00:00 -->
+    <!-- 优化：SEO、性能、无障碍性全面提升 -->
+</head>
+
+<body class="bg-[var(--cream-luxury)] font-serif text-[var(--text-primary)]">
+    <!-- 跳转到主内容链接 (无障碍性) -->
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-[var(--gold-standard)] text-white px-4 py-2 rounded z-50">跳转到主内容</a>
+    
+    <!-- 导航栏 -->
+    <header class="navbar-luxury fixed w-full top-0 left-0 z-50" role="banner">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between h-24">
+                <!-- 左侧导航链接 -->
+                <nav class="hidden md:flex items-center space-x-6" role="navigation" aria-label="主导航">
+                    <a href="#women" class="nav-link-luxury" aria-label="女士系列">女士</a>
+                    <a href="#men" class="nav-link-luxury" aria-label="男士系列">男士</a>
+                    <a href="#accessories" class="nav-link-luxury" aria-label="配饰系列">配饰</a>
+                </nav>
+                
+                <!-- 品牌标志 -->
+                <div class="flex-shrink-0">
+                    <h1 class="text-3xl md:text-4xl font-bold tracking-widest text-center">
+                        <a href="/" aria-label="Reich 首页">REICH</a>
+                    </h1>
+                </div>
+                
+                <!-- 右侧功能区 -->
+                <div class="flex items-center space-x-4" role="toolbar" aria-label="用户操作">
+                    <!-- 搜索按钮 -->
+                    <button id="searchBtn" 
+                            class="text-[var(--dark-primary)] hover:text-[var(--gold-standard)] transition-colors p-2"
+                            aria-label="打开搜索"
+                            aria-expanded="false"
+                            aria-controls="searchBar">
+                        <i class="fas fa-search text-xl" aria-hidden="true"></i>
+                    </button>
+                    
+                    <!-- 用户资料图标 -->
+                    <a href="#" 
+                       id="userProfileBtn"
+                       class="relative text-[var(--dark-primary)] hover:text-[var(--gold-standard)] transition-colors p-2"
+                       aria-label="用户登录">
+                        <img src="gucci-style-user-icon.svg" alt="" class="user-profile-icon" aria-hidden="true">
+                    </a>
+                    
+                    <!-- 心愿单图标 -->
+                    <button class="text-[var(--dark-primary)] hover:text-[var(--gold-standard)] transition-colors p-2"
+                            aria-label="心愿单">
+                        <img src="heart-icon.svg" alt="" class="h-6 w-6" aria-hidden="true">
+                        <span class="sr-only">心愿单</span>
+                    </button>
+                    
+                    <!-- 购物车图标 -->
+                    <button class="text-[var(--dark-primary)] hover:text-[var(--gold-standard)] transition-colors p-2 relative"
+                            aria-label="购物车"
+                            data-cart-icon="true">
+                        <img src="shopping-bag-icon.svg" alt="" class="h-6 w-6" aria-hidden="true">
+                        <span id="cart-count" class="sr-only">购物车中有 0 件商品</span>
+                        <span id="cart-badge" class="hidden absolute -top-1 -right-1 bg-[var(--brand-red)] text-white text-xs rounded-full h-5 w-5 flex items-center justify-center" aria-hidden="true">0</span>
+                    </button>
+                    
+                    <!-- 移动端菜单按钮 -->
+                    <button id="mobileMenuBtn" 
+                            class="md:hidden text-[var(--dark-primary)] hover:text-[var(--gold-standard)] transition-colors p-2"
+                            aria-label="打开菜单"
+                            aria-expanded="false"
+                            aria-controls="mobileMenu">
+                        <i class="fas fa-bars text-2xl" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 搜索栏 -->
+        <div id="searchBar" class="hidden bg-white py-4 px-6 border-t border-[var(--border-default)]" role="search">
+            <div class="container mx-auto">
+                <!-- 增强搜索组件容器 -->
+                <div id="enhanced-search-container"></div>
+            </div>
+        </div>
+        
+        <!-- 移动端导航菜单 -->
+        <div id="mobileMenu" class="hidden md:hidden bg-white border-t border-[var(--border-default)]">
+            <div class="container mx-auto px-4 py-6">
+                <nav class="flex flex-col space-y-5" role="navigation" aria-label="移动端导航">
+                    <a href="#women" class="nav-link-luxury py-2 text-lg">女士</a>
+                    <a href="#men" class="nav-link-luxury py-2 text-lg">男士</a>
+                    <a href="#accessories" class="nav-link-luxury py-2 text-lg">配饰</a>
+                    <a href="#perfume" class="nav-link-luxury py-2 text-lg">香水</a>
+                    <a href="#gifts" class="nav-link-luxury py-2 text-lg">礼品</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main id="main-content" class="pt-24" role="main">
+        <!-- 英雄区 -->
+        <section class="relative h-[90vh] overflow-hidden" aria-labelledby="hero-heading">
+            <picture>
+                <source srcset="images/hero/hero-main-desktop.webp" media="(min-width: 1280px)" type="image/webp">
+                <source srcset="images/hero/hero-main-desktop.avif" media="(min-width: 1280px)" type="image/avif">
+                <source srcset="images/hero/hero-main-mobile.webp" media="(min-width: 768px)" type="image/webp">
+                <source srcset="images/hero/hero-main-mobile.avif" media="(min-width: 768px)" type="image/avif">
+                <source srcset="images/hero/hero-main.webp" type="image/webp">
+                <source srcset="images/hero/hero-main.avif" type="image/avif">
+                <img 
+                    src="images/hero/hero-main.jpg" 
+                    alt="Reich 2025秋冬系列" 
+                    class="absolute inset-0 w-full h-full object-cover"
+                    loading="eager"
+                    fetchpriority="high">
+            </picture>
+            <div class="absolute inset-0 bg-gradient-to-b from-transparent to-[rgba(250,248,243,0.9)]"></div>
+            <div class="relative container mx-auto px-4 h-full flex flex-col justify-end pb-20">
+                <h2 id="hero-heading" class="text-4xl md:text-6xl font-bold tracking-tight mb-6">2025秋冬系列</h2>
+                <p class="text-lg md:text-xl mb-8 max-w-2xl">探索Reich全新秋冬系列，融合经典与现代，展现无与伦比的奢华体验。</p>
+                <div class="flex flex-wrap gap-4">
+                    <a href="#featured-collections" class="btn-luxury btn-luxury-primary" aria-describedby="hero-heading">立即探索</a>
+                    <a href="#brand-story" class="btn-luxury btn-luxury-secondary">了解更多</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- 精选系列 -->
+        <section id="featured-collections" class="py-20 bg-white" aria-labelledby="featured-heading">
+            <div class="container mx-auto px-4">
+                <h2 id="featured-heading" class="text-3xl md:text-4xl font-bold text-center mb-16">精选系列</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <!-- 精选项目1 -->
+                    <article class="group reich-product-card" data-product-id="00000001" itemscope itemtype="https://schema.org/Product">
+                        <div class="relative overflow-hidden mb-6">
+                            <picture>
+                                <source srcset="images/products/product-1.webp" type="image/webp">
+                                <source srcset="images/products/product-1.avif" type="image/avif">
+                                <img 
+                                    src="images/products/product-1.jpg" 
+                                    alt="Reich女士手袋系列 - 黑色真皮手袋，经典设计，限量版" 
+                                    class="w-full h-[600px] object-cover transition-transform duration-700 group-hover:scale-105 reich-product-image"
+                                    loading="lazy"
+                                    itemprop="image">
+                            </picture>
+                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300"></div>
+                            <!-- 添加到购物车按钮 -->
+                            <button class="reich-product-action absolute bottom-4 right-4 bg-white bg-opacity-90 hover:bg-opacity-100 p-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)]" 
+                                    aria-label="将女士手袋系列添加到购物车"
+                                    data-product-id="00000001">
+                                <i class="fas fa-shopping-bag text-[var(--gold-standard)] text-lg" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                        <h3 class="text-xl font-medium mb-2 reich-product-name" itemprop="name">女士手袋系列</h3>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="reich-product-price text-lg font-semibold text-[var(--dark-primary)]" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+                                <span itemprop="price" content="8800">¥8,800</span>
+                                <meta itemprop="priceCurrency" content="CNY">
+                                <meta itemprop="availability" content="https://schema.org/InStock">
+                            </span>
+                            <span class="text-sm text-[var(--text-muted)]">限量版</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <a href="/collections/women-bags" class="inline-block text-[var(--gold-standard)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded">
+                                探索系列 <i class="fas fa-arrow-right-long ml-2" aria-hidden="true"></i>
+                            </a>
+                            <button class="reich-product-action text-sm bg-[var(--gold-standard)] text-white px-4 py-2 rounded hover:bg-[var(--gold-dark)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] focus:ring-offset-2" 
+                                    aria-label="将女士手袋系列添加到购物车"
+                                    data-product-id="00000001">
+                                加入购物袋
+                            </button>
+                        </div>
+                        <meta itemprop="description" content="Reich女士手袋系列，采用顶级真皮制作，经典设计，限量版发售">
+                        <meta itemprop="brand" content="Reich">
+                        <meta itemprop="category" content="女士手袋">
+                    </article>
+                    <!-- 精选项目2 -->
+                    <article class="group reich-product-card" data-product-id="00000002" itemscope itemtype="https://schema.org/Product">
+                        <div class="relative overflow-hidden mb-6">
+                            <picture>
+                                <source srcset="images/products/product-2.webp" type="image/webp">
+                                <source srcset="images/products/product-2.avif" type="image/avif">
+                                <img 
+                                    src="images/products/product-2.jpg" 
+                                    alt="Reich男士西装系列 - 深蓝色羊毛西装，经典剪裁，商务正装" 
+                                    class="w-full h-[600px] object-cover transition-transform duration-700 group-hover:scale-105 reich-product-image"
+                                    loading="lazy"
+                                    itemprop="image">
+                            </picture>
+                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300"></div>
+                            <!-- 添加到购物车按钮 -->
+                            <button class="reich-product-action absolute bottom-4 right-4 bg-white bg-opacity-90 hover:bg-opacity-100 p-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)]" 
+                                    aria-label="将男士西装系列添加到购物车"
+                                    data-product-id="00000002">
+                                <i class="fas fa-shopping-bag text-[var(--gold-standard)] text-lg" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                        <h3 class="text-xl font-medium mb-2 reich-product-name" itemprop="name">男士西装系列</h3>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="reich-product-price text-lg font-semibold text-[var(--dark-primary)]" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+                                <span itemprop="price" content="12500">¥12,500</span>
+                                <meta itemprop="priceCurrency" content="CNY">
+                                <meta itemprop="availability" content="https://schema.org/InStock">
+                            </span>
+                            <span class="text-sm text-[var(--text-muted)]">经典款</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <a href="/collections/men-suits" class="inline-block text-[var(--gold-standard)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded">
+                                探索系列 <i class="fas fa-arrow-right-long ml-2" aria-hidden="true"></i>
+                            </a>
+                            <button class="reich-product-action text-sm bg-[var(--gold-standard)] text-white px-4 py-2 rounded hover:bg-[var(--gold-dark)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] focus:ring-offset-2" 
+                                    aria-label="将男士西装系列添加到购物车"
+                                    data-product-id="00000002">
+                                加入购物袋
+                            </button>
+                        </div>
+                        <meta itemprop="description" content="Reich男士西装系列，采用优质羊毛面料，经典剪裁，适合商务场合">
+                        <meta itemprop="brand" content="Reich">
+                        <meta itemprop="category" content="男士西装">
+                    </article>
+                    <!-- 精选项目3 -->
+                    <article class="group reich-product-card" data-product-id="00000003" itemscope itemtype="https://schema.org/Product">
+                        <div class="relative overflow-hidden mb-6">
+                            <picture>
+                                <source srcset="images/products/product-3.webp" type="image/webp">
+                                <source srcset="images/products/product-3.avif" type="image/avif">
+                                <img 
+                                    src="images/products/product-3.jpg" 
+                                    alt="Reich奢华配饰系列 - 金色项链和手镯套装，精致工艺，新品上市" 
+                                    class="w-full h-[600px] object-cover transition-transform duration-700 group-hover:scale-105 reich-product-image"
+                                    loading="lazy"
+                                    itemprop="image">
+                            </picture>
+                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300"></div>
+                            <!-- 添加到购物车按钮 -->
+                            <button class="reich-product-action absolute bottom-4 right-4 bg-white bg-opacity-90 hover:bg-opacity-100 p-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)]" 
+                                    aria-label="将奢华配饰系列添加到购物车"
+                                    data-product-id="00000003">
+                                <i class="fas fa-shopping-bag text-[var(--gold-standard)] text-lg" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                        <h3 class="text-xl font-medium mb-2 reich-product-name" itemprop="name">奢华配饰系列</h3>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="reich-product-price text-lg font-semibold text-[var(--dark-primary)]" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+                                <span itemprop="price" content="5200">¥5,200</span>
+                                <meta itemprop="priceCurrency" content="CNY">
+                                <meta itemprop="availability" content="https://schema.org/InStock">
+                            </span>
+                            <span class="text-sm text-[var(--text-muted)]">新品上市</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <a href="/collections/accessories" class="inline-block text-[var(--gold-standard)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded">
+                                探索系列 <i class="fas fa-arrow-right-long ml-2" aria-hidden="true"></i>
+                            </a>
+                            <button class="reich-product-action text-sm bg-[var(--gold-standard)] text-white px-4 py-2 rounded hover:bg-[var(--gold-dark)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] focus:ring-offset-2" 
+                                    aria-label="将奢华配饰系列添加到购物车"
+                                    data-product-id="00000003">
+                                加入购物袋
+                            </button>
+                        </div>
+                        <meta itemprop="description" content="Reich奢华配饰系列，精选金属材质，精致工艺，新品上市">
+                        <meta itemprop="brand" content="Reich">
+                        <meta itemprop="category" content="奢华配饰">
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- 品牌故事 -->
+        <section id="brand-story" class="py-20 bg-[var(--beige-light)]" aria-labelledby="brand-story-heading">
+            <div class="container mx-auto px-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <picture>
+                            <source srcset="images/banners/banner-promo-desktop.webp" media="(min-width: 1280px)" type="image/webp">
+                            <source srcset="images/banners/banner-promo-desktop.avif" media="(min-width: 1280px)" type="image/avif">
+                            <source srcset="images/banners/banner-promo-mobile.webp" media="(min-width: 768px)" type="image/webp">
+                            <source srcset="images/banners/banner-promo-mobile.avif" media="(min-width: 768px)" type="image/avif">
+                            <source srcset="images/banners/banner-promo.webp" type="image/webp">
+                            <source srcset="images/banners/banner-promo.avif" type="image/avif">
+                            <img 
+                                src="images/banners/banner-promo.jpg" 
+                                alt="Reich品牌故事 - 1920年创立的工坊场景，工匠正在制作皮具" 
+                                class="w-full h-auto rounded-lg shadow-lg"
+                                loading="lazy">
+                        </picture>
+                    </div>
+                    <div>
+                        <h2 id="brand-story-heading" class="text-3xl md:text-4xl font-bold mb-8">品牌故事</h2>
+                        <p class="text-lg mb-6">Reich创立于1920年，秉承着对卓越工艺和奢华品质的不懈追求，成为全球顶级奢侈品牌之一。</p>
+                        <p class="text-lg mb-8">每一件Reich作品都凝聚了数代工匠的智慧和技艺，融合传统与创新，彰显独特的品牌魅力。</p>
+                        <a href="/about" class="btn-luxury btn-luxury-secondary focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] focus:ring-offset-2">了解更多</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 订阅区 -->
+        <section class="py-20 bg-[var(--dark-primary)] text-white" aria-labelledby="newsletter-heading">
+            <div class="container mx-auto px-4 text-center">
+                <h2 id="newsletter-heading" class="text-3xl md:text-4xl font-bold mb-6">订阅Reich</h2>
+                <p class="text-lg mb-8 max-w-2xl mx-auto">订阅我们的电子邮件，获取最新产品信息、独家优惠和品牌活动邀请。</p>
+                <form class="max-w-xl mx-auto flex flex-col sm:flex-row gap-4" aria-labelledby="newsletter-heading" novalidate>
+                    <label for="newsletter-email" class="sr-only">您的电子邮箱</label>
+                    <input type="email" 
+                           id="newsletter-email"
+                           name="email"
+                           placeholder="您的电子邮箱" 
+                           class="flex-grow py-3 px-4 bg-transparent border border-white text-white placeholder-white focus:outline-none focus:border-[var(--gold-standard)] focus:ring-2 focus:ring-[var(--gold-standard)] focus:ring-opacity-50 rounded-none"
+                           required
+                           autocomplete="email"
+                           aria-describedby="newsletter-description">
+                    <button type="submit" class="btn-luxury btn-luxury-primary focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] focus:ring-offset-2 focus:ring-offset-[var(--dark-primary)]">订阅</button>
+                </form>
+                <p id="newsletter-description" class="text-sm text-gray-300 mt-4">我们承诺保护您的隐私，不会向第三方分享您的信息。</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-white py-16" role="contentinfo">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-12">
+                <!-- 品牌信息 -->
+                <div>
+                    <h3 class="text-2xl font-bold mb-6">REICH</h3>
+                    <p class="mb-6">探索Reich的奢华世界，体验无与伦比的品质与风格。</p>
+                    <div class="flex space-x-4" role="list" aria-label="社交媒体链接">
+                        <a href="https://instagram.com/reich" 
+                           class="text-[var(--dark-primary)] hover:text-[var(--gold-standard)] p-2 focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded"
+                           aria-label="关注我们的Instagram"
+                           target="_blank"
+                           rel="noopener noreferrer">
+                            <i class="fab fa-instagram text-xl" aria-hidden="true"></i>
+                        </a>
+                        <a href="https://facebook.com/reich" 
+                           class="text-[var(--dark-primary)] hover:text-[var(--gold-standard)] p-2 focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded"
+                           aria-label="关注我们的Facebook"
+                           target="_blank"
+                           rel="noopener noreferrer">
+                            <i class="fab fa-facebook text-xl" aria-hidden="true"></i>
+                        </a>
+                        <a href="https://twitter.com/reich" 
+                           class="text-[var(--dark-primary)] hover:text-[var(--gold-standard)] p-2 focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded"
+                           aria-label="关注我们的Twitter"
+                           target="_blank"
+                           rel="noopener noreferrer">
+                            <i class="fab fa-twitter text-xl" aria-hidden="true"></i>
+                        </a>
+                        <a href="https://weibo.com/reich" 
+                           class="text-[var(--dark-primary)] hover:text-[var(--gold-standard)] p-2 focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded"
+                           aria-label="关注我们的微博"
+                           target="_blank"
+                           rel="noopener noreferrer">
+                            <i class="fab fa-weibo text-xl" aria-hidden="true"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- 客户服务 -->
+                <div>
+                    <h4 class="text-lg font-medium mb-6">客户服务</h4>
+                    <nav aria-label="客户服务链接">
+                        <ul class="space-y-3">
+                            <li><a href="/contact" class="hover:text-[var(--gold-standard)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded">联系我们</a></li>
+                            <li><a href="/shipping" class="hover:text-[var(--gold-standard)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded">配送信息</a></li>
+                            <li><a href="/returns" class="hover:text-[var(--gold-standard)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded">退换政策</a></li>
+                            <li><a href="/faq" class="hover:text-[var(--gold-standard)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded">常见问题</a></li>
+                        </ul>
+                    </nav>
+                </div>
+                
+                <!-- 关于我们 -->
+                <div>
+                    <h4 class="text-lg font-medium mb-6">关于我们</h4>
+                    <nav aria-label="关于我们链接">
+                        <ul class="space-y-3">
+                            <li><a href="/about" class="hover:text-[var(--gold-standard)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded">品牌故事</a></li>
+                            <li><a href="/stores" class="hover:text-[var(--gold-standard)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded">门店查询</a></li>
+                            <li><a href="/sustainability" class="hover:text-[var(--gold-standard)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded">可持续发展</a></li>
+                            <li><a href="/careers" class="hover:text-[var(--gold-standard)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded">招聘信息</a></li>
+                        </ul>
+                    </nav>
+                </div>
+                
+                <!-- 法律信息 -->
+                <div>
+                    <h4 class="text-lg font-medium mb-6">法律信息</h4>
+                    <nav aria-label="法律信息链接">
+                        <ul class="space-y-3">
+                            <li><a href="/privacy" class="hover:text-[var(--gold-standard)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded">隐私政策</a></li>
+                            <li><a href="/terms" class="hover:text-[var(--gold-standard)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded">使用条款</a></li>
+                            <li><a href="/cookies" class="hover:text-[var(--gold-standard)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded">Cookie政策</a></li>
+                            <li><a href="/intellectual-property" class="hover:text-[var(--gold-standard)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--gold-standard)] rounded">知识产权</a></li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+            
+            <div class="mt-12 pt-8 border-t border-[var(--border-default)] text-center">
+                <p>&copy; 2025 Reich. 保留所有权利。</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script type="module" defer src="js/navigation.js"></script>
+    <script type="module" defer src="js/main.js"></script>
+    <script type="module" defer src="js/product-id-manager.js"></script>
+    <script type="module" defer src="js/cart.js"></script>
+    <script type="module" defer src="js/wishlist.js"></script>
+    <script type="module" defer src="js/touch-optimization.js"></script>
+    <script type="module" defer src="js/product-search/index.js"></script>
+    <script type="module" defer src="js/product-search/enhanced-search-component.js"></script>
+    <script type="module" defer src="js/navigation-icons.js"></script>
+    
+    <!-- 性能监控 -->
+    <script>
+        // 性能监控
+        if ('performance' in window) {
+            window.addEventListener('load', function() {
+                setTimeout(function() {
+                    const perfData = performance.getEntriesByType('navigation')[0];
+                    console.log('页面加载时间:', perfData.loadEventEnd - perfData.fetchStart, 'ms');
+                }, 0);
+            });
+        }
+        
+        // 错误监控
+        window.addEventListener('error', function(e) {
+            console.error('JavaScript错误:', e.error);
+        });
+        
+        // 未处理的Promise拒绝
+        window.addEventListener('unhandledrejection', function(e) {
+            console.error('未处理的Promise拒绝:', e.reason);
+        });
+    </script>
+    
+    <!-- 搜索栏交互 -->
+    <script>
+        // 全局变量
+        let enhancedSearchComponent = null;
+        
+        // 全局函数
+        window.toggleSearch = async function(show) {
+            const searchBtn = document.getElementById('searchBtn');
+            const searchBar = document.getElementById('searchBar');
+            
+            if (!searchBtn || !searchBar) {
+                console.error('搜索按钮或搜索栏元素未找到');
+                return;
+            }
+            
+            const isHidden = searchBar.classList.contains('hidden');
+            if (show === undefined) show = isHidden;
+            
+            if (show) {
+                searchBar.classList.remove('hidden');
+                searchBtn.setAttribute('aria-expanded', 'true');
+                
+                // 如果增强搜索组件已初始化，则显示热门搜索
+                if (enhancedSearchComponent) {
+                    try {
+                        await enhancedSearchComponent.showPopularSearches();
+                    } catch (error) {
+                        console.error('显示热门搜索失败:', error);
+                    }
+                }
+                
+                setTimeout(() => {
+                    // 尝试通过增强搜索组件获取搜索输入框
+                    let searchInputElement = null;
+                    if (enhancedSearchComponent && enhancedSearchComponent.elements && enhancedSearchComponent.elements.searchInput) {
+                        searchInputElement = enhancedSearchComponent.elements.searchInput;
+                    } else {
+                        // 如果通过组件获取失败，则尝试直接通过ID获取
+                        searchInputElement = document.getElementById('search-input');
+                    }
+                    
+                    if (searchInputElement) {
+                        searchInputElement.focus();
+                    }
+                }, 100);
+            } else {
+                searchBar.classList.add('hidden');
+                searchBtn.setAttribute('aria-expanded', 'false');
+                
+                // 如果增强搜索组件已初始化，则隐藏热门搜索
+                if (enhancedSearchComponent) {
+                    try {
+                        enhancedSearchComponent.hidePopularSearches();
+                    } catch (error) {
+                        console.error('隐藏热门搜索失败:', error);
+                    }
+                }
+            }
+        };
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchBtn = document.getElementById('searchBtn');
+            const searchBar = document.getElementById('searchBar');
+            const searchInput = document.getElementById('search-input');
+            const enhancedSearchContainer = document.getElementById('enhanced-search-container');
+            
+            // 动态导入增强搜索组件
+            import('./js/product-search/enhanced-search-component.js').then(async module => {
+                const EnhancedSearchComponent = module.EnhancedSearchComponent;
+                
+                try {
+                    // 创建增强搜索组件实例
+                    enhancedSearchComponent = new EnhancedSearchComponent({
+                        containerId: 'enhanced-search-container',
+                        searchApiEndpoint: '',
+                        suggestionsApiEndpoint: '',
+                        popularSearchesApiEndpoint: '',
+                        cacheTTL: 300000, // 5分钟缓存
+                        maxSuggestions: 8,
+                        maxPopularSearches: 10,
+                        maxSearchHistory: 5
+                    });
+                    
+                    // 初始化增强搜索组件（异步）
+                    await enhancedSearchComponent.init();
+                    
+                    // 监听搜索事件
+                    enhancedSearchComponent.on('search', (results) => {
+                        console.log('搜索结果:', results);
+                    });
+                    
+                    // 监听产品点击事件
+                    enhancedSearchComponent.on('productClick', (product) => {
+                        console.log('点击产品:', product);
+                        // 这里可以添加产品详情页面跳转逻辑
+                    });
+                    
+                    // 监听添加到购物车事件
+                    enhancedSearchComponent.on('addToCart', (product) => {
+                        console.log('添加到购物车:', product);
+                        // 这里可以添加购物车逻辑
+                        if (typeof updateCartCount === 'function') {
+                            // 假设购物车中有5件商品
+                            updateCartCount(5);
+                        }
+                    });
+                    
+                    // 监听添加到收藏夹事件
+                    enhancedSearchComponent.on('addToWishlist', (product) => {
+                        console.log('添加到收藏夹:', product);
+                        // 这里可以添加收藏夹逻辑
+                    });
+                    
+                    console.log('增强搜索组件初始化成功');
+                } catch (error) {
+                    console.error('增强搜索组件初始化失败:', error);
+                }
+            }).catch(error => {
+                console.error('加载增强搜索组件失败:', error);
+            });
+            
+            searchBtn.addEventListener('click', () => window.toggleSearch());
+            
+            // ESC键关闭搜索
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && searchBar && !searchBar.classList.contains('hidden')) {
+                    window.toggleSearch(false);
+                }
+            });
+            
+            // 移动端菜单交互
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const mobileMenu = document.getElementById('mobileMenu');
+            
+            function toggleMobileMenu() {
+                const isHidden = mobileMenu.classList.contains('hidden');
+                mobileMenu.classList.toggle('hidden');
+                mobileMenuBtn.setAttribute('aria-expanded', !isHidden);
+            }
+            
+            mobileMenuBtn.addEventListener('click', toggleMobileMenu);
+            
+            // 导航栏滚动效果
+            const navbar = document.querySelector('.navbar-luxury');
+            let ticking = false;
+            
+            function updateNavbar() {
+                if (window.scrollY > 50) {
+                    navbar.classList.add('scrolled');
+                } else {
+                    navbar.classList.remove('scrolled');
+                }
+                ticking = false;
+            }
+            
+            window.addEventListener('scroll', function() {
+                if (!ticking) {
+                    requestAnimationFrame(updateNavbar);
+                    ticking = true;
+                }
+            });
+            
+            // 购物车数量更新
+            function updateCartCount(count) {
+                const cartCount = document.getElementById('cart-count');
+                const cartBadge = document.getElementById('cart-badge');
+                
+                if (cartCount) {
+                    cartCount.textContent = `购物车中有 ${count} 件商品`;
+                }
+                
+                if (cartBadge) {
+                    if (count > 0) {
+                        cartBadge.textContent = count > 99 ? '99+' : count;
+                        cartBadge.classList.remove('hidden');
+                    } else {
+                        cartBadge.classList.add('hidden');
+                    }
+                }
+            }
+            
+            // 全局变量存储Casdoor可用性状态
+            let casdoorAvailable = false;
+            let casdoorCheckCompleted = false;
+            
+            // 异步检测Casdoor可用性
+            async function checkCasdoorAvailability() {
+                try {
+                    const response = await fetch('/api/auth/casdoor/login', {
+                        method: 'HEAD', // 使用HEAD请求减少网络开销
+                        credentials: 'include'
+                    });
+                    casdoorAvailable = response.ok;
+                } catch (error) {
+                    console.log('Casdoor服务不可用:', error.message);
+                    casdoorAvailable = false;
+                }
+                
+                // 存储Casdoor可用性状态
+                sessionStorage.setItem('casdoorAvailable', casdoorAvailable.toString());
+                casdoorCheckCompleted = true;
+                
+                console.log('Casdoor可用性检测完成:', casdoorAvailable);
+            }
+            
+            // 设置用户资料按钮
+            function setupUserProfileButton() {
+                const userProfileBtn = document.getElementById('userProfileBtn');
+                if (!userProfileBtn) return;
+                
+                // 设置用户资料按钮点击事件
+                userProfileBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // 构建登录页面URL，包含Casdoor状态信息
+                    const loginUrl = new URL('login.html', window.location.origin);
+                    
+                    // 如果Casdoor检测已完成，使用检测结果；否则使用sessionStorage中的缓存值
+                    let casdoorStatus = 'unavailable';
+                    if (casdoorCheckCompleted) {
+                        casdoorStatus = casdoorAvailable ? 'available' : 'unavailable';
+                    } else {
+                        // 从sessionStorage获取之前的检测结果
+                        const cachedStatus = sessionStorage.getItem('casdoorAvailable');
+                        casdoorStatus = (cachedStatus === 'true') ? 'available' : 'unavailable';
+                    }
+                    
+                    loginUrl.searchParams.set('casdoor', casdoorStatus);
+                    
+                    // 跳转到登录页面（不传递returnUrl避免信息泄露）
+                    window.location.href = loginUrl.toString();
+                });
+                
+                console.log('用户资料按钮设置完成');
+            }
+            
+            // 初始化导航
+            if (typeof setupNavigation === 'function') {
+                setupNavigation();
+            }
+            
+            // 初始化购物车数量
+            updateCartCount(0);
+            
+            // 设置用户资料按钮（同步）
+            setupUserProfileButton();
+            
+            // 异步检测Casdoor可用性（不阻塞页面加载）
+            checkCasdoorAvailability();
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,155 @@
+{
+  "id": "system-monitoring",
+  "title": "系统监控仪表板",
+  "description": "系统资源监控和性能指标",
+  "tags": [
+    "system",
+    "monitoring"
+  ],
+  "panels": [
+    {
+      "id": 1,
+      "title": "CPU使用率",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "query": "SELECT rate(cpu_usage) FROM system-metrics WHERE time > NOW() - 1h GROUP BY time(1m), instance",
+          "legendFormat": "{{instance}}"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "内存使用率",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "query": "SELECT rate(memory_usage) FROM system-metrics WHERE time > NOW() - 1h GROUP BY time(1m), instance",
+          "legendFormat": "{{instance}}"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "磁盘使用率",
+      "type": "gauge",
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 6,
+        "h": 8
+      },
+      "targets": [
+        {
+          "query": "SELECT disk_usage FROM system-metrics ORDER BY time DESC LIMIT 1",
+          "legendFormat": "Disk Usage"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "thresholds": {
+          "steps": [
+            {
+              "color": "green",
+              "value": null
+            },
+            {
+              "color": "yellow",
+              "value": 70
+            },
+            {
+              "color": "red",
+              "value": 90
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "网络流量",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 6,
+        "y": 8,
+        "w": 18,
+        "h": 8
+      },
+      "targets": [
+        {
+          "query": "SELECT rate(network_in) FROM system-metrics WHERE time > NOW() - 1h GROUP BY time(1m), instance",
+          "legendFormat": "In - {{instance}}"
+        },
+        {
+          "query": "SELECT rate(network_out) FROM system-metrics WHERE time > NOW() - 1h GROUP BY time(1m), instance",
+          "legendFormat": "Out - {{instance}}"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "系统负载",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "query": "SELECT system_load FROM system-metrics WHERE time > NOW() - 1h GROUP BY time(1m), instance",
+          "legendFormat": "Load - {{instance}}"
+        }
+      ]
+    }
+  ],
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "refresh": "30s"
+}

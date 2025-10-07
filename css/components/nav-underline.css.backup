@@ -1,0 +1,81 @@
+:root {
+    --nav-underline-height: 2px;
+    --nav-underline-height-mobile: 1.5px;
+    --nav-underline-transition: 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    --nav-link-padding: 8px 0;
+    --nav-link-padding-mobile: 12px 0;
+    --nav-link-margin: 0 12px;
+    --underline-delay: 0ms; /* 添加下划线延迟变量，默认为0确保同步显示 */
+}
+
+/* 奢华导航链接下划线动画 - 优化版 */
+.main-nav .nav-link-luxury {
+    color: var(--navbar-link-color);
+    text-decoration: none;
+    font-family: var(--font-secondary);
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    position: relative;
+    padding: var(--nav-link-padding);
+    margin: var(--nav-link-margin);
+    transition: color var(--nav-underline-transition);
+}
+
+.main-nav .nav-link-luxury::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: var(--nav-underline-height);
+    background: linear-gradient(90deg, var(--gold-pale), var(--gold-standard));
+    transform-origin: left center;
+    transition: all var(--nav-underline-transition);
+    transform: scaleX(0);
+    transition-delay: var(--underline-delay, 0ms); /* 使用变量确保同步显示 */
+}
+
+/* 悬停状态 - 仅在非活动链接上显示 */
+.main-nav .nav-link-luxury:not(.active):hover,
+.main-nav .nav-link-luxury:not(.active)[data-state="hover-active"] {
+    color: var(--gold-standard);
+}
+
+.main-nav .nav-link-luxury:not(.active):hover::after,
+.main-nav .nav-link-luxury:not(.active)[data-state="hover-active"]::after {
+    width: 100%;
+    transform: scaleX(1);
+    transition-delay: 0ms; /* 确保hover状态下立即显示下划线 */
+}
+
+/* 活动状态 - 点击后设置 */
+.main-nav .nav-link-luxury.active,
+.main-nav .nav-link-luxury[data-state="active"] {
+    color: var(--gold-standard);
+    font-weight: 600; /* 活动链接使用更粗的字体 */
+}
+
+.main-nav .nav-link-luxury.active::after,
+.main-nav .nav-link-luxury[data-state="active"]::after {
+    width: 100%;
+    transform: scaleX(1);
+    background: var(--gold-standard); /* 活动状态下使用纯金色 */
+    transition-delay: 0ms; /* 确保active状态下立即显示下划线 */
+}
+
+/* 确保所有导航链接的下划线动画同步 */
+.main-nav .nav-link-luxury {
+    --underline-delay: 0ms; /* 强制所有导航链接的下划线延迟为0 */
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .main-nav .nav-link-luxury {
+        padding: var(--nav-link-padding-mobile);
+        margin: 0;
+    }
+    
+    .main-nav .nav-link-luxury::after {
+        height: var(--nav-underline-height-mobile);
+    }
+}

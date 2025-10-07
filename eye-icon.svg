@@ -1,0 +1,31 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 作者：AI助手 -->
+  <!-- 时间：2025-01-26 15:45:00 -->
+  <!-- 用途：标准的查看/预览图标，简洁明了 -->
+  
+  <!-- 眼睛轮廓 -->
+  <path 
+    d="M12 5C7 5 2.73 8.11 1 12c1.73 3.89 6 7 11 7s9.27-3.11 11-7c-1.73-3.89-6-7-11-7z" 
+    stroke="#666666" 
+    stroke-width="2" 
+    stroke-linecap="round" 
+    stroke-linejoin="round"
+    fill="none"
+  />
+  
+  <!-- 瞳孔 -->
+  <circle 
+    cx="12" 
+    cy="12" 
+    r="3" 
+    fill="#333333"
+  />
+  
+  <!-- 高光 -->
+  <circle 
+    cx="13" 
+    cy="11" 
+    r="1" 
+    fill="#FFFFFF"
+  />
+</svg>

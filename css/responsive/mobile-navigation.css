@@ -1,0 +1,200 @@
+/*
+ * 移动端导航优化 - Reich Luxury Shopping Platform
+ * 专门优化移动设备上的导航体验
+ * 创建时间: 2025-09-23
+ * 来源: AI助手生成，基于移动端导航优化需求
+ */
+
+/* ==========================================================================
+   移动端导航基础样式
+   ========================================================================== */
+
+/* 移动端导航容器 */
+.mobile-nav-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  z-index: 999;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.mobile-nav-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.mobile-nav {
+  position: fixed;
+  top: 0;
+  right: -100%;
+  width: min(85vw, 320px);
+  height: 100vh;
+  background: var(--bg-primary);
+  z-index: 1000;
+  transition: right 0.3s ease;
+  overflow-y: auto;
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.3);
+}
+
+.mobile-nav.active {
+  right: 0;
+}
+
+/* 移动端导航头部 */
+.mobile-nav-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-4) var(--spacing-5);
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+
+.mobile-nav-logo {
+  font-family: var(--brand-font-primary);
+  font-size: 1.5rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--brand-gold);
+  text-decoration: none;
+}
+
+.mobile-nav-close {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: var(--spacing-2);
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-nav-close:hover {
+  background: var(--bg-tertiary);
+  color: var(--brand-gold);
+}
+
+.mobile-nav-close:active {
+  transform: scale(0.95);
+}
+
+/* ==========================================================================
+   移动端菜单按钮
+   ========================================================================== */
+
+
+
+/* ==========================================================================
+   移动端导航菜单
+   ========================================================================== */
+
+.mobile-nav-menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.mobile-nav-item {
+  border-bottom: 1px solid var(--border-color-light);
+}
+
+.mobile-nav-item:last-child {
+  border-bottom: none;
+}
+
+.mobile-nav-link {
+  display: block;
+  padding: var(--spacing-4) var(--spacing-5);
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: var(--font-weight-medium);
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.mobile-nav-link:hover {
+  background: var(--bg-tertiary);
+  color: var(--brand-gold);
+  padding-left: var(--spacing-6);
+}
+
+.mobile-nav-link.active {
+  background: var(--bg-tertiary);
+  color: var(--brand-gold);
+  font-weight: var(--font-weight-semibold);
+}
+
+.mobile-nav-link.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--brand-gold);
+}
+
+/* 移动端导航图标 */
+.mobile-nav-link i {
+  margin-right: var(--spacing-3);
+  width: 20px;
+  text-align: center;
+  color: var(--brand-gold);
+}
+
+/* ==========================================================================
+   移动端用户操作区域
+   ========================================================================== */
+
+.mobile-nav-actions {
+  padding: var(--spacing-5);
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+
+.mobile-nav-actions .btn-luxury {
+  width: 100%;
+  margin-bottom: var(--spacing-3);
+  padding: var(--spacing-3);
+  font-size: 0.9375rem;
+}
+
+.mobile-nav-actions .btn-luxury:last-child {
+  margin-bottom: 0;
+}
+
+/* ==========================================================================
+   响应式行为
+   ========================================================================== */
+
+/* 桌面端隐藏移动端导航 */
+@media (min-width: 768px) {
+  .mobile-nav-overlay,
+  .mobile-nav {
+    display: none !important;
+  }
+}
+
+/* 移动端隐藏桌面端导航 */
+@media (max-width: 767px) {
+  .navbar-nav {
+    display: none !important;
+  }
+  
+  .navbar-actions {
+    display: none !important;
+  }
+}

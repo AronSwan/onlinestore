@@ -1,0 +1,10 @@
+{
+  "scripts": {
+    "test:optimizations": "ts-node src/test-optimizations.ts",
+    "start:optimized": "NODE_ENV=development npm run test:optimizations && npm run start:dev",
+    "build:check": "npm run build && echo '✅ 构建成功'",
+    "health:check": "curl -f http://localhost:3000/api/health || echo '⚠️ 健康检查失败'",
+    "cache:stats": "curl -f http://localhost:3000/api/cache/stats || echo '⚠️ 缓存统计获取失败'",
+    "performance:metrics": "curl -f http://localhost:3000/api/performance/metrics || echo '⚠️ 性能指标获取失败'"
+  }
+}

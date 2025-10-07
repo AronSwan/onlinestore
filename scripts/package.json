@@ -1,0 +1,20 @@
+{
+  "name": "navigation-checklist-tracker",
+  "version": "1.0.0",
+  "description": "导航栏设计整改进度跟踪系统",
+  "main": "dashboard-updater.js",
+  "scripts": {
+    "update": "node dashboard-updater.js",
+    "watch": "node watch-checklist.js",
+    "serve": "npx http-server ../ -p 3000 -o",
+    "dev": "npm run watch & npm run serve"
+  },
+  "keywords": ["checklist", "dashboard", "progress", "tracking"],
+  "author": "AI助手",
+  "license": "MIT",
+  "dependencies": {
+    "chokidar": "^3.5.3",
+    "http-server": "^14.1.1"
+  },
+  "devDependencies": {}
+}

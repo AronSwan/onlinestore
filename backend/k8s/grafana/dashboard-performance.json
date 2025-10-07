@@ -1,0 +1,20 @@
+{
+  "title": "性能监控",
+  "panels": [
+    {
+      "title": "API响应时间(P99)",
+      "type": "graph",
+      "targets": [{
+        "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[1m])) by (le))",
+        "legendFormat": "{{route}}"
+      }]
+    },
+    {
+      "title": "缓存命中率",
+      "type": "gauge",
+      "targets": [{
+        "expr": "cache_hit_rate"
+      }]
+    }
+  ]
+}

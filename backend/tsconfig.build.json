@@ -1,0 +1,9 @@
+// 用途：TypeScript构建配置文件，用于NestJS项目的生产构建
+// 依赖文件：tsconfig.json
+// 作者：Trae AI助手
+// 时间：2025-09-26 18:15:00
+
+{
+  "extends": "./tsconfig.json",
+  "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
+}

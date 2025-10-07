@@ -1,0 +1,191 @@
+# 用途：定义Kubernetes部署配置，用于分布式环境下的服务部署
+# 依赖文件：Dockerfile, secrets.yaml
+# 作者：后端开发团队
+# 更新：支持TiDB数据库配置，增强分布式部署配置
+# 时间：2025-09-28 20:40:00
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: caddy-shopping-backend
+  namespace: caddy-shopping
+  labels:
+    app: caddy-shopping-backend
+    version: v1.0.0
+spec:
+  replicas: 5 # 增加副本数以提高分布式处理能力
+  selector:
+    matchLabels:
+      app: caddy-shopping-backend
+  template:
+    metadata:
+      labels:
+        app: caddy-shopping-backend
+        version: v1.0.0
+    spec:
+      containers:
+      - name: caddy-shopping-backend
+        image: caddy-shopping-backend:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3000
+          name: http
+          protocol: TCP
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "3000"
+        # 数据库配置
+        # 默认使用MySQL，可以通过环境变量切换到TiDB
+        - name: DB_HOST
+          valueFrom:
+            secretKeyRef:
+              name: caddy-shopping-backend-secrets
+              key: db-host
+        - name: DB_PORT
+          valueFrom:
+            secretKeyRef:
+              name: caddy-shopping-backend-secrets
+              key: db-port
+        - name: DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: caddy-shopping-backend-secrets
+              key: database-username
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: caddy-shopping-backend-secrets
+              key: database-password
+        - name: DB_DATABASE
+          value: "caddy_shopping"
+        # TiDB特定配置
+        - name: USE_TIDB
+          valueFrom:
+            secretKeyRef:
+              name: caddy-shopping-backend-secrets
+              key: use-tidb
+        - name: DB_SSL
+          valueFrom:
+            secretKeyRef:
+              name: caddy-shopping-backend-secrets
+              key: db-ssl
+        # Redis配置
+        - name: REDIS_HOST
+          value: "redis-service"
+        - name: REDIS_PORT
+          value: "6379"
+        # JWT配置
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: caddy-shopping-backend-secrets
+              key: jwt-secret-key
+        # 性能优化配置 - 分布式环境
+        - name: DB_POOL_SIZE
+          value: "200"
+        - name: THROTTLER_LIMIT
+          value: "5000"
+        - name: THROTTLER_TTL
+          value: "60"
+        # 集群模式配置
+        - name: CLUSTER_WORKERS
+          value: "4" # 在每个Pod中启用4个工作进程
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "1000m" # 增加资源请求以支持更高并发
+          limits:
+            memory: "2Gi"
+            cpu: "2000m" # 增加资源限制以支持更高并发
+        # 启动探针 - 等待应用完全启动
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30 # 最长等待5分钟(30*10s)启动
+        
+        # 存活探针 - 检查应用是否崩溃
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        # 就绪探针 - 检查应用是否准备好接收流量
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 3
+          timeoutSeconds: 3
+          failureThreshold: 2
+        
+        # 优雅关闭配置
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 30"] # 等待30秒让请求完成
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1001
+          runAsGroup: 1001
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+          capabilities:
+            drop:
+              - ALL
+          privileged: false
+      # 部署策略 - 滚动更新
+      strategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 1
+          maxSurge: 1
+      
+      # Pod反亲和性规则 - 避免同一应用的Pod部署在同一个节点上
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - caddy-shopping-backend
+              topologyKey: kubernetes.io/hostname
+      
+      # 节点选择器 - 确保Pod部署在合适的节点上
+      nodeSelector:
+        node-type: backend
+        workload: high-cpu
+      
+      # 资源请求和限制优化
+      resources:
+        requests:
+          memory: "1.5Gi"  # 从1Gi增加到1.5Gi
+          cpu: "1500m"     # 从1000m增加到1500m
+        limits:
+          memory: "3Gi"    # 从2Gi增加到3Gi
+          cpu: "3000m"     # 从2000m增加到3000m
+      
+      restartPolicy: Always
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault

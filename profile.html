@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人资料 - Caddy Style 购物网站</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/profile.css">
+    <script src="js/profile-manager.js"></script>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="index.html">Caddy Style</a>
+            </div>
+            <div class="nav-menu">
+                <a href="index.html">首页</a>
+                <a href="products.html">产品</a>
+                <a href="orders.html">订单</a>
+                <a href="wishlist.html">收藏</a>
+                <div class="nav-user">
+                    <button class="user-icon-btn">
+                        <img src="gucci-style-user-icon.svg" alt="用户">
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容区域 -->
+    <main class="profile-container">
+        <div class="profile-sidebar">
+            <h2>个人中心</h2>
+            <ul class="profile-menu">
+                <li><a href="#basic-info" class="active">基本信息</a></li>
+                <li><a href="#addresses">收货地址</a></li>
+                <li><a href="#security">账户安全</a></li>
+                <li><a href="#preferences">偏好设置</a></li>
+            </ul>
+        </div>
+
+        <div class="profile-content">
+            <!-- 基本信息部分 -->
+            <section id="basic-info" class="profile-section active">
+                <h2>基本信息</h2>
+                <form id="basic-info-form" class="profile-form">
+                    <div class="form-group">
+                        <label for="username">用户名</label>
+                        <input type="text" id="username" name="username" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">邮箱地址</label>
+                        <input type="email" id="email" name="email" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">手机号码</label>
+                        <input type="tel" id="phone" name="phone">
+                    </div>
+                    <div class="form-group">
+                        <label for="nickname">昵称</label>
+                        <input type="text" id="nickname" name="nickname">
+                    </div>
+                    <div class="form-group">
+                        <label for="birthday">生日</label>
+                        <input type="date" id="birthday" name="birthday">
+                    </div>
+                    <div class="form-group">
+                        <label for="gender">性别</label>
+                        <select id="gender" name="gender">
+                            <option value="">请选择</option>
+                            <option value="male">男</option>
+                            <option value="female">女</option>
+                            <option value="other">其他</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-primary">保存修改</button>
+                </form>
+            </section>
+
+            <!-- 收货地址部分 -->
+            <section id="addresses" class="profile-section">
+                <h2>收货地址管理</h2>
+                <div class="address-header">
+                    <button id="add-address-btn" class="btn-primary">添加新地址</button>
+                </div>
+                <div id="addresses-list" class="addresses-list">
+                    <!-- 地址列表将通过JavaScript动态加载 -->
+                </div>
+            </section>
+
+            <!-- 账户安全部分 -->
+            <section id="security" class="profile-section">
+                <h2>账户安全</h2>
+                <div class="security-options">
+                    <div class="security-item">
+                        <h3>修改密码</h3>
+                        <button id="change-password-btn" class="btn-secondary">修改密码</button>
+                    </div>
+                    <div class="security-item">
+                        <h3>登录记录</h3>
+                        <button id="view-login-history" class="btn-secondary">查看记录</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 偏好设置部分 -->
+            <section id="preferences" class="profile-section">
+                <h2>偏好设置</h2>
+                <form id="preferences-form" class="profile-form">
+                    <div class="form-group">
+                        <label for="language">语言偏好</label>
+                        <select id="language" name="language">
+                            <option value="zh-CN">简体中文</option>
+                            <option value="en-US">English</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="currency">货币单位</label>
+                        <select id="currency" name="currency">
+                            <option value="CNY">人民币 (CNY)</option>
+                            <option value="USD">美元 (USD)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="newsletter" name="newsletter">
+                            <span>订阅促销邮件</span>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="sms-notifications" name="sms-notifications">
+                            <span>短信通知</span>
+                        </label>
+                    </div>
+                    <button type="submit" class="btn-primary">保存设置</button>
+                </form>
+            </section>
+        </div>
+    </main>
+
+    <!-- 地址编辑模态框 -->
+    <div id="address-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3 id="address-modal-title">添加收货地址</h3>
+            <form id="address-form" class="profile-form">
+                <input type="hidden" id="address-id" name="id">
+                <div class="form-group">
+                    <label for="address-name">收货人姓名</label>
+                    <input type="text" id="address-name" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="address-phone">手机号码</label>
+                    <input type="tel" id="address-phone" name="phone" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="address-province">省份</label>
+                        <select id="address-province" name="province" required>
+                            <option value="">请选择省份</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="address-city">城市</label>
+                        <select id="address-city" name="city" required>
+                            <option value="">请选择城市</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="address-detail">详细地址</label>
+                    <input type="text" id="address-detail" name="detail" required>
+                </div>
+                <div class="form-group">
+                    <label for="address-postal">邮政编码</label>
+                    <input type="text" id="address-postal" name="postalCode">
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="address-default" name="isDefault">
+                        <span>设为默认地址</span>
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">保存地址</button>
+                    <button type="button" class="btn-secondary" id="cancel-address">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 修改密码模态框 -->
+    <div id="password-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3>修改密码</h3>
+            <form id="password-form" class="profile-form">
+                <div class="form-group">
+                    <label for="current-password">当前密码</label>
+                    <input type="password" id="current-password" name="currentPassword" required>
+                </div>
+                <div class="form-group">
+                    <label for="new-password">新密码</label>
+                    <input type="password" id="new-password" name="newPassword" required>
+                </div>
+                <div class="form-group">
+                    <label for="confirm-password">确认新密码</label>
+                    <input type="password" id="confirm-password" name="confirmPassword" required>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">确认修改</button>
+                    <button type="button" class="btn-secondary" id="cancel-password">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化用户资料管理器
+            if (window.ProfileManager) {
+                const profileManager = new ProfileManager();
+                profileManager.init();
+            }
+
+            // 绑定菜单切换事件
+            const menuLinks = document.querySelectorAll('.profile-menu a');
+            const sections = document.querySelectorAll('.profile-section');
+
+            menuLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // 移除所有激活状态
+                    menuLinks.forEach(l => l.classList.remove('active'));
+                    sections.forEach(s => s.classList.remove('active'));
+                    
+                    // 添加当前激活状态
+                    this.classList.add('active');
+                    const targetId = this.getAttribute('href').substring(1);
+                    document.getElementById(targetId).classList.add('active');
+                });
+            });
+        });
+    </script>
+</body>
+</html>

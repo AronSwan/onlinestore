@@ -1,0 +1,325 @@
+# 用途：一键部署所有Kubernetes资源的配置文件，包含分布式部署优化
+# 依赖文件：deployment.yaml, service.yaml, hpa.yaml, configmap.yaml, secrets.yaml, ingress.yaml
+# 作者：后端开发团队
+# 更新：AI助手 - 优化配置以支持持续1.5k并发
+# 时间：2025-09-26 19:30:00
+
+---
+# 配置映射
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: caddy-shopping-backend-config
+  namespace: caddy-shopping
+  labels:
+    app: caddy-shopping-backend
+    version: "1.0.0"
+data:
+  # 应用配置
+  NODE_ENV: "production"
+  PORT: "3000"
+  LOG_LEVEL: "info"
+  
+  # 数据库配置
+  DATABASE_HOST: "postgres-service"
+  DATABASE_PORT: "5432"
+  DATABASE_NAME: "caddy_shopping"
+  
+  # Redis配置
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  
+  # JWT配置
+  JWT_SECRET: "your-jwt-secret-key-here"
+  JWT_EXPIRES_IN: "7d"
+  
+  # CORS配置
+  CORS_ORIGIN: "*"
+  
+  # 限流配置 - 针对持续1.5k并发优化
+  THROTTLE_TTL: "60"
+  THROTTLE_LIMIT: "5000"
+  # 全局API限流
+  GLOBAL_RATE_LIMIT: "10000"
+  GLOBAL_RATE_LIMIT_TTL: "60"
+  # 认证接口限流
+  AUTH_RATE_LIMIT: "1500"
+  AUTH_RATE_LIMIT_TTL: "60"
+  
+  # 健康检查配置 - 分布式环境优化
+  HEALTH_CHECK_TIMEOUT: "3000"
+  HEALTH_CHECK_INTERVAL: "10000"
+  
+  # 集群配置
+  CLUSTER_ENABLED: "true"
+  CLUSTER_WORKERS: "6"
+  CLUSTER_RESTART_POLICY: "graceful"
+  
+  # 分布式跟踪配置
+  TRACING_ENABLED: "true"
+  TRACING_SERVICE_NAME: "caddy-shopping-backend"
+  
+  # 性能优化配置 - 针对持续1.5k并发
+  DB_POOL_SIZE: "300"
+  REDIS_POOL_SIZE: "150"
+  CACHE_TTL: "3600"
+
+---
+# 密钥配置
+apiVersion: v1
+kind: Secret
+metadata:
+  name: caddy-shopping-secrets
+  namespace: caddy-shopping
+  labels:
+    app: caddy-shopping-backend
+    version: "1.0.0"
+type: Opaque
+data:
+  # 数据库认证信息（base64编码）
+  DATABASE_USERNAME: "cG9zdGdyZXM="  # postgres
+  DATABASE_PASSWORD: "c2VjdXJlLXBhc3N3b3Jk"  # secure-password
+  
+  # Redis认证信息
+  REDIS_PASSWORD: "cmVkaXMtcGFzc3dvcmQ="  # redis-password
+  
+  # JWT密钥（生产环境应该使用更安全的密钥）
+  JWT_SECRET_KEY: "eW91ci1zdXBlci1zZWN1cmUtanNvbi13ZWItdG9rZW4tc2VjcmV0LWtleQ=="  # your-super-secure-json-web-token-secret-key
+  
+  # API密钥
+  API_KEY: "eW91ci1hcGkta2V5"  # your-api-key
+  
+  # 第三方服务密钥
+  PAYMENT_GATEWAY_KEY: "cGF5bWVudC1nYXRld2F5LWtleQ=="  # payment-gateway-key
+  EMAIL_SERVICE_KEY: "ZW1haWwtc2VydmljZS1rZXk="  # email-service-key
+
+---
+# 部署配置
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: caddy-shopping-backend
+  namespace: caddy-shopping
+  labels:
+    app: caddy-shopping-backend
+    version: "1.0.0"
+spec:
+  replicas: 5 # 增加副本数以提高分布式处理能力
+  selector:
+    matchLabels:
+      app: caddy-shopping-backend
+  template:
+    metadata:
+      labels:
+        app: caddy-shopping-backend
+        version: "1.0.0"
+    spec:
+      containers:
+      - name: caddy-shopping-backend
+        image: caddy-shopping-backend:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3000
+          name: http
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: caddy-shopping-backend-config
+        - secretRef:
+            name: caddy-shopping-secrets
+        env:
+        # 数据库配置
+        - name: DB_HOST
+          valueFrom:
+            secretKeyRef:
+              name: caddy-shopping-secrets
+              key: db-host
+        - name: DB_PORT
+          value: "3306"
+        - name: DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: caddy-shopping-secrets
+              key: db-username
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: caddy-shopping-secrets
+              key: db-password
+        - name: DB_DATABASE
+          value: "caddy_shopping"
+        # Redis配置
+        - name: REDIS_HOST
+          value: "redis-service"
+        - name: REDIS_PORT
+          value: "6379"
+        # JWT配置
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: caddy-shopping-secrets
+              key: jwt-secret
+        # 性能优化配置 - 针对持续1.5k并发
+        - name: DB_POOL_SIZE
+          value: "300"
+        - name: THROTTLER_LIMIT
+          value: "5000"
+        - name: THROTTLER_TTL
+          value: "60"
+        - name: THROTTLER_AUTH_LIMIT
+          value: "1500"
+        # 集群模式配置
+        - name: CLUSTER_WORKERS
+          value: "6" # 在每个Pod中启用6个工作进程
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "1000m" # 增加资源请求以支持更高并发
+          limits:
+            memory: "2Gi"
+            cpu: "2000m" # 增加资源限制以支持更高并发
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 3 # 更频繁地检查就绪状态，提高服务可用性
+          timeoutSeconds: 3
+          failureThreshold: 2 # 降低失败阈值，更快地检测服务问题
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1001
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+      restartPolicy: Always
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+
+---
+# 服务配置
+apiVersion: v1
+kind: Service
+metadata:
+  name: caddy-shopping-backend-service
+  namespace: caddy-shopping
+  labels:
+    app: caddy-shopping-backend
+    version: "1.0.0"
+spec:
+  selector:
+    app: caddy-shopping-backend
+  ports:
+  - name: http
+    port: 80
+    targetPort: 3000
+    protocol: TCP
+    appProtocol: http
+  clusterIP: None # 使用Headless Service，提高服务发现效率
+  # 会话亲和性配置，提高分布式环境下的会话稳定性
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800 # 3小时会话保持
+
+---
+# 自动扩缩容配置
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: caddy-shopping-backend-hpa
+  namespace: caddy-shopping
+  labels:
+    app: caddy-shopping-backend
+    version: "1.0.0"
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: caddy-shopping-backend
+  minReplicas: 3 # 增加最小副本数，提高分布式部署的稳定性和可用性
+  maxReplicas: 15 # 增加最大副本数，支持更高的并发负载
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 65 # 降低CPU目标利用率，更早触发扩缩容
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 75 # 降低内存目标利用率，更早触发扩缩容
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 600 # 增加缩容稳定窗口，避免频繁缩放
+      policies:
+      - type: Percent
+        value: 30 # 降低每次缩容百分比，保持系统稳定性
+        periodSeconds: 120
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 15
+
+---
+# Ingress配置
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: caddy-shopping-backend-ingress
+  namespace: caddy-shopping
+  annotations:
+    # 使用nginx ingress controller
+    kubernetes.io/ingress.class: "nginx"
+    # SSL重定向
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    # 启用CORS
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    # 代理设置
+    nginx.ingress.kubernetes.io/proxy-body-size: "20m" # 增加请求体大小限制
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120" # 增加超时时间
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "120" # 增加超时时间
+    # 负载均衡算法 - 使用一致性哈希算法，提高分布式环境下的会话稳定性
+    nginx.ingress.kubernetes.io/upstream-hash-by: "$client_real_ip"
+    # 健康检查配置
+    nginx.ingress.kubernetes.io/health-check-path: "/health"
+    nginx.ingress.kubernetes.io/health-check-interval: "3s"
+    nginx.ingress.kubernetes.io/health-check-timeout: "2s"
+    nginx.ingress.kubernetes.io/health-check-fail-count: "2"
+    # 限流配置 - 分布式环境下的细粒度限流
+    nginx.ingress.kubernetes.io/limit-rps: "10000" # 每秒请求数限制
+    nginx.ingress.kubernetes.io/limit-burst-multiplier: "5" # 突发流量倍数
+    nginx.ingress.kubernetes.io/limit-conn: "5000" # 并发连接数限制
+spec:
+  tls:
+  - hosts:
+    - api.caddy-shopping.com
+    secretName: caddy-shopping-tls
+  rules:
+  - host: api.caddy-shopping.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: caddy-shopping-backend-service
+            port:
+              number: 80
