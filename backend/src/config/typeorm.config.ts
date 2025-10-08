@@ -10,8 +10,8 @@ const dbType = (process.env.DB_TYPE || 'sqlite') as 'mysql' | 'postgres' | 'sqli
 const baseConfig: any = {
   type: dbType,
   database: process.env.DB_DATABASE || process.env.DATABASE_NAME || './data/caddy_shopping.db',
-  entities: ['src/**/*.entity.ts'],
-  migrations: ['src/database/migrations/*.ts'],
+  entities: ['src/**/*.entity{.ts,.js}'],
+  migrations: [process.env.NODE_ENV === 'development' ? 'src/database/migrations/*.ts' : 'dist/src/database/migrations/*.js'],
   synchronize: false,
   logging: process.env.NODE_ENV === 'development',
 };
@@ -34,14 +34,11 @@ if (dbType !== 'sqlite') {
         '20',
       10,
     ),
-    acquireTimeout: parseInt(
-      process.env.DB_ACQUIRE_TIMEOUT || process.env.DATABASE_ACQUIRE_TIMEOUT || '60000',
-      10,
-    ),
-    timeout: parseInt(
+    connectTimeout: parseInt(
       process.env.DB_CONNECTION_TIMEOUT || process.env.DATABASE_TIMEOUT || '30000',
       10,
     ),
+    waitForConnections: true,
     idleTimeout: parseInt(
       process.env.DB_IDLE_TIMEOUT ||
         process.env.DB_IDLE_TIMEOUT_MILLIS ||

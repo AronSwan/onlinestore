@@ -1,8 +1,12 @@
+# RedPanda 独立服务配置文件
+# 可以单独启动，也可以通过主配置文件启动
 version: "3.8"
+
 services:
   redpanda:
     image: docker.redpanda.com/redpandadata/redpanda:v24.2.9
-    container_name: redpanda
+    container_name: redpanda-standalone
+    restart: unless-stopped
     command:
       - redpanda
       - start
@@ -15,20 +19,169 @@ services:
       - --kafka-addr=PLAINTEXT://0.0.0.0:9092
       - --advertise-kafka-addr=PLAINTEXT://redpanda:9092
       - --rpc-addr=0.0.0.0:33145
-      - --advertise-rpc-addr=redpanda:33145
+      - --advertise-rpc-addr=localhost:33145
+      # 性能优化参数
+      - --default-log-level=info
+      - --topic-creation-ms=5000
+      - --memory-cleanup-interval-ms=5000
     ports:
-      - "9092:9092"
-      - "9644:9644"
+      - "9092:9092"  # Kafka API
+      - "9644:9644"  # HTTP Admin API
+      - "33145:33145"  # RPC
+    networks:
+      - redpanda-network
     ulimits:
       nofile:
         soft: 65536
         hard: 65536
+    volumes:
+      - redpanda_data:/var/lib/redpanda/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9644/v1/status/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+  # RedPanda Console 管理界面
   console:
     image: docker.redpanda.com/redpandadata/console:v2.6.1
-    container_name: redpanda-console
+    container_name: redpanda-console-standalone
+    restart: unless-stopped
     environment:
       - KAFKA_BROKERS=redpanda:9092
+      # 控制台配置
+      - CONSOLE_SERVER_NAME=redpanda-console
+      - CONSOLE_PORT=8080
+      - CONSOLE_RED_PANDA_TOPIC_REFRESH_INTERVAL=5000
+      - CONSOLE_RED_PANDA_CONSUMER_GROUP_REFRESH_INTERVAL=5000
     ports:
       - "8080:8080"
+    networks:
+      - redpanda-network
+    depends_on:
+      redpanda:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # 可选：Kafka UI (替代 RedPanda Console)
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui-standalone
+    restart: unless-stopped
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=redpanda:9092
+      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+    ports:
+      - "8081:8080"
+    networks:
+      - redpanda-network
     depends_on:
       - redpanda
+    profiles:
+      - kafka-ui
+
+  # 可选：Zookeeper (如果需要与外部 Kafka 兼容)
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper-standalone
+    restart: unless-stopped
+    environment:
+      - ZOOKEEPER_CLIENT_PORT=2181
+      - ZOOKEEPER_TICK_TIME=2000
+      - ZOOKEEPER_SYNC_LIMIT=2
+    networks:
+      - redpanda-network
+    ports:
+      - "2181:2181"
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_logs:/var/lib/zookeeper/log
+    profiles:
+      - kafka-ui
+
+  # 可选：Schema Registry
+  schema-registry:
+    image: confluentinc/cp-schema-registry:latest
+    container_name: schema-registry-standalone
+    restart: unless-stopped
+    environment:
+      - SCHEMA_REGISTRY_HOST_NAME=schema-registry
+      - SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS=redpanda:9092
+      - SCHEMA_REGISTRY_LISTENERS=http://0.0.0.0:8081
+    ports:
+      - "8082:8081"
+    networks:
+      - redpanda-network
+    depends_on:
+      - redpanda
+    profiles:
+      - schema-registry
+
+  # 可选：Kafka Connect
+  kafka-connect:
+    image: confluentinc/cp-kafka-connect:latest
+    container_name: kafka-connect-standalone
+    restart: unless-stopped
+    environment:
+      - CONNECT_BOOTSTRAP_SERVERS=redpanda:9092
+      - CONNECT_REST_ADVERTISED_HOST_NAME=kafka-connect
+      - CONNECT_REST_PORT=8083
+      - CONNECT_GROUP_ID=compose-connect-group
+      - CONNECT_CONFIG_STORAGE_TOPIC=_connect_configs
+      - CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR=1
+      - CONNECT_OFFSET_FLUSH_INTERVAL_MS=10000
+      - CONNECT_OFFSET_STORAGE_TOPIC=_connect_offsets
+      - CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR=1
+      - CONNECT_STATUS_STORAGE_TOPIC=_connect_statuses
+      - CONNECT_STATUS_STORAGE_REPLICATION_FACTOR=1
+      - CONNECT_KEY_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      - CONNECT_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      - CONNECT_INTERNAL_KEY_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      - CONNECT_INTERNAL_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      - CONNECT_ZOOKEEPER_CONNECT=zookeeper:2181
+      - CONNECT_PLUGIN_PATH=/usr/share/java,/usr/share/confluent-hub-components
+      - CONNECT_LOG4J_LOGGERS=org.apache.zookeeper=ERROR,org.I0Itec.zkclient=ERROR,org.reflections=ERROR
+    ports:
+      - "8083:8083"
+    networks:
+      - redpanda-network
+    depends_on:
+      - redpanda
+      - zookeeper
+    profiles:
+      - kafka-connect
+
+volumes:
+  redpanda_data:
+    driver: local
+    name: redpanda_standalone_data
+  zookeeper_data:
+    driver: local
+    name: zookeeper_standalone_data
+  zookeeper_logs:
+    driver: local
+    name: zookeeper_standalone_logs
+
+networks:
+  redpanda-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.23.0.0/16

@@ -100,7 +100,7 @@ export class ProductsService {
     for (const pattern of patterns) {
       try {
         // 使用更可靠的缓存键管理策略
-        const keysToDelete = [];
+        const keysToDelete: string[] = [];
 
         // 首先清除已知的缓存键
         for (const key of this.listCacheKeys) {

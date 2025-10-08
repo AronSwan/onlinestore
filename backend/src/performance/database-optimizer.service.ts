@@ -213,7 +213,11 @@ export class DatabaseOptimizerService {
   }
 
   private generateConnectionPoolRecommendations(stats: any[]) {
-    const recommendations = [];
+    const recommendations: Array<{
+      type: string;
+      message: string;
+      priority: string;
+    }> = [];
 
     const threadsConnected = stats.find(s => s.Variable_name === 'Threads_connected')?.Value || 0;
     const threadsRunning = stats.find(s => s.Variable_name === 'Threads_running')?.Value || 0;
@@ -252,7 +256,11 @@ export class DatabaseOptimizerService {
   }
 
   private generateQueryCacheRecommendations(stats: any[]) {
-    const recommendations = [];
+    const recommendations: Array<{
+      type: string;
+      message: string;
+      priority: string;
+    }> = [];
 
     const hitRate = this.calculateQueryCacheHitRate(stats);
 
@@ -312,8 +320,8 @@ export class DatabaseOptimizerService {
   }
 
   private generatePerformanceSummary(data: any) {
-    const issues = [];
-    const recommendations = [];
+    const issues: string[] = [];
+    const recommendations: string[] = [];
 
     // 分析慢查询
     if (data.slowQueryStats.slowQueryRate > 0.1) {

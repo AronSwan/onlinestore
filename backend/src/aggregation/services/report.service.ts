@@ -58,7 +58,13 @@ export class ReportService {
     }>
   > {
     // TODO: 从数据库获取报告列表
-    const reports = [];
+    const reports: Array<{
+      reportId: string;
+      type: any;
+      period: string;
+      generatedAt: Date;
+      status: 'completed';
+    }> = [];
 
     for (let i = 0; i < limit; i++) {
       const date = new Date();

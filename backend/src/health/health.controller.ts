@@ -16,6 +16,8 @@ import {
 } from '@nestjs/terminus';
 import { RedisHealthService } from '../redis/redis-health.service';
 import { RedpandaHealthIndicator } from './redpanda.health';
+import { ConfigService } from '@nestjs/config';
+import { isRedisEnabled } from '../common/redis/redis-utils';
 
 @ApiTags('系统健康')
 @Controller('health')
@@ -26,6 +28,7 @@ export class HealthController {
     private http: HttpHealthIndicator,
     @Optional() private redisHealth: RedisHealthService,
     @Optional() private redpanda: RedpandaHealthIndicator,
+    @Optional() private readonly configService?: ConfigService,
   ) {}
 
   @Get()
@@ -33,6 +36,7 @@ export class HealthController {
   @ApiGetResource(Object, 'API接口')
   async check() {
     const isDev = process.env.NODE_ENV === 'development';
+    const redisEnabled = isRedisEnabled(this.configService);
 
     // 开发环境：自定义返回，保证 200 且包含 redis: down 信息
     if (isDev) {
@@ -40,7 +44,7 @@ export class HealthController {
         'api',
         `http://localhost:${process.env.PORT || 3000}/health/status`,
       );
-      const redisRes = this.redisHealth
+      const redisRes = this.redisHealth && redisEnabled
         ? await this.redisIndicator()
         : ({ redis: { status: 'down', error: 'redis skipped' } } as any);
       return {
@@ -66,7 +70,7 @@ export class HealthController {
       checks.push(() => this.db.pingCheck('database'));
     }
 
-    if (this.redisHealth) {
+    if (this.redisHealth && redisEnabled) {
       checks.push(() => this.redisIndicator());
     }
 

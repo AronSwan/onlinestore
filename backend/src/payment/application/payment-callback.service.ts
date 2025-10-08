@@ -173,7 +173,10 @@ export class PaymentCallbackService {
    * 发布支付事件
    */
   private async publishPaymentEvents(paymentOrder: any, callbackInfo: any): Promise<void> {
-    const events = [];
+    const events: Array<{
+      name: string;
+      data: any;
+    }> = [];
 
     // 支付成功事件
     if (paymentOrder.status === 'SUCCESS') {

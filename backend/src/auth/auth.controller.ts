@@ -27,7 +27,6 @@ import { AuthGuard } from '@nestjs/passport';
 
 import { AuthService } from './auth.service';
 import { AuthProxyService } from './auth-proxy.service';
-import { LoginResponse } from './auth.service';
 import {
   LoginDto,
   RegisterDto,

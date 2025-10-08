@@ -359,12 +359,28 @@ export class LogAggregationService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async initializeOpenObserve(): Promise<void> {
+    // 如果未启用 OpenObserve，则直接跳过连接测试
+    const openobserveEnabledRaw = this.configService.get<string>('LOGGING_OPENOBSERVE_ENABLED', 'false');
+    const openobserveEnabled =
+      openobserveEnabledRaw === true as any ||
+      openobserveEnabledRaw === 'true' ||
+      openobserveEnabledRaw === '1';
+    if (!openobserveEnabled) {
+      this.loggingService.info('OpenObserve is disabled; skip connection initialization');
+      return;
+    }
+
     try {
       await this.openobserveService.testConnection();
       this.loggingService.info('Connected to OpenObserve');
     } catch (error) {
-      this.loggingService.error('Failed to connect to OpenObserve', error);
-      throw error;
+      const isDev = process.env.NODE_ENV === 'development';
+      if (isDev) {
+        this.loggingService.warn('Failed to connect to OpenObserve in development mode, continuing without it');
+      } else {
+        this.loggingService.error('Failed to connect to OpenObserve', error);
+        throw error;
+      }
     }
   }
 

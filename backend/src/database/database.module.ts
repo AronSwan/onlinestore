@@ -22,8 +22,11 @@ const masterConfig = createMasterConfiguration();
 
         // 根据配置使用相应的数据库
         const dbType = masterConfig.database.type;
+        // TiDB 使用 MySQL 驱动；统一在此做类型映射
+        const resolvedType = dbType === 'tidb' ? 'mysql' : dbType;
+        const defaultPort = dbType === 'tidb' ? 4000 : resolvedType === 'postgres' ? 5432 : 3306;
         const baseConfig = {
-          type: dbType as any,
+          type: resolvedType as any,
           database: masterConfig.database.database,
         };
 
@@ -31,7 +34,8 @@ const masterConfig = createMasterConfiguration();
         if (dbType !== 'sqlite') {
           Object.assign(baseConfig, {
             host: masterConfig.database.host,
-            port: masterConfig.database.port,
+            // 端口允许安全回退：TiDB默认4000，Postgres默认5432，MySQL默认3306
+            port: masterConfig.database.port || defaultPort,
             username: masterConfig.database.username,
             password: masterConfig.database.password,
           });
@@ -76,8 +80,8 @@ const masterConfig = createMasterConfiguration();
                 : {
                     // MySQL/TiDB 特定配置
                     connectionLimit: masterConfig.database.poolSize,
-                    acquireTimeout: masterConfig.database.acquireTimeout,
                     connectTimeout: masterConfig.database.connectionTimeout,
+                    waitForConnections: true,
                     ssl: process.env.DB_SSL === 'true',
                     supportBigNumbers: true,
                     bigNumberStrings: false,

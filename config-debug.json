@@ -1,294 +1,288 @@
-﻿{
-    "reporting":  {
-                      "notifications":  {
-                                            "github_pr_comment":  {
-                                                                      "enabled":  false
-                                                                  },
-                                            "console":  {
-                                                            "level":  "info",
-                                                            "enabled":  true
-                                                        },
-                                            "slack":  {
-                                                          "webhook_url":  "",
-                                                          "enabled":  false
-                                                      },
-                                            "file":  {
-                                                         "path":  "audit-run.log",
-                                                         "enabled":  true
-                                                     },
-                                            "email":  {
-                                                          "recipients":  [
-
-                                                                         ],
-                                                          "enabled":  false
-                                                      }
-                                        },
-                      "formats":  [
-                                      "sarif",
-                                      "markdown",
-                                      "json"
-                                  ],
-                      "include_metadata":  true,
-                      "output_path":  "./audit-reports",
-                      "compress_results":  false,
-                      "timestamp_format":  "yyyy-MM-dd_HH-mm-ss"
-                  },
-    "audit":  {
-                  "profile":  "balanced",
-                  "scope":  {
-                                "include":  [
-                                                "js/**/*.js",
-                                                "js/**/*.cjs",
-                                                "css/**/*.css",
-                                                "*.html",
-                                                "*.json",
-                                                "components/**/*",
-                                                "config/**/*",
-                                                "scripts/**/*"
-                                            ],
-                                "exclude":  [
-                                                "**/node_modules/**",
-                                                "**/dist/**",
-                                                "**/build/**",
-                                                "**/test*/**",
-                                                "**/tests/**",
-                                                "**/docs/**",
-                                                "**/*.md",
-                                                "**/*.log",
-                                                "**/.*"
-                                            ]
-                            },
-                  "depth":  "deep",
-                  "profiles":  {
-                                   "balanced":  {
-                                                    "fail_fast":  true,
-                                                    "performance":  {
-                                                                        "max_p99_latency_ms":  250
-                                                                    },
-                                                    "security":  {
-                                                                     "max_vulnerabilities":  5,
-                                                                     "block_on_cvss":  8
-                                                                 },
-                                                    "quality":  {
-                                                                    "max_complexity":  10,
-                                                                    "min_coverage_branch":  85,
-                                                                    "min_coverage_line":  90
-                                                                },
-                                                    "license":  {
-                                                                    "deny":  [
-                                                                                 "AGPL-*"
-                                                                             ]
-                                                                }
-                                                },
-                                   "strict":  {
-                                                  "fail_fast":  true,
-                                                  "performance":  {
-                                                                      "max_p99_latency_ms":  100
-                                                                  },
-                                                  "security":  {
-                                                                   "max_vulnerabilities":  0,
-                                                                   "block_on_cvss":  7
-                                                               },
-                                                  "quality":  {
-                                                                  "max_complexity":  8,
-                                                                  "min_coverage_branch":  90,
-                                                                  "min_coverage_line":  95
-                                                              },
-                                                  "license":  {
-                                                                  "deny":  [
-                                                                               "GPL-*",
-                                                                               "AGPL-*"
-                                                                           ]
-                                                              }
-                                              },
-                                   "lenient":  {
-                                                   "fail_fast":  false,
-                                                   "performance":  {
-                                                                       "max_p99_latency_ms":  500
-                                                                   },
-                                                   "security":  {
-                                                                    "max_vulnerabilities":  20,
-                                                                    "block_on_cvss":  9
-                                                                },
-                                                   "quality":  {
-                                                                   "max_complexity":  15,
-                                                                   "min_coverage_branch":  75,
-                                                                   "min_coverage_line":  80
-                                                               },
-                                                   "license":  {
-                                                                   "deny":  [
-
-                                                                            ]
-                                                               }
-                                               }
-                               }
-              },
-    "environment":  {
-                        "temp_directory":  "./temp-audit",
-                        "platform":  "docker",
-                        "fail_fast":  true,
-                        "working_directory":  "./",
-                        "parallel_execution":  false,
-                        "docker":  {
-                                       "image":  "mcr.microsoft.com/powershell:latest",
-                                       "container_name":  "trae-audit-container"
-                                   },
-                        "cache":  {
-                                      "ttl_hours":  24,
-                                      "path":  ".audit-cache",
-                                      "enabled":  true
-                                  },
-                        "timeout_minutes":  45
-                    },
-    "version":  "3.1.0",
-    "project":  {
-                    "type":  "microservice",
-                    "version":  "1.0.0",
-                    "owner":  "e-commerce-team",
-                    "name":  "caddy-style-shopping-site",
-                    "languages":  {
-                                      "typescript":  "5.7",
-                                      "html":  "5",
-                                      "json":  "latest",
-                                      "javascript":  "ES2024",
-                                      "css":  "3"
-                                  },
-                    "repository":  {
-                                       "branch":  "main",
-                                       "url":  "https://github.com/your-org/your-repo.git",
-                                       "commit":  "HEAD",
-                                       "local_path":  "./"
-                                   },
-                    "criticality":  "high"
-                },
-    "integrations":  {
-                         "issue_tracking":  {
-                                                "github_issues":  {
-                                                                      "labels":  [
-                                                                                     "security",
-                                                                                     "audit"
-                                                                                 ],
-                                                                      "assignees":  [
-
-                                                                                    ],
-                                                                      "enabled":  false
-                                                                  },
-                                                "jira":  {
-                                                             "project_key":  "",
-                                                             "url":  "",
-                                                             "enabled":  false
-                                                         }
-                                            },
-                         "ci_cd":  {
-                                       "jenkins":  {
-                                                       "auto_generate":  false,
-                                                       "jenkinsfile_path":  "Jenkinsfile",
-                                                       "enabled":  false
-                                                   },
-                                       "github_actions":  {
-                                                              "enabled":  true,
-                                                              "node_versions":  [
-                                                                                    "20.x"
-                                                                                ],
-                                                              "auto_generate":  true,
-                                                              "triggers":  {
-                                                                               "pull_request_branches":  [
-                                                                                                             "*"
-                                                                                                         ],
-                                                                               "push_branches":  [
-                                                                                                     "main",
-                                                                                                     "master"
-                                                                                                 ]
-                                                                           },
-                                                              "workflow_file":  ".github/workflows/audit.yml",
-                                                              "windows_image":  "windows-latest"
-                                                          }
-                                   },
-                         "security_platforms":  {
-                                                    "defectdojo":  {
-                                                                       "url":  "",
-                                                                       "enabled":  false
-                                                                   },
-                                                    "sonarqube":  {
-                                                                      "url":  "",
-                                                                      "enabled":  false
-                                                                  }
-                                                }
-                     },
-    "toolchain":  {
-                      "container_security":  [
-                                                 {
-                                                     "ignore_unfixed":  true,
-                                                     "name":  "Trivy",
-                                                     "severity":  "CRITICAL,HIGH",
-                                                     "enabled":  false
-                                                 }
-                                             ],
-                      "sast":  [
-                                   {
-                                       "config":  "security-and-quality",
-                                       "languages":  [
-                                                         "javascript"
-                                                     ],
-                                       "timeout":  1800,
-                                       "name":  "CodeQL",
-                                       "enabled":  true
-                                   },
-                                   {
-                                       "config":  "p/ci",
-                                       "timeout":  600,
-                                       "name":  "Semgrep",
-                                       "rules":  [
-                                                     "p/security-audit",
-                                                     "p/javascript"
-                                                 ],
-                                       "enabled":  true
-                                   },
-                                   {
-                                       "config":  ".eslintrc.cjs",
-                                       "name":  "ESLint",
-                                       "fix":  false,
-                                       "enabled":  true
-                                   }
-                               ],
-                      "sca":  [
-                                  {
-                                      "format":  "sarif",
-                                      "name":  "OSV-Scanner",
-                                      "timeout":  300,
-                                      "enabled":  true
-                                  },
-                                  {
-                                      "args":  "--audit-level=moderate",
-                                      "format":  "json",
-                                      "name":  "npm-audit",
-                                      "enabled":  true
-                                  },
-                                  {
-                                      "name":  "Retire.js",
-                                      "severity":  "medium",
-                                      "enabled":  true
-                                  }
-                              ],
-                      "sbom":  [
-                                   {
-                                       "include_dev":  false,
-                                       "format":  "cyclonedx-json",
-                                       "name":  "Syft",
-                                       "enabled":  true
-                                   }
-                               ],
-                      "quality":  [
-                                      {
-                                          "name":  "SonarJS",
-                                          "rules":  "recommended",
-                                          "enabled":  false
-                                      },
-                                      {
-                                          "config":  ".jshintrc",
-                                          "name":  "JSHint",
-                                          "enabled":  false
-                                      }
-                                  ]
-                  }
+{
+  "toolchain": {
+    "sca": [
+      {
+        "timeout": 300,
+        "name": "OSV-Scanner",
+        "format": "sarif",
+        "enabled": true
+      },
+      {
+        "args": "--audit-level=moderate",
+        "name": "npm-audit",
+        "format": "json",
+        "enabled": true
+      },
+      {
+        "severity": "medium",
+        "name": "Retire.js",
+        "enabled": true
+      }
+    ],
+    "sbom": [
+      {
+        "name": "Syft",
+        "format": "cyclonedx-json",
+        "include_dev": false,
+        "enabled": true
+      }
+    ],
+    "quality": [
+      {
+        "rules": "recommended",
+        "name": "SonarJS",
+        "enabled": false
+      },
+      {
+        "name": "JSHint",
+        "config": ".jshintrc",
+        "enabled": false
+      }
+    ],
+    "container_security": [
+      {
+        "severity": "CRITICAL,HIGH",
+        "name": "Trivy",
+        "ignore_unfixed": true,
+        "enabled": false
+      }
+    ],
+    "sast": [
+      {
+        "languages": [
+          "javascript"
+        ],
+        "timeout": 1800,
+        "name": "CodeQL",
+        "config": "security-and-quality",
+        "enabled": true
+      },
+      {
+        "rules": [
+          "p/security-audit",
+          "p/javascript"
+        ],
+        "name": "Semgrep",
+        "config": "p/ci",
+        "timeout": 600,
+        "enabled": true
+      },
+      {
+        "fix": false,
+        "name": "ESLint",
+        "config": ".eslintrc.cjs",
+        "enabled": true
+      }
+    ]
+  },
+  "reporting": {
+    "include_metadata": true,
+    "output_path": "./audit-reports",
+    "timestamp_format": "yyyy-MM-dd_HH-mm-ss",
+    "notifications": {
+      "console": {
+        "level": "info",
+        "enabled": true
+      },
+      "email": {
+        "recipients": [],
+        "enabled": false
+      },
+      "github_pr_comment": {
+        "enabled": false
+      },
+      "file": {
+        "path": "audit-run.log",
+        "enabled": true
+      },
+      "slack": {
+        "webhook_url": "",
+        "enabled": false
+      }
+    },
+    "compress_results": false,
+    "formats": [
+      "sarif",
+      "markdown",
+      "json"
+    ]
+  },
+  "project": {
+    "repository": {
+      "commit": "HEAD",
+      "local_path": "./",
+      "url": "https://github.com/your-org/your-repo.git",
+      "branch": "main"
+    },
+    "languages": {
+      "typescript": "5.7",
+      "html": "5",
+      "json": "latest",
+      "css": "3",
+      "javascript": "ES2024"
+    },
+    "type": "microservice",
+    "name": "caddy-style-shopping-site",
+    "criticality": "high",
+    "version": "1.0.0",
+    "owner": "e-commerce-team"
+  },
+  "audit": {
+    "profiles": {
+      "balanced": {
+        "security": {
+          "block_on_cvss": 8,
+          "max_vulnerabilities": 5
+        },
+        "performance": {
+          "max_p99_latency_ms": 250
+        },
+        "license": {
+          "deny": [
+            "AGPL-*"
+          ]
+        },
+        "fail_fast": true,
+        "quality": {
+          "min_coverage_line": 90,
+          "max_complexity": 10,
+          "min_coverage_branch": 85
+        }
+      },
+      "lenient": {
+        "security": {
+          "block_on_cvss": 9,
+          "max_vulnerabilities": 20
+        },
+        "performance": {
+          "max_p99_latency_ms": 500
+        },
+        "license": {
+          "deny": []
+        },
+        "fail_fast": false,
+        "quality": {
+          "min_coverage_line": 80,
+          "max_complexity": 15,
+          "min_coverage_branch": 75
+        }
+      },
+      "strict": {
+        "security": {
+          "block_on_cvss": 7,
+          "max_vulnerabilities": 0
+        },
+        "performance": {
+          "max_p99_latency_ms": 100
+        },
+        "license": {
+          "deny": [
+            "GPL-*",
+            "AGPL-*"
+          ]
+        },
+        "fail_fast": true,
+        "quality": {
+          "min_coverage_line": 95,
+          "max_complexity": 8,
+          "min_coverage_branch": 90
+        }
+      }
+    },
+    "profile": "balanced",
+    "depth": "deep",
+    "scope": {
+      "exclude": [
+        "**/node_modules/**",
+        "**/dist/**",
+        "**/build/**",
+        "**/test*/**",
+        "**/tests/**",
+        "**/docs/**",
+        "**/*.md",
+        "**/*.log",
+        "**/.*"
+      ],
+      "include": [
+        "js/**/*.js",
+        "js/**/*.cjs",
+        "css/**/*.css",
+        "*.html",
+        "*.json",
+        "components/**/*",
+        "config/**/*",
+        "scripts/**/*"
+      ]
+    }
+  },
+  "version": "3.1.0",
+  "integrations": {
+    "security_platforms": {
+      "defectdojo": {
+        "url": "",
+        "enabled": false
+      },
+      "sonarqube": {
+        "url": "",
+        "enabled": false
+      }
+    },
+    "issue_tracking": {
+      "jira": {
+        "url": "",
+        "project_key": "",
+        "enabled": false
+      },
+      "github_issues": {
+        "labels": [
+          "security",
+          "audit"
+        ],
+        "assignees": [],
+        "enabled": false
+      }
+    },
+    "ci_cd": {
+      "github_actions": {
+        "node_versions": [
+          "20.x"
+        ],
+        "workflow_file": ".github/workflows/audit.yml",
+        "windows_image": "windows-latest",
+        "triggers": {
+          "pull_request_branches": [
+            "*"
+          ],
+          "push_branches": [
+            "main",
+            "master"
+          ]
+        },
+        "enabled": true,
+        "auto_generate": true
+      },
+      "jenkins": {
+        "jenkinsfile_path": "Jenkinsfile",
+        "auto_generate": false,
+        "enabled": false
+      }
+    }
+  },
+  "environment": {
+    "fail_fast": true,
+    "temp_directory": "./temp-audit",
+    "timeout_minutes": 45,
+    "parallel_execution": false,
+    "cache": {
+      "path": ".audit-cache",
+      "ttl_hours": 24,
+      "enabled": true
+    },
+    "docker": {
+      "image": "mcr.microsoft.com/powershell:latest",
+      "container_name": "trae-audit-container"
+    },
+    "working_directory": "./",
+    "platform": "docker"
+  }
 }

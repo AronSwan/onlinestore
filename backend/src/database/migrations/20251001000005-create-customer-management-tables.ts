@@ -58,24 +58,63 @@ export class CreateCustomerManagementTables20251001000005 implements MigrationIn
     `);
 
     // 创建索引
-    await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS IDX_customer_profiles_user ON customer_profiles (user_id)`,
+    const profilesTable = 'customer_profiles';
+    // 兼容 MySQL/TiDB：用 information_schema.statistics 判断索引是否存在
+    const [idxProfilesUserExists] = await queryRunner.query(
+      `SELECT COUNT(1) AS cnt FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = 'IDX_customer_profiles_user'`,
+      [profilesTable],
     );
-    await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS IDX_customer_profiles_level ON customer_profiles (level)`,
+    if (!idxProfilesUserExists?.cnt) {
+      await queryRunner.query(
+        `CREATE INDEX IDX_customer_profiles_user ON ${profilesTable} (user_id)`,
+      );
+    }
+    const [idxProfilesLevelExists] = await queryRunner.query(
+      `SELECT COUNT(1) AS cnt FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = 'IDX_customer_profiles_level'`,
+      [profilesTable],
     );
-    await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS IDX_customer_profiles_points ON customer_profiles (points)`,
+    if (!idxProfilesLevelExists?.cnt) {
+      await queryRunner.query(
+        `CREATE INDEX IDX_customer_profiles_level ON ${profilesTable} (level)`,
+      );
+    }
+    const [idxProfilesPointsExists] = await queryRunner.query(
+      `SELECT COUNT(1) AS cnt FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = 'IDX_customer_profiles_points'`,
+      [profilesTable],
     );
-    await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS IDX_user_addresses_user ON user_addresses (user_id)`,
+    if (!idxProfilesPointsExists?.cnt) {
+      await queryRunner.query(
+        `CREATE INDEX IDX_customer_profiles_points ON ${profilesTable} (points)`,
+      );
+    }
+    const addressesTable = 'user_addresses';
+    const [idxAddressesUserExists] = await queryRunner.query(
+      `SELECT COUNT(1) AS cnt FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = 'IDX_user_addresses_user'`,
+      [addressesTable],
     );
-    await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS IDX_user_addresses_user_default ON user_addresses (user_id, is_default)`,
+    if (!idxAddressesUserExists?.cnt) {
+      await queryRunner.query(
+        `CREATE INDEX IDX_user_addresses_user ON ${addressesTable} (user_id)`,
+      );
+    }
+    const [idxAddressesUserDefaultExists] = await queryRunner.query(
+      `SELECT COUNT(1) AS cnt FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = 'IDX_user_addresses_user_default'`,
+      [addressesTable],
     );
-    await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS IDX_user_addresses_type ON user_addresses (type)`,
+    if (!idxAddressesUserDefaultExists?.cnt) {
+      await queryRunner.query(
+        `CREATE INDEX IDX_user_addresses_user_default ON ${addressesTable} (user_id, is_default)`,
+      );
+    }
+    const [idxAddressesTypeExists] = await queryRunner.query(
+      `SELECT COUNT(1) AS cnt FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = 'IDX_user_addresses_type'`,
+      [addressesTable],
     );
+    if (!idxAddressesTypeExists?.cnt) {
+      await queryRunner.query(
+        `CREATE INDEX IDX_user_addresses_type ON ${addressesTable} (type)`,
+      );
+    }
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

@@ -4,7 +4,6 @@
     "/api/health": {
       "get": {
         "operationId": "HealthController_check",
-        "summary": "API接口",
         "parameters": [],
         "responses": {
           "200": {
@@ -195,20 +194,20 @@
             }
           }
         },
-        "tags": [
-          "系统健康"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "API接口",
+        "tags": [
+          "系统健康"
         ]
       }
     },
     "/api/health/status": {
       "get": {
         "operationId": "HealthController_getStatus",
-        "summary": "API接口",
         "parameters": [],
         "responses": {
           "200": {
@@ -263,20 +262,20 @@
             }
           }
         },
-        "tags": [
-          "系统健康"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "API接口",
+        "tags": [
+          "系统健康"
         ]
       }
     },
     "/api/health/metrics": {
       "get": {
         "operationId": "HealthController_getMetrics",
-        "summary": "API接口",
         "parameters": [],
         "responses": {
           "200": {
@@ -331,20 +330,20 @@
             }
           }
         },
-        "tags": [
-          "系统健康"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "API接口",
+        "tags": [
+          "系统健康"
         ]
       }
     },
     "/api/health/redpanda": {
       "get": {
         "operationId": "HealthController_checkRedpanda",
-        "summary": "API接口",
         "parameters": [],
         "responses": {
           "200": {
@@ -535,20 +534,623 @@
             }
           }
         },
-        "tags": [
-          "系统健康"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "API接口",
+        "tags": [
+          "系统健康"
+        ]
+      }
+    },
+    "/api/api/monitoring/health": {
+      "get": {
+        "operationId": "MonitoringController_healthCheck",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "健康状态"
+          }
+        },
+        "summary": "健康检查",
+        "tags": [
+          "monitoring"
+        ]
+      }
+    },
+    "/api/api/monitoring/metrics": {
+      "get": {
+        "operationId": "MonitoringController_getMetrics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "当前指标数据"
+          }
+        },
+        "summary": "获取当前指标",
+        "tags": [
+          "monitoring"
+        ]
+      }
+    },
+    "/api/api/monitoring/metrics/summary": {
+      "get": {
+        "operationId": "MonitoringController_getMetricsSummary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "指标摘要数据"
+          }
+        },
+        "summary": "获取指标摘要",
+        "tags": [
+          "monitoring"
+        ]
+      }
+    },
+    "/api/api/monitoring/metrics/category": {
+      "get": {
+        "operationId": "MonitoringController_getMetricsByCategory",
+        "parameters": [
+          {
+            "name": "category",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "http",
+                "database",
+                "cache",
+                "connections"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "指定类别的指标数据"
+          }
+        },
+        "summary": "按类别获取指标",
+        "tags": [
+          "monitoring"
+        ]
+      }
+    },
+    "/api/api/monitoring/metrics/history": {
+      "get": {
+        "operationId": "MonitoringController_getMetricsHistory",
+        "parameters": [
+          {
+            "name": "period",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "hour",
+                "day",
+                "week"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "历史指标数据"
+          }
+        },
+        "summary": "获取历史指标",
+        "tags": [
+          "monitoring"
+        ]
+      }
+    },
+    "/api/api/monitoring/performance/report": {
+      "get": {
+        "operationId": "MonitoringController_generatePerformanceReport",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "性能报告数据"
+          }
+        },
+        "summary": "生成性能报告",
+        "tags": [
+          "monitoring"
+        ]
+      }
+    },
+    "/api/api/monitoring/application/status": {
+      "get": {
+        "operationId": "MonitoringController_getApplicationStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "应用状态数据"
+          }
+        },
+        "summary": "获取应用状态",
+        "tags": [
+          "monitoring"
+        ]
+      }
+    },
+    "/api/api/monitoring/system/info": {
+      "get": {
+        "operationId": "MonitoringController_getSystemInfo",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "系统信息数据"
+          }
+        },
+        "summary": "获取系统信息",
+        "tags": [
+          "monitoring"
+        ]
+      }
+    },
+    "/api/api/monitoring/audit/logs": {
+      "get": {
+        "operationId": "MonitoringController_getAuditLogs",
+        "parameters": [
+          {
+            "name": "endDate",
+            "required": false,
+            "in": "query",
+            "schema": {}
+          },
+          {
+            "name": "startDate",
+            "required": false,
+            "in": "query",
+            "schema": {}
+          },
+          {
+            "name": "eventType",
+            "required": false,
+            "in": "query",
+            "schema": {}
+          },
+          {
+            "name": "userId",
+            "required": false,
+            "in": "query",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "审计日志数据"
+          }
+        },
+        "summary": "获取审计日志",
+        "tags": [
+          "monitoring"
+        ]
+      }
+    },
+    "/api/api/monitoring/security/events": {
+      "get": {
+        "operationId": "MonitoringController_getSecurityEvents",
+        "parameters": [
+          {
+            "name": "endDate",
+            "required": false,
+            "in": "query",
+            "schema": {}
+          },
+          {
+            "name": "startDate",
+            "required": false,
+            "in": "query",
+            "schema": {}
+          },
+          {
+            "name": "severity",
+            "required": false,
+            "in": "query",
+            "schema": {}
+          },
+          {
+            "name": "eventType",
+            "required": false,
+            "in": "query",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "安全事件数据"
+          }
+        },
+        "summary": "获取安全事件",
+        "tags": [
+          "monitoring"
+        ]
+      }
+    },
+    "/api/api/monitoring/prometheus": {
+      "get": {
+        "operationId": "MonitoringController_getPrometheusMetrics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Prometheus格式的指标数据"
+          }
+        },
+        "summary": "获取Prometheus格式的指标",
+        "tags": [
+          "monitoring"
+        ]
+      }
+    },
+    "/api/api/alerts/rules": {
+      "get": {
+        "operationId": "AlertController_getAlertRules",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "成功获取告警规则列表"
+          }
+        },
+        "summary": "获取所有告警规则",
+        "tags": [
+          "告警管理"
+        ]
+      },
+      "post": {
+        "operationId": "AlertController_createAlertRule",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAlertRuleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "成功创建告警规则"
+          },
+          "400": {
+            "description": "请求参数无效"
+          }
+        },
+        "summary": "创建新的告警规则",
+        "tags": [
+          "告警管理"
+        ]
+      }
+    },
+    "/api/api/alerts/rules/enabled": {
+      "get": {
+        "operationId": "AlertController_getEnabledAlertRules",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "成功获取启用的告警规则列表"
+          }
+        },
+        "summary": "获取启用的告警规则",
+        "tags": [
+          "告警管理"
+        ]
+      }
+    },
+    "/api/api/alerts/rules/{id}": {
+      "put": {
+        "operationId": "AlertController_updateAlertRule",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "告警规则ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAlertRuleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功更新告警规则"
+          },
+          "404": {
+            "description": "告警规则不存在"
+          }
+        },
+        "summary": "更新告警规则",
+        "tags": [
+          "告警管理"
+        ]
+      },
+      "delete": {
+        "operationId": "AlertController_deleteAlertRule",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "告警规则ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "成功删除告警规则"
+          },
+          "404": {
+            "description": "告警规则不存在"
+          }
+        },
+        "summary": "删除告警规则",
+        "tags": [
+          "告警管理"
+        ]
+      }
+    },
+    "/api/api/alerts/active": {
+      "get": {
+        "operationId": "AlertController_getActiveAlerts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "成功获取活跃告警列表"
+          }
+        },
+        "summary": "获取所有活跃告警",
+        "tags": [
+          "告警管理"
+        ]
+      }
+    },
+    "/api/api/alerts/history": {
+      "get": {
+        "operationId": "AlertController_getAlertHistory",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "告警状态过滤",
+            "schema": {}
+          },
+          {
+            "name": "severity",
+            "required": false,
+            "in": "query",
+            "description": "告警级别过滤",
+            "schema": {}
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "返回记录数限制",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取告警历史"
+          }
+        },
+        "summary": "获取告警历史",
+        "tags": [
+          "告警管理"
+        ]
+      }
+    },
+    "/api/api/alerts/{id}/resolve": {
+      "post": {
+        "operationId": "AlertController_resolveAlert",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "告警ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功解决告警"
+          },
+          "404": {
+            "description": "告警不存在"
+          }
+        },
+        "summary": "手动解决告警",
+        "tags": [
+          "告警管理"
+        ]
+      }
+    },
+    "/api/api/alerts/stats": {
+      "get": {
+        "operationId": "AlertController_getAlertStats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "成功获取告警统计信息"
+          }
+        },
+        "summary": "获取告警统计信息",
+        "tags": [
+          "告警管理"
+        ]
+      }
+    },
+    "/api/api/alerts/rules/{id}/test": {
+      "post": {
+        "operationId": "AlertController_testAlertRule",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "告警规则ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功测试告警规则"
+          },
+          "404": {
+            "description": "告警规则不存在"
+          }
+        },
+        "summary": "测试告警规则",
+        "tags": [
+          "告警管理"
+        ]
+      }
+    },
+    "/api/notifications": {
+      "get": {
+        "operationId": "NotificationController_getNotifications",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Notification"
+        ]
+      },
+      "post": {
+        "operationId": "NotificationController_createNotification",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Notification"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
+    "/api/notifications/{id}": {
+      "get": {
+        "operationId": "NotificationController_getNotification",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
+    "/api/notifications/test": {
+      "post": {
+        "operationId": "NotificationController_testNotification",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
+    "/api/notifications/bulk": {
+      "post": {
+        "operationId": "NotificationController_sendBulkNotifications",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Notification"
         ]
       }
     },
     "/api/api/cart/items/{customerUserId}": {
       "get": {
         "operationId": "CartController_getCartItems",
-        "summary": "API接口",
         "parameters": [
           {
             "name": "customerUserId",
@@ -628,9 +1230,6 @@
             }
           }
         },
-        "tags": [
-          "购物车管理"
-        ],
         "security": [
           {
             "bearer": []
@@ -638,11 +1237,14 @@
           {
             "bearer": []
           }
+        ],
+        "summary": "API接口",
+        "tags": [
+          "购物车管理"
         ]
       },
       "post": {
         "operationId": "CartController_addCartItem",
-        "summary": "创建资源",
         "parameters": [
           {
             "name": "customerUserId",
@@ -727,9 +1329,6 @@
             }
           }
         },
-        "tags": [
-          "购物车管理"
-        ],
         "security": [
           {
             "bearer": []
@@ -737,12 +1336,15 @@
           {
             "bearer": []
           }
+        ],
+        "summary": "创建资源",
+        "tags": [
+          "购物车管理"
         ]
       },
       "delete": {
-        "operationId": "CartController_removeCartItems",
-        "summary": "批量删除购物车商品",
         "description": "根据商品ID列表批量删除用户购物车中的商品",
+        "operationId": "CartController_removeCartItems",
         "parameters": [
           {
             "name": "customerUserId",
@@ -778,20 +1380,20 @@
             }
           }
         },
-        "tags": [
-          "购物车管理"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "批量删除购物车商品",
+        "tags": [
+          "购物车管理"
         ]
       }
     },
     "/api/api/cart/selected/{customerUserId}": {
       "get": {
         "operationId": "CartController_getSelectedCartItems",
-        "summary": "API接口",
         "parameters": [
           {
             "name": "customerUserId",
@@ -855,9 +1457,6 @@
             }
           }
         },
-        "tags": [
-          "购物车管理"
-        ],
         "security": [
           {
             "bearer": []
@@ -865,12 +1464,15 @@
           {
             "bearer": []
           }
+        ],
+        "summary": "API接口",
+        "tags": [
+          "购物车管理"
         ]
       },
       "delete": {
-        "operationId": "CartController_clearSelectedItems",
-        "summary": "清空选中商品",
         "description": "删除用户购物车中所有已选中的商品",
+        "operationId": "CartController_clearSelectedItems",
         "parameters": [
           {
             "name": "customerUserId",
@@ -895,21 +1497,21 @@
             }
           }
         },
-        "tags": [
-          "购物车管理"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "清空选中商品",
+        "tags": [
+          "购物车管理"
         ]
       }
     },
     "/api/api/cart/items/{customerUserId}/{cartItemId}": {
       "put": {
-        "operationId": "CartController_updateCartItem",
-        "summary": "更新购物车商品",
         "description": "更新购物车中指定商品的数量、选中状态等信息",
+        "operationId": "CartController_updateCartItem",
         "parameters": [
           {
             "name": "customerUserId",
@@ -955,19 +1557,19 @@
             }
           }
         },
-        "tags": [
-          "购物车管理"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "更新购物车商品",
+        "tags": [
+          "购物车管理"
         ]
       },
       "delete": {
-        "operationId": "CartController_removeCartItem",
-        "summary": "删除购物车商品",
         "description": "从用户购物车中删除指定的商品",
+        "operationId": "CartController_removeCartItem",
         "parameters": [
           {
             "name": "customerUserId",
@@ -1002,21 +1604,21 @@
             }
           }
         },
-        "tags": [
-          "购物车管理"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "删除购物车商品",
+        "tags": [
+          "购物车管理"
         ]
       }
     },
     "/api/api/cart/select-all/{customerUserId}": {
       "put": {
-        "operationId": "CartController_updateAllSelectFlag",
-        "summary": "批量更新选中状态",
         "description": "批量设置用户购物车中所有商品的选中状态",
+        "operationId": "CartController_updateAllSelectFlag",
         "parameters": [
           {
             "name": "customerUserId",
@@ -1052,20 +1654,20 @@
             }
           }
         },
-        "tags": [
-          "购物车管理"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "批量更新选中状态",
+        "tags": [
+          "购物车管理"
         ]
       }
     },
     "/api/api/cart/summary/{customerUserId}": {
       "get": {
         "operationId": "CartController_getCartSummary",
-        "summary": "API接口",
         "parameters": [
           {
             "name": "customerUserId",
@@ -1129,9 +1731,6 @@
             }
           }
         },
-        "tags": [
-          "购物车管理"
-        ],
         "security": [
           {
             "bearer": []
@@ -1139,13 +1738,16 @@
           {
             "bearer": []
           }
+        ],
+        "summary": "API接口",
+        "tags": [
+          "购物车管理"
         ]
       }
     },
     "/api/api/cart/count/{customerUserId}": {
       "get": {
         "operationId": "CartController_getCartItemCount",
-        "summary": "API接口",
         "parameters": [
           {
             "name": "customerUserId",
@@ -1209,456 +1811,302 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "API接口",
         "tags": [
           "购物车管理"
-        ],
-        "security": [
-          {
-            "bearer": []
-          },
-          {
-            "bearer": []
-          }
         ]
       }
     },
-    "/api/api/customer-user/receive-address/{customerUserId}": {
-      "get": {
-        "operationId": "AddressController_list",
-        "summary": "获取用户收货地址列表",
-        "parameters": [
-          {
-            "name": "customerUserId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "获取成功",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/ApiResponseDto"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/Object"
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "未授权访问",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "权限不足",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "资源不存在",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "收货地址"
-        ],
-        "security": [
-          {
-            "bearer": []
-          },
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/api/customer-user/receive-address": {
+    "/api/address/geocode": {
       "post": {
-        "operationId": "AddressController_save",
-        "summary": "新增用户收货地址",
+        "operationId": "AddressController_geocode",
         "parameters": [],
         "requestBody": {
           "required": true,
-          "description": "创建资源的请求数据",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Object"
+                "$ref": "#/components/schemas/GeocodeDto"
               }
             }
           }
         },
         "responses": {
-          "200": {
-            "description": "创建成功",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/ApiResponseDto"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/Object"
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          },
           "201": {
-            "description": ""
-          },
-          "400": {
-            "description": "请求参数错误",
+            "description": "",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "未授权访问",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "权限不足",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
+                  "type": "object"
                 }
               }
             }
           }
         },
+        "summary": "地理编码",
         "tags": [
-          "收货地址"
-        ],
-        "security": [
-          {
-            "bearer": []
-          },
-          {
-            "bearer": []
-          }
+          "Address"
         ]
-      },
-      "put": {
-        "operationId": "AddressController_update",
-        "summary": "修改用户收货地址",
+      }
+    },
+    "/api/address/reverse-geocode": {
+      "post": {
+        "operationId": "AddressController_reverseGeocode",
         "parameters": [],
         "requestBody": {
           "required": true,
-          "description": "更新资源的请求数据",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Object"
+                "$ref": "#/components/schemas/ReverseGeocodeDto"
               }
             }
           }
         },
         "responses": {
-          "200": {
-            "description": "更新成功",
+          "201": {
+            "description": "",
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/ApiResponseDto"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/Object"
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "请求参数错误",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "未授权访问",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "权限不足",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "资源不存在",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
+                  "type": "object"
                 }
               }
             }
           }
         },
+        "summary": "反向地理编码",
         "tags": [
-          "收货地址"
-        ],
-        "security": [
-          {
-            "bearer": []
-          },
-          {
-            "bearer": []
-          }
+          "Address"
         ]
       }
     },
-    "/api/api/customer-user/{customerUserId}/receive-address/{receiveAddressId}": {
-      "delete": {
-        "operationId": "AddressController_remove",
-        "summary": "删除用户收货地址",
-        "parameters": [
-          {
-            "name": "customerUserId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "receiveAddressId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "删除成功",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "未授权访问",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "权限不足",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "资源不存在",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "收货地址"
-        ],
-        "security": [
-          {
-            "bearer": []
-          },
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/api/customer-user/receive-address/{receiveAddressId}/default": {
-      "put": {
-        "operationId": "AddressController_setDefault",
-        "summary": "设置默认地址",
-        "parameters": [
-          {
-            "name": "receiveAddressId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+    "/api/address/geocode/batch": {
+      "post": {
+        "operationId": "AddressController_batchGeocode",
+        "parameters": [],
         "requestBody": {
           "required": true,
-          "description": "更新资源的请求数据",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Object"
+                "$ref": "#/components/schemas/BatchGeocodeDto"
               }
             }
           }
         },
         "responses": {
-          "200": {
-            "description": "更新成功",
+          "201": {
+            "description": "",
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/ApiResponseDto"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/Object"
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "请求参数错误",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "未授权访问",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "权限不足",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "资源不存在",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
+                  "type": "object"
                 }
               }
             }
           }
         },
+        "summary": "异步批量地理编码",
         "tags": [
-          "收货地址"
-        ],
-        "security": [
+          "Address"
+        ]
+      }
+    },
+    "/api/address/job/{jobId}": {
+      "get": {
+        "operationId": "AddressController_getJobStatus",
+        "parameters": [
           {
-            "bearer": []
-          },
-          {
-            "bearer": []
+            "name": "jobId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
           }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "获取任务状态",
+        "tags": [
+          "Address"
+        ]
+      }
+    },
+    "/api/address/queue/status": {
+      "get": {
+        "operationId": "AddressController_getQueueStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "获取队列状态",
+        "tags": [
+          "Address"
+        ]
+      }
+    },
+    "/api/address/cache/stats": {
+      "get": {
+        "operationId": "AddressController_getCacheStats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "获取缓存统计",
+        "tags": [
+          "Address"
+        ]
+      }
+    },
+    "/api/address/cache/cleanup": {
+      "post": {
+        "operationId": "AddressController_cleanupCache",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "清理缓存",
+        "tags": [
+          "Address"
+        ]
+      }
+    },
+    "/api/address/validate": {
+      "post": {
+        "operationId": "AddressController_validateAddress",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidateAddressDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "验证地址",
+        "tags": [
+          "Address"
+        ]
+      }
+    },
+    "/api/address/format": {
+      "post": {
+        "operationId": "AddressController_formatAddress",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FormatAddressDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "格式化地址",
+        "tags": [
+          "Address"
+        ]
+      }
+    },
+    "/api/address/health": {
+      "get": {
+        "operationId": "AddressController_healthCheck",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "健康检查",
+        "tags": [
+          "Address"
         ]
       }
     },
     "/api/api/basics-data/region/all": {
       "get": {
         "operationId": "RegionController_listAll",
-        "summary": "API接口",
         "parameters": [],
         "responses": {
           "200": {
@@ -1713,20 +2161,20 @@
             }
           }
         },
-        "tags": [
-          "行政区划"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "API接口",
+        "tags": [
+          "行政区划"
         ]
       }
     },
     "/api/api/basics-data/region/list/level/{level}": {
       "get": {
         "operationId": "RegionController_listByLevel",
-        "summary": "API接口",
         "parameters": [
           {
             "name": "level",
@@ -1790,20 +2238,20 @@
             }
           }
         },
-        "tags": [
-          "行政区划"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "API接口",
+        "tags": [
+          "行政区划"
         ]
       }
     },
     "/api/api/basics-data/region/list/code/{code}": {
       "get": {
         "operationId": "RegionController_listByCode",
-        "summary": "API接口",
         "parameters": [
           {
             "name": "code",
@@ -1867,20 +2315,20 @@
             }
           }
         },
-        "tags": [
-          "行政区划"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "API接口",
+        "tags": [
+          "行政区划"
         ]
       }
     },
     "/api/api/basics-data/region/list/parent/{parent}": {
       "get": {
         "operationId": "RegionController_listByParent",
-        "summary": "API接口",
         "parameters": [
           {
             "name": "parent",
@@ -1944,21 +2392,21 @@
             }
           }
         },
-        "tags": [
-          "行政区划"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "API接口",
+        "tags": [
+          "行政区划"
         ]
       }
     },
     "/api/api/payment/orders": {
       "post": {
-        "operationId": "PaymentController_createPaymentOrder",
-        "summary": "创建支付订单",
         "description": "创建新的支付订单，支持多种支付方式和货币类型",
+        "operationId": "PaymentController_createPaymentOrder",
         "parameters": [
           {
             "name": "x-idempotency-key",
@@ -2013,21 +2461,21 @@
             "description": "重复请求"
           }
         },
-        "tags": [
-          "Payment"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "创建支付订单",
+        "tags": [
+          "Payment"
         ]
       }
     },
     "/api/api/payment/orders/{paymentOrderId}": {
       "get": {
-        "operationId": "PaymentController_getPaymentOrderStatus",
-        "summary": "查询支付订单状态",
         "description": "根据支付订单ID查询当前支付状态",
+        "operationId": "PaymentController_getPaymentOrderStatus",
         "parameters": [
           {
             "name": "paymentOrderId",
@@ -2053,6 +2501,7 @@
             "description": "支付订单不存在"
           }
         },
+        "summary": "查询支付订单状态",
         "tags": [
           "Payment"
         ]
@@ -2060,9 +2509,8 @@
     },
     "/api/api/payment/orders/batch-query": {
       "post": {
-        "operationId": "PaymentController_batchQueryPaymentStatus",
-        "summary": "批量查询支付订单状态",
         "description": "一次性查询多个支付订单的状态",
+        "operationId": "PaymentController_batchQueryPaymentStatus",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -2102,6 +2550,7 @@
             }
           }
         },
+        "summary": "批量查询支付订单状态",
         "tags": [
           "Payment"
         ]
@@ -2109,9 +2558,8 @@
     },
     "/api/api/payment/callbacks/{paymentMethod}": {
       "post": {
-        "operationId": "PaymentController_handlePaymentCallback",
-        "summary": "支付回调处理",
         "description": "处理第三方支付平台的异步回调通知",
+        "operationId": "PaymentController_handlePaymentCallback",
         "parameters": [
           {
             "name": "paymentMethod",
@@ -2173,6 +2621,7 @@
             "description": "回调数据无效"
           }
         },
+        "summary": "支付回调处理",
         "tags": [
           "Payment"
         ]
@@ -2180,9 +2629,8 @@
     },
     "/api/api/payment/refunds": {
       "post": {
-        "operationId": "PaymentController_createRefund",
-        "summary": "发起退款",
         "description": "对已成功支付的订单发起退款，支持全额退款和部分退款",
+        "operationId": "PaymentController_createRefund",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -2223,21 +2671,21 @@
             "description": "订单状态不允许退款"
           }
         },
-        "tags": [
-          "Payment"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "发起退款",
+        "tags": [
+          "Payment"
         ]
       }
     },
     "/api/api/payment/methods": {
       "get": {
-        "operationId": "PaymentController_getPaymentMethods",
-        "summary": "获取支持的支付方式",
         "description": "获取系统支持的所有支付方式列表，包括传统支付和加密货币支付",
+        "operationId": "PaymentController_getPaymentMethods",
         "parameters": [],
         "responses": {
           "200": {
@@ -2251,6 +2699,7 @@
             }
           }
         },
+        "summary": "获取支持的支付方式",
         "tags": [
           "Payment"
         ]
@@ -2258,9 +2707,8 @@
     },
     "/api/api/payment/merchant-orders/{merchantOrderId}/payments": {
       "get": {
-        "operationId": "PaymentController_getMerchantOrderPayments",
-        "summary": "查询商户订单的支付记录",
         "description": "获取指定商户订单的所有支付记录，包括成功、失败和退款记录",
+        "operationId": "PaymentController_getMerchantOrderPayments",
         "parameters": [
           {
             "name": "merchantOrderId",
@@ -2286,21 +2734,21 @@
             }
           }
         },
-        "tags": [
-          "Payment"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "查询商户订单的支付记录",
+        "tags": [
+          "Payment"
         ]
       }
     },
     "/api/api/payment/orders/{paymentOrderId}/sync": {
       "post": {
-        "operationId": "PaymentController_syncPaymentOrderStatus",
-        "summary": "同步支付订单状态",
         "description": "主动向第三方支付平台查询订单状态并更新本地记录",
+        "operationId": "PaymentController_syncPaymentOrderStatus",
         "parameters": [
           {
             "name": "paymentOrderId",
@@ -2333,21 +2781,21 @@
             }
           }
         },
-        "tags": [
-          "Payment"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "同步支付订单状态",
+        "tags": [
+          "Payment"
         ]
       }
     },
     "/api/api/payment/orders/{paymentOrderId}/close": {
       "post": {
-        "operationId": "PaymentController_closePaymentOrder",
-        "summary": "关闭支付订单",
         "description": "关闭未支付的订单，释放相关资源",
+        "operationId": "PaymentController_closePaymentOrder",
         "parameters": [
           {
             "name": "paymentOrderId",
@@ -2386,21 +2834,21 @@
             "description": ""
           }
         },
-        "tags": [
-          "Payment"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "关闭支付订单",
+        "tags": [
+          "Payment"
         ]
       }
     },
     "/api/api/payment/health": {
       "get": {
-        "operationId": "PaymentController_healthCheck",
-        "summary": "支付服务健康检查",
         "description": "检查支付服务的运行状态和健康度",
+        "operationId": "PaymentController_healthCheck",
         "parameters": [],
         "responses": {
           "200": {
@@ -2449,461 +2897,15 @@
             }
           }
         },
+        "summary": "支付服务健康检查",
         "tags": [
           "Payment"
         ]
       }
     },
-    "/api/monitoring/metrics": {
-      "get": {
-        "operationId": "MonitoringController_getMetrics",
-        "summary": "",
-        "description": "Prometheus 指标端点",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "获取成功",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/ApiResponseDto"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/Object"
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "未授权访问",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "权限不足",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "资源不存在",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "系统监控"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/monitoring/health": {
-      "get": {
-        "operationId": "MonitoringController_getHealth",
-        "summary": "",
-        "description": "应用健康状态",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "获取成功",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/ApiResponseDto"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/Object"
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "未授权访问",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "权限不足",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "资源不存在",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "系统监控"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/monitoring/dashboard": {
-      "get": {
-        "operationId": "MonitoringController_getDashboard",
-        "summary": "",
-        "description": "实时监控仪表板",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "获取成功",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/ApiResponseDto"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/Object"
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "未授权访问",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "权限不足",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "资源不存在",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "系统监控"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/monitoring/cache-stats": {
-      "get": {
-        "operationId": "MonitoringController_getCacheStats",
-        "summary": "",
-        "description": "缓存统计信息",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "获取成功",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/ApiResponseDto"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/Object"
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "未授权访问",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "权限不足",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "资源不存在",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "系统监控"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/monitoring/performance": {
-      "get": {
-        "operationId": "MonitoringController_getPerformanceOverview",
-        "summary": "",
-        "description": "性能指标概览",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "获取成功",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/ApiResponseDto"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/Object"
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "未授权访问",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "权限不足",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "资源不存在",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "系统监控"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/notifications": {
-      "get": {
-        "operationId": "NotificationController_getNotifications",
-        "parameters": [
-          {
-            "name": "userId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "page",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "limit",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        }
-      },
-      "post": {
-        "operationId": "NotificationController_createNotification",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Notification"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/notifications/{id}": {
-      "get": {
-        "operationId": "NotificationController_getNotification",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/notifications/test": {
-      "post": {
-        "operationId": "NotificationController_testNotification",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/api/notifications/bulk": {
-      "post": {
-        "operationId": "NotificationController_sendBulkNotifications",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        }
-      }
-    },
     "/api/gateway/stats": {
       "get": {
         "operationId": "GatewayController_getApiStats",
-        "summary": "API接口",
         "parameters": [
           {
             "name": "timeRange",
@@ -2967,20 +2969,20 @@
             }
           }
         },
-        "tags": [
-          "gateway"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "API接口",
+        "tags": [
+          "gateway"
         ]
       }
     },
     "/api/gateway/rate-limit/stats": {
       "get": {
         "operationId": "GatewayController_getRateLimitStats",
-        "summary": "API接口",
         "parameters": [],
         "responses": {
           "200": {
@@ -3035,20 +3037,20 @@
             }
           }
         },
-        "tags": [
-          "gateway"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "API接口",
+        "tags": [
+          "gateway"
         ]
       }
     },
     "/api/gateway/api-keys": {
       "get": {
         "operationId": "GatewayController_getActiveApiKeys",
-        "summary": "API接口",
         "parameters": [],
         "responses": {
           "200": {
@@ -3103,18 +3105,18 @@
             }
           }
         },
-        "tags": [
-          "gateway"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "API接口",
+        "tags": [
+          "gateway"
         ]
       },
       "post": {
         "operationId": "GatewayController_createApiKey",
-        "summary": "创建资源",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -3183,20 +3185,20 @@
             }
           }
         },
-        "tags": [
-          "gateway"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "创建资源",
+        "tags": [
+          "gateway"
         ]
       }
     },
     "/api/gateway/api-keys/{apiKey}/revoke": {
       "post": {
         "operationId": "GatewayController_revokeApiKey",
-        "summary": "创建资源",
         "parameters": [
           {
             "name": "apiKey",
@@ -3274,20 +3276,20 @@
             }
           }
         },
-        "tags": [
-          "gateway"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "创建资源",
+        "tags": [
+          "gateway"
         ]
       }
     },
     "/api/gateway/api-keys/{apiKey}/info": {
       "get": {
         "operationId": "GatewayController_getApiKeyInfo",
-        "summary": "API接口",
         "parameters": [
           {
             "name": "apiKey",
@@ -3351,20 +3353,20 @@
             }
           }
         },
-        "tags": [
-          "gateway"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "API接口",
+        "tags": [
+          "gateway"
         ]
       }
     },
     "/api/gateway/validate": {
       "post": {
         "operationId": "GatewayController_validateRequest",
-        "summary": "创建资源",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -3433,20 +3435,20 @@
             }
           }
         },
-        "tags": [
-          "gateway"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "创建资源",
+        "tags": [
+          "gateway"
         ]
       }
     },
     "/api/gateway/rate-limit/remaining": {
       "get": {
         "operationId": "GatewayController_getRemainingRequests",
-        "summary": "API接口",
         "parameters": [
           {
             "name": "clientIp",
@@ -3526,20 +3528,20 @@
             }
           }
         },
-        "tags": [
-          "gateway"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "API接口",
+        "tags": [
+          "gateway"
         ]
       }
     },
     "/api/aggregation/dashboard": {
       "get": {
         "operationId": "AggregationController_getDashboardData",
-        "summary": "获取综合仪表板数据",
         "parameters": [
           {
             "name": "timeRange",
@@ -3603,20 +3605,20 @@
             }
           }
         },
-        "tags": [
-          "数据聚合"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "获取综合仪表板数据",
+        "tags": [
+          "数据聚合"
         ]
       }
     },
     "/api/aggregation/realtime": {
       "get": {
         "operationId": "AggregationController_getRealTimeStats",
-        "summary": "获取实时统计数据",
         "parameters": [],
         "responses": {
           "200": {
@@ -3671,20 +3673,20 @@
             }
           }
         },
-        "tags": [
-          "数据聚合"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "获取实时统计数据",
+        "tags": [
+          "数据聚合"
         ]
       }
     },
     "/api/aggregation/trends/{metric}": {
       "get": {
         "operationId": "AggregationController_getTrendAnalysis",
-        "summary": "获取趋势分析",
         "parameters": [
           {
             "name": "metric",
@@ -3756,20 +3758,20 @@
             }
           }
         },
-        "tags": [
-          "数据聚合"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "获取趋势分析",
+        "tags": [
+          "数据聚合"
         ]
       }
     },
     "/api/aggregation/reports/generate": {
       "post": {
         "operationId": "AggregationController_generateReport",
-        "summary": "生成业务报告",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -3845,20 +3847,20 @@
             }
           }
         },
-        "tags": [
-          "数据聚合"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "生成业务报告",
+        "tags": [
+          "数据聚合"
         ]
       }
     },
     "/api/bff/user/{userId}/home": {
       "get": {
         "operationId": "BffController_getUserHomePage",
-        "summary": "API接口",
         "parameters": [
           {
             "name": "userId",
@@ -3922,20 +3924,20 @@
             }
           }
         },
-        "tags": [
-          "前端聚合服务"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "API接口",
+        "tags": [
+          "前端聚合服务"
         ]
       }
     },
     "/api/bff/order/{orderId}": {
       "get": {
         "operationId": "BffController_getOrderDetailsPage",
-        "summary": "API接口",
         "parameters": [
           {
             "name": "orderId",
@@ -4007,20 +4009,20 @@
             }
           }
         },
-        "tags": [
-          "前端聚合服务"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "API接口",
+        "tags": [
+          "前端聚合服务"
         ]
       }
     },
     "/api/bff/product/{productId}": {
       "get": {
         "operationId": "BffController_getProductDetailsPage",
-        "summary": "API接口",
         "parameters": [
           {
             "name": "productId",
@@ -4092,20 +4094,20 @@
             }
           }
         },
-        "tags": [
-          "前端聚合服务"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "API接口",
+        "tags": [
+          "前端聚合服务"
         ]
       }
     },
     "/api/bff/user/{userId}/cart": {
       "get": {
         "operationId": "BffController_getCartPage",
-        "summary": "API接口",
         "parameters": [
           {
             "name": "userId",
@@ -4169,20 +4171,20 @@
             }
           }
         },
-        "tags": [
-          "前端聚合服务"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "API接口",
+        "tags": [
+          "前端聚合服务"
         ]
       }
     },
     "/api/bff/user/{userId}/checkout": {
       "get": {
         "operationId": "BffController_getCheckoutPage",
-        "summary": "API接口",
         "parameters": [
           {
             "name": "userId",
@@ -4246,20 +4248,20 @@
             }
           }
         },
-        "tags": [
-          "前端聚合服务"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "API接口",
+        "tags": [
+          "前端聚合服务"
         ]
       }
     },
     "/api/bff/user/{userId}/center": {
       "get": {
         "operationId": "BffController_getUserCenterPage",
-        "summary": "API接口",
         "parameters": [
           {
             "name": "userId",
@@ -4323,20 +4325,20 @@
             }
           }
         },
-        "tags": [
-          "前端聚合服务"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "API接口",
+        "tags": [
+          "前端聚合服务"
         ]
       }
     },
     "/api/bff/mobile/home": {
       "get": {
         "operationId": "BffController_getMobileHomePage",
-        "summary": "API接口",
         "parameters": [],
         "responses": {
           "200": {
@@ -4391,21 +4393,20 @@
             }
           }
         },
-        "tags": [
-          "前端聚合服务"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "API接口",
+        "tags": [
+          "前端聚合服务"
         ]
       }
     },
     "/api/audit/logs": {
       "get": {
         "operationId": "AuditController_findLogs",
-        "summary": "查询审计日志",
-        "description": "查询审计日志（兼容原有接口）",
         "parameters": [
           {
             "name": "userId",
@@ -4476,21 +4477,20 @@
             "description": "查询成功"
           }
         },
-        "tags": [
-          "审计日志"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "查询审计日志",
+        "tags": [
+          "审计日志"
         ]
       }
     },
     "/api/audit/logs/search": {
       "post": {
         "operationId": "AuditController_findLogsAdvanced",
-        "summary": "高级查询审计日志",
-        "description": "高级查询审计日志",
         "parameters": [],
         "responses": {
           "200": {
@@ -4520,21 +4520,20 @@
             }
           }
         },
-        "tags": [
-          "审计日志"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "高级查询审计日志",
+        "tags": [
+          "审计日志"
         ]
       }
     },
     "/api/audit/statistics": {
       "get": {
         "operationId": "AuditController_getStatistics",
-        "summary": "获取审计统计信息",
-        "description": "获取审计统计信息",
         "parameters": [
           {
             "name": "startDate",
@@ -4560,42 +4559,40 @@
             "description": "统计信息获取成功"
           }
         },
-        "tags": [
-          "审计日志"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "获取审计统计信息",
+        "tags": [
+          "审计日志"
         ]
       }
     },
     "/api/audit/overview": {
       "get": {
         "operationId": "AuditController_getOverview",
-        "summary": "获取审计概览",
-        "description": "获取审计概览",
         "parameters": [],
         "responses": {
           "200": {
             "description": "概览信息获取成功"
           }
         },
-        "tags": [
-          "审计日志"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "获取审计概览",
+        "tags": [
+          "审计日志"
         ]
       }
     },
     "/api/audit/users/{userId}/activity": {
       "get": {
         "operationId": "AuditController_getUserActivity",
-        "summary": "获取用户活动统计",
-        "description": "获取用户活动统计",
         "parameters": [
           {
             "name": "userId",
@@ -4619,21 +4616,20 @@
             "description": "用户活动统计获取成功"
           }
         },
-        "tags": [
-          "审计日志"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "获取用户活动统计",
+        "tags": [
+          "审计日志"
         ]
       }
     },
     "/api/audit/security/events": {
       "get": {
         "operationId": "AuditController_getSecurityEvents",
-        "summary": "获取安全事件统计",
-        "description": "获取安全事件统计",
         "parameters": [
           {
             "name": "days",
@@ -4649,21 +4645,20 @@
             "description": "安全事件统计获取成功"
           }
         },
-        "tags": [
-          "审计日志"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "获取安全事件统计",
+        "tags": [
+          "审计日志"
         ]
       }
     },
     "/api/audit/cleanup": {
       "post": {
         "operationId": "AuditController_cleanupLogs",
-        "summary": "手动清理过期日志",
-        "description": "手动清理过期日志",
         "parameters": [
           {
             "name": "days",
@@ -4679,69 +4674,67 @@
             "description": "清理完成"
           }
         },
-        "tags": [
-          "审计日志"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "手动清理过期日志",
+        "tags": [
+          "审计日志"
         ]
       }
     },
     "/api/audit/health": {
       "get": {
         "operationId": "AuditController_getHealth",
-        "summary": "获取审计健康状态",
-        "description": "获取审计健康状态",
         "parameters": [],
         "responses": {
           "200": {
             "description": "健康状态获取成功"
           }
         },
-        "tags": [
-          "审计日志"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "获取审计健康状态",
+        "tags": [
+          "审计日志"
         ]
       }
     },
     "/api/audit/test": {
       "post": {
         "operationId": "AuditController_testAuditLog",
-        "summary": "测试审计日志记录",
-        "description": "测试审计日志记录",
         "parameters": [],
         "responses": {
           "200": {
             "description": "测试完成"
           }
         },
-        "tags": [
-          "审计日志"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "测试审计日志记录",
+        "tags": [
+          "审计日志"
         ]
       }
     },
     "/api/degradation/status": {
       "get": {
         "operationId": "DegradationController_getStatus",
-        "summary": "获取降级状态",
-        "description": "获取降级状态",
         "parameters": [],
         "responses": {
           "200": {
             "description": "降级状态信息"
           }
         },
+        "summary": "获取降级状态",
         "tags": [
           "degradation"
         ]
@@ -4750,8 +4743,6 @@
     "/api/degradation/enable/{service}": {
       "post": {
         "operationId": "DegradationController_enableDegradation",
-        "summary": "启用服务降级",
-        "description": "启用降级",
         "parameters": [
           {
             "name": "service",
@@ -4771,6 +4762,7 @@
             "description": ""
           }
         },
+        "summary": "启用服务降级",
         "tags": [
           "degradation"
         ]
@@ -4779,8 +4771,6 @@
     "/api/degradation/disable/{service}": {
       "delete": {
         "operationId": "DegradationController_disableDegradation",
-        "summary": "禁用服务降级",
-        "description": "禁用降级",
         "parameters": [
           {
             "name": "service",
@@ -4797,6 +4787,7 @@
             "description": "降级禁用成功"
           }
         },
+        "summary": "禁用服务降级",
         "tags": [
           "degradation"
         ]
@@ -4805,28 +4796,26 @@
     "/api/degradation/config": {
       "get": {
         "operationId": "DegradationController_getConfig",
-        "summary": "获取降级配置",
-        "description": "获取降级配置",
         "parameters": [],
         "responses": {
           "200": {
             "description": "降级配置信息"
           }
         },
+        "summary": "获取降级配置",
         "tags": [
           "degradation"
         ]
       },
       "put": {
         "operationId": "DegradationController_updateConfig",
-        "summary": "更新降级配置",
-        "description": "更新降级配置",
         "parameters": [],
         "responses": {
           "200": {
             "description": "配置更新成功"
           }
         },
+        "summary": "更新降级配置",
         "tags": [
           "degradation"
         ]
@@ -4835,14 +4824,13 @@
     "/api/api/circuit-breaker/status": {
       "get": {
         "operationId": "CircuitBreakerController_getAllCircuitBreakers",
-        "summary": "获取所有熔断器状态",
-        "description": "获取所有熔断器状态",
         "parameters": [],
         "responses": {
           "200": {
             "description": "成功获取熔断器状态列表"
           }
         },
+        "summary": "获取所有熔断器状态",
         "tags": [
           "熔断器管理"
         ]
@@ -4851,8 +4839,6 @@
     "/api/api/circuit-breaker/{name}/status": {
       "get": {
         "operationId": "CircuitBreakerController_getCircuitBreakerStatus",
-        "summary": "获取特定熔断器状态",
-        "description": "获取特定熔断器状态",
         "parameters": [
           {
             "name": "name",
@@ -4872,6 +4858,7 @@
             "description": "熔断器不存在"
           }
         },
+        "summary": "获取特定熔断器状态",
         "tags": [
           "熔断器管理"
         ]
@@ -4880,8 +4867,6 @@
     "/api/api/circuit-breaker/{name}/state": {
       "post": {
         "operationId": "CircuitBreakerController_setCircuitBreakerState",
-        "summary": "设置熔断器状态",
-        "description": "设置熔断器状态",
         "parameters": [
           {
             "name": "name",
@@ -4914,6 +4899,7 @@
             "description": "熔断器不存在"
           }
         },
+        "summary": "设置熔断器状态",
         "tags": [
           "熔断器管理"
         ]
@@ -4922,8 +4908,6 @@
     "/api/api/circuit-breaker/{name}/history": {
       "delete": {
         "operationId": "CircuitBreakerController_clearCircuitBreakerHistory",
-        "summary": "清除熔断器历史记录",
-        "description": "清除熔断器历史",
         "parameters": [
           {
             "name": "name",
@@ -4943,6 +4927,7 @@
             "description": "熔断器不存在"
           }
         },
+        "summary": "清除熔断器历史记录",
         "tags": [
           "熔断器管理"
         ]
@@ -4951,8 +4936,6 @@
     "/api/api/circuit-breaker/{name}": {
       "delete": {
         "operationId": "CircuitBreakerController_removeCircuitBreaker",
-        "summary": "删除熔断器",
-        "description": "删除熔断器",
         "parameters": [
           {
             "name": "name",
@@ -4972,6 +4955,7 @@
             "description": "熔断器不存在"
           }
         },
+        "summary": "删除熔断器",
         "tags": [
           "熔断器管理"
         ]
@@ -4980,14 +4964,13 @@
     "/api/api/circuit-breaker/health": {
       "get": {
         "operationId": "CircuitBreakerController_getHealthStatus",
-        "summary": "获取熔断器系统健康状态",
-        "description": "获取系统健康状态",
         "parameters": [],
         "responses": {
           "200": {
             "description": "成功获取健康状态"
           }
         },
+        "summary": "获取熔断器系统健康状态",
         "tags": [
           "熔断器管理"
         ]
@@ -4996,8 +4979,6 @@
     "/api/api/circuit-breaker/statistics": {
       "get": {
         "operationId": "CircuitBreakerController_getStatistics",
-        "summary": "获取熔断器统计信息",
-        "description": "获取熔断器统计信息",
         "parameters": [
           {
             "name": "period",
@@ -5014,6 +4995,7 @@
             "description": "成功获取统计信息"
           }
         },
+        "summary": "获取熔断器统计信息",
         "tags": [
           "熔断器管理"
         ]
@@ -5022,8 +5004,6 @@
     "/api/api/circuit-breaker/{name}/test": {
       "post": {
         "operationId": "CircuitBreakerController_testCircuitBreaker",
-        "summary": "测试熔断器功能",
-        "description": "测试熔断器",
         "parameters": [
           {
             "name": "name",
@@ -5070,6 +5050,7 @@
             }
           }
         },
+        "summary": "测试熔断器功能",
         "tags": [
           "熔断器管理"
         ]
@@ -5078,7 +5059,6 @@
     "/api/auth/register": {
       "post": {
         "operationId": "AuthController_register",
-        "summary": "用户注册",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -5118,7 +5098,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/LoginResponseDto"
                 }
               }
             }
@@ -5154,20 +5134,20 @@
             }
           }
         },
-        "tags": [
-          "认证"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "用户注册",
+        "tags": [
+          "认证"
         ]
       }
     },
     "/api/auth/login": {
       "post": {
         "operationId": "AuthController_login",
-        "summary": "用户登录",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -5233,20 +5213,20 @@
             }
           }
         },
-        "tags": [
-          "认证"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "用户登录",
+        "tags": [
+          "认证"
         ]
       }
     },
     "/api/auth/refresh": {
       "post": {
         "operationId": "AuthController_refreshToken",
-        "summary": "刷新令牌",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -5312,91 +5292,47 @@
             }
           }
         },
-        "tags": [
-          "认证"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "刷新令牌",
+        "tags": [
+          "认证"
         ]
       }
     },
     "/api/auth/profile": {
       "get": {
         "operationId": "AuthController_getProfile",
-        "summary": "获取用户信息",
         "parameters": [],
         "responses": {
           "200": {
-            "description": "获取成功",
+            "description": "成功获取用户信息",
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/ApiResponseDto"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/Object"
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "未授权访问",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "权限不足",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "资源不存在",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
+                  "$ref": "#/components/schemas/ProfileResponseDto"
                 }
               }
             }
           }
         },
-        "tags": [
-          "认证"
-        ],
         "security": [
           {
             "bearer": []
-          },
-          {
-            "bearer": []
           }
+        ],
+        "summary": "获取用户信息",
+        "tags": [
+          "认证"
         ]
       }
     },
     "/api/auth/change-password": {
       "post": {
         "operationId": "AuthController_changePassword",
-        "summary": "修改密码",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -5432,7 +5368,14 @@
             }
           },
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponseDto"
+                }
+              }
+            }
           },
           "400": {
             "description": "请求参数错误",
@@ -5465,9 +5408,6 @@
             }
           }
         },
-        "tags": [
-          "认证"
-        ],
         "security": [
           {
             "bearer": []
@@ -5475,13 +5415,16 @@
           {
             "bearer": []
           }
+        ],
+        "summary": "修改密码",
+        "tags": [
+          "认证"
         ]
       }
     },
     "/api/auth/logout": {
       "post": {
         "operationId": "AuthController_logout",
-        "summary": "用户登出",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -5517,7 +5460,14 @@
             }
           },
           "201": {
-            "description": ""
+            "description": "登出成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponseDto"
+                }
+              }
+            }
           },
           "400": {
             "description": "请求参数错误",
@@ -5550,9 +5500,6 @@
             }
           }
         },
-        "tags": [
-          "认证"
-        ],
         "security": [
           {
             "bearer": []
@@ -5560,13 +5507,16 @@
           {
             "bearer": []
           }
+        ],
+        "summary": "用户登出",
+        "tags": [
+          "认证"
         ]
       }
     },
     "/api/auth/casdoor/login": {
       "get": {
         "operationId": "AuthController_casdoorLogin",
-        "summary": "重定向到Casdoor登录",
         "parameters": [],
         "responses": {
           "200": {
@@ -5621,20 +5571,20 @@
             }
           }
         },
-        "tags": [
-          "认证"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "重定向到Casdoor登录",
+        "tags": [
+          "认证"
         ]
       }
     },
     "/api/auth/casdoor/callback": {
       "get": {
         "operationId": "AuthController_casdoorCallback",
-        "summary": "Casdoor登录回调",
         "parameters": [
           {
             "name": "code",
@@ -5706,20 +5656,20 @@
             }
           }
         },
-        "tags": [
-          "认证"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "Casdoor登录回调",
+        "tags": [
+          "认证"
         ]
       }
     },
     "/api/auth/casdoor/userinfo": {
       "get": {
         "operationId": "AuthController_getCasdoorUserInfo",
-        "summary": "获取Casdoor用户信息",
         "parameters": [],
         "responses": {
           "200": {
@@ -5774,9 +5724,6 @@
             }
           }
         },
-        "tags": [
-          "认证"
-        ],
         "security": [
           {
             "bearer": []
@@ -5784,13 +5731,16 @@
           {
             "bearer": []
           }
+        ],
+        "summary": "获取Casdoor用户信息",
+        "tags": [
+          "认证"
         ]
       }
     },
     "/api/auth/casdoor/logout": {
       "post": {
         "operationId": "AuthController_casdoorLogout",
-        "summary": "Casdoor登出",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -5859,9 +5809,6 @@
             }
           }
         },
-        "tags": [
-          "认证"
-        ],
         "security": [
           {
             "bearer": []
@@ -5869,14 +5816,355 @@
           {
             "bearer": []
           }
+        ],
+        "summary": "Casdoor登出",
+        "tags": [
+          "认证"
         ]
       }
     },
     "/api/api/users": {
       "post": {
-        "operationId": "UsersController_create",
-        "summary": "创建用户",
-        "description": "管理员创建新用户账户，包括基本信息和角色分配",
+        "operationId": "UsersController_createUser",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Users"
+        ]
+      },
+      "get": {
+        "operationId": "UsersController_searchUsers",
+        "parameters": [
+          {
+            "name": "search",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortDirection",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "isActive",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "emailVerified",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "country",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "city",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "createdAfter",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "createdBefore",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/api/users/{id}": {
+      "get": {
+        "operationId": "UsersController_getUserById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Users"
+        ]
+      },
+      "put": {
+        "operationId": "UsersController_updateUser",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Users"
+        ]
+      },
+      "delete": {
+        "operationId": "UsersController_deleteUser",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/api/users/{id}/activate": {
+      "put": {
+        "operationId": "UsersController_activateUser",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/api/users/{id}/deactivate": {
+      "put": {
+        "operationId": "UsersController_deactivateUser",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/api/users/{id}/verify-email": {
+      "put": {
+        "operationId": "UsersController_verifyUserEmail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/api/users/stats/overview": {
+      "get": {
+        "operationId": "UsersController_getUserStats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/api/customer-user/verify-code/send": {
+      "post": {
+        "operationId": "VerifyCodeController_send",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -5902,7 +6190,89 @@
                     {
                       "properties": {
                         "data": {
-                          "$ref": "#/components/schemas/CreateUserDto"
+                          "$ref": "#/components/schemas/Object"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权访问",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "权限不足",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "创建资源",
+        "tags": [
+          "验证码"
+        ]
+      }
+    },
+    "/api/products": {
+      "post": {
+        "operationId": "ProductsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "创建资源的请求数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProductDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "创建成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponseDto"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Product"
                         }
                       }
                     }
@@ -5916,7 +6286,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/User"
+                  "$ref": "#/components/schemas/Product"
                 }
               }
             }
@@ -5952,22 +6322,19 @@
             }
           }
         },
-        "tags": [
-          "用户管理"
-        ],
         "security": [
           {
             "bearer": []
-          },
-          {
-            "bearer": []
           }
+        ],
+        "summary": "创建产品",
+        "tags": [
+          "产品管理"
         ]
       },
       "get": {
-        "operationId": "UsersController_findAll",
-        "summary": "获取用户列表",
-        "description": "管理员分页获取用户列表",
+        "description": "分页获取产品列表，支持搜索和排序",
+        "operationId": "ProductsController_findAll",
         "parameters": [
           {
             "name": "page",
@@ -5993,27 +6360,748 @@
             "name": "search",
             "required": false,
             "in": "query",
-            "description": "搜索关键词（用户名、邮箱）",
+            "description": "搜索关键词",
+            "schema": {
+              "example": "iPhone",
+              "type": "string"
+            }
+          },
+          {
+            "name": "maxPrice",
+            "required": false,
+            "in": "query",
+            "description": "最高价格",
+            "schema": {
+              "example": 1000
+            }
+          },
+          {
+            "name": "minPrice",
+            "required": false,
+            "in": "query",
+            "description": "最低价格",
+            "schema": {
+              "example": 100
+            }
+          },
+          {
+            "name": "brand",
+            "required": false,
+            "in": "query",
+            "description": "品牌",
+            "schema": {
+              "example": "Apple"
+            }
+          },
+          {
+            "name": "categoryId",
+            "required": false,
+            "in": "query",
+            "description": "分类ID",
+            "schema": {
+              "example": 1
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "排序字段",
+            "schema": {
+              "example": "createdAt",
+              "type": "string"
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "description": "排序方向",
+            "schema": {
+              "example": "DESC",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "查询成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponseDto"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "allOf": [
+                            {
+                              "$ref": "#/components/schemas/PaginatedResponseDto"
+                            },
+                            {
+                              "properties": {
+                                "items": {
+                                  "type": "array",
+                                  "items": {
+                                    "$ref": "#/components/schemas/Product"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "查询参数错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权访问",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "权限不足",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "获取产品列表",
+        "tags": [
+          "产品管理"
+        ]
+      }
+    },
+    "/api/products/search": {
+      "get": {
+        "description": "使用搜索引擎进行全文搜索，支持多种筛选条件",
+        "operationId": "ProductsController_searchProducts",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "description": "搜索关键词",
+            "schema": {
+              "example": "iPhone",
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "页码",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "每页数量",
+            "schema": {
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "description": "分类ID",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "minPrice",
+            "required": false,
+            "in": "query",
+            "description": "最低价格",
+            "schema": {
+              "example": 100,
+              "type": "number"
+            }
+          },
+          {
+            "name": "maxPrice",
+            "required": false,
+            "in": "query",
+            "description": "最高价格",
+            "schema": {
+              "example": 1000,
+              "type": "number"
+            }
+          },
+          {
+            "name": "inStock",
+            "required": false,
+            "in": "query",
+            "description": "仅显示有库存商品",
+            "schema": {
+              "example": true,
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "搜索成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "搜索产品",
+        "tags": [
+          "产品管理"
+        ]
+      }
+    },
+    "/api/products/suggestions": {
+      "get": {
+        "description": "根据输入提供搜索建议，帮助用户快速找到相关产品",
+        "operationId": "ProductsController_getSearchSuggestions",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "description": "搜索关键词前缀",
+            "schema": {
+              "example": "iph",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "返回建议数量限制",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "获取成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "获取搜索建议",
+        "tags": [
+          "产品管理"
+        ]
+      }
+    },
+    "/api/products/popular-searches": {
+      "get": {
+        "description": "获取热门搜索词列表，支持时间范围和分类筛选",
+        "operationId": "ProductsController_getPopularSearches",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "返回热门搜索数量限制",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "includeTrends",
+            "required": false,
+            "in": "query",
+            "description": "是否包含趋势信息",
+            "schema": {
+              "example": false,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "timeRange",
+            "required": false,
+            "in": "query",
+            "description": "时间范围",
+            "schema": {
+              "example": "week",
+              "type": "string"
+            }
+          },
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "description": "分类过滤",
+            "schema": {
+              "example": "手机",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "获取成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "获取热门搜索",
+        "tags": [
+          "产品管理"
+        ]
+      }
+    },
+    "/api/products/popular": {
+      "get": {
+        "description": "根据浏览量、销量等指标获取热门产品列表",
+        "operationId": "ProductsController_findPopular",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "返回数量限制",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "获取热门产品成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponseDto"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Product"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "summary": "获取热门产品",
+        "tags": [
+          "产品管理"
+        ]
+      }
+    },
+    "/api/products/{id}": {
+      "get": {
+        "description": "根据产品ID获取详细信息，包括库存、图片、规格等",
+        "operationId": "ProductsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "产品ID",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "获取成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponseDto"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Product"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权访问",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "权限不足",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "资源不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "获取产品详情",
+        "tags": [
+          "产品管理"
+        ]
+      },
+      "patch": {
+        "description": "管理员更新产品的基本信息、价格、库存等",
+        "operationId": "ProductsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "产品ID",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "更新资源的请求数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProductDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponseDto"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Product"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权访问",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "权限不足",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "资源不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "更新产品信息",
+        "tags": [
+          "产品管理"
+        ]
+      },
+      "delete": {
+        "description": "管理员删除指定产品，同时清理相关数据",
+        "operationId": "ProductsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "产品ID",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权访问",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "权限不足",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "资源不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "删除产品",
+        "tags": [
+          "产品管理"
+        ]
+      }
+    },
+    "/api/products/{id}/view": {
+      "post": {
+        "description": "记录用户浏览产品的行为，用于统计和推荐",
+        "operationId": "ProductsController_recordView",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "产品ID",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "浏览记录成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDto"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "记录产品浏览",
+        "tags": [
+          "产品管理"
+        ]
+      }
+    },
+    "/api/search": {
+      "get": {
+        "operationId": "SearchController_search",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
             "schema": {
               "type": "string"
             }
           },
           {
-            "name": "role",
+            "name": "limit",
             "required": false,
             "in": "query",
-            "description": "用户角色筛选",
+            "description": "每页数量",
+            "schema": {
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "offset",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "category",
+            "required": true,
+            "in": "query",
             "schema": {
               "type": "string"
             }
           },
           {
-            "name": "status",
-            "required": false,
+            "name": "minPrice",
+            "required": true,
             "in": "query",
-            "description": "用户状态筛选",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "maxPrice",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "页码",
+            "schema": {
+              "example": 1,
+              "type": "number"
             }
           },
           {
@@ -6104,36 +7192,281 @@
             }
           }
         },
-        "tags": [
-          "用户管理"
-        ],
         "security": [
           {
             "bearer": []
-          },
-          {
-            "bearer": []
           }
+        ],
+        "summary": "执行搜索",
+        "tags": [
+          "搜索"
         ]
       }
     },
-    "/api/api/users/{id}": {
+    "/api/search/suggestions": {
       "get": {
-        "operationId": "UsersController_findOne",
-        "summary": "获取用户详情",
-        "description": "根据用户ID获取详细信息，包括个人资料、权限等",
+        "description": "根据输入的关键词前缀获取搜索建议",
+        "operationId": "SearchController_getSuggestions",
         "parameters": [
           {
-            "name": "id",
+            "name": "q",
             "required": true,
-            "in": "path",
-            "description": "用户ID",
+            "in": "query",
+            "description": "搜索关键词前缀",
             "schema": {
-              "example": 1,
-              "type": "number"
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "返回建议数量限制，默认10",
+            "schema": {
+              "type": "string"
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "获取搜索建议",
+        "tags": [
+          "搜索"
+        ]
+      }
+    },
+    "/api/search/popular": {
+      "get": {
+        "description": "获取热门搜索词列表，支持时间范围和分类过滤",
+        "operationId": "SearchController_getPopularSearches",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "返回热门搜索数量限制，默认10",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeTrends",
+            "required": false,
+            "in": "query",
+            "description": "是否包含趋势信息，默认true",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "timeRange",
+            "required": false,
+            "in": "query",
+            "description": "时间范围，默认week",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "description": "分类过滤",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "获取热门搜索",
+        "tags": [
+          "搜索"
+        ]
+      },
+      "post": {
+        "description": "手动添加热门搜索词到系统",
+        "operationId": "SearchController_addPopularSearchTerm",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "热门搜索词数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "添加热门搜索词",
+        "tags": [
+          "搜索"
+        ]
+      }
+    },
+    "/api/search/history": {
+      "post": {
+        "description": "记录用户搜索历史，用于统计和分析",
+        "operationId": "SearchController_recordSearchHistory",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "搜索历史数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "记录搜索历史",
+        "tags": [
+          "搜索"
+        ]
+      }
+    },
+    "/api/search/trends": {
+      "get": {
+        "description": "获取指定天数内的搜索趋势分析数据",
+        "operationId": "SearchController_getSearchTrends",
+        "parameters": [
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "description": "分析天数，默认7天",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "获取搜索趋势分析",
+        "tags": [
+          "搜索"
+        ]
+      }
+    },
+    "/api/search/cache": {
+      "delete": {
+        "description": "清除所有搜索相关的缓存数据",
+        "operationId": "SearchController_clearSearchCache",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "清除搜索缓存",
+        "tags": [
+          "搜索"
+        ]
+      }
+    },
+    "/api/search/status": {
+      "get": {
+        "description": "获取搜索系统的运行状态和统计信息",
+        "operationId": "SearchController_getSearchStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "获取搜索系统状态",
+        "tags": [
+          "搜索"
+        ]
+      }
+    },
+    "/api/search/switch/{engine}": {
+      "post": {
+        "description": "手动切换到指定的搜索引擎",
+        "operationId": "SearchController_switchSearchEngine",
+        "parameters": [
+          {
+            "name": "engine",
+            "required": true,
+            "in": "path",
+            "description": "搜索引擎名称",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "手动切换搜索引擎",
+        "tags": [
+          "搜索"
+        ]
+      }
+    },
+    "/api/search/reinitialize": {
+      "post": {
+        "description": "重新初始化搜索引擎，重建索引和配置",
+        "operationId": "SearchController_reinitializeSearchEngine",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "重新初始化搜索引擎",
+        "tags": [
+          "搜索"
+        ]
+      }
+    },
+    "/api/cache/stats": {
+      "get": {
+        "operationId": "CacheController_getStats",
+        "parameters": [],
         "responses": {
           "200": {
             "description": "获取成功",
@@ -6187,48 +7520,24 @@
             }
           }
         },
-        "tags": [
-          "用户管理"
-        ],
         "security": [
           {
             "bearer": []
-          },
-          {
-            "bearer": []
-          }
-        ]
-      },
-      "patch": {
-        "operationId": "UsersController_update",
-        "summary": "更新用户信息",
-        "description": "用户更新自己的个人信息，或管理员更新用户信息",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "用户ID",
-            "schema": {
-              "example": 1,
-              "type": "number"
-            }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "description": "更新资源的请求数据",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Object"
-              }
-            }
-          }
-        },
+        "summary": "API接口",
+        "tags": [
+          "cache"
+        ]
+      }
+    },
+    "/api/cache/health": {
+      "get": {
+        "operationId": "CacheController_healthCheck",
+        "parameters": [],
         "responses": {
           "200": {
-            "description": "更新成功",
+            "description": "获取成功",
             "content": {
               "application/json": {
                 "schema": {
@@ -6239,21 +7548,11 @@
                     {
                       "properties": {
                         "data": {
-                          "$ref": "#/components/schemas/UpdateUserDto"
+                          "$ref": "#/components/schemas/Object"
                         }
                       }
                     }
                   ]
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "请求参数错误",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
                 }
               }
             }
@@ -6289,31 +7588,27 @@
             }
           }
         },
-        "tags": [
-          "用户管理"
-        ],
         "security": [
           {
             "bearer": []
-          },
-          {
-            "bearer": []
           }
+        ],
+        "summary": "API接口",
+        "tags": [
+          "cache"
         ]
-      },
+      }
+    },
+    "/api/cache/flush/{tag}": {
       "delete": {
-        "operationId": "UsersController_remove",
-        "summary": "删除用户",
-        "description": "管理员删除用户账户（软删除）",
+        "operationId": "CacheController_flushByTag",
         "parameters": [
           {
-            "name": "id",
+            "name": "tag",
             "required": true,
             "in": "path",
-            "description": "用户ID",
             "schema": {
-              "example": 1,
-              "type": "number"
+              "type": "string"
             }
           }
         ],
@@ -6359,71 +7654,20 @@
             }
           }
         },
-        "tags": [
-          "用户管理"
-        ],
-        "security": [
-          {
-            "bearer": []
-          },
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/api/users/stats/count": {
-      "get": {
-        "operationId": "UsersController_getStats",
-        "summary": "获取用户统计",
-        "description": "获取用户总数、活跃用户数、角色分布等统计信息",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "获取统计信息成功",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "未授权访问",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "权限不足",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "用户管理"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "删除资源",
+        "tags": [
+          "cache"
         ]
       }
     },
-    "/api/api/customer-user/verify-code/send": {
+    "/api/cache/stats/reset": {
       "post": {
-        "operationId": "VerifyCodeController_send",
-        "summary": "创建资源",
+        "operationId": "CacheController_resetStats",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -6492,13 +7736,14 @@
             }
           }
         },
-        "tags": [
-          "验证码"
-        ],
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "创建资源",
+        "tags": [
+          "cache"
         ]
       }
     }
@@ -6621,6 +7866,86 @@
           "code",
           "message",
           "timestamp"
+        ]
+      },
+      "CreateAlertRuleDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateAlertRuleDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "Notification": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "userId": {
+            "type": "number"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "email",
+              "sms",
+              "push",
+              "in_app"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "sent",
+              "failed",
+              "read"
+            ]
+          },
+          "metadata": {
+            "type": "object"
+          },
+          "scheduledAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "sentAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "readAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "type",
+          "title",
+          "content",
+          "status",
+          "metadata",
+          "scheduledAt",
+          "sentAt",
+          "readAt",
+          "createdAt",
+          "updatedAt"
         ]
       },
       "Object": {
@@ -6746,6 +8071,123 @@
           "timestamp"
         ]
       },
+      "GeocodeDto": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "countryCode": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 2
+          },
+          "language": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 10
+          }
+        },
+        "required": [
+          "address"
+        ]
+      },
+      "ReverseGeocodeDto": {
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "type": "number"
+          },
+          "longitude": {
+            "type": "number"
+          },
+          "language": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 10
+          }
+        },
+        "required": [
+          "latitude",
+          "longitude"
+        ]
+      },
+      "BatchAddressDto": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "countryCode": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 2
+          },
+          "requestId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "address"
+        ]
+      },
+      "BatchGeocodeDto": {
+        "type": "object",
+        "properties": {
+          "addresses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BatchAddressDto"
+            }
+          },
+          "priority": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 10
+          }
+        },
+        "required": [
+          "addresses"
+        ]
+      },
+      "ValidateAddressDto": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "countryCode": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 2
+          }
+        },
+        "required": [
+          "address"
+        ]
+      },
+      "FormatAddressDto": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "object"
+          },
+          "countryCode": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 2
+          }
+        },
+        "required": [
+          "address"
+        ]
+      },
       "CreatePaymentOrderDto": {
         "type": "object",
         "properties": {
@@ -6816,11 +8258,13 @@
           },
           "notifyUrl": {
             "type": "string",
+            "format": "uri",
             "description": "异步通知URL",
             "example": "https://example.com/payment/notify"
           },
           "returnUrl": {
             "type": "string",
+            "format": "uri",
             "description": "同步返回URL",
             "example": "https://example.com/payment/return"
           },
@@ -7135,13 +8579,13 @@
         "type": "object",
         "properties": {
           "paymentOrderIds": {
+            "minItems": 1,
+            "maxItems": 50,
             "description": "支付订单ID列表",
             "example": [
               "PAY_1234567890ABCDEF",
               "PAY_ABCDEF1234567890"
             ],
-            "minItems": 1,
-            "maxItems": 50,
             "type": "array",
             "items": {
               "type": "string"
@@ -7515,78 +8959,6 @@
           "crypto"
         ]
       },
-      "Notification": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "number"
-          },
-          "userId": {
-            "type": "number"
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "email",
-              "sms",
-              "push",
-              "in_app"
-            ]
-          },
-          "title": {
-            "type": "string"
-          },
-          "content": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "pending",
-              "sent",
-              "failed",
-              "read"
-            ]
-          },
-          "metadata": {
-            "type": "object"
-          },
-          "scheduledAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "sentAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "readAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "userId",
-          "type",
-          "title",
-          "content",
-          "status",
-          "metadata",
-          "scheduledAt",
-          "sentAt",
-          "readAt",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
       "AuditLogEntity": {
         "type": "object",
         "properties": {
@@ -7659,287 +9031,260 @@
         "type": "object",
         "properties": {}
       },
-      "Order": {
+      "LoginResponseDto": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "number"
-          },
-          "userId": {
-            "type": "number"
-          },
-          "orderNumber": {
-            "type": "string"
-          },
-          "totalAmount": {
-            "type": "number"
-          },
-          "status": {
+          "access_token": {
             "type": "string",
-            "enum": [
-              "pending",
-              "paid",
-              "confirmed",
-              "shipped",
-              "delivered",
-              "cancelled"
-            ]
+            "description": "访问令牌",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
           },
-          "paymentStatus": {
+          "refresh_token": {
             "type": "string",
-            "enum": [
-              "pending",
-              "paid",
-              "failed",
-              "refunded"
-            ]
+            "description": "刷新令牌",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
           },
-          "items": {
-            "type": "array",
-            "items": {
-              "type": "object"
+          "expires_in": {
+            "type": "number",
+            "description": "令牌过期时间（秒）",
+            "example": 900
+          },
+          "user": {
+            "type": "object",
+            "description": "用户信息",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "number"
+              },
+              "email": {
+                "type": "string"
+              },
+              "username": {
+                "type": "string"
+              },
+              "role": {
+                "type": "string"
+              }
             }
-          },
-          "user": {
-            "type": "object"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "shippedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "paidAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "completedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "shippingAddress": {
-            "type": "string"
-          },
-          "recipientName": {
-            "type": "string"
-          },
-          "recipientPhone": {
-            "type": "string"
-          },
-          "paymentMethod": {
-            "type": "string"
-          },
-          "notes": {
-            "type": "string"
           }
         },
         "required": [
-          "id",
-          "userId",
-          "orderNumber",
-          "totalAmount",
-          "status",
-          "paymentStatus",
-          "items",
-          "createdAt"
-        ]
-      },
-      "UserRoleEntity": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "number"
-          },
-          "userId": {
-            "type": "number"
-          },
-          "roleId": {
-            "type": "number"
-          },
-          "user": {
-            "type": "object"
-          }
-        },
-        "required": [
-          "id",
-          "userId",
-          "roleId",
+          "access_token",
+          "refresh_token",
+          "expires_in",
           "user"
         ]
       },
-      "User": {
+      "ProfileResponseDto": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "number",
-            "description": "用户ID"
-          },
-          "email": {
+          "user": {
+            "type": "object",
+            "description": "用户信息",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "number"
+              },
+              "sub": {
+                "type": "number"
+              },
+              "email": {
+                "type": "string"
+              },
+              "username": {
+                "type": "string"
+              },
+              "role": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "required": [
+          "user"
+        ]
+      },
+      "MessageResponseDto": {
+        "type": "object",
+        "properties": {
+          "message": {
             "type": "string",
-            "description": "邮箱地址"
+            "description": "响应消息",
+            "example": "操作成功"
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
+      "CreateUserDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
           },
           "password": {
-            "type": "string",
-            "description": "密码（加密后）"
+            "type": "string"
           },
-          "username": {
-            "type": "string",
-            "description": "用户名"
+          "firstName": {
+            "type": "string"
           },
-          "role": {
-            "enum": [
-              "user",
-              "admin",
-              "moderator"
-            ],
+          "lastName": {
+            "type": "string"
+          },
+          "birthday": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "address": {
+            "type": "object"
+          },
+          "preferences": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "firstName",
+          "lastName"
+        ]
+      },
+      "UpdateUserDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "birthday": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "address": {
+            "type": "object"
+          },
+          "preferences": {
+            "type": "object"
+          }
+        }
+      },
+      "CreateProductDto": {
+        "type": "object",
+        "properties": {
+          "name": {
             "type": "string",
-            "description": "用户角色"
+            "description": "产品名称",
+            "example": "高端智能手机"
+          },
+          "description": {
+            "type": "string",
+            "description": "产品描述",
+            "example": "最新款高端智能手机，配备顶级摄像头"
+          },
+          "price": {
+            "type": "number",
+            "minimum": 0,
+            "description": "产品价格",
+            "example": 2999.99
+          },
+          "originalPrice": {
+            "type": "number",
+            "minimum": 0,
+            "description": "原价",
+            "example": 3499.99
+          },
+          "stock": {
+            "type": "number",
+            "minimum": 0,
+            "description": "库存数量",
+            "example": 100
+          },
+          "categoryId": {
+            "type": "number",
+            "description": "产品分类ID",
+            "example": 1
+          },
+          "brand": {
+            "type": "string",
+            "description": "产品品牌",
+            "example": "Apple"
+          },
+          "images": {
+            "description": "产品图片URL数组",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "specifications": {
+            "type": "object",
+            "description": "产品规格"
           },
           "isActive": {
             "type": "boolean",
-            "description": "是否激活"
-          },
-          "avatar": {
-            "type": "string",
-            "description": "头像URL"
-          },
-          "phone": {
-            "type": "string",
-            "description": "电话号码"
-          },
-          "casdoorId": {
-            "type": "string",
-            "description": "Casdoor用户ID"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "description": "创建时间"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string",
-            "description": "更新时间"
-          },
-          "lastLoginAt": {
-            "format": "date-time",
-            "type": "string",
-            "description": "最后登录时间"
-          },
-          "loginCount": {
-            "type": "number",
-            "description": "登录次数"
-          },
-          "orders": {
-            "description": "用户订单",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Order"
-            }
-          },
-          "userRoles": {
-            "description": "用户角色关联",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/UserRoleEntity"
-            }
-          },
-          "addresses": {
-            "description": "用户地址列表",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Address"
-            }
-          },
-          "customerProfile": {
-            "description": "客户档案",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/CustomerProfile"
-              }
-            ]
+            "description": "是否上架",
+            "default": true
           }
         },
         "required": [
-          "id",
-          "email",
-          "password",
-          "username",
-          "role",
-          "isActive",
-          "avatar",
-          "phone",
-          "createdAt",
-          "updatedAt",
-          "lastLoginAt",
-          "loginCount",
-          "orders",
-          "userRoles",
-          "addresses",
-          "customerProfile"
+          "name",
+          "description",
+          "price",
+          "stock",
+          "categoryId",
+          "brand"
         ]
       },
-      "Address": {
+      "ProductImage": {
         "type": "object",
         "properties": {
           "id": {
             "type": "number",
-            "description": "地址ID"
+            "description": "图片ID"
           },
-          "user": {
-            "description": "所属用户",
+          "product": {
+            "description": "关联产品",
             "allOf": [
               {
-                "$ref": "#/components/schemas/User"
+                "$ref": "#/components/schemas/Product"
               }
             ]
           },
-          "userId": {
+          "productId": {
             "type": "number",
-            "description": "用户ID"
+            "description": "产品ID"
           },
-          "type": {
-            "enum": [
-              "shipping",
-              "billing",
-              "both"
-            ],
+          "url": {
             "type": "string",
-            "description": "地址类型"
+            "description": "图片URL"
           },
-          "isDefault": {
+          "title": {
+            "type": "string",
+            "description": "图片标题"
+          },
+          "description": {
+            "type": "string",
+            "description": "图片描述"
+          },
+          "sortOrder": {
+            "type": "number",
+            "description": "排序权重"
+          },
+          "isActive": {
             "type": "boolean",
-            "description": "是否默认地址"
-          },
-          "recipientName": {
-            "type": "string",
-            "description": "收货人姓名"
-          },
-          "phone": {
-            "type": "string",
-            "description": "联系电话"
-          },
-          "province": {
-            "type": "string",
-            "description": "省份"
-          },
-          "city": {
-            "type": "string",
-            "description": "城市"
-          },
-          "district": {
-            "type": "string",
-            "description": "区县"
-          },
-          "detail": {
-            "type": "string",
-            "description": "详细地址"
-          },
-          "postalCode": {
-            "type": "string",
-            "description": "邮政编码"
+            "description": "是否启用"
           },
           "createdAt": {
             "format": "date-time",
@@ -7954,96 +9299,184 @@
         },
         "required": [
           "id",
-          "user",
-          "userId",
-          "type",
-          "isDefault",
-          "recipientName",
-          "phone",
-          "province",
-          "city",
-          "district",
-          "detail",
-          "postalCode",
+          "product",
+          "productId",
+          "url",
+          "title",
+          "description",
+          "sortOrder",
+          "isActive",
           "createdAt",
           "updatedAt"
         ]
       },
-      "CustomerProfile": {
+      "Product": {
         "type": "object",
         "properties": {
           "id": {
             "type": "number",
-            "description": "档案ID"
+            "description": "产品ID"
           },
-          "user": {
-            "description": "关联用户",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/User"
-              }
-            ]
-          },
-          "userId": {
-            "type": "number",
-            "description": "用户ID"
-          },
-          "level": {
-            "enum": [
-              "bronze",
-              "silver",
-              "gold",
-              "platinum",
-              "diamond"
-            ],
+          "name": {
             "type": "string",
-            "description": "客户等级"
+            "description": "产品名称"
           },
-          "points": {
-            "type": "number",
-            "description": "积分余额"
-          },
-          "totalSpent": {
-            "type": "number",
-            "description": "总消费金额"
-          },
-          "orderCount": {
-            "type": "number",
-            "description": "订单总数"
-          },
-          "returnCount": {
-            "type": "number",
-            "description": "退货次数"
-          },
-          "reviewCount": {
-            "type": "number",
-            "description": "评价次数"
-          },
-          "averageRating": {
+          "description": {
             "type": "string",
-            "description": "平均评分"
+            "description": "产品描述"
           },
-          "firstPurchaseAt": {
-            "format": "date-time",
-            "type": "string",
-            "description": "首次购买时间"
-          },
-          "lastPurchaseAt": {
-            "format": "date-time",
-            "type": "string",
-            "description": "最近购买时间"
-          },
-          "consecutiveLoginDays": {
+          "price": {
             "type": "number",
-            "description": "连续登录天数"
+            "description": "产品价格"
+          },
+          "originalPrice": {
+            "type": "number",
+            "description": "原价"
+          },
+          "stock": {
+            "type": "number",
+            "description": "库存数量"
+          },
+          "sales": {
+            "type": "number",
+            "description": "销量"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "是否上架"
+          },
+          "views": {
+            "type": "number",
+            "description": "浏览量"
+          },
+          "favorites": {
+            "type": "number",
+            "description": "收藏数"
+          },
+          "mainImage": {
+            "type": "string",
+            "description": "主图URL"
           },
           "tags": {
-            "type": "string",
-            "description": "客户标签（JSON格式）"
+            "description": "产品标签",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
-          "notes": {
+          "specifications": {
+            "type": "object",
+            "description": "产品规格"
+          },
+          "category": {
+            "description": "产品分类",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Category"
+              }
+            ]
+          },
+          "images": {
+            "description": "产品图片",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductImage"
+            }
+          },
+          "createdAt": {
+            "format": "date-time",
             "type": "string",
-            "description": "备注信息"
+            "description": "创建时间"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "更新时间"
+          },
+          "publishedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "上架时间"
+          },
+          "version": {
+            "type": "number",
+            "description": "乐观锁版本"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "price",
+          "originalPrice",
+          "stock",
+          "sales",
+          "isActive",
+          "views",
+          "favorites",
+          "mainImage",
+          "tags",
+          "specifications",
+          "category",
+          "images",
+          "createdAt",
+          "updatedAt",
+          "publishedAt",
+          "version"
+        ]
+      },
+      "Category": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "description": "分类ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "分类名称"
+          },
+          "slug": {
+            "type": "string",
+            "description": "分类别名"
+          },
+          "description": {
+            "type": "string",
+            "description": "分类描述"
+          },
+          "icon": {
+            "type": "string",
+            "description": "分类图标"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "是否启用"
+          },
+          "sortOrder": {
+            "type": "number",
+            "description": "排序权重"
+          },
+          "children": {
+            "description": "子分类",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Category"
+            }
+          },
+          "parent": {
+            "description": "父分类",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Category"
+              }
+            ]
+          },
+          "products": {
+            "description": "分类下的产品",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Product"
+            }
           },
           "createdAt": {
             "format": "date-time",
@@ -8058,23 +9491,77 @@
         },
         "required": [
           "id",
-          "user",
-          "userId",
-          "level",
-          "points",
-          "totalSpent",
-          "orderCount",
-          "returnCount",
-          "reviewCount",
-          "averageRating",
-          "firstPurchaseAt",
-          "lastPurchaseAt",
-          "consecutiveLoginDays",
-          "tags",
-          "notes",
+          "name",
+          "slug",
+          "description",
+          "icon",
+          "isActive",
+          "sortOrder",
+          "children",
+          "parent",
+          "products",
           "createdAt",
           "updatedAt"
         ]
+      },
+      "UpdateProductDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "产品名称",
+            "example": "高端智能手机"
+          },
+          "description": {
+            "type": "string",
+            "description": "产品描述",
+            "example": "最新款高端智能手机，配备顶级摄像头"
+          },
+          "price": {
+            "type": "number",
+            "minimum": 0,
+            "description": "产品价格",
+            "example": 2999.99
+          },
+          "originalPrice": {
+            "type": "number",
+            "minimum": 0,
+            "description": "原价",
+            "example": 3499.99
+          },
+          "stock": {
+            "type": "number",
+            "minimum": 0,
+            "description": "库存数量",
+            "example": 100
+          },
+          "categoryId": {
+            "type": "number",
+            "description": "产品分类ID",
+            "example": 1
+          },
+          "brand": {
+            "type": "string",
+            "description": "产品品牌",
+            "example": "Apple"
+          },
+          "images": {
+            "description": "产品图片URL数组",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "specifications": {
+            "type": "object",
+            "description": "产品规格"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "是否上架",
+            "default": true
+          }
+        }
       },
       "PaginatedResponseDto": {
         "type": "object",

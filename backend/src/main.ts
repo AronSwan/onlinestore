@@ -8,36 +8,47 @@ import compression from 'compression';
 import { ConfigurationValidator } from './config/configuration.validator';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
-import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { FileUploadInterceptor } from './common/interceptors/file-upload.interceptor';
+import { MetricsInterceptor } from './monitoring/metrics.interceptor';
+import { MonitoringService } from './monitoring/monitoring.service';
 
 export async function bootstrap() {
-  // 配置验证
-  const configValidation = ConfigurationValidator.validateAll();
-  if (!configValidation.isValid) {
-    console.error('❌ 配置验证失败:');
-    configValidation.errors.forEach(error => console.error(`  - ${error}`));
-    process.exit(1);
-  }
-
-  if (configValidation.warnings.length > 0) {
-    console.warn('⚠️  配置警告:');
-    configValidation.warnings.forEach(warning => console.warn(`  - ${warning}`));
+  // 配置验证（可通过环境变量跳过）
+  const skipValidation = process.env.SKIP_CONFIG_VALIDATION === 'true';
+  if (!skipValidation) {
+    const configValidation = ConfigurationValidator.validateAll();
+    if (!configValidation.isValid) {
+      console.error('❌ 配置验证失败:');
+      configValidation.errors.forEach(error => console.error(`  - ${error}`));
+      process.exit(1);
+    }
+    if (configValidation.warnings.length > 0) {
+      console.warn('⚠️  配置警告:');
+      configValidation.warnings.forEach(warning => console.warn(`  - ${warning}`));
+    }
+  } else {
+    console.warn('⚠️ 本地开发跳过配置验证（SKIP_CONFIG_VALIDATION=true）');
   }
 
   const app = await NestFactory.create(AppModule, {
     bufferLogs: true,
   });
 
-  // 使用Winston日志
-  const logger = app.get(WINSTON_MODULE_NEST_PROVIDER);
+  // 使用NestJS内置日志
+  const logger = new Logger('Bootstrap');
   app.useLogger(logger);
+
+  // 获取MonitoringService实例
+  const monitoringService = app.get(MonitoringService);
 
   // 全局异常过滤器
   app.useGlobalFilters(new GlobalExceptionFilter());
 
   // 全局日志拦截器
   app.useGlobalInterceptors(new LoggingInterceptor());
+
+  // 监控指标拦截器
+  app.useGlobalInterceptors(new MetricsInterceptor(monitoringService));
 
   // 文件上传安全拦截器
   app.useGlobalInterceptors(new FileUploadInterceptor());
@@ -86,7 +97,7 @@ export async function bootstrap() {
       forbidNonWhitelisted: true,
       transform: true,
       // 文件上传验证
-      validateCustomDecorators: true,
+      // validateCustomDecorators: true,
     }),
   );
 

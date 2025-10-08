@@ -1,18 +1,73 @@
 # 架构与源码结构（加强版）
 
-核心文件与职责
-- verifier.go：核心 Verifier 类型与主流程（配置、Verify 入口、Reachable 计算、自动更新调度控制）。
-  - 可配置项：smtpCheckEnabled、catchAllCheckEnabled、domainSuggestEnabled、gravatarCheckEnabled、fromEmail、helloName、proxyURI、connectTimeout、operationTimeout、apiVerifiers（厂商API路径）。
-- smtp.go：SMTP 验证实现（并发拨号全部 MX，超时控制；RCPT 随机地址进行 catch-all 检测；具体用户名的投递可达性判定）。
-- mx.go：MX 记录查询（net.LookupMX），返回 HasMXRecord 与 MX 列表。
-- address.go：邮箱语法解析（用户名/域名），配合 constants/util。
-- misc.go：Free Provider/Role/Disposable 等辅助校验。
-- gravatar.go：Gravatar 查询（可选），网络往返。
-- suggestion.go / metadata_suggestion.go：域名拼写建议（如 gmai.com -> gmail.com）。
-- metadata_disposable.go（~3.1MB）/ metadata_free.go / metadata_role.go：内置元数据；加载后驻留内存。
-- schedule.go：定时调度（time.Ticker + goroutine），用于自动更新一次性域名清单。
-- handler.go：updateDisposableDomains 实现（HTTP 拉取 JSON 清单，原子性与一致性需注意）。
-- error.go / constants.go / util.go：错误语义、常量与工具方法。
+## 目录
+- [项目架构概述](#项目架构概述)
+- [核心架构组件与设计模式](#核心架构组件与设计模式)
+- [架构特点与设计模式应用](#架构特点与设计模式应用)
+- [关键数据结构](#关键数据结构)
+- [调用链与控制流](#调用链与控制流)
+- [并发与定时机制](#并发与定时机制)
+- [注意点](#注意点)
+
+## 项目架构概述
+
+AfterShip Email Verifier 是一个用 Go 语言编写的邮箱验证库，采用模块化设计，具有清晰的职责分离和优秀的设计模式应用。
+
+## 核心架构组件与设计模式
+
+### 1. 验证器核心 (Verifier)
+- **文件**: `verifier.go` - 核心 Verifier 类型与主流程
+- **职责**: 协调所有验证流程，提供统一的验证接口
+- **设计模式**: 门面模式 (Facade Pattern)
+- **可配置项**: smtpCheckEnabled、catchAllCheckEnabled、domainSuggestEnabled、gravatarCheckEnabled、fromEmail、helloName、proxyURI、connectTimeout、operationTimeout、apiVerifiers（厂商API路径）
+
+### 2. 验证模块
+- **语法验证**: `address.go` - 邮箱格式验证，用户名/域名分离
+- **MX记录验证**: `mx.go` - DNS MX记录检查（net.LookupMX）
+- **SMTP验证**: `smtp.go` - 邮件服务器连接验证（并发拨号全部 MX，超时控制）
+- **元数据验证**: 
+  - `metadata_disposable.go` - 一次性邮箱检测（~3.1MB内置数据）
+  - `metadata_free.go` - 免费邮箱服务商检测
+  - `metadata_role.go` - 角色邮箱检测
+  - `misc.go` - 辅助校验逻辑
+
+### 3. 辅助模块
+- **Gravatar集成**: `gravatar.go` - Gravatar头像检测（可选）
+- **域名建议**: `suggestion.go` / `metadata_suggestion.go` - 拼写纠错（如 gmai.com -> gmail.com）
+- **定时调度**: `schedule.go` - 自动更新一次性域名清单（time.Ticker + goroutine）
+- **数据更新**: `handler.go` - updateDisposableDomains 实现（HTTP 拉取 JSON 清单）
+- **错误处理**: `error.go` - 统一的错误处理机制
+- **工具函数**: `constants.go` / `util.go` - 常量定义和通用工具
+
+## 架构特点与设计模式应用
+
+### 1. 模块化设计
+- 每个验证功能独立封装，高内聚低耦合
+- 易于扩展和维护，支持选择性启用功能
+- 配置驱动，通过配置选项控制验证行为
+
+### 2. 设计模式应用
+#### 建造者模式 (Builder Pattern)
+```go
+verifier := emailverifier.
+    NewVerifier().
+    EnableSMTPCheck().
+    EnableAutoUpdateDisposable().
+    Proxy("socks5://proxy:1080")
+```
+
+#### 策略模式 (Strategy Pattern)
+- 不同的验证策略可以灵活组合
+- 支持自定义验证规则和验证流程
+
+#### 观察者模式 (Observer Pattern)
+- 支持验证过程中的事件监听
+- 便于监控和日志记录
+
+### 3. 并发安全设计
+- 线程安全的验证器实例
+- 适当的锁机制（sync.RWMutex）
+- 避免竞态条件，确保数据一致性
 
 关键数据结构
 - Verifier：

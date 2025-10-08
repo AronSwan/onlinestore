@@ -1,0 +1,21 @@
+{
+  "name": "email-verifier",
+  "version": "1.0.0",
+  "description": "Email verification microservice",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "health": "node health.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "keywords": [
+    "email",
+    "verification",
+    "microservice"
+  ],
+  "author": "",
+  "license": "ISC"
+}

@@ -22,12 +22,26 @@ export class CreateUsersReceiveAddress20251001000002 implements MigrationInterfa
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-    await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS IDX_users_receive_address_user ON users_receive_address (user_id)`,
+    const tableName = 'users_receive_address';
+    // 创建索引（兼容不支持 IF NOT EXISTS 的 MySQL/TiDB）
+    const [userIdxExists] = await queryRunner.query(
+      `SELECT COUNT(1) AS cnt FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = 'IDX_users_receive_address_user'`,
+      [tableName],
     );
-    await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS IDX_users_receive_address_user_default ON users_receive_address (user_id, is_default)`,
+    if (!userIdxExists?.cnt) {
+      await queryRunner.query(
+        `CREATE INDEX IDX_users_receive_address_user ON ${tableName} (user_id)`,
+      );
+    }
+    const [userDefaultIdxExists] = await queryRunner.query(
+      `SELECT COUNT(1) AS cnt FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = 'IDX_users_receive_address_user_default'`,
+      [tableName],
     );
+    if (!userDefaultIdxExists?.cnt) {
+      await queryRunner.query(
+        `CREATE INDEX IDX_users_receive_address_user_default ON ${tableName} (user_id, is_default)`,
+      );
+    }
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

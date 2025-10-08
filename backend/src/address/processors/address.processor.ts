@@ -71,7 +71,12 @@ export class AddressProcessor {
 
     this.logger.log(`Processing batch geocoding job for ${addresses.length} addresses`);
 
-    const results = [];
+    const results: Array<{
+      address: string;
+      result: any;
+      success: boolean;
+      error?: string;
+    }> = [];
 
     for (const address of addresses) {
       try {
@@ -92,6 +97,7 @@ export class AddressProcessor {
         this.logger.error(`Error geocoding address ${address}: ${error.message}`);
         results.push({
           address,
+          result: null,
           error: error.message,
           success: false,
         });

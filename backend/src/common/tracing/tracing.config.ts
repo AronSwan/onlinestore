@@ -99,7 +99,7 @@ function createResource(config: TracingConfig) {
  * 创建Span导出器 - 集成OpenObserve
  */
 function createSpanExporters(config: TracingConfig) {
-  const exporters = [];
+  const exporters: any[] = [];
 
   // OpenObserve导出器（优先使用）
   if (config.openobserve?.enabled) {
@@ -146,7 +146,7 @@ function createSpanExporters(config: TracingConfig) {
  * 创建指标导出器 - 使用OpenObserve替代Prometheus
  */
 function createMetricReaders(config: TracingConfig) {
-  const readers = [];
+  const readers: any[] = [];
 
   if (config.metrics?.enabled) {
     // 使用OpenObserve指标导出器

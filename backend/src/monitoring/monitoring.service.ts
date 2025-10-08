@@ -331,7 +331,7 @@ export class MonitoringService {
 
     // Determine overall health status
     let status = 'ok';
-    const issues = [];
+    const issues: string[] = [];
 
     if (metrics.errorRate > 5) {
       status = 'degraded';
@@ -514,7 +514,11 @@ export class MonitoringService {
 
   // Generate performance recommendations
   private generateRecommendations(stats: any, detailedMetrics: any) {
-    const recommendations = [];
+    const recommendations: Array<{
+      priority: string;
+      category: string;
+      message: string;
+    }> = [];
 
     if (stats.errorRate > 5) {
       recommendations.push({

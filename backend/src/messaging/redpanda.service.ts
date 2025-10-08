@@ -17,37 +17,97 @@ export class RedpandaService implements OnModuleInit, OnModuleDestroy {
   private consumers: Consumer[] = [];
 
   constructor() {
-    const brokers = (process.env.REDPANDA_BROKERS || 'localhost:9092').split(',');
-    const clientId = process.env.REDPANDA_CLIENT_ID || 'onlinestore-backend';
-    const ssl = process.env.REDPANDA_SSL === 'true';
-    const saslUser = process.env.REDPANDA_SASL_USERNAME;
-    const saslPass = process.env.REDPANDA_SASL_PASSWORD;
-    const cfg: KafkaConfig = {
-      clientId,
-      brokers,
-      ssl: ssl ? {} : undefined,
-      sasl:
-        saslUser && saslPass
-          ? { mechanism: 'plain', username: saslUser, password: saslPass }
-          : undefined,
-      logLevel: logLevel.ERROR,
-    };
-    this.kafka = new Kafka(cfg);
-    this.producer = this.kafka.producer({ allowAutoTopicCreation: true });
+    const isDev = process.env.NODE_ENV === 'development';
+    const kafkaEnabledEnv = process.env.KAFKA_ENABLED;
+    const kafkaEnabled = kafkaEnabledEnv === undefined ? !isDev : kafkaEnabledEnv !== 'false';
+
+    if (isDev || !kafkaEnabled) {
+      // 在开发环境中创建一个空的 Kafka 实例
+      this.kafka = {
+        producer: () => ({
+          connect: async () => {},
+          disconnect: async () => {},
+          send: async () => {},
+          on: () => {},
+        }),
+        admin: () => ({
+          connect: async () => {},
+          disconnect: async () => {},
+          createTopics: async () => {},
+          fetchTopicMetadata: async () => ({ topics: [] }),
+        }),
+        consumer: () => ({
+          connect: async () => {},
+          disconnect: async () => {},
+          subscribe: async () => {},
+          run: async () => {},
+        }),
+      } as any;
+      this.producer = this.kafka.producer({ allowAutoTopicCreation: true });
+      if (!kafkaEnabled) {
+        this.logger.log('Kafka/Redpanda disabled via KAFKA_ENABLED=false; using stub client');
+      }
+    } else {
+      const brokers = (process.env.REDPANDA_BROKERS || 'localhost:9092').split(',');
+      const clientId = process.env.REDPANDA_CLIENT_ID || 'onlinestore-backend';
+      const ssl = process.env.REDPANDA_SSL === 'true';
+      const saslUser = process.env.REDPANDA_SASL_USERNAME;
+      const saslPass = process.env.REDPANDA_SASL_PASSWORD;
+      const cfg: KafkaConfig = {
+        clientId,
+        brokers,
+        ssl: ssl ? {} : undefined,
+        sasl:
+          saslUser && saslPass
+            ? { mechanism: 'plain', username: saslUser, password: saslPass }
+            : undefined,
+        logLevel: logLevel.ERROR,
+      };
+      this.kafka = new Kafka(cfg);
+      this.producer = this.kafka.producer({ allowAutoTopicCreation: true });
+    }
   }
 
   async onModuleInit() {
-    await this.producer.connect();
-    this.logger.log('Redpanda producer connected');
+    try {
+      const kafkaEnabledEnv = process.env.KAFKA_ENABLED;
+      const isDev = process.env.NODE_ENV === 'development';
+      const kafkaEnabled = kafkaEnabledEnv === undefined ? !isDev : kafkaEnabledEnv !== 'false';
 
-    // 可选：预创建常用主题
-    const admin = this.kafka.admin();
-    await admin.connect();
-    await admin.createTopics({
-      topics: Object.values(Topics).map(t => ({ topic: t, numPartitions: 3 })),
-      waitForLeaders: true,
-    });
-    await admin.disconnect();
+      if (!kafkaEnabled) {
+        this.logger.log('Kafka/Redpanda is disabled; skipping connection and topic creation');
+        return;
+      }
+
+      await this.producer.connect();
+      this.logger.log('Redpanda producer connected');
+
+      // 可选：预创建常用主题
+      const admin = this.kafka.admin();
+      await admin.connect();
+      await admin.createTopics({
+        topics: Object.values(Topics).map(t => ({ topic: t, numPartitions: 3 })),
+        waitForLeaders: true,
+      });
+      await admin.disconnect();
+    } catch (error) {
+      const isDev = process.env.NODE_ENV === 'development';
+      const kafkaEnabledEnv = process.env.KAFKA_ENABLED;
+      const kafkaEnabled = kafkaEnabledEnv === undefined ? !isDev : kafkaEnabledEnv !== 'false';
+      if (isDev || !kafkaEnabled) {
+        this.logger.warn('Failed to connect to Redpanda in development mode, continuing without it');
+        // 创建一个空的 producer，避免运行时错误
+        this.producer = {
+          connect: async () => {},
+          disconnect: async () => {},
+          send: async () => {},
+          on: () => {},
+        } as any;
+      } else {
+        this.logger.error('Failed to connect to Redpanda', error);
+        throw error;
+      }
+    }
   }
 
   async onModuleDestroy() {

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import Redis from 'ioredis';
+import { createRedisClient, RedisLike } from '../../../common/redis/redis-utils';
 import { CartRedisConfig } from '../config/cart-redis.config';
 import { CartItemAggregate } from '../../domain/aggregates/cart-item.aggregate';
 
@@ -11,7 +11,7 @@ import { CartItemAggregate } from '../../domain/aggregates/cart-item.aggregate';
 @Injectable()
 export class CartCacheService {
   private readonly logger = new Logger(CartCacheService.name);
-  private readonly redis: Redis;
+  private readonly redis: RedisLike;
   private readonly ttl: number;
 
   constructor(
@@ -19,7 +19,7 @@ export class CartCacheService {
     private readonly cartRedisConfig: CartRedisConfig,
   ) {
     const cacheConfig = this.cartRedisConfig.getCacheConfig();
-    this.redis = new Redis(cacheConfig);
+    this.redis = createRedisClient(this.configService, cacheConfig);
     this.ttl = cacheConfig.ttl;
   }
 

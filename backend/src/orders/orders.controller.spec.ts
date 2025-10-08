@@ -106,6 +106,23 @@ describe('OrdersController', () => {
         recipientName: 'John Doe',
         recipientPhone: '123-456-7890',
         paymentMethod: 'credit_card',
+        items: [
+          {
+            id: 1,
+            orderId: 1,
+            productId: 1,
+            quantity: 2,
+            unitPrice: 19.99,
+            totalPrice: 39.98,
+            productSnapshot: {
+              name: 'Test Product',
+              image: 'test.jpg',
+              specifications: {},
+            },
+            order: {} as any, // 避免循环引用
+            product: {} as any, // 避免循环引用
+          },
+        ],
       };
 
       jest.spyOn(ordersService, 'create').mockResolvedValue(createdOrder);
@@ -243,6 +260,38 @@ describe('OrdersController', () => {
         recipientName: 'John Doe',
         recipientPhone: '123-456-7890',
         paymentMethod: 'credit_card',
+        items: [
+          {
+            id: 1,
+            orderId: 1,
+            productId: 1,
+            quantity: 2,
+            unitPrice: 19.99,
+            totalPrice: 39.98,
+            productSnapshot: {
+              name: 'Test Product',
+              image: 'test.jpg',
+              specifications: {},
+            },
+            order: {} as any, // 避免循环引用
+            product: {} as any, // 避免循环引用
+          },
+          {
+            id: 2,
+            orderId: 1,
+            productId: 2,
+            quantity: 1,
+            unitPrice: 29.99,
+            totalPrice: 29.99,
+            productSnapshot: {
+              name: 'Test Product 2',
+              image: 'test2.jpg',
+              specifications: {},
+            },
+            order: {} as any, // 避免循环引用
+            product: {} as any, // 避免循环引用
+          },
+        ],
       };
 
       jest.spyOn(ordersService, 'create').mockResolvedValue(createdOrder);
@@ -262,6 +311,7 @@ describe('OrdersController', () => {
           items: [
             {
               id: 1,
+              orderId: 1,
               productId: 1,
               quantity: 2,
               unitPrice: 19.99,
@@ -271,6 +321,8 @@ describe('OrdersController', () => {
                 image: 'test.jpg',
                 specifications: {},
               },
+              order: {} as any, // 避免循环引用
+              product: {} as any, // 避免循环引用
             },
           ],
           status: OrderStatus.PENDING,
@@ -286,6 +338,7 @@ describe('OrdersController', () => {
           items: [
             {
               id: 2,
+              orderId: 2,
               productId: 2,
               quantity: 1,
               unitPrice: 29.99,
@@ -295,6 +348,8 @@ describe('OrdersController', () => {
                 image: 'test2.jpg',
                 specifications: {},
               },
+              order: {} as any, // 避免循环引用
+              product: {} as any, // 避免循环引用
             },
           ],
           status: OrderStatus.SHIPPED,
@@ -365,6 +420,7 @@ describe('OrdersController', () => {
           items: [
             {
               id: 1,
+              orderId: 1,
               productId: 1,
               quantity: 2,
               unitPrice: 19.99,
@@ -374,6 +430,8 @@ describe('OrdersController', () => {
                 image: 'test.jpg',
                 specifications: {},
               },
+              order: {} as any, // 避免循环引用
+              product: {} as any, // 避免循环引用
             },
           ],
           status: OrderStatus.PENDING,
@@ -446,6 +504,7 @@ describe('OrdersController', () => {
         items: [
           {
             id: 1,
+            orderId: 1,
             productId: 1,
             quantity: 2,
             unitPrice: 19.99,
@@ -455,6 +514,8 @@ describe('OrdersController', () => {
               image: 'test.jpg',
               specifications: {},
             },
+            order: {} as any, // 避免循环引用
+            product: {} as any, // 避免循环引用
           },
         ],
         createdAt: new Date(),
@@ -495,12 +556,26 @@ describe('OrdersController', () => {
           id: 1,
           username: 'testuser',
           email: 'test@example.com',
-          firstName: 'Test',
-          lastName: 'User',
+          password: 'hashedPassword',
+          role: 'user' as any,
+          isActive: true,
+          avatar: '',
+          phone: '',
+          casdoorId: '',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          lastLoginAt: new Date(),
+          loginCount: 0,
+          failedLoginAttempts: 0,
+          lastFailedLoginAt: null as any,
+          accountLockedUntil: null as any,
+          addresses: [],
+          customerProfile: null as any,
         },
         items: [
           {
             id: 1,
+            orderId: 1,
             productId: 1,
             quantity: 2,
             unitPrice: 19.99,
@@ -510,6 +585,8 @@ describe('OrdersController', () => {
               image: 'test.jpg',
               specifications: {},
             },
+            order: {} as any, // 避免循环引用
+            product: {} as any, // 避免循环引用
           },
         ],
         createdAt: new Date(),
@@ -525,7 +602,9 @@ describe('OrdersController', () => {
 
       if (result) {
         expect(result.user).toBeDefined();
-        expect(result.user.username).toBe('testuser');
+        if (result.user) {
+          expect(result.user.username).toBe('testuser');
+        }
       }
     });
   });
@@ -546,6 +625,7 @@ describe('OrdersController', () => {
         items: [
           {
             id: 1,
+            orderId: 1,
             productId: 1,
             quantity: 2,
             unitPrice: 19.99,
@@ -555,6 +635,8 @@ describe('OrdersController', () => {
               image: 'test.jpg',
               specifications: {},
             },
+            order: {} as any, // 避免循环引用
+            product: {} as any, // 避免循环引用
           },
         ],
         createdAt: new Date(),
@@ -596,6 +678,7 @@ describe('OrdersController', () => {
         items: [
           {
             id: 1,
+            orderId: 1,
             productId: 1,
             quantity: 2,
             unitPrice: 19.99,
@@ -605,6 +688,8 @@ describe('OrdersController', () => {
               image: 'test.jpg',
               specifications: {},
             },
+            order: {} as any, // 避免循环引用
+            product: {} as any, // 避免循环引用
           },
         ],
         createdAt: new Date(),
@@ -633,6 +718,7 @@ describe('OrdersController', () => {
         items: [
           {
             id: 1,
+            orderId: 1,
             productId: 1,
             quantity: 2,
             unitPrice: 19.99,
@@ -642,6 +728,8 @@ describe('OrdersController', () => {
               image: 'test.jpg',
               specifications: {},
             },
+            order: {} as any, // 避免循环引用
+            product: {} as any, // 避免循环引用
           },
         ],
         createdAt: new Date(),

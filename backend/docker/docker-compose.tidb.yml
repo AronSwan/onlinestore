@@ -1,53 +1,233 @@
+# TiDB 独立服务配置文件
+# 可以单独启动，也可以通过主配置文件启动
 version: "3.8"
+
 services:
+  # PD (Placement Driver) - TiDB 集群的调度器
   pd:
     image: pingcap/pd:v7.5.0
-    container_name: tidb-pd
+    container_name: tidb-pd-standalone
+    restart: unless-stopped
     command:
       - --name=pd
       - --client-urls=http://0.0.0.0:2379
       - --peer-urls=http://0.0.0.0:2380
-      - --advertise-client-urls=http://pd:2379
-      - --advertise-peer-urls=http://pd:2380
-      - --initial-cluster=pd=http://pd:2380
+      - --advertise-client-urls=http://tidb-pd:2379
+      - --advertise-peer-urls=http://tidb-pd:2380
+      - --initial-cluster=pd=http://tidb-pd:2380
       - --data-dir=/data/pd
+      # 性能优化配置
+      - --log-level=info
+      - --log-file=/var/log/pd.log
+      - --log-rotate=max-size=100M,max-num=10
+      - --metric-addr=http://0.0.0.0:2379
+      - --enable-dashboard=true
+      - --dashboard-addr=http://0.0.0.0:2379
     ports:
-      - "2379:2379"
+      - "2379:2379"  # Client API
+      - "2380:2380"  # Peer API
     volumes:
-      - pd-data:/data
-    networks: [tidb-net]
+      - pd_data:/data
+      - pd_logs:/var/log
+    networks:
+      - tidb-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:2379/pd/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
 
+  # TiKV - 分布式存储引擎
   tikv:
     image: pingcap/tikv:v7.5.0
-    container_name: tidb-tikv
+    container_name: tidb-tikv-standalone
+    restart: unless-stopped
     command:
       - --addr=0.0.0.0:20160
-      - --advertise-addr=tikv:20160
+      - --advertise-addr=tidb-tikv:20160
       - --data-dir=/data/tikv
-      - --pd=pd:2379
-    depends_on: [pd]
-    networks: [tidb-net]
+      - --pd=tidb-pd:2379
+      # 性能优化配置
+      - --log-level=info
+      - --log-file=/var/log/tikv.log
+      - --log-rotate=max-size=100M,max-num=10
+      - --metric-addr=http://0.0.0.0:20180
+      - --status-addr=0.0.0.0:20180
+      - --storage-engine=rocksdb
+      - --rocksdb-max-open-files=1000
+      - --rocksdb-write-buffer-size=128M
+      - --rocksdb-max-write-buffer-number=6
+    ports:
+      - "20160:20160"  # TiKV API
+      - "20180:20180"  # Status API
+    depends_on:
+      pd:
+        condition: service_healthy
+    networks:
+      - tidb-network
     volumes:
-      - tikv-data:/data
+      - tikv_data:/data
+      - tikv_logs:/var/log
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:20180/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
 
+  # TiDB - SQL 层
   tidb:
     image: pingcap/tidb:v7.5.0
-    container_name: tidb-server
+    container_name: tidb-server-standalone
+    restart: unless-stopped
     command:
       - --store=tikv
-      - --path=pd:2379
+      - --path=tidb-pd:2379
       - --advertise-address=tidb
-      - -L
-      - warn
+      - --host=0.0.0.0
+      - --port=4000
+      - --status-port=10080
+      - --log-level=info
+      - --log-file=/var/log/tidb.log
+      - --log-rotate=max-size=100M,max-num=10
+      - --metric-addr=http://0.0.0.0:10080
+      - --enable-binlog=false
+      - --run-ddl=true
+      - --lease=45s
+      - --token-limit=1000
+      - --oom-action=cancel
+      - --memory-quota=10737418240  # 10GB
+      - --性能优化参数
+      - --max-procs=0
+      - --server-version=TiDB-v7.5.0
     ports:
-      - "4000:4000"
-      - "10080:10080"
-    depends_on: [pd, tikv]
-    networks: [tidb-net]
+      - "4000:4000"  # MySQL 兼容端口
+      - "10080:10080"  # Status API
+    depends_on:
+      pd:
+        condition: service_healthy
+      tikv:
+        condition: service_healthy
+    networks:
+      - tidb-network
+    volumes:
+      - tidb_logs:/var/log
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:10080/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
 
-networks:
-  tidb-net:
+  # TiDB Dashboard (可选)
+  tidb-dashboard:
+    image: pingcap/tidb-dashboard:v7.5.0
+    container_name: tidb-dashboard-standalone
+    restart: unless-stopped
+    environment:
+      - PD_ADDR=http://tidb-pd:2379
+      - TIDB_STATUS_ADDR=http://tidb:10080
+    ports:
+      - "12333:12333"
+    depends_on:
+      - pd
+      - tidb
+    networks:
+      - tidb-network
+    profiles:
+      - dashboard
+
+  # Grafana for TiDB monitoring (可选)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana-tidb-standalone
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    depends_on:
+      - pd
+      - tikv
+      - tidb
+    networks:
+      - tidb-network
+    profiles:
+      - monitoring
+
+  # Prometheus for TiDB monitoring (可选)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus-tidb-standalone
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=90d'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus-tidb.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      - pd
+      - tikv
+      - tidb
+    networks:
+      - tidb-network
+    profiles:
+      - monitoring
 
 volumes:
-  pd-data:
-  tikv-data:
+  pd_data:
+    driver: local
+    name: tidb_standalone_pd_data
+  pd_logs:
+    driver: local
+    name: tidb_standalone_pd_logs
+  tikv_data:
+    driver: local
+    name: tidb_standalone_tikv_data
+  tikv_logs:
+    driver: local
+    name: tidb_standalone_tikv_logs
+  tidb_logs:
+    driver: local
+    name: tidb_standalone_tidb_logs
+  grafana_data:
+    driver: local
+    name: tidb_standalone_grafana_data
+  prometheus_data:
+    driver: local
+    name: tidb_standalone_prometheus_data
+
+networks:
+  tidb-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.24.0.0/16

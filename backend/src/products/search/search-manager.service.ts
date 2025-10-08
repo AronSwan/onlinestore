@@ -22,6 +22,11 @@ export class SearchManagerService implements OnModuleInit {
   private fallbackStrategy: SearchEngine = SearchEngine.ZINCSEARCH;
   private healthCheckInterval: NodeJS.Timeout;
   private isInitialized = false;
+  private isSearchEnabled(): boolean {
+    const env = process.env.SEARCH_ENABLED;
+    // 默认启用；当显式设置为 'false' 时禁用
+    return env === undefined ? true : env !== 'false';
+  }
 
   constructor(
     private configService: ConfigService,
@@ -33,6 +38,11 @@ export class SearchManagerService implements OnModuleInit {
   }
 
   async onModuleInit() {
+    if (!this.isSearchEnabled()) {
+      this.logger.log('搜索服务已禁用（SEARCH_ENABLED=false），跳过初始化与健康监控');
+      this.isInitialized = true;
+      return;
+    }
     await this.initialize();
     this.startHealthMonitoring();
   }
@@ -40,6 +50,12 @@ export class SearchManagerService implements OnModuleInit {
   private async initialize(): Promise<void> {
     try {
       this.logger.log('开始初始化搜索服务管理器...');
+
+      if (!this.isSearchEnabled()) {
+        this.logger.log('搜索服务禁用，跳过搜索引擎健康检查与设置初始化');
+        this.isInitialized = true;
+        return;
+      }
 
       // 检查首选搜索引擎的健康状态
       const primaryHealthy = await this.meiliSearchService.healthCheck();
@@ -89,6 +105,10 @@ export class SearchManagerService implements OnModuleInit {
   }
 
   private startHealthMonitoring(): void {
+    if (!this.isSearchEnabled()) {
+      this.logger.log('搜索服务禁用，未启动健康检查监控');
+      return;
+    }
     const interval = this.configService.get<number>('search.healthCheckInterval') || 30000; // 30秒
 
     this.healthCheckInterval = setInterval(async () => {

@@ -1,20 +1,27 @@
 // 用途：Redis连接健康检查服务，确保Redis缓存正常工作
-// 依赖文件：unified-master.config.ts
 // 作者：后端开发团队
 // 时间：2025-06-17 11:50:00
 
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, Optional } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
-import { createMasterConfiguration } from '../config/unified-master.config';
 
 @Injectable()
 export class RedisHealthService {
   private readonly logger = new Logger(RedisHealthService.name);
   private redisClient: Redis;
-  private config = createMasterConfiguration();
 
-  constructor(redisClient?: Redis) {
+  constructor(
+    @Optional() @Inject('REDIS_CLIENT') redisClient?: Redis,
+    @Optional() private readonly configService?: ConfigService,
+  ) {
     const isTest = process.env.NODE_ENV === 'test';
+
+    // 读取Redis启用开关，允许生产环境也禁用以降级
+    const enabledRaw = (this.configService?.get?.('REDIS_ENABLED') as string) ?? process.env.REDIS_ENABLED ?? 'true';
+    const redisEnabled = typeof enabledRaw === 'string'
+      ? ['true', '1', 'yes', 'on'].includes(enabledRaw.toLowerCase())
+      : !!enabledRaw;
 
     // 在测试环境中，如果传入了redisClient，则使用它
     if (isTest && redisClient !== undefined) {
@@ -27,16 +34,17 @@ export class RedisHealthService {
       this.redisClient = redisClient;
       this.setupEventListeners();
     } else {
-      const isDev = this.config?.app?.env === 'development';
+      const isDev = this.configService?.get<string>('NODE_ENV') === 'development';
 
       // 开发环境或测试环境：不实例化 Redis 客户端，避免无 Redis 服务时产生连接错误
-      if (isDev || isTest) {
-        this.redisClient = undefined as any;
-        if (isTest) {
-          this.logger.warn('Test environment detected: Redis client is disabled.');
-        } else {
-          this.logger.warn('Development environment detected: Redis client is disabled.');
-        }
+      if (isDev || isTest || !redisEnabled) {
+        // 禁用或开发/测试模式：使用最小可用的Stub，避免连接错误
+        this.redisClient = this.createStubClient() as any;
+        const reason = !redisEnabled
+          ? 'Redis disabled via REDIS_ENABLED'
+          : (isTest ? 'Test environment' : 'Development environment');
+        this.logger.warn(`${reason}: Redis client is using stub.`);
+        this.setupEventListeners();
       } else {
         this.initializeRedisClient();
       }
@@ -50,25 +58,31 @@ export class RedisHealthService {
         return;
       }
 
-      const isDev = this.config?.app?.env === 'development';
+      const isDev = this.configService?.get<string>('NODE_ENV') === 'development';
       const isTest = process.env.NODE_ENV === 'test';
 
+      // 读取Redis启用开关
+      const enabledRaw = (this.configService?.get?.('REDIS_ENABLED') as string) ?? process.env.REDIS_ENABLED ?? 'true';
+      const redisEnabled = typeof enabledRaw === 'string'
+        ? ['true', '1', 'yes', 'on'].includes(enabledRaw.toLowerCase())
+        : !!enabledRaw;
+
       // 开发环境或测试环境：不实例化 Redis 客户端，避免无 Redis 服务时产生连接错误
-      if (isDev || isTest) {
-        this.redisClient = undefined as any;
-        if (isTest) {
-          this.logger.warn('Test environment detected: Redis client is disabled.');
-        } else {
-          this.logger.warn('Development environment detected: Redis client is disabled.');
-        }
+      if (isDev || isTest || !redisEnabled) {
+        this.redisClient = this.createStubClient() as any;
+        const reason = !redisEnabled
+          ? 'Redis disabled via REDIS_ENABLED'
+          : (isTest ? 'Test environment' : 'Development environment');
+        this.logger.warn(`${reason}: Redis client is using stub.`);
+        this.setupEventListeners();
         return;
       }
 
       this.redisClient = new Redis({
-        host: this.config?.redis?.host || 'localhost',
-        port: this.config?.redis?.port || 6379,
-        password: this.config?.redis?.password,
-        db: this.config?.redis?.db || 0,
+        host: this.configService?.get<string>('REDIS_HOST', 'localhost'),
+        port: this.configService?.get<number>('REDIS_PORT', 6379),
+        password: this.configService?.get<string>('REDIS_PASSWORD'),
+        db: this.configService?.get<number>('REDIS_DB', 0),
         connectTimeout: 3000,
         commandTimeout: 2000,
         lazyConnect: false,
@@ -88,6 +102,24 @@ export class RedisHealthService {
     } catch (error) {
       this.logger.error('Failed to initialize Redis client', error);
     }
+  }
+
+  // 创建一个最小可用的Stub客户端，避免连接错误
+  private createStubClient(): any {
+    const store = new Map<string, string>();
+    const ttlMap = new Map<string, NodeJS.Timeout>();
+    return {
+      async get(key: string) { return store.has(key) ? store.get(key)! : null; },
+      async set(key: string, value: string) {
+        if (ttlMap.has(key)) { clearTimeout(ttlMap.get(key)!); ttlMap.delete(key); }
+        store.set(key, value); return 'OK';
+      },
+      async del(key: string) { return store.delete(key) ? 1 : 0; },
+      async ping() { return 'PONG'; },
+      async info() { return 'redis_version:stub\r\nconnected_clients:1\r\nused_memory_human:1K\r\nuptime_in_seconds:1'; },
+      on() { /* noop */ },
+      quit: async () => {},
+    };
   }
 
   private setupEventListeners() {
