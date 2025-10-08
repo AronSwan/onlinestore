@@ -1,7 +1,0 @@
-[33mee46c73[m[33m ([m[1;31morigin/docs/openobserve-research[m[33m)[m 更新OpenObserve研究文档：完善架构、部署、性能和安全相关内容
-[33m1316125[m Add comprehensive OpenObserve research: overview, architecture, features & API, deployment & ops, performance & scalability, security & compliance, comparison & selection, maintenance & community, practical examples
-[33m0ecc419[m[33m ([m[1;31morigin/docs/aftership-email-verifier[m[33m)[m 更新Paperless-ngx配置和添加docker-compose文件
-[33mc4a9eda[m Add comprehensive research on AfterShip/email-verifier: architecture, features, usage (with batch example), performance deep dive, security, comparison (enhanced), API practice (deployment & Nginx rate limiting), Nest integration examples, index cross-links and reading order; include OpenObserve monitoring ingestion and alerting guidance.
-[33m0d93421[m 初始提交：Caddy风格购物网站项目
-[33mf357ab9[m refactor(dubbo): align migration plan with Dubbo Triple + Nacos best practices; replace dubbo2.js with @apache/dubbo-js, unify API gateway to Node.js, add governance/observability details, correct tri protocol port and Nacos namespace/group guidance
-[33m9366860[m Initial commit: Add quality gates and project structure
