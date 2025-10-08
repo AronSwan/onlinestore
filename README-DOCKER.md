@@ -1,35 +1,54 @@
 # Docker 部署指南
 
-本项目提供完整的 Docker 化解决方案，支持开发和生产环境的容器化部署。
+本指南提供完整的 Docker 化解决方案，支持开发和生产环境的容器化部署。
+
+## 📚 文档导航
+
+### 总领文档
+- **[当前文档 - Docker 部署指南](README-DOCKER.md)** - 完整的Docker部署和使用说明
+
+### 后端Docker配置文档
+- **[Docker配置优化指南](backend/DOCKER_OPTIMIZATION_GUIDE.md)** - 详细的优化过程和最佳实践
+- **[Docker配置优化总结](backend/DOCKER_OPTIMIZATION_SUMMARY.md)** - 优化成果和效果总结
+
+### 后端Docker快速参考
+- **[Docker使用说明](backend/docker/README.md)** - 简化的使用说明和快速开始
+
+### 文档关系图
+```
+README-DOCKER.md (总领文档)
+    ↓
+    ├── backend/DOCKER_OPTIMIZATION_GUIDE.md (详细优化指南)
+    ├── backend/DOCKER_OPTIMIZATION_SUMMARY.md (优化总结)
+    └── backend/docker/README.md (快速使用说明)
+```
 
 ## 🏗️ 架构概览
 
 ### 服务组件
 
-- **前端服务** (Nginx + 静态文件)
 - **后端服务** (Node.js + NestJS)
 - **数据库** (PostgreSQL 15)
 - **缓存** (Redis 7)
 - **邮箱验证** (AfterShip email-verifier)
-- **搜索引擎** (Elasticsearch 8)
-- **监控系统** (Prometheus + Grafana)
-- **负载均衡** (Nginx)
+- **消息队列** (RedPanda)
+- **监控系统** (OpenObserve)
+- **支付服务** (Gopay + 加密货币网关)
+- **可选数据库** (TiDB 分布式数据库)
 
 ### 网络架构
 
 ```
 Internet
     ↓
-Nginx 负载均衡器 (80/443)
+后端服务 (3000)
     ↓
-前端服务 (80) ← → 后端服务 (3000)
-    ↓                    ↓
-静态文件              API 服务
-                        ↓
-            ┌─────────────────────┐
-            ↓         ↓           ↓
-        PostgreSQL  Redis  Email-Verifier
-         (5432)    (6379)     (8080)
+API 服务
+    ↓
+┌─────────────────────────────────────────┐
+↓         ↓           ↓           ↓       ↓
+PostgreSQL  Redis  Email-Verifier  RedPanda  OpenObserve
+ (5432)    (6379)     (8080)        (9092)     (5080)
 ```
 
 ## 🚀 快速开始
@@ -51,7 +70,7 @@ docker-compose --version
 
 ```bash
 # 复制环境配置文件
-cp .env.docker .env
+cp backend/.env.example .env
 
 # 编辑配置文件
 nano .env
@@ -60,14 +79,17 @@ nano .env
 ### 3. 一键部署
 
 ```bash
-# 给脚本执行权限
-chmod +x scripts/docker-deploy.sh
+# 进入后端目录
+cd backend
+
+# 给脚本执行权限 (Linux/macOS)
+chmod +x docker/start.sh
 
 # 启动生产环境
-./scripts/docker-deploy.sh prod
+docker/start.sh prod
 
 # 或启动开发环境
-./scripts/docker-deploy.sh dev
+docker/start.sh dev
 ```
 
 ## 📋 部署命令
@@ -76,38 +98,44 @@ chmod +x scripts/docker-deploy.sh
 
 ```bash
 # 生产环境部署
-./scripts/docker-deploy.sh prod
+docker/start.sh prod
 
 # 开发环境部署
-./scripts/docker-deploy.sh dev
+docker/start.sh dev
 
 # 启动监控服务
-./scripts/docker-deploy.sh monitoring
+docker/start.sh monitoring
+
+# 启动包含支付服务的完整配置
+docker/start.sh -p payment all
+
+# 启动包含TiDB的完整配置
+docker/start.sh -p tidb all
 
 # 停止所有服务
-./scripts/docker-deploy.sh stop
+docker/start.sh -s
 
 # 重启服务
-./scripts/docker-deploy.sh restart
+docker/start.sh -r
 
 # 查看日志
-./scripts/docker-deploy.sh logs [service_name]
+docker/start.sh -l [service_name]
 
 # 健康检查
-./scripts/docker-deploy.sh health
+docker/start.sh --status
 ```
 
 ### 数据管理
 
 ```bash
-# 备份数据
-./scripts/docker-deploy.sh backup
+# 备份数据库
+docker-compose exec postgres pg_dump -U postgres shopping_db > backup.sql
 
-# 恢复数据
-./scripts/docker-deploy.sh restore /path/to/backup
+# 恢复数据库
+docker-compose exec -T postgres psql -U postgres shopping_db < backup.sql
 
 # 清理资源
-./scripts/docker-deploy.sh clean --force
+docker/start.sh -c
 ```
 
 ## 🔧 配置说明
@@ -118,65 +146,58 @@ chmod +x scripts/docker-deploy.sh
 # 数据库配置
 POSTGRES_DB=shopping_db
 POSTGRES_USER=postgres
-POSTGRES_PASSWORD=your_secure_password
+POSTGRES_PASSWORD=your_postgres_password
 
-# Redis 配置
+# Redis配置
 REDIS_PASSWORD=your_redis_password
 
+# JWT配置
+JWT_SECRET=your_jwt_secret_key
+
+# OpenObserve配置
+ZO_ROOT_USER_EMAIL=admin@example.com
+ZO_ROOT_USER_PASSWORD=ComplexPass#123
+
+# 支付服务配置
+ALIPAY_APP_ID=your_alipay_app_id
+ALIPAY_PRIVATE_KEY=your_alipay_private_key
+ALIPAY_PUBLIC_KEY=your_alipay_public_key
+WECHAT_APP_ID=your_wechat_app_id
+WECHAT_MCH_ID=your_wechat_mch_id
+WECHAT_API_KEY=your_wechat_api_key
+
 # 应用配置
-JWT_SECRET=your_jwt_secret
 NODE_ENV=production
-
-# 邮箱验证配置
-EMAIL_VERIFIER_API_URL=http://email-verifier:8080
-ENABLE_SMTP_CHECK=false
-
-# 监控配置
-GRAFANA_PASSWORD=admin123
+PORT=3000
+CORS_ORIGIN=http://localhost
 ```
-
-### Docker Compose 配置
-
-#### 生产环境 (docker-compose.yml)
-
-- 完整的生产级配置
-- 包含健康检查和重启策略
-- 资源限制和安全配置
-- 数据持久化
-
-#### 开发环境 (docker-compose.dev.yml)
-
-- 热重载支持
-- 调试端口开放
-- 开发工具集成
-- 数据库管理界面
 
 ## 🌐 服务访问
 
-### 生产环境
+### 核心服务
 
 | 服务 | 地址 | 说明 |
 |------|------|------|
-| 网站首页 | http://localhost | 主要网站 |
-| API 接口 | http://localhost/api | 后端 API |
-| 负载均衡器 | http://localhost:8000 | Nginx LB |
+| 后端API | http://localhost:3000 | 后端服务 |
+| PostgreSQL | localhost:5432 | 数据库 |
+| Redis | localhost:6379 | 缓存 |
+| Email Verifier | http://localhost:8080 | 邮件验证服务 |
 
-### 开发环境
-
-| 服务 | 地址 | 说明 |
-|------|------|------|
-| 前端开发 | http://localhost:3001 | 热重载前端 |
-| 后端开发 | http://localhost:3000 | 热重载后端 |
-| 数据库管理 | http://localhost:5050 | PgAdmin |
-| Redis 管理 | http://localhost:8082 | Redis Commander |
-
-### 监控服务
+### 监控和管理
 
 | 服务 | 地址 | 用户名/密码 |
 |------|------|-------------|
-| Grafana | http://localhost:3001 | admin/admin123 |
-| Prometheus | http://localhost:9090 | - |
-| Kibana | http://localhost:5601 | - |
+| OpenObserve | http://localhost:5080 | admin@example.com / ComplexPass#123 |
+| RedPanda Console | http://localhost:8081 | - |
+| Node Exporter | http://localhost:9100 | - |
+
+### 可选服务
+
+| 服务 | 地址 | 说明 |
+|------|------|------|
+| Gopay服务 | http://localhost:8082 | 支付服务 (需要 -p payment) |
+| 加密货币网关 | http://localhost:8083 | 加密货币支付 (需要 -p payment) |
+| TiDB | http://localhost:4000 | 分布式数据库 (需要 -p tidb) |
 
 ## 📊 监控和日志
 
@@ -184,31 +205,23 @@ GRAFANA_PASSWORD=admin123
 
 ```bash
 # 查看所有服务日志
-docker-compose logs -f
+docker/start.sh -l
 
 # 查看特定服务日志
-docker-compose logs -f backend
+docker/start.sh -l backend
 
 # 查看最近 100 行日志
-docker-compose logs --tail=100 frontend
+docker-compose logs --tail=100 backend
 ```
 
 ### 监控指标
 
+OpenObserve 提供统一的日志和指标收集：
+
 - **应用性能**: 响应时间、吞吐量、错误率
 - **系统资源**: CPU、内存、磁盘、网络
-- **数据库**: 连接数、查询性能、锁等待
-- **缓存**: 命中率、内存使用、键空间
-
-### Grafana 仪表板
-
-预配置的监控面板：
-
-1. **应用概览**: 整体系统状态
-2. **后端性能**: API 响应时间和错误率
-3. **数据库监控**: PostgreSQL 性能指标
-4. **Redis 监控**: 缓存性能和内存使用
-5. **系统资源**: 容器资源使用情况
+- **数据库**: 连接数、查询性能
+- **缓存**: 命中率、内存使用
 
 ## 🔒 安全配置
 
@@ -216,8 +229,7 @@ docker-compose logs --tail=100 frontend
 
 - 容器间通信使用内部网络
 - 仅必要端口对外开放
-- Nginx 反向代理和限流
-- SSL/TLS 支持 (需配置证书)
+- 使用网络隔离服务
 
 ### 数据安全
 
@@ -232,6 +244,13 @@ docker-compose logs --tail=100 frontend
 - 最小权限原则
 - 镜像安全扫描
 - 定期更新基础镜像
+
+### 安全最佳实践
+
+1. **修改默认密码**：部署前务必修改所有默认密码
+2. **配置防火墙**：仅开放必要端口
+3. **定期更新**：保持Docker镜像和基础系统更新
+4. **监控告警**：配置安全事件监控和告警
 
 ## 🚀 生产部署
 
@@ -250,50 +269,33 @@ sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-
 sudo chmod +x /usr/local/bin/docker-compose
 ```
 
-### 2. SSL 证书配置
+### 2. SSL 证书配置 (可选)
 
 ```bash
 # 使用 Let's Encrypt (推荐)
 sudo apt install certbot
 sudo certbot certonly --standalone -d yourdomain.com
 
-# 复制证书到项目
-sudo cp /etc/letsencrypt/live/yourdomain.com/fullchain.pem docker/nginx/ssl/cert.pem
-sudo cp /etc/letsencrypt/live/yourdomain.com/privkey.pem docker/nginx/ssl/key.pem
+# 配置证书到负载均衡器
 ```
 
-### 3. 域名配置
-
-更新 `docker/nginx/nginx-lb.conf`:
-
-```nginx
-server {
-    listen 443 ssl http2;
-    server_name yourdomain.com;
-    
-    ssl_certificate /etc/nginx/ssl/cert.pem;
-    ssl_certificate_key /etc/nginx/ssl/key.pem;
-    
-    # 其他配置...
-}
-```
-
-### 4. 生产部署
+### 3. 生产部署
 
 ```bash
 # 克隆项目
 git clone <your-repo-url>
-cd caddy-style-shopping-site
+cd onlinestore
 
 # 配置环境变量
-cp .env.docker .env
+cp backend/.env.example .env
 nano .env  # 修改生产配置
 
 # 部署服务
-./scripts/docker-deploy.sh prod
+cd backend
+docker/start.sh prod
 
 # 启动监控
-./scripts/docker-deploy.sh monitoring
+docker/start.sh monitoring
 ```
 
 ## 🔧 故障排除
@@ -303,10 +305,10 @@ nano .env  # 修改生产配置
 1. **端口冲突**
    ```bash
    # 检查端口占用
-   netstat -tulpn | grep :80
+   netstat -tulpn | grep :3000
    
    # 修改端口映射
-   nano docker-compose.yml
+   nano .env  # 修改端口配置
    ```
 
 2. **内存不足**
@@ -321,10 +323,10 @@ nano .env  # 修改生产配置
 3. **数据库连接失败**
    ```bash
    # 检查数据库状态
-   docker-compose logs postgres
+   docker/start.sh -l postgres
    
    # 重启数据库
-   docker-compose restart postgres
+   docker/start.sh -r database
    ```
 
 4. **镜像构建失败**
@@ -347,11 +349,11 @@ docker inspect shopping-backend
 
 # 查看网络配置
 docker network ls
-docker network inspect shopping-network
+docker network inspect backend_backend-network
 
 # 查看卷挂载
 docker volume ls
-docker volume inspect shopping_postgres_data
+docker volume inspect backend_postgres_data
 ```
 
 ## 📈 性能优化
@@ -370,19 +372,18 @@ docker volume inspect shopping_postgres_data
 deploy:
   resources:
     limits:
-      memory: 512M
-      cpus: '0.5'
+      memory: 2G
+      cpus: '1.0'
     reservations:
-      memory: 256M
-      cpus: '0.25'
+      memory: 1G
+      cpus: '0.5'
 ```
 
 ### 3. 缓存策略
 
 - Redis 缓存配置优化
-- Nginx 静态文件缓存
 - 数据库查询缓存
-- CDN 集成
+- 应用级缓存
 
 ### 4. 数据库优化
 
@@ -400,8 +401,9 @@ deploy:
 git pull origin main
 
 # 重新构建和部署
+cd backend
 docker-compose build
-docker-compose up -d
+docker/start.sh -r
 
 # 滚动更新 (零停机)
 docker-compose up -d --no-deps backend
@@ -411,13 +413,10 @@ docker-compose up -d --no-deps backend
 
 ```bash
 # 备份数据
-./scripts/docker-deploy.sh backup
+docker-compose exec postgres pg_dump -U postgres shopping_db > backup.sql
 
-# 执行迁移
+# 执行迁移 (如果有)
 docker-compose exec backend npm run migration:run
-
-# 验证迁移
-docker-compose exec backend npm run migration:show
 ```
 
 ### 定期维护
@@ -426,12 +425,12 @@ docker-compose exec backend npm run migration:show
 # 清理未使用的镜像
 docker image prune -f
 
-# 清理未使用的卷
+# 清理未使用的卷 (谨慎操作)
 docker volume prune -f
 
 # 更新基础镜像
 docker-compose pull
-docker-compose up -d
+docker/start.sh -r
 ```
 
 ## 📚 扩展功能
@@ -446,41 +445,48 @@ services:
       replicas: 3
 ```
 
-### 集群部署
+### 独立服务部署
 
-- Docker Swarm 模式
-- Kubernetes 配置
-- 负载均衡配置
-- 服务发现
+如果需要独立部署特定服务：
 
-### CI/CD 集成
+```bash
+# 独立部署OpenObserve
+cd backend/docker/openobserve && docker-compose up -d
 
-- GitHub Actions 配置
-- 自动化测试
-- 自动部署流水线
-- 镜像安全扫描
+# 独立部署RedPanda
+cd backend/docker/redpanda && docker-compose up -d
+
+# 独立部署TiDB
+cd backend && docker-compose -f docker/docker-compose.tidb.yml up -d
+
+# 独立部署支付服务
+cd backend/src/payment && docker-compose up -d
+```
 
 ## 🆘 支持和帮助
 
 ### 文档资源
 
+- [后端Docker配置优化指南](backend/DOCKER_OPTIMIZATION_GUIDE.md)
+- [后端Docker配置优化总结](backend/DOCKER_OPTIMIZATION_SUMMARY.md)
 - [Docker 官方文档](https://docs.docker.com/)
 - [Docker Compose 文档](https://docs.docker.com/compose/)
-- [Nginx 配置指南](https://nginx.org/en/docs/)
-- [PostgreSQL 文档](https://www.postgresql.org/docs/)
+- [OpenObserve 文档](https://openobserve.ai/docs/)
+- [RedPanda 文档](https://docs.redpanda.com/)
+- [TiDB 文档](https://docs.pingcap.com/tidb/stable/)
 
-### 社区支持
+## 📖 相关文档
 
-- 项目 Issue 追踪
-- 技术交流群
-- 在线文档和教程
-- 专业技术支持
+- 查看 [Docker配置优化指南](backend/DOCKER_OPTIMIZATION_GUIDE.md) 了解详细的优化过程
+- 查看 [Docker配置优化总结](backend/DOCKER_OPTIMIZATION_SUMMARY.md) 了解优化成果
+- 查看 [Docker使用说明](backend/docker/README.md) 获取快速开始指南
 
 ---
 
-**注意**: 生产环境部署前请务必：
+**重要提醒**: 生产环境部署前请务必：
 1. 修改所有默认密码
-2. 配置 SSL 证书
+2. 配置适当的网络安全策略
 3. 设置防火墙规则
-4. 配置备份策略
+4. 配置数据备份策略
 5. 设置监控告警
+6. 进行安全评估

@@ -5,7 +5,7 @@
 
 import { DataSource } from 'typeorm';
 import { createMasterConfiguration } from '../config/unified-master.config';
-import { User } from '../users/entities/user.entity';
+import { UserEntity } from '../users/infrastructure/persistence/typeorm/user.entity';
 import { Product } from '../products/entities/product.entity';
 import { ProductImage } from '../products/entities/product-image.entity';
 import { Category } from '../products/entities/category.entity';
@@ -31,7 +31,7 @@ export const AppDataSource = new DataSource({
   }),
   database: masterConfig.database.database,
   entities: [
-    User,
+    UserEntity,
     Product,
     ProductImage,
     Category,
@@ -40,15 +40,23 @@ export const AppDataSource = new DataSource({
     AddressEntity,
     CustomerProfileEntity,
   ],
-  migrations: ['src/database/migrations/*.ts'],
+  migrations: [
+    ((process.env.MIGRATION_SCOPE === 'schema')
+      ? (isDev
+        ? 'src/database/migrations/2025100100000*.ts'
+        : 'dist/src/database/migrations/2025100100000*.js')
+      : (isDev
+        ? 'src/database/migrations/*.ts'
+        : 'dist/src/database/migrations/*.js')),
+  ],
   migrationsTableName: 'typeorm_migrations',
   synchronize: false, // 迁移模式下禁用自动同步
   logging: isDev,
   // SQL注入防护配置
   extra: {
     connectionLimit: masterConfig.database.poolSize,
-    acquireTimeout: masterConfig.database.acquireTimeout,
     connectTimeout: masterConfig.database.connectionTimeout,
+    waitForConnections: true,
     ssl: process.env.DB_SSL === 'true',
     supportBigNumbers: true,
     bigNumberStrings: false,

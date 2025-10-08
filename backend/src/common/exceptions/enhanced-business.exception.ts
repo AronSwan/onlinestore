@@ -377,7 +377,7 @@ export class EnhancedBusinessException extends HttpException {
     action?: string,
     context?: ErrorContext,
   ): EnhancedBusinessException {
-    const details = [];
+    const details: Array<{ field: string; value: string }> = [];
     if (resource) details.push({ field: 'resource', value: resource });
     if (action) details.push({ field: 'action', value: action });
 

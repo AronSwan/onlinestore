@@ -180,7 +180,13 @@ export class UserAnalyticsService {
    * 生成队列分析数据
    */
   private generateCohortData() {
-    const cohorts = [];
+    const cohorts: Array<{
+      cohort: string;
+      day0: number;
+      day1: number;
+      day7: number;
+      day30: number;
+    }> = [];
     for (let i = 0; i < 6; i++) {
       const date = new Date();
       date.setMonth(date.getMonth() - i);

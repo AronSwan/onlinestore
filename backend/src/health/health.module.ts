@@ -1,21 +1,23 @@
 import { Module } from '@nestjs/common';
 import { TerminusModule } from '@nestjs/terminus';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { HttpModule } from '@nestjs/axios';
 import { HealthController } from './health.controller';
-// import { DatabaseHealthIndicator } from './indicators/database-health.indicator';
-// import { RedisHealthIndicator } from './indicators/redis-health.indicator';
-// import { RedisModule } from '../redis/redis.module';
+import { RedisModule } from '../redis/redis.module';
+import { MessagingModule } from '../messaging/messaging.module';
+import { RedpandaHealthIndicator } from './redpanda.health';
 
 @Module({
   imports: [
     TerminusModule,
     TypeOrmModule.forFeature([]),
-    // RedisModule,
+    HttpModule,
+    RedisModule,
+    MessagingModule,
   ],
   controllers: [HealthController],
   providers: [
-    // DatabaseHealthIndicator,
-    // RedisHealthIndicator,
+    RedpandaHealthIndicator,
   ],
 })
 export class HealthModule {}

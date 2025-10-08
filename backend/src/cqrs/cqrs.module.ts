@@ -2,7 +2,7 @@
 // 作者：后端开发团队
 // 时间：2025-10-05
 
-import { DynamicModule, Module, OnModuleInit } from '@nestjs/common';
+import { DynamicModule, Module, OnModuleInit, Provider } from '@nestjs/common';
 import { DiscoveryModule, DiscoveryService } from '@nestjs/core';
 import { Reflector } from '@nestjs/core';
 import { COMMAND_HANDLER_METADATA } from './decorators/command-handler.decorator';
@@ -123,7 +123,7 @@ export class CqrsModule implements OnModuleInit {
       customEventBus,
     } = options;
 
-    const providers = [];
+    const providers: Provider[] = [];
 
     // 添加发现服务
     providers.push(DiscoveryService, Reflector);
@@ -204,7 +204,7 @@ export class CqrsModule implements OnModuleInit {
       customEventBusFactory,
     } = options;
 
-    const providers = [];
+    const providers: Provider[] = [];
 
     // 添加发现服务
     providers.push(DiscoveryService, Reflector);

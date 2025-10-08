@@ -13,15 +13,34 @@ export class CreateBasicRegionInfo20251001000003 implements MigrationInterface {
         sort INT DEFAULT 0
       )
     `);
-    await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS IDX_basic_region_info_level ON basic_region_info (level)`,
+    const tableName = 'basic_region_info';
+    const [idxLevelExists] = await queryRunner.query(
+      `SELECT COUNT(1) AS cnt FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = 'IDX_basic_region_info_level'`,
+      [tableName],
     );
-    await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS IDX_basic_region_info_parent ON basic_region_info (parent)`,
+    if (!idxLevelExists?.cnt) {
+      await queryRunner.query(
+        `CREATE INDEX IDX_basic_region_info_level ON ${tableName} (level)`,
+      );
+    }
+    const [idxParentExists] = await queryRunner.query(
+      `SELECT COUNT(1) AS cnt FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = 'IDX_basic_region_info_parent'`,
+      [tableName],
     );
-    await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS IDX_basic_region_info_sort ON basic_region_info (sort)`,
+    if (!idxParentExists?.cnt) {
+      await queryRunner.query(
+        `CREATE INDEX IDX_basic_region_info_parent ON ${tableName} (parent)`,
+      );
+    }
+    const [idxSortExists] = await queryRunner.query(
+      `SELECT COUNT(1) AS cnt FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = 'IDX_basic_region_info_sort'`,
+      [tableName],
     );
+    if (!idxSortExists?.cnt) {
+      await queryRunner.query(
+        `CREATE INDEX IDX_basic_region_info_sort ON ${tableName} (sort)`,
+      );
+    }
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

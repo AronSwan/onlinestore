@@ -1,179 +1,38 @@
-# OpenObserve监控架构 Docker Compose配置 - 阶段四优化版本
-version: '3.8'
-
 services:
+  # OpenObserve服务
   openobserve:
     image: public.ecr.aws/zinclabs/openobserve:latest
-    container_name: shopping-openobserve
-    restart: unless-stopped
-    # 资源限制和优化
-    deploy:
-      resources:
-        limits:
-          cpus: '2.0'
-          memory: 4G
-        reservations:
-          cpus: '1.0'
-          memory: 2G
-    environment:
-      - ZO_ROOT_USER_EMAIL=admin@example.com
-      - ZO_ROOT_USER_PASSWORD=ComplexPass#123
-      - ZO_DATA_DIR=/data
-      - ZO_META_DIR=/meta
-      - ZO_FILE_DATA_DIR=/files
-      - ZO_COMPRESSION=gzip
-      - ZO_MEMORY_CACHE_ENABLED=true
-      - ZO_MEMORY_CACHE_MAX_SIZE=2048
-      - ZO_METRICS_ENABLED=true
-      - ZO_TRACING_ENABLED=true
-      - ZO_DEFAULT_ORG=default
-      - ZO_DISABLE_LOGIN=true
-      - ZO_AUTH_DISABLED=true
-      # 性能优化环境变量
-      - ZO_COMPRESSION_LEVEL=6
-      - ZO_QUERY_CACHE_ENABLED=true
-      - ZO_QUERY_CACHE_TTL=600
-      - ZO_MAX_FILE_SIZE=268435456
-      - ZO_MEMORY_MERGE_INTERVAL=300
-      - ZO_DATA_RETENTION_DAYS=90
-      - ZO_WAL_MEMORY_MODE=true
-      - ZO_WAL_MEMORY_MAX_SIZE=1073741824
-    volumes:
-      - openobserve_data:/data
-      - openobserve_meta:/meta
-      - openobserve_files:/files
-      - ./docker/openobserve/config.yaml:/etc/openobserve/config.yaml:ro
-      - ./logs/openobserve:/var/log/openobserve
+    container_name: openobserve
     ports:
       - "5080:5080"
-    networks:
-      - shopping-network
-    # 优化的健康检查
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5080/health"]
-      interval: 15s
-      timeout: 10s
-      retries: 5
-      start_period: 120s
-    depends_on:
-      - prometheus
-    # 日志配置
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "100m"
-        max-file: "3"
-
-  # 保留Prometheus用于指标收集 - 优化版本
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: shopping-prometheus
-    restart: unless-stopped
-    # 资源限制
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 2G
-        reservations:
-          cpus: '0.5'
-          memory: 1G
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--storage.tsdb.retention.time=90d'
-      - '--web.enable-lifecycle'
-      - '--web.enable-admin-api'
-      # 性能优化参数
-      - '--storage.tsdb.wal-compression'
-      - '--query.max-samples=50000000'
-      - '--query.timeout=2m'
-      - '--storage.remote.read-concurrency=10'
-      - '--storage.remote.write-concurrency=10'
+    environment:
+      - ZO_ROOT_USER_EMAIL=admin@example.com
+      - ZO_ROOT_USER_PASSWORD=Complexpass#123
+      - ZO_DATA_DIR=/data
     volumes:
-      - ./docker/prometheus/prometheus-openobserve.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
-      - ./logs/prometheus:/var/log/prometheus
-    networks:
-      - shopping-network
-    ports:
-      - "9090:9090"
-    # 健康检查
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-    # 日志配置
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "3"
-
-  # Node Exporter用于系统监控 - 优化版本
-  node-exporter:
-    image: prom/node-exporter:latest
-    container_name: shopping-node-exporter
+      - openobserve_data:/data
     restart: unless-stopped
-    # 资源限制
-    deploy:
-      resources:
-        limits:
-          cpus: '0.2'
-          memory: 256M
-        reservations:
-          cpus: '0.1'
-          memory: 128M
-    command:
-      - '--path.procfs=/host/proc'
-      - '--path.rootfs=/rootfs'
-      - '--path.sysfs=/host/sys'
-      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
-      # 性能优化参数
-      - '--collector.cpu.info'
-      - '--collector.meminfo'
-      - '--collector.diskstats'
-      - '--collector.netdev'
-      - '--collector.filesystem'
-      - '--no-collector.ipvs'
-      - '--no-collector.netdev'
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
     networks:
-      - shopping-network
+      - openobserve-network
+
+  # Redis服务 (用于缓存)
+  redis:
+    image: redis:7-alpine
+    container_name: redis
     ports:
-      - "9100:9100"
-    # 健康检查
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9100/metrics"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    # 日志配置
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "2"
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - openobserve-network
 
 volumes:
   openobserve_data:
     driver: local
-  openobserve_meta:
-    driver: local
-  openobserve_files:
-    driver: local
-  prometheus_data:
+  redis_data:
     driver: local
 
 networks:
-  shopping-network:
+  openobserve-network:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16

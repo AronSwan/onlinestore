@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import Redis, { RedisOptions, Cluster } from 'ioredis';
@@ -72,10 +72,21 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly tracingService: TracingService,
+    @Optional() private readonly tracingService: TracingService,
   ) {}
 
   async onModuleInit(): Promise<void> {
+    const enabledRaw = this.configService.get<string>('REDIS_ENABLED', 'true');
+    const enabled = typeof enabledRaw === 'string'
+      ? ['true', '1', 'yes', 'on'].includes(enabledRaw.toLowerCase())
+      : !!enabledRaw;
+
+    if (!enabled) {
+      this.logger.warn('Redis已禁用，使用No-Op Stub客户端以保障服务可用');
+      this.redis = this.createStubClient() as any;
+      return;
+    }
+
     await this.initializeRedis();
   }
 
@@ -88,6 +99,7 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
    */
   private async initializeRedis(): Promise<void> {
     try {
+      const isDev = process.env.NODE_ENV === 'development';
       const isCluster = this.configService.get<boolean>('REDIS_CLUSTER_ENABLED', false);
 
       if (isCluster) {
@@ -99,8 +111,35 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
       this.setupEventHandlers();
       this.logger.log('✅ Redis cache service initialized successfully');
     } catch (error) {
-      this.logger.error('❌ Failed to initialize Redis cache service:', error.message);
-      throw error;
+      const isDev = process.env.NODE_ENV === 'development';
+      if (isDev) {
+        this.logger.warn('⚠️ Failed to initialize Redis cache service in development mode, continuing without it');
+        // 创建一个空的 Redis 客户端，避免运行时错误
+        this.redis = {
+          get: async () => null,
+          set: async () => 'OK',
+          del: async () => 0,
+          exists: async () => 0,
+          expire: async () => 0,
+          ttl: async () => -1,
+          incrby: async () => 0,
+          decrby: async () => 0,
+          mget: async () => [],
+          mset: async () => 'OK',
+          pipeline: () => ({
+            set: () => ({ pipeline: () => ({ exec: async () => [] }) }),
+            setex: () => ({ pipeline: () => ({ exec: async () => [] }) }),
+            exec: async () => []
+          }),
+          keys: async () => [],
+          info: async () => 'redis_version:6.0.0',
+          quit: async () => {},
+          on: () => {},
+        } as any;
+      } else {
+        this.logger.error('❌ Failed to initialize Redis cache service:', error.message);
+        throw error;
+      }
     }
   }
 
@@ -124,6 +163,42 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
     this.redis = new Redis(options);
     await this.redis.connect();
     this.logger.log('🔗 Connected to Redis single instance');
+  }
+
+  /**
+   * 创建一个最小可用的Stub客户端，在禁用Redis时使用
+   */
+  private createStubClient(): any {
+    const store = new Map<string, string>();
+    const ttlMap = new Map<string, NodeJS.Timeout>();
+    return {
+      async get(key: string) { return store.has(key) ? store.get(key)! : null; },
+      async set(key: string, value: string) {
+        if (ttlMap.has(key)) { clearTimeout(ttlMap.get(key)!); ttlMap.delete(key); }
+        store.set(key, value); return 'OK';
+      },
+      async del(key: string) { return store.delete(key) ? 1 : 0; },
+      async exists(key: string) { return store.has(key) ? 1 : 0; },
+      async expire(key: string, ttl: number) {
+        if (!store.has(key)) return 0;
+        if (ttlMap.has(key)) { clearTimeout(ttlMap.get(key)!); ttlMap.delete(key); }
+        const timer = setTimeout(() => { store.delete(key); ttlMap.delete(key); }, ttl * 1000);
+        ttlMap.set(key, timer);
+        return 1;
+      },
+      async ttl(_key: string) { return -1; },
+      async mget(...keys: string[]) { return keys.map(k => (store.has(k) ? store.get(k)! : null)); },
+      async mset(..._args: any[]) { return 'OK'; },
+      async ping() { return 'PONG'; },
+      async quit() { /* noop */ },
+      on() { /* noop */ },
+      async connect() { /* noop */ },
+      pipeline: () => ({
+        set: (_key: string, _value: string) => ({ pipeline: () => ({ exec: async () => [] }) }),
+        setex: (_key: string, _ttl: number, _value: string) => ({ pipeline: () => ({ exec: async () => [] }) }),
+        exec: async () => [],
+      }),
+    };
   }
 
   /**
@@ -180,7 +255,7 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
    * 获取缓存值
    */
   async get<T>(key: string, config?: Partial<CacheConfig>): Promise<T | null> {
-    const traceId = this.tracingService.getTraceId() || 'unknown';
+    const traceId = this.getTraceId();
     const fullKey = this.buildKey(key, config?.prefix);
 
     try {
@@ -212,7 +287,7 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
    * 设置缓存值
    */
   async set<T>(key: string, value: T, config?: CacheConfig): Promise<boolean> {
-    const traceId = this.tracingService.getTraceId() || 'unknown';
+    const traceId = this.getTraceId();
     const fullKey = this.buildKey(key, config?.prefix);
 
     try {
@@ -244,7 +319,7 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
    * 删除缓存键
    */
   async delete(key: string, prefix?: string): Promise<boolean> {
-    const traceId = this.tracingService.getTraceId() || 'unknown';
+    const traceId = this.getTraceId();
     const fullKey = this.buildKey(key, prefix);
 
     try {
@@ -266,7 +341,7 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
    * 检查缓存是否存在
    */
   async exists(key: string, prefix?: string): Promise<boolean> {
-    const traceId = this.tracingService.getTraceId() || 'unknown';
+    const traceId = this.getTraceId();
     const fullKey = this.buildKey(key, prefix);
 
     try {
@@ -284,7 +359,7 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
    * 设置缓存过期时间
    */
   async expire(key: string, ttl: number, prefix?: string): Promise<boolean> {
-    const traceId = this.tracingService.getTraceId() || 'unknown';
+    const traceId = this.getTraceId();
     const fullKey = this.buildKey(key, prefix);
 
     try {
@@ -304,7 +379,7 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
    * 获取缓存剩余生存时间
    */
   async ttl(key: string, prefix?: string): Promise<number> {
-    const traceId = this.tracingService.getTraceId() || 'unknown';
+    const traceId = this.getTraceId();
     const fullKey = this.buildKey(key, prefix);
 
     try {
@@ -322,7 +397,7 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
    * 原子递增
    */
   async increment(key: string, delta: number = 1, prefix?: string): Promise<number> {
-    const traceId = this.tracingService.getTraceId() || 'unknown';
+    const traceId = this.getTraceId();
     const fullKey = this.buildKey(key, prefix);
 
     try {
@@ -340,7 +415,7 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
    * 原子递减
    */
   async decrement(key: string, delta: number = 1, prefix?: string): Promise<number> {
-    const traceId = this.tracingService.getTraceId() || 'unknown';
+    const traceId = this.getTraceId();
     const fullKey = this.buildKey(key, prefix);
 
     try {
@@ -358,7 +433,7 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
    * 批量获取
    */
   async mget<T>(keys: string[], prefix?: string): Promise<(T | null)[]> {
-    const traceId = this.tracingService.getTraceId() || 'unknown';
+    const traceId = this.getTraceId();
     const fullKeys = keys.map(key => this.buildKey(key, prefix));
 
     try {
@@ -391,7 +466,7 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
    * 批量设置
    */
   async mset<T>(keyValuePairs: Record<string, T>, config?: CacheConfig): Promise<boolean> {
-    const traceId = this.tracingService.getTraceId() || 'unknown';
+    const traceId = this.getTraceId();
 
     try {
       this.logger.debug(
@@ -430,7 +505,7 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
    * 批量删除
    */
   async mdel(keys: string[], prefix?: string): Promise<number> {
-    const traceId = this.tracingService.getTraceId() || 'unknown';
+    const traceId = this.getTraceId();
     const fullKeys = keys.map(key => this.buildKey(key, prefix));
 
     try {
@@ -452,7 +527,7 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
    * 模式匹配删除
    */
   async deleteByPattern(pattern: string, prefix?: string): Promise<number> {
-    const traceId = this.tracingService.getTraceId() || 'unknown';
+    const traceId = this.getTraceId();
     const fullPattern = this.buildKey(pattern, prefix);
 
     try {
@@ -480,7 +555,7 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
    * 清空所有缓存
    */
   async flush(): Promise<boolean> {
-    const traceId = this.tracingService.getTraceId() || 'unknown';
+    const traceId = this.getTraceId();
 
     try {
       this.logger.warn(`[${traceId}] Flushing all cache data`);
@@ -599,6 +674,17 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
     this.stats.totalOperations = this.stats.hits + this.stats.misses;
     this.stats.hitRate =
       this.stats.totalOperations > 0 ? (this.stats.hits / this.stats.totalOperations) * 100 : 0;
+  }
+
+  /**
+   * 获取追踪ID，处理TracingService可能为空的情况
+   */
+  private getTraceId(): string {
+    try {
+      return this.tracingService?.getTraceId() || 'unknown';
+    } catch (error) {
+      return 'unknown';
+    }
   }
 
   /**

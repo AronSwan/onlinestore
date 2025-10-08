@@ -4,12 +4,13 @@
 // 时间：2025-09-30
 
 import { Module } from '@nestjs/common';
+import { CacheModule } from '@nestjs/cache-manager';
 import { UnifiedCacheModule } from '../cache/cache.module';
 import { CacheService } from '../cache/cache.service';
 import { MonitoringModule } from '../monitoring/monitoring.module';
 
 @Module({
-  imports: [UnifiedCacheModule, MonitoringModule],
+  imports: [UnifiedCacheModule, MonitoringModule, CacheModule.register()],
   providers: [CacheService],
   exports: [CacheService],
 })

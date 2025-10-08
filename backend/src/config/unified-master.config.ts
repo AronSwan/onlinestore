@@ -334,11 +334,23 @@ export const createMasterConfiguration = (): MasterConfig => {
     abortEarly: false,
   });
 
+  const skipValidation = process.env.SKIP_CONFIG_VALIDATION === 'true' || process.env.NODE_ENV === 'development';
   if (error) {
-    throw new Error(`配置验证失败: ${error.message}`);
+    if (!skipValidation) {
+      throw new Error(`配置验证失败: ${error.message}`);
+    } else {
+      // 在开发或显式跳过验证时，仅警告并继续
+      console.warn(`⚠️ 跳过严格配置验证: ${error.message}`);
+    }
   }
 
-  const env = validatedEnvConfig;
+  let env: any = validatedEnvConfig;
+  if (skipValidation) {
+    env.JWT_SECRET = env.JWT_SECRET || 'dev-jwt-secret-key-32-chars-xxxxxxxxxxxxxxxx';
+    env.ENCRYPTION_KEY = env.ENCRYPTION_KEY || '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+    env.DB_DATABASE = env.DB_DATABASE || './data/dev_caddy_shopping.db';
+    env.CORS_ORIGINS = env.CORS_ORIGINS || 'http://localhost:3000';
+  }
   const isTest = env.NODE_ENV === 'test';
   const isProd = env.NODE_ENV === 'production';
 

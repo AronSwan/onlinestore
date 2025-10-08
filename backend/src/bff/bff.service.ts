@@ -359,7 +359,13 @@ export class BffService {
    */
   private async getHotProducts(limit: number = 10) {
     // TODO: 调用产品服务
-    const products = [];
+    const products: Array<{
+      id: number;
+      name: string;
+      price: number;
+      image: string;
+      rating: number;
+    }> = [];
     for (let i = 1; i <= limit; i++) {
       products.push({
         id: i,

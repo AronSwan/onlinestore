@@ -1,23 +1,91 @@
 # 概览
 
-- 项目：AfterShip/email-verifier
-- 语言/生态：Go
-- 许可：MIT
-- 目标：在不发送邮件的情况下进行邮箱地址验证与可达性评估（Syntax、MX、SMTP、Disposable、Free Provider、Role Account、Gravatar、Typo建议、Reachability 等）。
-- 亮点：
-  - 支持多维度校验（语法、DNS、SMTP、黑白名单元数据）。
-  - 可选启用 SMTP 实时验证（默认关闭，因多数 ISP 封锁 25 端口）。
-  - 支持 SOCKS4/4a/5 代理，提升在受限网络下的验证能力。
-  - 可自动更新一次性邮箱域名列表（EnableAutoUpdateDisposable）。
-  - 提供简单的自托管 API 参考脚本（cmd/apiserver）。
+## 目录
+- [项目概述与核心价值](#项目概述与核心价值)
+- [核心使用方式](#核心使用方式)
+- [技术亮点](#技术亮点)
+- [适用场景分析](#适用场景分析)
+- [技术优势](#技术优势)
 
-核心使用方式：
-- `NewVerifier()` 初始化，按需启用功能：`EnableSMTPCheck()`, `DisableCatchAllCheck()`, `Proxy(...)`, `EnableAutoUpdateDisposable()`, `EnableDomainSuggest()`
-- `Verify(email)` 一次性完成综合校验
-- `CheckSMTP(domain, username)` 进行 SMTP 维度单独检查
-- `IsDisposable(domain)`、`SuggestDomain(domain)` 等便捷方法
+## 项目概述与核心价值
 
-适用场景：
-- 注册/订阅表单邮箱验证
-- 营销/通知邮件名单清洗（提升投递成功率）
-- 安全风控（一次性邮箱、角色邮箱识别）
+AfterShip Email Verifier 是一个功能全面的邮箱验证库，具有以下核心价值：
+
+### 1. 项目基本信息
+- **项目名称**：AfterShip/email-verifier
+- **编程语言**：Go
+- **开源许可**：MIT
+- **主要目标**：在不发送邮件的情况下进行邮箱地址验证与可达性评估
+
+### 2. 功能完整性
+- **全面验证能力**：支持语法、MX、SMTP、一次性邮箱、免费邮箱、角色邮箱、Gravatar等多种验证方式
+- **模块化设计**：各验证功能独立封装，支持选择性启用
+- **扩展性强**：易于添加新的验证规则和自定义验证器
+
+### 3. 性能优化
+- **并发处理**：并发拨号策略，首个成功连接胜出，降低尾延迟
+- **缓存机制**：DNS缓存、元数据缓存、验证结果缓存等多级缓存
+- **超时控制**：双重超时机制（ConnectTimeout、OperationTimeout）
+- **资源管理**：内存优化、连接复用、并发控制
+
+## 核心使用方式
+
+### 1. 初始化配置
+```go
+verifier := NewVerifier()
+    .EnableSMTPCheck()
+    .DisableCatchAllCheck()
+    .Proxy("socks5://proxy:1080")
+    .EnableAutoUpdateDisposable()
+    .EnableDomainSuggest()
+```
+
+### 2. 验证方法
+- `Verify(email)`：一次性完成综合校验
+- `CheckSMTP(domain, username)`：进行SMTP维度单独检查
+- `IsDisposable(domain)`、`SuggestDomain(domain)`等便捷方法
+
+## 技术亮点
+
+### 1. 代理支持
+- 支持SOCKS4/4a/5代理，提升在受限网络下的验证能力
+- 可配置代理超时参数，与验证器超时协同调优
+
+### 2. 自动更新
+- 可自动更新一次性邮箱域名列表（EnableAutoUpdateDisposable）
+- 支持24小时周期性更新，确保数据最新性
+
+### 3. API集成
+- 提供简单的自托管API参考脚本（cmd/apiserver）
+- 支持厂商API校验（如Yahoo），绕过25端口限制
+
+### 4. 设计模式
+- **建造者模式**：流畅的配置接口，易于使用和扩展
+- **策略模式**：灵活的验证策略组合，支持自定义规则
+- **观察者模式**：验证过程中的事件监听，便于监控和日志记录
+
+## 适用场景分析
+
+### 1. 推荐使用场景
+- **用户注册**：注册/订阅表单邮箱验证，防止虚假注册
+- **邮件营销**：营销/通知邮件名单清洗，提升投递成功率
+- **安全风控**：一次性邮箱、角色邮箱识别，提高账号质量
+- **企业应用**：员工邮箱验证，确保通信有效性
+
+## 技术优势
+
+### 1. 高可靠性
+- 多重验证机制，确保验证结果准确性
+- 详细的错误分类和处理，支持降级策略
+
+### 2. 高性能
+- 并发处理和缓存优化，支持高吞吐量
+- 双重超时机制，避免长时间阻塞
+
+### 3. 易集成
+- 丰富的配置选项和多种集成模式
+- 标准化的API接口，易于集成到现有系统
+
+### 4. 可扩展
+- 模块化设计，支持自定义验证规则
+- 清晰的代码结构，便于二次开发和维护

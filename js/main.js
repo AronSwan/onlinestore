@@ -10,6 +10,8 @@
 // 时间：2025-09-25 16:02:15
 // 用途：提供导航栏交互效果，包括悬停、点击、触摸和滚动响应
 // 依赖文件：navigation-state-manager.js（通过window.navStateManager使用）
+// 导入触摸优化模块
+import { cleanupTouchOptimization } from './touch-optimization.js';
 
 function setupNavigation() {
   // 配置选项
@@ -55,10 +57,10 @@ function setupNavigation() {
                 bottom: -4px;
                 height: 2px;
                 width: 0;
-                background: ${config.underline.color};
+                background: var(--gold-standard);
                 transition: 
-                    width ${config.underline.duration}ms cubic-bezier(0.25, 1, 0.5, 1),
-                    opacity ${config.underline.duration}ms ease;
+                    width 300ms cubic-bezier(0.25, 1, 0.5, 1),
+                    opacity 300ms ease;
                 opacity: 0;
                 z-index: 10;
                 transform-origin: left center;
@@ -89,14 +91,13 @@ function setupNavigation() {
   // 缓存DOM
   const navContainer = document.querySelector('.main-nav');
   const navLinks = [...document.querySelectorAll('.nav-link-luxury')];
-  const navbar = document.querySelector('.navbar-luxury');
 
   // 工具函数
   const throttle = (fn, delay) => {
     let lastCall = 0;
     return (...args) => {
       const now = Date.now();
-      if (now - lastCall < delay) return;
+      if (now - lastCall < delay) {return;}
       lastCall = now;
       return fn(...args);
     };
@@ -105,7 +106,7 @@ function setupNavigation() {
   // 事件处理（职责分离：存在 navStateManager 时委托给其方法，不直接改动 class）
   const handleClick = (e) => {
     const link = e.target.closest('.nav-link-luxury');
-    if (!link) return;
+    if (!link) {return;}
     
     // 始终委托给状态管理器处理点击事件
     if (hasNavManager && window.navStateManager && typeof window.navStateManager.handleClick === 'function') {
@@ -117,7 +118,7 @@ function setupNavigation() {
     
     // 如果没有状态管理器，使用基本的状态管理逻辑
     // 清除所有状态 - 统一管理状态
-    navLinks.forEach(l => {
+    navLinks.forEach((l) => {
       l.classList.remove(config.activeClass, config.hoverClass);
       l.setAttribute('data-state', 'inactive');
     });
@@ -144,7 +145,7 @@ function setupNavigation() {
 
   const handleHover = (e) => {
     const link = e.target.closest('.nav-link-luxury');
-    if (!link) return;
+    if (!link) {return;}
 
     // 始终委托给状态管理器处理悬停事件
     if (hasNavManager && window.navStateManager && typeof window.navStateManager.handleMouseEnter === 'function') {
@@ -160,7 +161,7 @@ function setupNavigation() {
     state.underlineTimeout = null;
 
     // 设置悬停状态 - 统一管理，同一时间只有一个悬停状态
-    navLinks.forEach(l => {
+    navLinks.forEach((l) => {
       l.classList.remove(config.hoverClass);
       if (l !== state.activeLink) {
         l.setAttribute('data-state', 'inactive');
@@ -175,7 +176,7 @@ function setupNavigation() {
 
   const handleHoverEnd = (e) => {
     const link = e.target.closest('.nav-link-luxury');
-    if (!link) return;
+    if (!link) {return;}
 
     // 委托给状态管理器处理悬停结束事件
     if (hasNavManager && window.navStateManager && typeof window.navStateManager.handleMouseLeave === 'function') {
@@ -185,7 +186,7 @@ function setupNavigation() {
 
     // 如果没有状态管理器，使用基本的状态管理逻辑
     // 立即恢复状态，不使用延迟 - 统一管理状态
-    navLinks.forEach(l => {
+    navLinks.forEach((l) => {
       if (l !== state.activeLink) {
         l.classList.remove(config.hoverClass);
         l.setAttribute('data-state', 'inactive');
@@ -199,7 +200,7 @@ function setupNavigation() {
 
   const handleTouchStart = (e) => {
     const link = e.target.closest('.nav-link-luxury');
-    if (!link) return;
+    if (!link) {return;}
 
     if (hasNavManager && window.navStateManager && typeof window.navStateManager.handleTouchStart === 'function') {
       window.navStateManager.handleTouchStart({ currentTarget: link });
@@ -213,7 +214,7 @@ function setupNavigation() {
 
   const handleTouchEnd = (e) => {
     const link = e.target.closest('.nav-link-luxury');
-    if (!link) return;
+    if (!link) {return;}
 
     if (hasNavManager && window.navStateManager && typeof window.navStateManager.handleTouchEnd === 'function') {
       window.navStateManager.handleTouchEnd({ currentTarget: link });
@@ -235,12 +236,12 @@ function setupNavigation() {
     state.lastScrollPosition = scrollPosition;
 
     // 如果没有状态管理器，使用基本的滚动检测逻辑
-    if (hasNavManager) return;
+    if (hasNavManager) {return;}
 
     let currentSection = null;
     let minDistance = Infinity;
 
-    state.sections.forEach(section => {
+    state.sections.forEach((section) => {
       const distance = Math.abs(section.top - scrollPosition);
       if (distance < minDistance) {
         minDistance = distance;
@@ -249,7 +250,7 @@ function setupNavigation() {
     });
 
     if (currentSection && currentSection.link !== state.activeLink) {
-      navLinks.forEach(l => {
+      navLinks.forEach((l) => {
         l.classList.remove(config.activeClass);
         if (l !== state.hoverLink) {
           l.setAttribute('data-state', 'inactive');
@@ -270,7 +271,7 @@ function setupNavigation() {
     }
 
     // 初始化sections数组
-    state.sections = navLinks.map(link => {
+    state.sections = navLinks.map((link) => {
       const href = link.getAttribute('href');
       if (href && href.startsWith('#') && href.length > 1) {
         try {
@@ -300,7 +301,7 @@ function setupNavigation() {
     // 初始化激活状态
     const hash = window.location.hash;
     if (hash && hash.length > 1) {
-      const targetLink = navLinks.find(link => link.getAttribute('href') === hash);
+      const targetLink = navLinks.find((link) => link.getAttribute('href') === hash);
       if (targetLink) {
         targetLink.classList.add(config.activeClass);
         targetLink.setAttribute('data-state', 'active');
@@ -340,7 +341,7 @@ function setupNavigation() {
     }
 
     // 清除所有状态
-    navLinks.forEach(link => {
+    navLinks.forEach((link) => {
       link.classList.remove(config.activeClass, config.hoverClass);
       link.removeAttribute('data-state');
     });
@@ -354,10 +355,10 @@ function setupNavigation() {
     getState: () => ({ ...state }),
     setActive: (link) => {
       if (typeof link === 'string') {
-        link = navLinks.find(l => l.getAttribute('href') === link || l.textContent === link);
+        link = navLinks.find((l) => l.getAttribute('href') === link || l.textContent === link);
       }
       if (link && navLinks.includes(link)) {
-        navLinks.forEach(l => {
+        navLinks.forEach((l) => {
           l.classList.remove(config.activeClass);
           if (l !== state.hoverLink) {
             l.setAttribute('data-state', 'inactive');
@@ -392,7 +393,7 @@ if (document.readyState === 'loading') {
 // 依赖文件：无
 
 window.addEventListener('beforeunload', () => {
-    if (typeof cleanupTouchOptimization === 'function') {
-        cleanupTouchOptimization();
-    }
+  if (typeof cleanupTouchOptimization === 'function') {
+    cleanupTouchOptimization();
+  }
 });

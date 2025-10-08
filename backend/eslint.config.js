@@ -1,14 +1,15 @@
 // 用途：ESLint配置文件，支持TypeScript和Prettier
 // 作者：后端开发团队
 // 时间：2025-10-01 15:30:00
+// 修改：2025-10-07 转换为CommonJS格式
 
-import { ESLint } from 'eslint';
-import tsParser from '@typescript-eslint/parser';
-import tsPlugin from '@typescript-eslint/eslint-plugin';
-import prettierPlugin from 'eslint-plugin-prettier';
-import prettierConfig from 'eslint-config-prettier';
+const { ESLint } = require('eslint');
+const tsParser = require('@typescript-eslint/parser');
+const tsPlugin = require('@typescript-eslint/eslint-plugin');
+const prettierPlugin = require('eslint-plugin-prettier');
+const prettierConfig = require('eslint-config-prettier');
 
-// 由于ESLint 9+使用ES模块，需要通过动态导入获取配置
+// CommonJS格式的ESLint配置
 const config = [
   {
     files: ['src/**/*.{ts,js}', 'test/**/*.{ts,js}'],
@@ -16,7 +17,6 @@ const config = [
       'node_modules/',
       'dist/',
       'coverage/',
-      'test/',
       'scripts/',
       '.eslintrc.js',
       '.prettierrc',
@@ -26,8 +26,8 @@ const config = [
       parser: tsParser,
       parserOptions: {
         project: 'tsconfig.json',
-        tsconfigRootDir: import.meta.dirname,
-        sourceType: 'module',
+        tsconfigRootDir: __dirname,
+        sourceType: 'commonjs',
       },
       globals: {
         node: true,
@@ -54,7 +54,6 @@ const config = [
       'node_modules/',
       'dist/',
       'coverage/',
-      'test/',
       'scripts/',
       '.eslintrc.js',
       '.prettierrc',
@@ -63,4 +62,4 @@ const config = [
   },
 ];
 
-export default config;
+module.exports = config;

@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import Redis from 'ioredis';
+import { createRedisClient, RedisLike } from '../../../common/redis/redis-utils';
 import { CartRedisConfig } from '../config/cart-redis.config';
 
 /**
@@ -10,7 +10,7 @@ import { CartRedisConfig } from '../config/cart-redis.config';
 @Injectable()
 export class CartLockService implements OnModuleDestroy {
   private readonly logger = new Logger(CartLockService.name);
-  private readonly redis: Redis;
+  private readonly redis: RedisLike;
   private readonly lockTimeout: number;
   private readonly maxRetries: number;
   private readonly retryDelay: number;
@@ -19,7 +19,7 @@ export class CartLockService implements OnModuleDestroy {
     private readonly configService: ConfigService,
     private readonly cartRedisConfig: CartRedisConfig,
   ) {
-    this.redis = new Redis(this.cartRedisConfig.getLockConfig());
+    this.redis = createRedisClient(this.configService, this.cartRedisConfig.getLockConfig());
     const timeoutConfig = this.cartRedisConfig.getLockTimeout();
     this.lockTimeout = timeoutConfig.lockTimeout;
     this.maxRetries = timeoutConfig.retryCount;

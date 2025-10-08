@@ -17,12 +17,25 @@ export class CreateUsersSession20251001000004 implements MigrationInterface {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-    await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS IDX_users_session_user ON users_session (user_id)`,
+    const tableName = 'users_session';
+    const [idxUserExists] = await queryRunner.query(
+      `SELECT COUNT(1) AS cnt FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = 'IDX_users_session_user'`,
+      [tableName],
     );
-    await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS IDX_users_session_expires ON users_session (expires_at)`,
+    if (!idxUserExists?.cnt) {
+      await queryRunner.query(
+        `CREATE INDEX IDX_users_session_user ON ${tableName} (user_id)`,
+      );
+    }
+    const [idxExpiresExists] = await queryRunner.query(
+      `SELECT COUNT(1) AS cnt FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = 'IDX_users_session_expires'`,
+      [tableName],
     );
+    if (!idxExpiresExists?.cnt) {
+      await queryRunner.query(
+        `CREATE INDEX IDX_users_session_expires ON ${tableName} (expires_at)`,
+      );
+    }
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

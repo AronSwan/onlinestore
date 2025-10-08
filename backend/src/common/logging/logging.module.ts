@@ -1,9 +1,12 @@
 import { Module, DynamicModule, Global } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { WinstonModule } from 'nest-winston';
+import * as winston from 'winston';
 import { LoggingService } from './logging.service';
 import { LogAggregationService } from './log-aggregation.service';
 import { TracingService } from '../tracing/tracing.service';
+import { OpenObserveModule } from '../openobserve/openobserve.module';
 
 // 日志模块配置接口
 export interface LoggingModuleOptions {
@@ -347,7 +350,20 @@ export class LoggingCoreModule {
   static forRoot(options: LoggingModuleOptions = {}): DynamicModule {
     return {
       module: LoggingCoreModule,
-      imports: [ConfigModule, ScheduleModule.forRoot()],
+      imports: [
+        ConfigModule,
+        ScheduleModule.forRoot(),
+        OpenObserveModule,
+        WinstonModule.forRoot({
+          format: winston.format.combine(
+            winston.format.timestamp(),
+            winston.format.json(),
+          ),
+          transports: [
+            new winston.transports.Console(),
+          ],
+        })
+      ],
       providers: [
         {
           provide: 'LOGGING_MODULE_OPTIONS',
@@ -357,7 +373,7 @@ export class LoggingCoreModule {
         TracingService,
         LogAggregationService,
       ],
-      exports: [LoggingService, TracingService, LogAggregationService],
+      exports: [LoggingService, TracingService, LogAggregationService, WinstonModule],
       global: options.isGlobal !== false,
     };
   }
@@ -365,7 +381,21 @@ export class LoggingCoreModule {
   static forRootAsync(options: LoggingModuleAsyncOptions): DynamicModule {
     return {
       module: LoggingCoreModule,
-      imports: [ConfigModule, ScheduleModule.forRoot(), ...(options.imports || [])],
+      imports: [
+        ConfigModule,
+        ScheduleModule.forRoot(),
+        OpenObserveModule,
+        WinstonModule.forRoot({
+          format: winston.format.combine(
+            winston.format.timestamp(),
+            winston.format.json(),
+          ),
+          transports: [
+            new winston.transports.Console(),
+          ],
+        }),
+        ...(options.imports || [])
+      ],
       providers: [
         {
           provide: 'LOGGING_MODULE_OPTIONS',
@@ -376,7 +406,7 @@ export class LoggingCoreModule {
         TracingService,
         LogAggregationService,
       ],
-      exports: [LoggingService, TracingService, LogAggregationService],
+      exports: [LoggingService, TracingService, LogAggregationService, WinstonModule],
       global: options.isGlobal !== false,
     };
   }

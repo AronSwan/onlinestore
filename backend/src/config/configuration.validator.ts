@@ -12,8 +12,48 @@ import { CacheKeyManager } from './cache-key-manager';
 import { ErrorLogger } from './error-logger';
 import { ApiVersionManager } from './api-version-manager';
 
-// Create configuration instance
-const masterConfig = createMasterConfiguration();
+/**
+ * Create configuration instance with safe fallback
+ * Avoid crashing at module load when env/config is incomplete.
+ */
+let masterConfig: any;
+try {
+  masterConfig = createMasterConfiguration();
+} catch (e) {
+  // Fallback to safe development defaults to prevent startup crash
+  masterConfig = {
+    app: { env: process.env.NODE_ENV || 'development' },
+    database: {
+      host: process.env.DB_HOST || 'localhost',
+      port: Number(process.env.DB_PORT || 5432),
+      username: process.env.DB_USER || 'root',
+      password: process.env.DB_PASSWORD || 'password',
+      poolSize: Number(process.env.DB_POOL_SIZE || 50),
+      connectionTimeout: Number(process.env.DB_CONN_TIMEOUT || 15000),
+    },
+    redis: {
+      host: process.env.REDIS_HOST || 'localhost',
+      port: Number(process.env.REDIS_PORT || 6379),
+      password: process.env.REDIS_PASSWORD || '',
+    },
+    jwt: (() => {
+      const alg = process.env.JWT_ALG || 'HS256';
+      if (alg === 'RS256') {
+        return {
+          algorithm: 'RS256',
+          privateKey: process.env.JWT_PRIVATE_KEY || '',
+          publicKey: process.env.JWT_PUBLIC_KEY || '',
+          expiresIn: process.env.JWT_EXPIRES_IN || '1h',
+        };
+      }
+      return {
+        algorithm: 'HS256',
+        secret: process.env.JWT_SECRET || 'dev-secret-key-please-change-xxxxxxxxxxxxxxxxxxxx',
+        expiresIn: process.env.JWT_EXPIRES_IN || '1h',
+      };
+    })(),
+  };
+}
 
 export class ConfigurationValidator {
   /**

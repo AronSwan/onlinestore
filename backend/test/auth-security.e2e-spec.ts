@@ -501,7 +501,7 @@ describe('AuthSecurity (e2e)', () => {
   describe('速率限制测试', () => {
     it('应该限制登录尝试频率', async () => {
       const maxRequests = 10;
-      const promises = [];
+      const promises: any[] = [];
 
       // 快速发送多个请求
       for (let i = 0; i < maxRequests + 5; i++) {
@@ -523,7 +523,7 @@ describe('AuthSecurity (e2e)', () => {
 
     it('应该限制注册尝试频率', async () => {
       const maxRequests = 5;
-      const promises = [];
+      const promises: any[] = [];
 
       // 快速发送多个注册请求
       for (let i = 0; i < maxRequests + 3; i++) {

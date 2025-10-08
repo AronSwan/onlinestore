@@ -195,7 +195,7 @@ export class LoginUserDto {
 }
 
 // 用户响应DTO，用于API响应，排除敏感信息
-export class UserResponseDto {
+export class UserUpdateResponseDto {
   @ApiProperty({ description: '用户ID' })
   id: string;
 

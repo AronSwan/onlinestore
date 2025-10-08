@@ -4,9 +4,11 @@
 // 时间：2025-09-26 18:22:00
 
 import { Module, forwardRef } from '@nestjs/common';
+import { CacheModule } from '@nestjs/cache-manager';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MonitoringModule } from '../monitoring/monitoring.module';
 import { SearchModule } from './search/search.module';
+import { MessagingModule } from '../messaging/messaging.module';
 
 import { ProductsService } from './products.service';
 import { ProductsController } from './products.controller';
@@ -17,7 +19,9 @@ import { ProductImage } from './entities/product-image.entity';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Product, Category, ProductImage]),
+    CacheModule.register(),
     MonitoringModule,
+    forwardRef(() => MessagingModule),
     forwardRef(() => SearchModule),
   ],
   controllers: [ProductsController],

@@ -1,12 +1,16 @@
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, Optional } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
+import { RedisCacheService } from '../cache/redis-cache.service';
+import { TracingService } from '../tracing/tracing.service';
 
 @Injectable()
 export class ApiKeyGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly configService: ConfigService,
+    @Optional() private readonly redisCacheService?: RedisCacheService,
+    @Optional() private readonly tracingService?: TracingService,
   ) {}
 
   canActivate(context: ExecutionContext): boolean {

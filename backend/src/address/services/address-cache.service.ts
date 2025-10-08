@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
-import Redis from 'ioredis';
+import { createRedisClient, RedisLike } from '../../common/redis/redis-utils';
 import { Address } from '../entities/address.entity';
 import { NominatimSearchResult, NominatimReverseResult } from './nominatim.service';
 
@@ -27,7 +27,7 @@ export interface ReverseGeocodeCache {
 @Injectable()
 export class AddressCacheService {
   private readonly logger = new Logger(AddressCacheService.name);
-  private readonly redis: Redis;
+  private readonly redis: RedisLike;
   private readonly config: CacheConfig;
 
   constructor(
@@ -42,8 +42,8 @@ export class AddressCacheService {
       failedTTL: this.configService.get('address.cache.failedTTL', 4 * 60 * 60),
     };
 
-    // 初始化 Redis 连接
-    this.redis = new Redis({
+    // 初始化 Redis（支持禁用时降级为内存Stub）
+    this.redis = createRedisClient(this.configService, {
       host: this.configService.get('REDIS_HOST', 'localhost'),
       port: this.configService.get('REDIS_PORT', 6379),
       db: this.configService.get('REDIS_DB', 0),

@@ -42,7 +42,7 @@ import {
 import { Product } from './entities/product.entity';
 
 @ApiTags('产品管理')
-@Controller('api/products')
+@Controller('products')
 @UseInterceptors(RouteLabelInterceptor)
 export class ProductsController {
   constructor(

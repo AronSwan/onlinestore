@@ -1,3 +1,5 @@
+# 支付服务独立配置文件
+# 可以单独启动，也可以通过主配置文件启动
 version: '3.8'
 
 services:
@@ -6,11 +8,11 @@ services:
     build:
       context: ./microservices/gopay-service
       dockerfile: Dockerfile
-    container_name: gopay-service
-    ports:
-      - "8080:8080"
+    container_name: payment-gopay-service
+    restart: unless-stopped
     environment:
       - PORT=8080
+      - HOST=0.0.0.0
       - ALIPAY_APP_ID=${ALIPAY_APP_ID}
       - ALIPAY_PRIVATE_KEY=${ALIPAY_PRIVATE_KEY}
       - ALIPAY_PUBLIC_KEY=${ALIPAY_PUBLIC_KEY}
@@ -19,45 +21,204 @@ services:
       - WECHAT_MCH_ID=${WECHAT_MCH_ID}
       - WECHAT_API_KEY=${WECHAT_API_KEY}
       - WECHAT_SANDBOX=true
+      # Redis 配置
+      - REDIS_URL=redis://payment-redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      # 日志配置
+      - LOG_LEVEL=info
+      - LOG_FORMAT=json
+      # 监控配置
+      - METRICS_ENABLED=true
+      - METRICS_PORT=9090
     volumes:
       - ./microservices/gopay-service/.env:/root/.env:ro
+      - ./logs:/var/log/gopay
     networks:
       - payment-network
-    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - payment-redis
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
 
-  # 加密货币支付网关（示例）
+  # 加密货币支付网关
   crypto-gateway:
     image: nginx:alpine
-    container_name: crypto-gateway
-    ports:
-      - "8081:80"
+    container_name: payment-crypto-gateway
+    restart: unless-stopped
     volumes:
       - ./crypto-gateway-mock.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./logs/nginx:/var/log/nginx
     networks:
       - payment-network
-    restart: unless-stopped
+    ports:
+      - "8081:80"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
 
   # Redis（用于缓存和会话）
-  redis:
+  payment-redis:
     image: redis:7-alpine
-    container_name: payment-redis
-    ports:
-      - "6379:6379"
+    container_name: payment-redis-standalone
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru --requirepass ${REDIS_PASSWORD}
     volumes:
-      - redis-data:/data
+      - payment_redis_data:/data
+      - ./redis.conf:/etc/redis/redis.conf:ro
     networks:
       - payment-network
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # 支付数据库 (PostgreSQL)
+  payment-db:
+    image: postgres:15-alpine
+    container_name: payment-db-standalone
     restart: unless-stopped
-    command: redis-server --appendonly yes
+    environment:
+      - POSTGRES_DB=${PAYMENT_DB:-payment_db}
+      - POSTGRES_USER=${PAYMENT_DB_USER:-payment_user}
+      - POSTGRES_PASSWORD=${PAYMENT_DB_PASSWORD}
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - payment_db_data:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d:ro
+      - ./logs/postgres:/var/log/postgresql
+    networks:
+      - payment-network
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PAYMENT_DB_USER:-payment_user} -d ${PAYMENT_DB:-payment_db}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # 支付服务监控
+  payment-monitor:
+    image: prom/prometheus:latest
+    container_name: payment-monitor-standalone
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./prometheus-payment.yml:/etc/prometheus/prometheus.yml:ro
+      - payment_monitor_data:/prometheus
+    networks:
+      - payment-network
+    ports:
+      - "9090:9090"
+    depends_on:
+      - gopay-service
+    profiles:
+      - monitoring
+
+  # 支付服务指标收集器
+  payment-exporter:
+    image: prom/node-exporter:latest
+    container_name: payment-exporter-standalone
+    restart: unless-stopped
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    networks:
+      - payment-network
+    ports:
+      - "9100:9100"
+    profiles:
+      - monitoring
+
+  # 支付服务管理界面
+  payment-admin:
+    image: nginx:alpine
+    container_name: payment-admin-standalone
+    restart: unless-stopped
+    volumes:
+      - ./admin:/usr/share/nginx/html:ro
+      - ./admin.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - payment-network
+    ports:
+      - "8082:80"
+    depends_on:
+      - gopay-service
+      - payment-db
+    profiles:
+      - admin
+
+  # 支付服务文档
+  payment-docs:
+    image: swaggerapi/swagger-ui:latest
+    container_name: payment-docs-standalone
+    restart: unless-stopped
+    environment:
+      - SWAGGER_JSON=/api/swagger.yaml
+    volumes:
+      - ./swagger.yaml:/api/swagger.yaml:ro
+    networks:
+      - payment-network
+    ports:
+      - "8083:8080"
+    profiles:
+      - docs
+
+volumes:
+  payment_redis_data:
+    driver: local
+    name: payment_standalone_redis_data
+  payment_db_data:
+    driver: local
+    name: payment_standalone_db_data
+  payment_monitor_data:
+    driver: local
+    name: payment_standalone_monitor_data
 
 networks:
   payment-network:
     driver: bridge
-
-volumes:
-  redis-data:
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16

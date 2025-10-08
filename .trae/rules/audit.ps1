@@ -555,6 +555,133 @@ function Check-ToolEnvironment {
 
 <#
 .SYNOPSIS
+    Collects version information for all tools in the toolchain.
+
+.DESCRIPTION
+    This function collects version information for all tools defined in the toolchain configuration.
+    It stores the version information in a global variable for use in reports.
+
+.PARAMETER Toolchain
+    The toolchain configuration object containing tool definitions.
+    This parameter is mandatory.
+
+.PARAMETER EnvironmentConfig
+    The environment configuration object.
+    This parameter is mandatory.
+
+.EXAMPLE
+    Collect-ToolVersions -Toolchain $config.toolchain -EnvironmentConfig $config.environment
+    Collects versions for all tools in the configuration.
+
+.NOTES
+    - Collects version information for security tools like CodeQL, Semgrep, OSV-Scanner, Syft
+    - Stores versions in global ToolVersions hashtable
+    - Handles Docker execution environment
+    - Supports both hashtable and PSObject toolchain configurations
+#>
+function Collect-ToolVersions {
+    param(
+        [Parameter(Mandatory=$true)] $Toolchain,
+        [Parameter(Mandatory=$true)] $EnvironmentConfig
+    )
+    
+    Write-Log "Collecting tool versions..." 'DEBUG'
+    
+    # Initialize global ToolVersions hashtable if not exists
+    if (-not (Get-Variable -Name 'ToolVersions' -Scope 'Global' -ErrorAction 'SilentlyContinue')) {
+        $Global:ToolVersions = @{}
+    }
+    
+    $allTools = @()
+    
+    # Extract tools from toolchain configuration
+    if ($Toolchain -is [hashtable]) {
+        foreach ($category in $Toolchain.Keys) {
+            $tools = $Toolchain[$category]
+            if ($tools -is [array]) {
+                foreach ($tool in $tools) {
+                    if ($tool.name) {
+                        $allTools += $tool.name
+                    }
+                }
+            }
+        }
+    } else {
+        $Toolchain.PSObject.Properties | ForEach-Object {
+            $tools = $_.Value
+            if ($tools -is [array]) {
+                foreach ($tool in $tools) {
+                    if ($tool.name) {
+                        $allTools += $tool.name
+                    }
+                }
+            }
+        }
+    }
+    
+    # Always check core tools as well
+    $allTools = ($allTools + @('git','npm','npx','PowerShell')) | Select-Object -Unique | Where-Object { $_ }
+    
+    $isDockerConfigured = ($EnvironmentConfig.platform -eq 'docker')
+    $isInContainer = (Test-Path '/.dockerenv') -or ($env:RUNNING_IN_CONTAINER -eq '1')
+    $useDockerExec = $isDockerConfigured -and -not $isInContainer
+    $containerName = if ($useDockerExec) { $EnvironmentConfig.container_name } else { $null }
+    
+    # Collect version for each tool
+    foreach ($tool in $allTools) {
+        try {
+            $toolLower = $tool.ToLower()
+            $version = 'Not Installed'
+            
+            # Get version command based on tool
+            $versionCommand = switch ($toolLower) {
+                'git'         { 'git --version' }
+                'npm'         { 'npm --version' }
+                'npx'         { 'npx --version' }
+                'codeql'      { 'codeql --version' }
+                'semgrep'     { 'semgrep --version' }
+                'osv-scanner' { 'osv-scanner --version' }
+                'syft'        { 'syft version' }
+                'retire'      { 'retire --version' }
+                'powershell'  { '(Get-Host).Version.ToString()' }
+                default       { continue }
+            }
+            
+            if ($useDockerExec -and $toolLower -ne 'powershell') {
+                # Execute in Docker container
+                $dockerCmd = "docker exec $containerName pwsh -NoLogo -NoProfile -Command `"$versionCommand`""
+                $version = Invoke-Expression $dockerCmd 2>$null
+                if ($LASTEXITCODE -ne 0) { $version = 'Not Available in Container' }
+            } else {
+                # Execute locally
+                if ($toolLower -eq 'powershell') {
+                    $version = Invoke-Expression $versionCommand
+                } else {
+                    $version = & cmd.exe /c $versionCommand 2>$null
+                }
+                if (-not $version) { $version = 'Not Installed' }
+            }
+            
+            # Clean up version output
+            if ($version) {
+                $version = $version.Trim()
+                # Extract semantic version from output
+                if ($version -match '\d+\.\d+(\.\d+)?') {
+                    $version = $matches[0]
+                }
+            }
+            
+            $Global:ToolVersions[$tool] = $version
+            Write-Log "$tool version: $version" 'DEBUG'
+        } catch {
+            Write-Log "Failed to get version for ${tool}: $($_.Exception.Message)" 'DEBUG'
+            $Global:ToolVersions[$tool] = 'Error Retrieving'
+        }
+    }
+}
+
+<#
+.SYNOPSIS
     Prepares the codebase for audit by handling local paths or cloning repositories.
 
 .DESCRIPTION
@@ -978,29 +1105,31 @@ function Invoke-Tool {
                         $argList += $ToolConfig.args.Split(' ', [System.StringSplitOptions]::RemoveEmptyEntries)
                     }
                     try {
-                        # AI Assistant fix: use ProcessStartInfo to avoid PowerShell Get-Command/ArgumentList resolution issues when invoking external tools
-                        # Timestamp: 2025-09-11 17:24:13 Asia/Shanghai; Source: PowerShell docs on System.Diagnostics.ProcessStartInfo and external process invocation
-                        $argsEscaped = ($argList | ForEach-Object { if ($_ -match '"|\s') { '"' + ($_ -replace '"','\"') + '"' } else { $_ } }) -join ' '
-                        $psi = New-Object System.Diagnostics.ProcessStartInfo
-                        $psi.FileName = (Get-Command npm -ErrorAction Stop | Select-Object -First 1).Source
-                        $psi.Arguments = $argsEscaped
-                        $psi.RedirectStandardOutput = $true
-                        $psi.RedirectStandardError = $true
-                        $psi.UseShellExecute = $false
-                        $psi.CreateNoWindow = $true
-                        $proc = New-Object System.Diagnostics.Process
-                        $proc.StartInfo = $psi
-                        [void]$proc.Start()
-                        $stdOut = $proc.StandardOutput.ReadToEnd()
-                        $stdErr = $proc.StandardError.ReadToEnd()
-                        $proc.WaitForExit()
-                        # Write stdout to file; append stderr for diagnostics
-                        if ($stdOut) { $stdOut | Set-Content -Path $outputFile -Encoding utf8 } else { '' | Set-Content -Path $outputFile -Encoding utf8 }
-                        if ($stdErr) { "\n=== STDERR ===\n$stdErr" | Add-Content -Path $outputFile -Encoding utf8 }
-                        if ($proc.ExitCode -ne 0) {
-                            Write-Log "npm audit exited with code $($proc.ExitCode) — output captured to $outputFile" "WARN"
-                        } else {
-                            Write-Log "npm audit completed: $outputFile"
+                        # 修复：在Windows上正确执行npm命令，避免直接运行npm.ps1导致的错误
+                        # 使用PowerShell的调用操作符&来执行npm命令
+                        try {
+                            $command = "npm $($argList -join ' ') > '$outputFile' 2>&1"
+                            Write-Log "Executing: $command" 'DEBUG'
+                            Invoke-Expression $command
+                            $exitCode = $LASTEXITCODE
+                            if (-not (Test-Path $outputFile -PathType Leaf)) {
+                                # 创建空文件作为回退
+                                '' | Set-Content -Path $outputFile -Encoding utf8
+                            }
+                            if ($exitCode -ne 0) {
+                                Write-Log "npm audit exited with code $exitCode — output captured to $outputFile" "WARN"
+                            } else {
+                                Write-Log "npm audit completed: $outputFile"
+                            }
+                        } catch {
+                            Write-Log "npm audit failed to execute via Invoke-Expression: $($_.Exception.Message)" "ERROR"
+                            # 最后的回退：使用更简单的命令格式
+                            try {
+                                & npm audit --json > $outputFile 2>&1
+                                Write-Log "npm audit completed using fallback method: $outputFile"
+                            } catch {
+                                Write-Log "npm audit fallback execution failed: $($_.Exception.Message)" "ERROR"
+                            }
                         }
                     } catch {
                         Write-Log "npm audit failed to execute: $($_.Exception.Message)" "ERROR"
@@ -1339,6 +1468,42 @@ function Generate-AuditReport {
 
 # --- Docker Environment Helpers ---
 # Inserted by AI assistant; Timestamp: 2025-09-11 17:17:56 Asia/Shanghai; Source: Trae AI code audit session — ensure Docker execution when platform=docker
+
+<#
+.SYNOPSIS
+    Tests if Docker is available on the system.
+
+.DESCRIPTION
+    Checks if the 'docker' command is available in the system PATH and if the Docker daemon is running.
+
+.OUTPUTS
+    Returns $true if Docker is available and running, $false otherwise.
+
+.EXAMPLE
+    if (Test-DockerAvailable) {
+        Write-Log "Docker is available"
+    }
+#>
+function Test-DockerAvailable {
+    try {
+        # Check if docker command exists
+        $dockerCommand = Get-Command 'docker' -ErrorAction Stop
+        Write-Log "Docker command found at $($dockerCommand.Source)" 'DEBUG'
+        
+        # Check if Docker daemon is running
+        $dockerVersion = & docker version --format '{{.Server.Version}}' 2>$null
+        if (-not $dockerVersion) {
+            Write-Log "Docker command exists but daemon is not running or inaccessible" 'WARN'
+            return $false
+        }
+        Write-Log "Docker daemon is running (version: $dockerVersion)" 'DEBUG'
+        return $true
+    } catch {
+        Write-Log "Docker is not installed or not in PATH" 'WARN'
+        return $false
+    }
+}
+
 function Get-PreferredDockerImage {
     param(
         [Parameter(Mandatory=$true)] $EnvironmentConfig
@@ -1387,14 +1552,21 @@ try {
         Write-Log "Audit configuration could not be parsed. Proceeding with defaults and limited execution." "WARN"
     }
 
-    # Ensure Docker execution if configured
+    # Ensure Docker execution if configured and available
     $envCfg = Get-ConfigValue $config 'environment' @{}
     if ($envCfg -and $envCfg.platform -eq 'docker') {
         $isInContainer = (Test-Path '/.dockerenv') -or ($env:RUNNING_IN_CONTAINER -eq '1')
         if (-not $isInContainer) {
-            $imageToUse = Get-PreferredDockerImage -EnvironmentConfig $envCfg
-            $code = Invoke-SelfInDocker -Image $imageToUse -EnvConfig $envCfg
-            exit $code
+            # Check if Docker is available
+            if (Test-DockerAvailable) {
+                $imageToUse = Get-PreferredDockerImage -EnvironmentConfig $envCfg
+                $code = Invoke-SelfInDocker -Image $imageToUse -EnvConfig $envCfg
+                exit $code
+            } else {
+                Write-Log "Docker is not available. Switching to local execution mode." "WARN"
+                # Override platform to local for this run
+                $envCfg.platform = 'local'
+            }
         } else {
             Write-Log "Detected container runtime (/.dockerenv present). Continuing in-container execution." 'DEBUG'
         }

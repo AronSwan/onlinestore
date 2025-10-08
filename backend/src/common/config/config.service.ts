@@ -7,7 +7,8 @@ import * as path from 'path';
 import * as yaml from 'js-yaml';
 import * as Joi from 'joi';
 import { Redis } from 'ioredis';
-import { watch } from 'chokidar';
+/* fallback to require to avoid TS2307 resolution issues during build */
+const { watch } = require('chokidar');
 
 // 配置源类型
 export enum ConfigSourceType {

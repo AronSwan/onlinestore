@@ -292,7 +292,12 @@ export class CartService {
     }>;
   }> {
     const cartItems = await this.getSelectedCartItems(customerUserId);
-    const invalidItems = [];
+    const invalidItems: Array<{
+      id: string;
+      productName: string;
+      requestedQuantity: number;
+      availableStock: number;
+    }> = [];
 
     // 这里应该调用产品服务验证库存
     // 简化实现，假设所有商品都有足够库存
