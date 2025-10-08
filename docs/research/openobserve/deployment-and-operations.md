@@ -1,24 +1,42 @@
-# 部署与运维
+# 部署与运维（加强版，依据 README 与仓库）
 
-部署方式
-- Docker/docker-compose：快速起步，适合开发与小规模生产。
-- Kubernetes：适合中大型环境，结合存储与扩容策略。
+快速启动（README）
+- Docker 单机：
+```bash
+docker run -d \
+  --name openobserve \
+  -v $PWD/data:/data \
+  -p 5080:5080 \
+  -e ZO_ROOT_USER_EMAIL="root@example.com" \
+  -e ZO_ROOT_USER_PASSWORD="Complexpass#123" \
+  public.ecr.aws/zinclabs/openobserve:latest
+```
+- Docker Compose：
+```yaml
+services:
+  openobserve:
+    image: public.ecr.aws/zinclabs/openobserve:latest
+    restart: unless-stopped
+    environment:
+      ZO_ROOT_USER_EMAIL: "root@example.com"
+      ZO_ROOT_USER_PASSWORD: "Complexpass#123"
+    ports:
+      - "5080:5080"
+    volumes:
+      - data:/data
+volumes:
+  data:
+```
+- HA 部署：README 链接至官方 HA 文档（openobserve.ai/docs/ha_deployment）
 
 基础配置
-- 组织与流：创建 org 与 stream，发放 Ingest Token。
-- 端口与网络：确保 Ingest 端口（默认 5080）可从业务服务访问。
-- 认证与访问控制：使用 Token 保护写入与查询；按租户隔离。
+- Root 用户：环境变量设定 root 邮箱与密码（见 .env.example 与 README）
+- 组织与流：在 UI 中创建 org/stream，生成 Ingest Token
+- 端口：默认 5080（HTTP Ingest 与 UI）
+- 存储：本地卷或对象存储（S3/MinIO/GCS/Azure Blob）
 
-存储与扩容
-- 分片与副本：按数据量与查询模式调整分片与复制策略。
-- 保留策略：设置数据保留周期，控制存储成本。
-- 热/冷分层（如有）：根据访问频次进行分层存储。
-
-备份与恢复
-- 依据官方文档对存储目录/卷进行快照与备份。
-- 灾备：跨区/跨云部署与数据复制策略。
-
-运维建议
-- 滚动升级：保持服务可用性与数据一致性。
-- 指标与健康检查：监控 Ingest 成功率、查询延迟、存储使用、错误比率。
-- 日常治理：stream 命名规范、标签约定、查询模板复用。
+运维建议（结合仓库）
+- 备份：持久化卷/对象存储策略（依据部署方式）
+- 监控：关注 Ingest 成功率、查询延迟、存储占用（benchmarks/ 与 README 的性能目标）
+- 滚动升级：单二进制与 HA 模式下平滑升级
+- 多租户治理：org/stream 命名规范与配额策略

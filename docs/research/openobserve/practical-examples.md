@@ -1,35 +1,17 @@
-# 实践示例（日志/指标/追踪上报）
+# 实践示例（加强版，基于 README 与本项目集成场景）
 
-Node/JS 写入示例（HTTP Ingest）
-```ts
-import axios from 'axios';
-export async function ooIngest(records: any[]) {
-  const base = process.env.OO_BASE_URL || 'http://openobserve:5080';
-  const org = process.env.OO_ORG || 'default';
-  const stream = process.env.OO_STREAM || 'email_verification';
-  const token = process.env.OO_TOKEN || '';
-  const url = `${base}/api/${org}/${stream}/_json`;
-  await axios.post(url, records, { headers: { Authorization: `Bearer ${token}` } });
-}
-```
+HTTP Ingest（JSON 批量）
+- 端点：POST /api/{org}/{stream}/_json
+- Header：Authorization: Bearer {token}
+- 建议批量大小与重试策略，详见 usage-and-integration.md
 
-示例：上报 Email 验证批量任务指标
-```ts
-await ooIngest([
-  { timestamp: new Date().toISOString(), kind: 'batch_start', job_id: 'job-123', size: 10000 },
-  { timestamp: new Date().toISOString(), kind: 'metric', name: 'unknown_ratio', value: 0.28 },
-  { timestamp: new Date().toISOString(), kind: 'metric', name: 'timeout_rate', value: 0.06 },
-  { timestamp: new Date().toISOString(), kind: 'domain_hotspot', domain: 'yahoo.com', errors: 120 },
-  { timestamp: new Date().toISOString(), kind: 'batch_end', job_id: 'job-123', duration_ms: 1800000 }
-]);
-```
+OTLP（Traces/Metrics/Logs）
+- 端点：/otlp/v1/traces、/otlp/v1/metrics、/otlp/v1/logs
+- 与 OpenTelemetry SDK 集成（Node 示例见 usage-and-integration.md）
 
-仪表建议
-- 任务级：开始/结束、耗时、处理量。
-- 质量级：unknown 比例、超时率、错误类别。
-- 域热点：按域与错误计数的排行。
+Pipelines（README）
+- 在摄取时做脱敏与富化，将日志转为聚合指标（示例见 usage-and-integration.md 的伪配置）
 
-告警建议
-- unknown_ratio > 0.3（5分钟窗口）
-- timeout_rate > 0.1
-- 单域错误计数激增（环比翻倍）
+仪表与告警（README 提供 UI/Alerts 截图）
+- 按 stream 构建仪表，监控 unknown 比例、超时率、域热点等
+- 告警规则与通知渠道通过 UI 配置；参考 README 中 Alerts 截图

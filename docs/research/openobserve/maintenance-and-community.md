@@ -1,14 +1,16 @@
-# 维护与社区
+# 维护与社区（加强版，依据仓库）
 
 维护信号
-- CI 与发布节奏：关注官方 release 与变更日志。
-- 文档与示例：查看仓库与网站的使用指南与最佳实践。
+- 活跃度：README 徽章显示 last-commit、stars、issues、contributors、releases
+- SBOM：提供 Rust 与 JS 的 SBOM 文件（openobserve.cdx.xml、web/sbom.json）
+- 代码质量：存在 clippy.toml、rustfmt.toml、deny.toml 等配置
 
 社区互动
-- Issue 与讨论：在 GitHub 提问与反馈。
-- 贡献：按贡献指南参与代码或文档完善。
+- Slack/WeChat：README 提供加入渠道
+- CONTRIBUTING.md：贡献流程与规范
+- Releases 与变更：关注 releases 与文档更新
 
 长期建议
-- 基于自身数据规模做性能基准与容量规划。
-- 建立组织内的字段/标签约定，保障查询与告警的一致性。
-- 定期审查保留策略与成本。
+- 依据负载与查询场景做容量规划与基准
+- 统一字段与标签规范，复用查询模板与仪表
+- 定期审查保留周期与存储成本

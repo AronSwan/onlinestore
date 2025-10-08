@@ -1,18 +1,20 @@
-# 架构与源码结构（基于公开信息的概述）
+# 架构与源码结构（加强版，基于仓库）
 
-核心理念：
-- 数据模型：org（组织）/stream（数据流），通过 HTTP/OTLP 等协议将结构化 JSON 文档或时序数据写入指定流。
-- 存储与查询：后端将数据按分片与索引管理，提供高效查询与聚合能力。
-- 管理平面：组织与流的创建/权限管理、Token 发放、告警与仪表板配置。
+代码结构与技术栈（来自仓库根目录）
+- 后端：Rust（Cargo.toml、src/ 目录）
+- 前端：web/（JavaScript，含 sbom.json）
+- 部署与工具：deploy/（部署相关）、benchmarks/（基准）、tests/、.env.example（环境变量样例）
 
-典型组件（仓库顶层结构可能包含）：
-- server：核心服务端，包括 API、Ingest、查询等逻辑。
-- ui：Web 控制台与仪表展示。
-- deploy：部署脚本与容器编排（如 docker-compose / k8s manifests）。
-- docs/ examples：接口与集成示例。
+核心组件（依据 README 与目录）
+- Ingest/API：提供 HTTP/OTLP 摄取接口，支持 logs/metrics/traces 与 RUM
+- 查询与可视化：内置 UI（web/），支持 SQL 与 PromQL
+- 多租户与认证：org/stream 模型、内置认证与 Token（README）
+- 存储后端：支持本地磁盘与对象存储（S3、MinIO、GCS、Azure Blob）（README）
+- Pipelines：对数据进行富化、脱敏、归一化（README）
+- HA/集群：支持单二进制或高可用安装（README）
 
-数据流示意：
-1) 客户端（应用或代理）通过 HTTP/OTLP 上报数据到 OpenObserve Ingest 端点，携带 org、stream、token。
-2) 服务端进行解析、存储、索引与压缩。
-3) 查询端提供过滤、聚合、可视化与告警触发。
-4) 管理端进行多租户、配额、权限与生命周期的控制。
+数据路径
+1) 客户端或代理（Fluent Bit/Vector/OTLP/HTTP）发往 Ingest 端点（携带 org/stream/token）
+2) 服务端解析并存储（Rust 实现，细节参考 src/）
+3) 查询端通过 UI 或 API 执行 SQL/PromQL，生成仪表与告警
+4) 管理平面进行 org/stream 与 Token 管理（README 中的 UI 截图）
