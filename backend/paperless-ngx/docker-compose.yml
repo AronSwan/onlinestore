@@ -36,7 +36,7 @@ services:
 
   # PostgreSQL数据库服务
   database:
-    image: postgres:15
+    image: postgres:16
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
