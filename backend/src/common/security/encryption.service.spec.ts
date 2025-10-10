@@ -4,12 +4,12 @@
 // 时间：2025-10-02 00:00:00
 
 // Mock crypto module first, before any imports that might use it
-jest.mock('crypto', () => ({
-  randomBytes: jest.fn(),
-  createCipheriv: jest.fn(),
-  createDecipheriv: jest.fn(),
-  createHmac: jest.fn(),
-  timingSafeEqual: jest.fn(),
+(jest as any).mock('crypto', () => ({
+  randomBytes: (jest as any).fn(),
+  createCipheriv: (jest as any).fn(),
+  createDecipheriv: (jest as any).fn(),
+  createHmac: (jest as any).fn(),
+  timingSafeEqual: (jest as any).fn(),
 }));
 
 import { Test, TestingModule } from '@nestjs/testing';
@@ -20,28 +20,22 @@ import * as crypto from 'crypto';
 
 // Mock ConfigService
 const mockConfigService = {
-  get: jest.fn(),
+  get: (jest as any).fn(),
 };
 
 // Get the mocked crypto functions
-const mockRandomBytes = crypto.randomBytes as jest.MockedFunction<typeof crypto.randomBytes>;
-const mockCreateCipheriv = crypto.createCipheriv as jest.MockedFunction<
-  typeof crypto.createCipheriv
->;
-const mockCreateDecipheriv = crypto.createDecipheriv as jest.MockedFunction<
-  typeof crypto.createDecipheriv
->;
-const mockCreateHmac = crypto.createHmac as jest.MockedFunction<typeof crypto.createHmac>;
-const mockTimingSafeEqual = crypto.timingSafeEqual as jest.MockedFunction<
-  typeof crypto.timingSafeEqual
->;
+const mockRandomBytes = crypto.randomBytes as any;
+const mockCreateCipheriv = crypto.createCipheriv as any;
+const mockCreateDecipheriv = crypto.createDecipheriv as any;
+const mockCreateHmac = crypto.createHmac as any;
+const mockTimingSafeEqual = crypto.timingSafeEqual as any;
 
 describe('EncryptionService', () => {
   let service: EncryptionService;
   let configService: ConfigService;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    (jest as any).clearAllMocks();
 
     // Setup default mock returns before creating the module
     mockConfigService.get.mockImplementation((key: string) => {
@@ -133,7 +127,7 @@ describe('EncryptionService', () => {
       const iv = Buffer.from('a'.repeat(SECURITY_CONSTANTS.ENCRYPTION.IV_LENGTH));
       const authTag = Buffer.from('auth-tag-data');
 
-      (mockRandomBytes as jest.Mock).mockReturnValue(iv);
+      mockRandomBytes.mockImplementation(() => iv);
 
       const mockCipher = {
         update: jest.fn().mockReturnValue('encrypted-part1'),
@@ -235,7 +229,7 @@ describe('EncryptionService', () => {
     it('should generate secure random string with default length', () => {
       // 创建一个32字节的Buffer，这将生成64个字符的hex字符串
       const randomBytes = Buffer.alloc(32, 'a');
-      (mockRandomBytes as jest.Mock).mockReturnValue(randomBytes);
+      mockRandomBytes.mockImplementation(() => randomBytes);
 
       const result = service.generateSecureRandom();
 
@@ -248,7 +242,7 @@ describe('EncryptionService', () => {
     it('should generate secure random string with custom length', () => {
       // 创建一个16字节的Buffer，这将生成32个字符的hex字符串
       const randomBytes = Buffer.alloc(16, 'a');
-      (mockRandomBytes as jest.Mock).mockReturnValue(randomBytes);
+      mockRandomBytes.mockImplementation(() => randomBytes);
 
       const result = service.generateSecureRandom(16);
 
@@ -258,7 +252,7 @@ describe('EncryptionService', () => {
     });
 
     it('should handle random generation errors gracefully', () => {
-      (mockRandomBytes as jest.Mock).mockImplementation(() => {
+      mockRandomBytes.mockImplementation(() => {
         throw new Error('Random generation failed');
       });
 
@@ -326,7 +320,7 @@ describe('EncryptionService', () => {
       const randomString = 'random-hex-string';
 
       const dateNowSpy = jest.spyOn(Date, 'now').mockReturnValue(fixedTimestamp);
-      (mockRandomBytes as jest.Mock).mockReturnValue(Buffer.from(randomString, 'hex'));
+      mockRandomBytes.mockImplementation(() => Buffer.from(randomString, 'hex'));
 
       const result = service.generatePaymentNonce();
 
@@ -385,7 +379,7 @@ describe('EncryptionService', () => {
       const authTag = Buffer.from('a'.repeat(SECURITY_CONSTANTS.ENCRYPTION.TAG_LENGTH)); // 使用正确长度的认证标签
 
       // Mock encryption
-      (mockRandomBytes as jest.Mock).mockReturnValue(iv);
+      mockRandomBytes.mockImplementation(() => iv);
       const mockCipher = {
         update: jest.fn().mockReturnValue('encrypted-part1'),
         final: jest.fn().mockReturnValue('encrypted-part2'),
@@ -436,7 +430,7 @@ describe('EncryptionService', () => {
       const randomString = 'random-hex-string';
 
       const dateNowSpy = jest.spyOn(Date, 'now').mockReturnValue(fixedTimestamp);
-      (mockRandomBytes as jest.Mock).mockReturnValue(Buffer.from(randomString, 'hex'));
+      mockRandomBytes.mockImplementation(() => Buffer.from(randomString, 'hex'));
 
       // Generate nonce
       const nonce = service.generatePaymentNonce();
@@ -471,7 +465,7 @@ describe('EncryptionService', () => {
       expect(() => service.encrypt(text)).toThrow('Encryption failed: Cipher error');
 
       // Reset mock
-      jest.clearAllMocks();
+      (jest as any).clearAllMocks();
       mockConfigService.get.mockImplementation((key: string) => {
         if (key === 'ENCRYPTION_KEY') {
           return 'a'.repeat(64);
@@ -480,7 +474,7 @@ describe('EncryptionService', () => {
       });
 
       // Setup default mocks again
-      (mockRandomBytes as jest.Mock).mockImplementation((size, callback) => {
+      mockRandomBytes.mockImplementation((size, callback) => {
         const buf = Buffer.from('a'.repeat(size));
         if (callback) {
           callback(null, buf);

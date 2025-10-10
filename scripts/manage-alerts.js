@@ -3,8 +3,9 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 
-const OPENOBSERVE_URL = process.env.OPENOBSERVE_URL || 'http://localhost:5080';
-const OPENOBSERVE_ORGANIZATION = process.env.OPENOBSERVE_ORGANIZATION || 'caddy-shopping';
+const { env } = require('./openobserve/env-adapter.js');
+const OPENOBSERVE_URL = env.url;
+const OPENOBSERVE_ORGANIZATION = env.organization;
 
 async function getAuthToken() {
   try {

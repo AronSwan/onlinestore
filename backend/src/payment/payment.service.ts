@@ -149,15 +149,15 @@ export class PaymentService {
     try {
       const result = await strategy.handleCallback(callbackData);
 
-      if (result.success && result.paymentId) {
+      if (result.success && result.data?.paymentId) {
         const payment = await this.paymentRepository.findOne({
-          where: { paymentId: result.paymentId },
+          where: { paymentId: result.data.paymentId },
         });
 
         if (payment) {
-          return await this.updatePaymentFromCallback(payment, result);
+          return await this.updatePaymentFromCallback(payment, result.data);
         } else {
-          this.logger.warn(`回调中的支付记录不存在: ${result.paymentId}`);
+          this.logger.warn(`回调中的支付记录不存在: ${result.data.paymentId}`);
         }
       }
 
@@ -194,8 +194,8 @@ export class PaymentService {
       });
 
       if (result.success) {
-        await this.updatePaymentWithRefund(payment, amount, result.refundId);
-        await this.publishRefundEvent(payment, amount, result.refundId, reason);
+        await this.updatePaymentWithRefund(payment, amount, result.data?.refundId);
+        await this.publishRefundEvent(payment, amount, result.data?.refundId, reason);
         this.logger.log(`退款成功: ${paymentId}, 金额: ${amount}`);
       }
 
@@ -322,17 +322,17 @@ export class PaymentService {
     queryRunner: QueryRunner,
   ): Promise<void> {
     payment.status = PaymentStatus.PROCESSING;
-    payment.thirdPartyTransactionId = result.thirdPartyTransactionId || null;
-    payment.cryptoAddress = result.cryptoAddress || null;
+    payment.thirdPartyTransactionId = result.data?.thirdPartyTransactionId || null;
+    payment.cryptoAddress = result.data?.cryptoAddress || null;
     payment.metadata = {
       ...payment.metadata,
-      redirectUrl: result.redirectUrl,
-      qrCode: result.qrCode,
-      deepLink: result.deepLink,
+      redirectUrl: result.data?.redirectUrl,
+      qrCode: result.data?.qrCode,
+      deepLink: result.data?.deepLink,
     };
 
-    if (result.expiredAt) {
-      payment.expiredAt = result.expiredAt;
+    if (result.data?.expiredAt) {
+      payment.expiredAt = result.data.expiredAt;
     }
 
     await queryRunner.manager.save(payment);
@@ -449,16 +449,16 @@ export class PaymentService {
       const strategy = this.getPaymentStrategy(payment.method);
       const result = await strategy.queryPayment(payment.paymentId);
 
-      if (result.status !== payment.status) {
+      if (result.success && result.data && result.data.status !== payment.status) {
         const oldStatus = payment.status;
-        payment.status = result.status as PaymentStatus;
+        payment.status = result.data.status as PaymentStatus;
 
-        if (result.paidAt && !payment.paidAt) {
-          payment.paidAt = result.paidAt;
+        if (result.data.paidAt && !payment.paidAt) {
+          payment.paidAt = result.data.paidAt;
         }
 
-        if (result.blockchainTxHash) {
-          payment.blockchainTxHash = result.blockchainTxHash;
+        if (result.data.blockchainTxHash) {
+          payment.blockchainTxHash = result.data.blockchainTxHash;
         }
 
         await this.paymentRepository.save(payment);

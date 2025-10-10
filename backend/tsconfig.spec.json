@@ -1,12 +1,18 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "types": ["jest", "node"]
+    "types": ["jest", "node"],
+    "typeRoots": ["./node_modules/@types", "./src/logging"]
   },
   "include": [
+    "src/**/*",
     "src/**/*.spec.ts",
     "src/**/*.test.ts",
     "test/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
   ]
 }

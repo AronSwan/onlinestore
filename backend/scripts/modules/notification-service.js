@@ -12,6 +12,7 @@ const https = require('https');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const { getSlack, getEmail } = require('./openobserve-adapter');
 
 // 默认配置
 const DEFAULT_CONFIG = {
@@ -74,6 +75,32 @@ const DEFAULT_CONFIG = {
 class NotificationService {
   constructor(options = {}) {
     this.config = { ...DEFAULT_CONFIG, ...options };
+    // 适配器合并（仅在现有值为空时填充，保留env兜底）
+    try {
+      const slackSdk = getSlack();
+      if (slackSdk && typeof slackSdk === 'object') {
+        this.config.slack.webhookUrl = this.config.slack.webhookUrl || slackSdk.webhookUrl || '';
+        this.config.slack.channel = this.config.slack.channel || slackSdk.channel || '#security-alerts';
+        this.config.slack.username = this.config.slack.username || slackSdk.username || 'Security Bot';
+        this.config.slack.iconEmoji = this.config.slack.iconEmoji || slackSdk.iconEmoji || ':warning:';
+      }
+      const mail = getEmail();
+      if (mail && typeof mail === 'object') {
+        this.config.email.smtpHost = this.config.email.smtpHost || mail.smtpHost || (process.env.SMTP_HOST || '');
+        this.config.email.smtpPort = this.config.email.smtpPort || Number(mail.smtpPort || (process.env.SMTP_PORT || 587));
+        this.config.email.secure = this.config.email.secure || Boolean(mail.secure || false);
+        const user = (this.config.email.auth && this.config.email.auth.user) || mail.user || (process.env.SMTP_USER || '');
+        const pass = (this.config.email.auth && this.config.email.auth.pass) || mail.pass || (process.env.SMTP_PASS || '');
+        this.config.email.auth = { user, pass };
+        this.config.email.from = this.config.email.from || mail.from || (process.env.SMTP_FROM || 'security@example.com');
+        const toList = Array.isArray(this.config.email.to) ? this.config.email.to : [];
+        const mailTo = Array.isArray(mail.to) ? mail.to : (mail.to ? String(mail.to).split(',').map(s => s.trim()).filter(Boolean) : []);
+        const envTo = process.env.SMTP_TO ? String(process.env.SMTP_TO).split(',').map(s => s.trim()).filter(Boolean) : [];
+        this.config.email.to = toList.length ? toList : (mailTo.length ? mailTo : envTo);
+      }
+    } catch (_) {
+      // 适配器不可用时静默回退
+    }
     this.initTemplates();
   }
 

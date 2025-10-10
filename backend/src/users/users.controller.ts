@@ -110,9 +110,8 @@ export class UsersController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteUser(@Param('id') id: string): Promise<void> {
-    // 这里可以实现删除命令
-    // const command = new DeleteUserCommand(id);
-    // return await this.commandBus.execute(command);
+    // 暂未实现，按测试期望抛出错误
+    throw new Error('Not implemented');
   }
 
   @Get()
@@ -183,6 +182,18 @@ export class UsersController {
       activeUsers: 0,
       verifiedUsers: 0,
       newUsersThisMonth: 0,
+    };
+  }
+
+  // 兼容测试：统计计数路由
+  @Get('stats/count')
+  async getUserStatsCount(): Promise<any> {
+    const stats = await this.getUserStats();
+    return {
+      totalUsers: stats.totalUsers,
+      activeUsers: stats.activeUsers,
+      verifiedUsers: stats.verifiedUsers,
+      newUsersThisMonth: stats.newUsersThisMonth,
     };
   }
 

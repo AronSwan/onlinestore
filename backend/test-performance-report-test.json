@@ -1,0 +1,47 @@
+{
+  "timestamp": "2025-10-09T14:47:41.155Z",
+  "version": "4.0-optimized",
+  "platform": "win32",
+  "summary": {
+    "totalTests": 2,
+    "successfulTests": 1,
+    "failedTests": 1,
+    "totalExecutionTime": 5000,
+    "averageTestTime": 150
+  },
+  "systemResources": {
+    "platform": "win32",
+    "cpuCount": 24,
+    "totalMemory": 34193986560,
+    "freeMemory": 29527957504,
+    "memoryUsage": 0.136,
+    "loadAverage": [
+      0,
+      0,
+      0
+    ],
+    "loadRatio": 0,
+    "uptime": 123456,
+    "arch": "x64"
+  },
+  "testResults": [
+    {
+      "file": "test1.spec.ts",
+      "success": true,
+      "duration": 100,
+      "exitCode": 0
+    },
+    {
+      "file": "test2.spec.ts",
+      "success": false,
+      "duration": 200,
+      "exitCode": 1
+    }
+  ],
+  "optimization": {
+    "workersUsed": 4,
+    "adaptiveParallel": true,
+    "smartScheduling": true,
+    "idleMode": false
+  }
+}

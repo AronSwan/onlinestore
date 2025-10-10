@@ -1,0 +1,166 @@
+{
+  "timestamp": "2025-10-10T07:58:31.077Z",
+  "summary": {
+    "total": 15,
+    "passed": 15,
+    "failed": 0,
+    "skipped": 0,
+    "passRate": "100.00"
+  },
+  "systemInfo": {
+    "memory": {
+      "total": 34193149952,
+      "free": 20135469056,
+      "usage": 0.4111255271811467
+    },
+    "cpu": {
+      "count": 24,
+      "load": [
+        0,
+        0,
+        0
+      ]
+    },
+    "platform": "win32"
+  },
+  "testDetails": [
+    {
+      "name": "路径验证安全性测试",
+      "category": "安全验证",
+      "passed": true,
+      "timestamp": "2025-10-10T07:50:10.267Z",
+      "details": {}
+    },
+    {
+      "name": "命令注入防护测试",
+      "category": "安全验证",
+      "passed": true,
+      "timestamp": "2025-10-10T07:50:40.461Z",
+      "details": {}
+    },
+    {
+      "name": "文件权限验证测试",
+      "category": "安全验证",
+      "passed": true,
+      "timestamp": "2025-10-10T07:50:42.052Z",
+      "details": {}
+    },
+    {
+      "name": "内存使用限制测试",
+      "category": "资源管理",
+      "passed": true,
+      "timestamp": "2025-10-10T07:51:12.060Z",
+      "details": {
+        "output": "\u001b[95m[Nest] 21036  - \u001b[39m2025/10/10 15:51:04 \u001b[95m  DEBUG\u001b[39m \u001b[38;5;3m[TanStackQueryIntegrationService] \u001b[39m\u001b[95mExecuting query: user.1\u001b[39m\n\u001b[95m[Nest] 21036  - \u001b[39m2025/10/10 15:51:04 \u001b[95m  DEBUG\u001b[39m \u001b[38;5;3m[TanStackQueryIntegrationService] \u001b[39m\u001b[95mCache hit for query: user.1\u001b[39m\n\u001b[95m[Nest] 21036  - \u001b[39m2025/10/10 15:51:04 \u001b[95m  DEBUG\u001b[39m \u001b[38;5;3m[TanStackQueryIntegrationService] \u001b[39m\u001b[95mExecuting query: abort.nocache\u001b[39m\n\u001b[95m[Nest] 21036  - \u001b[39m2025/10/10 15:51:04 \u001b[95m"
+      }
+    },
+    {
+      "name": "并发限制测试",
+      "category": "资源管理",
+      "passed": true,
+      "timestamp": "2025-10-10T07:51:44.316Z",
+      "details": {}
+    },
+    {
+      "name": "超时处理测试",
+      "category": "资源管理",
+      "passed": true,
+      "timestamp": "2025-10-10T07:52:37.441Z",
+      "details": {
+        "exitCode": 1
+      }
+    },
+    {
+      "name": "网络故障恢复测试",
+      "category": "错误恢复",
+      "passed": true,
+      "timestamp": "2025-10-10T07:53:07.451Z",
+      "details": {
+        "exitCode": 1
+      }
+    },
+    {
+      "name": "文件系统错误恢复测试",
+      "category": "错误恢复",
+      "passed": true,
+      "timestamp": "2025-10-10T07:53:08.943Z",
+      "details": {}
+    },
+    {
+      "name": "无效参数处理测试",
+      "category": "错误恢复",
+      "passed": true,
+      "timestamp": "2025-10-10T07:53:09.280Z",
+      "details": {}
+    },
+    {
+      "name": "空测试套件处理测试",
+      "category": "边界条件",
+      "passed": true,
+      "timestamp": "2025-10-10T07:53:39.285Z",
+      "details": {
+        "exitCode": 1,
+        "output": "🧪 测试运行器启动（安全修复版）...\n\n📊 系统信息:\n  CPU: 24 核心 (Intel(R) Xeon(R) CPU E5-2673 v3 @ 2.40GHz)\n  内存: 31.84GB 总计, 18.85GB 可用\n  负载: 1分钟 0.00, 5分钟 0.00, 15分钟 0.00\n  系统空闲: 是\n\n⚙️ 优化配置:\n  自适应并行度: 启用\n  智能调度: 启用\n  闲"
+      }
+    },
+    {
+      "name": "大文件处理测试",
+      "category": "边界条件",
+      "passed": true,
+      "timestamp": "2025-10-10T07:53:40.676Z",
+      "details": {}
+    },
+    {
+      "name": "极端参数值测试",
+      "category": "边界条件",
+      "passed": true,
+      "timestamp": "2025-10-10T07:54:40.853Z",
+      "details": {}
+    },
+    {
+      "name": "并行性能测试",
+      "category": "性能测试",
+      "passed": true,
+      "timestamp": "2025-10-10T07:55:15.078Z",
+      "details": {
+        "duration": 34224,
+        "exitCode": 1
+      }
+    },
+    {
+      "name": "串行性能测试",
+      "category": "性能测试",
+      "passed": true,
+      "timestamp": "2025-10-10T07:56:05.603Z",
+      "details": {
+        "duration": 50524,
+        "exitCode": 1
+      }
+    },
+    {
+      "name": "多实例并发测试",
+      "category": "并发测试",
+      "passed": true,
+      "timestamp": "2025-10-10T07:58:31.076Z",
+      "details": {
+        "instances": 3,
+        "completed": 3
+      }
+    }
+  ],
+  "config": {
+    "testRunnerPath": "D:\\onlinestore\\backend\\scripts\\test-runner-secure.cjs",
+    "timeout": {
+      "short": 30000,
+      "medium": 120000,
+      "long": 300000
+    },
+    "resourceLimits": {
+      "maxMemoryMB": 1024,
+      "maxFileSizeMB": 10,
+      "maxConcurrentTests": 8
+    },
+    "testDataDir": "D:\\onlinestore\\backend\\scripts\\test-data",
+    "reportDir": "D:\\onlinestore\\backend\\scripts\\robustness-reports"
+  }
+}

@@ -1,15 +1,18 @@
 import {
   PaymentStrategy,
   PaymentRequest,
-  PaymentResponse,
-  PaymentQueryResponse,
-  PaymentCallbackResponse,
   RefundRequest,
-  RefundResponse,
 } from './payment-strategy.interface';
+import {
+  GatewayResult,
+  CreatePaymentData,
+  QueryPaymentData,
+  CallbackData,
+  RefundData,
+} from '../common/gateway-result';
 
 export class AlipayStrategy extends PaymentStrategy {
-  async createPayment(request: PaymentRequest): Promise<PaymentResponse> {
+  async createPayment(request: PaymentRequest): Promise<GatewayResult<CreatePaymentData>> {
     // TODO: 集成支付宝SDK
     // 这里是模拟实现，实际需要调用支付宝API
 
@@ -17,37 +20,47 @@ export class AlipayStrategy extends PaymentStrategy {
 
     return {
       success: true,
-      paymentId,
-      redirectUrl: `https://openapi.alipay.com/gateway.do?payment_id=${paymentId}`,
-      qrCode: `alipay://pay?payment_id=${paymentId}`,
-      thirdPartyTransactionId: paymentId,
+      data: {
+        paymentId,
+        redirectUrl: `https://openapi.alipay.com/gateway.do?payment_id=${paymentId}`,
+        qrCode: `alipay://pay?payment_id=${paymentId}`,
+        thirdPartyTransactionId: paymentId,
+      },
     };
   }
 
-  async queryPayment(paymentId: string): Promise<PaymentQueryResponse> {
+  async queryPayment(paymentId: string): Promise<GatewayResult<QueryPaymentData>> {
     // TODO: 查询支付宝支付状态
     return {
-      status: 'success',
-      thirdPartyTransactionId: paymentId,
+      success: true,
+      data: {
+        status: 'success',
+        thirdPartyTransactionId: paymentId,
+      },
     };
   }
 
-  async handleCallback(data: any): Promise<PaymentCallbackResponse> {
+  async handleCallback(data: any): Promise<GatewayResult<CallbackData>> {
     // TODO: 处理支付宝回调
     return {
       success: true,
-      paymentId: data.out_trade_no,
-      status: 'success',
-      thirdPartyTransactionId: data.trade_no,
+      data: {
+        paymentId: data.out_trade_no,
+        status: 'success',
+        thirdPartyTransactionId: data.trade_no,
+      },
     };
   }
 
-  async refund(request: RefundRequest): Promise<RefundResponse> {
+  async refund(request: RefundRequest): Promise<GatewayResult<RefundData>> {
     // TODO: 支付宝退款
     return {
       success: true,
-      refundId: `REFUND_${request.paymentId}_${Date.now()}`,
-      message: '退款成功',
+      data: {
+        refundId: `REFUND_${request.paymentId}_${Date.now()}`,
+        status: 'SUCCESS',
+        message: '退款成功',
+      },
     };
   }
 

@@ -1,4 +1,5 @@
 import { Injectable, Logger, Inject } from '@nestjs/common';
+import { extractErrorInfo } from './utils/logging-error.util';
 import { UserBehaviorLog, OpenObserveConfig } from '../interfaces/logging.interface';
 import OpenObserveTransport from './openobserve-transport';
 import { Request } from 'express';
@@ -6,19 +7,11 @@ import { Request } from 'express';
 @Injectable()
 export class UserBehaviorTracker {
   private readonly logger = new Logger(UserBehaviorTracker.name);
-  private readonly openObserveTransport: OpenObserveTransport;
 
   constructor(
     @Inject('OPENOBSERVE_CONFIG') private readonly config: OpenObserveConfig,
-  ) {
-    this.openObserveTransport = new OpenObserveTransport({
-      endpoint: `${config.url}/api/${config.organization}/user-behavior/_json`,
-      token: config.auth.token || '',
-      batchSize: config.performance.batch_size,
-      flushInterval: config.performance.flush_interval,
-      service: 'caddy-shopping-frontend',
-    });
-  }
+    @Inject('USER_BEHAVIOR_TRANSPORT') private readonly openObserveTransport: OpenObserveTransport,
+  ) {}
 
   // 记录页面访问
   trackPageView(sessionId: string, page: string, userId?: string, req?: Request): void {
@@ -161,8 +154,8 @@ export class UserBehaviorTracker {
     return (
       req.headers['x-forwarded-for'] as string ||
       req.headers['x-real-ip'] as string ||
-      req.connection.remoteAddress ||
-      req.socket.remoteAddress ||
+      req.socket?.remoteAddress ||
+      req.ip ||
       'unknown'
     );
   }
@@ -172,16 +165,20 @@ export class UserBehaviorTracker {
     try {
       this.openObserveTransport.log(behaviorLog, () => {});
     } catch (error) {
-      this.logger.error('Failed to send user behavior log to OpenObserve', error);
+      const errorInfo = extractErrorInfo(error);
+      this.logger.error('Failed to send user behavior log to OpenObserve', errorInfo.stack);
     }
   }
 
   // 强制刷新缓冲区
   flush(): void {
     try {
-      (this.openObserveTransport as any).flush();
+      if (this.openObserveTransport && typeof this.openObserveTransport.flush === 'function') {
+        this.openObserveTransport.flush();
+      }
     } catch (error) {
-      this.logger.error('Failed to flush behavior log buffer', error);
+      const errorInfo = extractErrorInfo(error);
+      this.logger.error('Failed to flush behavior log buffer', errorInfo.stack);
     }
   }
 }

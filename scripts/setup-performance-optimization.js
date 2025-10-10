@@ -6,13 +6,15 @@
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const { env } = require('./openobserve/env-adapter.js');
 
 class PerformanceOptimizationSetup {
   constructor() {
     this.config = {
-      openobserveUrl: process.env.OPENOBSERVE_URL || 'http://localhost:5080',
-      organization: process.env.OPENOBSERVE_ORGANIZATION || 'default',
-      token: process.env.OPENOBSERVE_TOKEN || '',
+
+      openobserveUrl: env.url,
+      organization: env.organization,
+      token: env.token || '',
       metricsStream: process.env.METRICS_STREAM || 'performance-metrics',
       optimizationStream: process.env.OPTIMIZATION_STREAM || 'optimization-recommendations',
       retention: process.env.PERFORMANCE_RETENTION || '30d'

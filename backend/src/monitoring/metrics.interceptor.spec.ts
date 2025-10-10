@@ -4,6 +4,7 @@ import { MonitoringService } from './monitoring.service';
 import { ExecutionContext, CallHandler } from '@nestjs/common';
 import { Observable, of } from 'rxjs';
 import { Request, Response } from 'express';
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 
 describe('MetricsInterceptor', () => {
   let interceptor: MetricsInterceptor;
@@ -12,6 +13,7 @@ describe('MetricsInterceptor', () => {
   let mockResponse: jest.Mocked<Response>;
   let mockContext: ExecutionContext;
   let mockCallHandler: CallHandler;
+  let execIntercept: () => void;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -49,7 +51,15 @@ describe('MetricsInterceptor', () => {
     } as any;
 
     mockCallHandler = {
-      handle: jest.fn().mockReturnValue(of({})),
+      handle: () => of({}),
+    } as CallHandler;
+
+    // 订阅触发：辅助函数，执行一次拦截并订阅以触发 tap 的 next/error
+    execIntercept = () => {
+      const obs = interceptor.intercept(mockContext, mockCallHandler) as any;
+      if (obs && typeof obs.subscribe === 'function') {
+        obs.subscribe({ next: () => {}, error: () => {} });
+      }
     };
   });
 
@@ -63,13 +73,13 @@ describe('MetricsInterceptor', () => {
     });
 
     it('should increment active connections on request start', () => {
-      interceptor.intercept(mockContext, mockCallHandler);
+      execIntercept();
 
       expect(monitoringService.incrementActiveConnections).toHaveBeenCalled();
     });
 
     it('should decrement active connections on request completion', (done) => {
-      interceptor.intercept(mockContext, mockCallHandler);
+      execIntercept();
 
       // Wait for the observable to complete
       setTimeout(() => {
@@ -79,7 +89,7 @@ describe('MetricsInterceptor', () => {
     });
 
     it('should record API call metrics on successful response', (done) => {
-      interceptor.intercept(mockContext, mockCallHandler);
+      execIntercept();
 
       // Wait for the observable to complete
       setTimeout(() => {
@@ -95,13 +105,11 @@ describe('MetricsInterceptor', () => {
 
     it('should record API call metrics on error response', (done) => {
       mockResponse.statusCode = 404;
-      mockCallHandler.handle = jest.fn().mockReturnValue(
-        new Observable(subscriber => {
-          subscriber.error(new Error('Not found'));
-        }),
-      );
+      mockCallHandler.handle = () => new Observable(subscriber => {
+        subscriber.error(new Error('Not found'));
+      });
 
-      interceptor.intercept(mockContext, mockCallHandler);
+      execIntercept();
 
       // Wait for the observable to error
       setTimeout(() => {
@@ -122,7 +130,7 @@ describe('MetricsInterceptor', () => {
         .mockReturnValueOnce(1609459200000) // Start time
         .mockReturnValueOnce(1609459200200); // End time (200ms later)
 
-      interceptor.intercept(mockContext, mockCallHandler);
+      execIntercept();
 
       // Wait for the observable to complete
       setTimeout(() => {
@@ -143,7 +151,7 @@ describe('MetricsInterceptor', () => {
 
       methods.forEach(method => {
         mockRequest.method = method;
-        interceptor.intercept(mockContext, mockCallHandler);
+        execIntercept();
 
         setTimeout(() => {
           expect(monitoringService.recordApiCall).toHaveBeenCalledWith(
@@ -166,7 +174,7 @@ describe('MetricsInterceptor', () => {
 
       statusCodes.forEach(statusCode => {
         mockResponse.statusCode = statusCode;
-        interceptor.intercept(mockContext, mockCallHandler);
+        execIntercept();
 
         setTimeout(() => {
           expect(monitoringService.recordApiCall).toHaveBeenCalledWith(
@@ -189,7 +197,7 @@ describe('MetricsInterceptor', () => {
 
       paths.forEach(path => {
         mockRequest.url = path;
-        interceptor.intercept(mockContext, mockCallHandler);
+        execIntercept();
 
         setTimeout(() => {
           expect(monitoringService.recordApiCall).toHaveBeenCalledWith(

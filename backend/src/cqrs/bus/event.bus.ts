@@ -6,7 +6,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { IEvent, IEventHandlerResult } from '../events/event.base';
 import {
   IEventHandler,
-  IEventHandlerFactory,
   IEventMiddleware,
   IEventPipeline,
   IEventPublisher,
@@ -14,6 +13,9 @@ import {
   EventProcessingStatus,
   EventProcessingStatusInfo,
 } from '../interfaces/event-handler.interface';
+import { CqrsLoggingService } from '../logging/cqrs-logging.service';
+import { CqrsMetricsService } from '../metrics/cqrs-metrics.service';
+import { CqrsTracingService } from '../tracing/cqrs-tracing.service';
 
 /**
  * 事件总线接口
@@ -105,37 +107,77 @@ export class EventBus implements IEventBus, IEventPipeline {
     timeoutId: NodeJS.Timeout;
   }> = [];
 
+  constructor(
+    private readonly cqrsLoggingService: CqrsLoggingService,
+    private readonly cqrsMetricsService: CqrsMetricsService,
+    private readonly cqrsTracingService: CqrsTracingService,
+  ) {}
+
   /**
    * 发布事件
    */
   async publish<TEvent extends IEvent>(event: TEvent): Promise<void> {
     const eventType = event.eventType || event.constructor.name;
-    this.logger.debug(`Publishing event: ${eventType} with ID: ${event.id}`);
+    const eventId = event.id;
+
+    // 获取追踪上下文
+    const span = this.cqrsTracingService.startEventSpan(eventType, eventId);
+    const { traceId, spanId } = this.cqrsTracingService.getCurrentContext();
+
+    // 记录开始日志
+    this.cqrsLoggingService.logEvent({
+      type: eventType,
+      id: eventId,
+      status: 'published',
+      traceId,
+      spanId,
+    });
 
     // 初始化处理状态
-    this.processingStatus.set(event.id, {
-      eventId: event.id,
+    this.processingStatus.set(eventId, {
+      eventId,
       status: EventProcessingStatus.PENDING,
       startTime: new Date(),
     });
+
+    const startTime = Date.now();
 
     try {
       // 获取事件处理器
       const handlers = this.handlers.get(eventType) || [];
       if (handlers.length === 0) {
         this.logger.warn(`No handlers registered for event type: ${eventType}`);
+
+        // 记录指标
+        this.cqrsMetricsService.recordEvent(eventType, 'published', Date.now() - startTime);
+
+        // 完成追踪
+        this.cqrsTracingService.finishSpan(span, true, undefined, {
+          'event.no_handlers': true,
+          'event.duration_ms': Date.now() - startTime,
+        });
+
         return;
       }
 
       // 并行处理所有处理器
-      const promises = handlers.map(handler => this.processEvent(event, handler));
+      const promises = handlers.map(handler =>
+        this.processEvent(event, handler, {
+          traceId,
+          spanId,
+          eventType,
+          eventId,
+          startTime,
+        }),
+      );
       const results = await Promise.allSettled(promises);
 
       // 检查是否有处理器失败
       const hasFailures = results.some(result => result.status === 'rejected');
-      
+      const durationMs = Date.now() - startTime;
+
       // 更新处理状态
-      const status = this.processingStatus.get(event.id);
+      const status = this.processingStatus.get(eventId);
       if (status) {
         if (hasFailures) {
           status.status = EventProcessingStatus.FAILED;
@@ -150,16 +192,41 @@ export class EventBus implements IEventBus, IEventPipeline {
         }
         status.endTime = new Date();
       }
+
+      // 记录指标
+      this.cqrsMetricsService.recordEvent(eventType, hasFailures ? 'error' : 'handled', durationMs);
+
+      // 完成追踪
+      this.cqrsTracingService.finishSpan(
+        span,
+        !hasFailures,
+        hasFailures ? new Error('Some handlers failed') : undefined,
+        {
+          'event.duration_ms': durationMs,
+          'event.handlers_count': handlers.length,
+          'event.failures': hasFailures,
+        },
+      );
     } catch (error) {
+      const durationMs = Date.now() - startTime;
       this.logger.error(`Error publishing event ${eventType}:`, error);
 
       // 更新处理状态
-      const status = this.processingStatus.get(event.id);
+      const status = this.processingStatus.get(eventId);
       if (status) {
         status.status = EventProcessingStatus.FAILED;
         status.endTime = new Date();
         status.error = error.message;
       }
+
+      // 记录指标
+      this.cqrsMetricsService.recordEvent(eventType, 'error', durationMs);
+
+      // 完成追踪
+      this.cqrsTracingService.finishSpan(span, false, error as Error, {
+        'event.duration_ms': durationMs,
+        'event.error_code': (error as Error).name,
+      });
     }
   }
 
@@ -256,7 +323,7 @@ export class EventBus implements IEventBus, IEventPipeline {
 
       // 检查是否有处理器失败
       const hasFailures = results.some(result => result.status === 'rejected');
-      
+
       // 更新处理状态
       const status = this.processingStatus.get(event.id);
       if (status) {
@@ -374,16 +441,81 @@ export class EventBus implements IEventBus, IEventPipeline {
   private async processEvent<TEvent extends IEvent>(
     event: TEvent,
     handler: IEventHandler<TEvent>,
+    context: any = {},
   ): Promise<void> {
     const eventType = event.eventType || event.constructor.name;
+    const eventId = event.id;
     const handlerName = handler.getName();
+    const { traceId, spanId, startTime } = context;
 
-    this.logger.debug(`Processing event: ${eventType} with handler: ${handlerName}`);
+    // 获取追踪上下文
+    const span = this.cqrsTracingService.startEventSpan(eventType, eventId, handlerName);
+
+    // 记录开始日志
+    this.cqrsLoggingService.logEvent({
+      type: eventType,
+      id: eventId,
+      status: 'handled',
+      subscriber: handlerName,
+      traceId,
+      spanId,
+    });
 
     try {
       // 执行中间件管道
-      await this.execute(event, handler);
+      const result = await this.execute(event, handler);
+
+      // 记录成功日志
+      this.cqrsLoggingService.logEvent({
+        type: eventType,
+        id: eventId,
+        status: 'handled',
+        subscriber: handlerName,
+        traceId,
+        spanId,
+        durationMs: Date.now() - startTime,
+      });
+
+      // 记录指标
+      this.cqrsMetricsService.recordEvent(
+        eventType,
+        'handled',
+        Date.now() - startTime,
+        handlerName,
+      );
+
+      // 完成追踪
+      this.cqrsTracingService.finishSpan(span, true, undefined, {
+        'event.duration_ms': Date.now() - startTime,
+        'event.handler': handlerName,
+      });
     } catch (error) {
+      // 记录错误日志
+      this.cqrsLoggingService.logEvent(
+        {
+          type: eventType,
+          id: eventId,
+          status: 'error',
+          subscriber: handlerName,
+          traceId,
+          spanId,
+          durationMs: Date.now() - startTime,
+          errorCode: (error as Error).name,
+        },
+        undefined,
+        error as Error,
+      );
+
+      // 记录指标
+      this.cqrsMetricsService.recordEvent(eventType, 'error', Date.now() - startTime, handlerName);
+
+      // 完成追踪
+      this.cqrsTracingService.finishSpan(span, false, error as Error, {
+        'event.duration_ms': Date.now() - startTime,
+        'event.handler': handlerName,
+        'event.error_code': (error as Error).name,
+      });
+
       this.logger.error(`Error processing event ${eventType} with handler ${handlerName}:`, error);
       throw error;
     }
@@ -485,17 +617,24 @@ export class EventBus implements IEventBus, IEventPipeline {
   /**
    * 获取处理器提供者（用于测试）
    */
-  getProvider(handlerName: string): IEventHandler | null {
+  getProvider(handlerName: string): IEventHandler<any> | null {
     // 在测试中，这个方法用于模拟处理器提供者
     // 实际实现应该从依赖注入容器中获取处理器
     // 返回模拟处理器用于测试
+
+    // 使用类型断言来避免 TypeScript 错误
+    const jest = (global as any).jest || {
+      fn: () => ({ mockResolvedValue: (val: any) => Promise.resolve(val) }),
+      mockReturnValue: (val: any) => val,
+    };
+
     return {
       handle: jest.fn().mockResolvedValue({
         success: true,
       }),
       getName: jest.fn().mockReturnValue(handlerName),
       getEventType: jest.fn().mockReturnValue('TestEvent'),
-    } as IEventHandler;
+    } as IEventHandler<any>;
   }
 
   /**

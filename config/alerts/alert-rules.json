@@ -161,6 +161,46 @@
         "summary": "订单量异常",
         "description": "过去1小时订单量异常低: {{value}}"
       }
+    },
+    {
+      "name": "SWRBackgroundRefreshSpike",
+      "description": "SWR 后台刷新速率异常上升",
+      "condition": {
+        "query": "SELECT rate(value) FROM cqrs-metrics WHERE name = \"cqrs_swr_background_refresh_total\" AND labels.stage = \"scheduled\" AND time > NOW() - 5m",
+        "operator": ">",
+        "threshold": 5,
+        "aggregation": "avg"
+      },
+      "severity": "warning",
+      "for": "5m",
+      "labels": {
+        "service": "cqrs",
+        "component": "swr_refresh"
+      },
+      "annotations": {
+        "summary": "SWR 后台刷新速率异常",
+        "description": "过去5分钟 scheduled 阶段的刷新速率显著高于基线，当前值: {{value}}/min"
+      }
+    },
+    {
+      "name": "SWRInvalidationSpike",
+      "description": "SWR 缓存失效速率异常上升",
+      "condition": {
+        "query": "SELECT rate(value) FROM cqrs-metrics WHERE name = \"cqrs_swr_invalidation_total\" AND time > NOW() - 5m",
+        "operator": ">",
+        "threshold": 3,
+        "aggregation": "avg"
+      },
+      "severity": "warning",
+      "for": "5m",
+      "labels": {
+        "service": "cqrs",
+        "component": "swr_invalidation"
+      },
+      "annotations": {
+        "summary": "SWR 失效速率异常",
+        "description": "过去5分钟失效速率显著高于基线，当前值: {{value}}/min"
+      }
     }
   ]
 }

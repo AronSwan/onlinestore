@@ -13,6 +13,8 @@ import { ConfigService } from '@nestjs/config';
 import { NotFoundException } from '@nestjs/common';
 
 import { ProductsService } from './products.service';
+import { createMockedFunction } from '../../test/utils/typed-mock-factory';
+import { createMockQueryBuilder } from '../../test/utils/index';
 import { Product } from './entities/product.entity';
 import { Category } from './entities/category.entity';
 import { ProductImage } from './entities/product-image.entity';
@@ -27,8 +29,13 @@ const mockCategory = {
   id: 1,
   name: '测试分类',
   description: '测试分类描述',
+  slug: 'test-category',
   isActive: true,
   sortOrder: 1,
+  icon: '',
+  children: [],
+  parent: undefined as any,
+  products: [],
   createdAt: new Date(),
   updatedAt: new Date(),
 };
@@ -43,6 +50,8 @@ const mockProduct = {
   views: 100,
   sales: 20,
   isActive: true,
+  favorites: 0,
+  mainImage: '',
   publishedAt: new Date(),
   tags: ['标签1', '标签2'],
   specifications: { color: '红色', size: 'M' },
@@ -50,87 +59,79 @@ const mockProduct = {
   images: [],
   createdAt: new Date(),
   updatedAt: new Date(),
+  version: 1,
 };
 
 const mockProductImage = {
   id: 1,
-  url: 'https://example.com/image.jpg',
-  alt: '产品图片',
-  isMain: true,
-  sortOrder: 1,
   product: mockProduct,
+  productId: 1,
+  url: 'https://example.com/image.jpg',
+  title: '产品图片',
+  description: '产品图片描述',
+  sortOrder: 1,
+  isActive: true,
   createdAt: new Date(),
   updatedAt: new Date(),
 };
 
 // Mock repositories
 const mockProductRepository = {
-  create: jest.fn(),
-  save: jest.fn(),
-  findOne: jest.fn(),
-  find: jest.fn(),
-  update: jest.fn(),
-  delete: jest.fn(),
-  increment: jest.fn(),
-  count: jest.fn(),
-  createQueryBuilder: jest.fn(),
+  create: createMockedFunction<(dto: Partial<Product>) => Product>(),
+  save: createMockedFunction<(entity: Product) => Promise<Product>>(),
+  findOne: createMockedFunction<(options: any) => Promise<Product | null>>(),
+  find: createMockedFunction<(options: any) => Promise<Product[]>>(),
+  update: createMockedFunction<(id: number | any, partial: Partial<Product>) => Promise<{ affected?: number }>>(),
+  delete: createMockedFunction<(id: number | any) => Promise<{ affected?: number }>>(),
+  increment: createMockedFunction<(criteria: any, property: keyof Product | string, value: number) => Promise<{ affected?: number }>>(),
+  count: createMockedFunction<(options?: any) => Promise<number>>(),
+  createQueryBuilder: createMockedFunction<(alias?: string) => any>(),
 };
 
 const mockCategoryRepository = {
-  findOne: jest.fn(),
-  find: jest.fn(),
+  findOne: createMockedFunction<(options: any) => Promise<Category | null>>(),
+  find: createMockedFunction<(options?: any) => Promise<Category[]>>(),
 };
 
 const mockProductImageRepository = {
-  find: jest.fn(),
+  find: createMockedFunction<(options?: any) => Promise<ProductImage[]>>(),
 };
 
 // Mock services
 const mockCacheManager = {
-  get: jest.fn(),
-  set: jest.fn(),
-  del: jest.fn(),
+  get: createMockedFunction<(key: string) => Promise<any>>(),
+  set: createMockedFunction<(key: string, value: any, ttl?: number) => Promise<boolean>>(),
+  del: createMockedFunction<(key: string) => Promise<boolean>>(),
 };
 
 const mockConfigService = {
-  get: jest.fn(),
+  get: createMockedFunction<(key: string) => any>(),
 };
 
 const mockMonitoringService = {
-  observeRedisDuration: jest.fn(),
-  recordCacheHit: jest.fn(),
-  recordCacheMiss: jest.fn(),
-  observeDbQuery: jest.fn(),
+  observeRedisDuration: createMockedFunction<(metric: string, durationMs: number) => Promise<void>>(),
+  recordCacheHit: createMockedFunction<(key: string) => Promise<void>>(),
+  recordCacheMiss: createMockedFunction<(key: string) => Promise<void>>(),
+  observeDbQuery: createMockedFunction<(queryName: string, durationMs: number) => Promise<void>>(),
 };
 
 const mockProductEventsService = {
-  publishProductCreated: jest.fn(),
-  publishProductUpdated: jest.fn(),
-  publishProductViewed: jest.fn(),
-  publishInventoryUpdated: jest.fn(),
+  publishProductCreated: createMockedFunction<(payload: any) => Promise<void>>(),
+  publishProductUpdated: createMockedFunction<(payload: any) => Promise<void>>(),
+  publishProductViewed: createMockedFunction<(payload: any) => Promise<void>>(),
+  publishInventoryUpdated: createMockedFunction<(payload: any) => Promise<void>>(),
 };
 
 const mockSearchManagerService = {
-  search: jest.fn(),
-  indexProduct: jest.fn(),
-  deleteProduct: jest.fn(),
-  indexProducts: jest.fn(),
-  getStatus: jest.fn(),
+  search: createMockedFunction<(keyword: string, options: any) => Promise<{ hits: Array<{ id: string }>; total: number }>>(),
+  indexProduct: createMockedFunction<(product: Product) => Promise<void>>(),
+  deleteProduct: createMockedFunction<(productId: number) => Promise<void>>(),
+  indexProducts: createMockedFunction<(products: Product[]) => Promise<void>>(),
+  getStatus: createMockedFunction<() => Promise<{ healthy: boolean }>>(),
 };
 
-// Mock QueryBuilder
-const mockQueryBuilder = {
-  leftJoinAndSelect: jest.fn().mockReturnThis(),
-  where: jest.fn().mockReturnThis(),
-  andWhere: jest.fn().mockReturnThis(),
-  orderBy: jest.fn().mockReturnThis(),
-  skip: jest.fn().mockReturnThis(),
-  take: jest.fn().mockReturnThis(),
-  getManyAndCount: jest.fn(),
-  getMany: jest.fn(),
-  select: jest.fn().mockReturnThis(),
-  getRawOne: jest.fn(),
-};
+// Mock QueryBuilder（类型化封装，保留链式调用）
+const mockQueryBuilder = createMockQueryBuilder<Product>();
 
 describe('ProductsService', () => {
   let service: ProductsService;
@@ -146,8 +147,8 @@ describe('ProductsService', () => {
   const originalEnv = process.env;
 
   beforeEach(async () => {
-    jest.resetModules();
-    jest.clearAllMocks();
+    (jest as any).resetModules();
+    (jest as any).clearAllMocks();
     process.env = { ...originalEnv };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -207,7 +208,7 @@ describe('ProductsService', () => {
     Object.values(mockMonitoringService).forEach(mock => mock.mockReset());
     Object.values(mockProductEventsService).forEach(mock => mock.mockReset());
     Object.values(mockSearchManagerService).forEach(mock => mock.mockReset());
-    Object.values(mockQueryBuilder).forEach(mock => mock.mockReset());
+    Object.values(mockQueryBuilder).forEach((mock: any) => mock.mockReset());
 
     // Setup default mock returns
     mockConfigService.get.mockImplementation((key: string) => {
@@ -286,7 +287,7 @@ describe('ProductsService', () => {
     it('should throw NotFoundException when category does not exist', async () => {
       mockCategoryRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.create(createProductData)).rejects.toThrow(NotFoundException);
+      await expect(service.create(createProductData)).rejects.toThrow(new NotFoundException());
       expect(mockCategoryRepository.findOne).toHaveBeenCalledWith({
         where: { id: createProductData.categoryId },
       });
@@ -417,18 +418,10 @@ describe('ProductsService', () => {
     it('should fallback to database search when search engine fails', async () => {
       mockSearchManagerService.search.mockRejectedValue(new Error('Search failed'));
 
-      // 确保QueryBuilder方法链式调用正确模拟
-      const queryBuilder = {
-        leftJoinAndSelect: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        andWhere: jest.fn().mockReturnThis(),
-        orderBy: jest.fn().mockReturnThis(),
-        skip: jest.fn().mockReturnThis(),
-        take: jest.fn().mockReturnThis(),
-        getManyAndCount: jest.fn().mockResolvedValue([[mockProduct], 1]),
-      };
-
-      mockProductRepository.createQueryBuilder.mockReturnValue(queryBuilder);
+      // 使用统一的 QueryBuilder 工厂，确保链式方法和返回类型一致
+      const qb = createMockQueryBuilder<Product>();
+      qb.getManyAndCount.mockResolvedValue([[mockProduct], 1]);
+      mockProductRepository.createQueryBuilder.mockReturnValue(qb);
 
       const result = await service.search(searchOptions);
 
@@ -442,18 +435,10 @@ describe('ProductsService', () => {
     it('should use database search when no keyword is provided', async () => {
       const optionsWithoutKeyword = { ...searchOptions, keyword: undefined };
 
-      // 确保QueryBuilder方法链式调用正确模拟
-      const queryBuilder = {
-        leftJoinAndSelect: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        andWhere: jest.fn().mockReturnThis(),
-        orderBy: jest.fn().mockReturnThis(),
-        skip: jest.fn().mockReturnThis(),
-        take: jest.fn().mockReturnThis(),
-        getManyAndCount: jest.fn().mockResolvedValue([[mockProduct], 1]),
-      };
-
-      mockProductRepository.createQueryBuilder.mockReturnValue(queryBuilder);
+      // 使用统一的 QueryBuilder 工厂，确保链式方法和返回类型一致
+      const qb = createMockQueryBuilder<Product>();
+      qb.getManyAndCount.mockResolvedValue([[mockProduct], 1]);
+      mockProductRepository.createQueryBuilder.mockReturnValue(qb);
 
       const result = await service.search(optionsWithoutKeyword);
 
@@ -542,7 +527,9 @@ describe('ProductsService', () => {
       let callCount = 0;
       mockProductRepository.findOne.mockImplementation(() => {
         callCount++;
-        return callCount === 1 ? mockProduct : { ...mockProduct, name: '更新后的产品' };
+        return Promise.resolve(
+          callCount === 1 ? mockProduct : { ...mockProduct, name: '更新后的产品' },
+        );
       });
 
       const result = await service.update(1, updateProductData);
@@ -563,7 +550,7 @@ describe('ProductsService', () => {
       mockCacheManager.get.mockResolvedValue(null); // 确保缓存未命中
       mockProductRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.update(999, updateProductData)).rejects.toThrow(NotFoundException);
+      await expect(service.update(999, updateProductData)).rejects.toThrow(new NotFoundException());
     });
 
     it('should throw NotFoundException when new category does not exist', async () => {
@@ -575,7 +562,7 @@ describe('ProductsService', () => {
       // 使用async/await方式检查异常
       try {
         await service.update(1, updateProductData);
-        fail('Expected NotFoundException to be thrown');
+        expect(true).toBe(false); // Expected NotFoundException to be thrown
       } catch (error) {
         expect(error).toBeInstanceOf(NotFoundException);
       }
@@ -601,7 +588,7 @@ describe('ProductsService', () => {
     it('should throw NotFoundException when product does not exist', async () => {
       mockProductRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.delete(999)).rejects.toThrow(NotFoundException);
+      await expect(service.delete(999)).rejects.toThrow(new NotFoundException());
     });
   });
 
@@ -655,13 +642,11 @@ describe('ProductsService', () => {
         .mockResolvedValueOnce(80) // activeProducts
         .mockResolvedValueOnce(5); // outOfStockProducts
 
-      // 确保QueryBuilder方法链式调用正确模拟
-      const queryBuilder = {
-        select: jest.fn().mockReturnThis(),
-        getRawOne: jest.fn().mockResolvedValue({ totalSales: '1000' }),
-      };
-
-      mockProductRepository.createQueryBuilder.mockReturnValue(queryBuilder);
+      // 使用统一的 QueryBuilder 工厂，确保链式方法和返回类型一致
+      const qb = createMockQueryBuilder<Product>();
+      qb.select.mockReturnThis();
+      qb.getRawOne.mockResolvedValue({ totalSales: '1000' } as any);
+      mockProductRepository.createQueryBuilder.mockReturnValue(qb);
 
       const result = await service.getStatistics();
 
@@ -698,25 +683,17 @@ describe('ProductsService', () => {
 
     it('should fetch from database when not cached', async () => {
       mockCacheManager.get.mockResolvedValue(null);
-
-      // 确保QueryBuilder方法链式调用正确模拟
-      const queryBuilder = {
-        leftJoinAndSelect: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        orderBy: jest.fn().mockReturnThis(),
-        skip: jest.fn().mockReturnThis(),
-        take: jest.fn().mockReturnThis(),
-        getManyAndCount: jest.fn().mockResolvedValue([[mockProduct], 1]),
-      };
-
-      mockProductRepository.createQueryBuilder.mockReturnValue(queryBuilder);
+      // 使用统一的 QueryBuilder 工厂，确保链式方法和返回类型一致
+      const qb = createMockQueryBuilder<Product>();
+      qb.getManyAndCount.mockResolvedValue([[mockProduct], 1]);
+      mockProductRepository.createQueryBuilder.mockReturnValue(qb);
       mockCacheManager.set.mockResolvedValue(true);
       mockMonitoringService.recordCacheMiss.mockResolvedValue(undefined);
 
       const result = await service.findAll(findAllOptions);
 
       expect(result).toEqual({ products: [mockProduct], total: 1 });
-      expect(queryBuilder.getManyAndCount).toHaveBeenCalled();
+      expect(mockQueryBuilder.getManyAndCount).toHaveBeenCalled();
       expect(mockCacheManager.set).toHaveBeenCalledWith(
         'caddy_shopping:products:list:1:20:测试',
         { products: [mockProduct], total: 1 },
@@ -747,25 +724,17 @@ describe('ProductsService', () => {
 
     it('should fetch from database when not cached', async () => {
       mockCacheManager.get.mockResolvedValue(null);
-
-      // 确保QueryBuilder方法链式调用正确模拟
-      const queryBuilder = {
-        leftJoinAndSelect: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        andWhere: jest.fn().mockReturnThis(),
-        orderBy: jest.fn().mockReturnThis(),
-        take: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockResolvedValue([mockProduct]),
-      };
-
-      mockProductRepository.createQueryBuilder.mockReturnValue(queryBuilder);
+      // 使用统一的 QueryBuilder 工厂，确保链式方法和返回类型一致
+      const qb = createMockQueryBuilder<Product>();
+      qb.getMany.mockResolvedValue([mockProduct]);
+      mockProductRepository.createQueryBuilder.mockReturnValue(qb);
       mockCacheManager.set.mockResolvedValue(true);
       mockMonitoringService.recordCacheMiss.mockResolvedValue(undefined);
 
       const result = await service.findByCategory('测试分类', 10);
 
       expect(result).toEqual([mockProduct]);
-      expect(queryBuilder.getMany).toHaveBeenCalled();
+      expect(mockQueryBuilder.getMany).toHaveBeenCalled();
       expect(mockCacheManager.set).toHaveBeenCalledWith(
         'caddy_shopping:products:category:测试分类:10',
         [mockProduct],
@@ -859,7 +828,7 @@ describe('ProductsService', () => {
   describe('Get Search Engine Status', () => {
     it('should return search engine status', async () => {
       const status = { status: 'healthy', uptime: 3600 };
-      mockSearchManagerService.getStatus.mockResolvedValue(status);
+      mockSearchManagerService.getStatus.mockResolvedValue({ healthy: true });
 
       const result = await service.getSearchEngineStatus();
 
@@ -971,19 +940,10 @@ describe('ProductsService', () => {
     it('should handle search engine errors gracefully', async () => {
       const searchOptions = { keyword: '测试' };
       mockSearchManagerService.search.mockRejectedValue(new Error('Search error'));
-
-      // 确保QueryBuilder方法链式调用正确模拟
-      const queryBuilder = {
-        leftJoinAndSelect: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        andWhere: jest.fn().mockReturnThis(),
-        orderBy: jest.fn().mockReturnThis(),
-        skip: jest.fn().mockReturnThis(),
-        take: jest.fn().mockReturnThis(),
-        getManyAndCount: jest.fn().mockResolvedValue([[mockProduct], 1]),
-      };
-
-      mockProductRepository.createQueryBuilder.mockReturnValue(queryBuilder);
+      // 使用统一的 QueryBuilder 工厂，确保链式方法和返回类型一致
+      const qb = createMockQueryBuilder<Product>();
+      qb.getManyAndCount.mockResolvedValue([[mockProduct], 1]);
+      mockProductRepository.createQueryBuilder.mockReturnValue(qb);
 
       const result = await service.search(searchOptions);
 

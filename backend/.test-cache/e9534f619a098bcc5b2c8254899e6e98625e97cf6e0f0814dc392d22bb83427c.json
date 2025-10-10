@@ -1,0 +1,23 @@
+{
+  "stdout": "",
+  "stderr": "",
+  "exitCode": 1,
+  "metrics": {
+    "testName": "运行单元测试",
+    "testType": "unit",
+    "command": "npx jest --config=jest.config.cjs --testPathPatterns=\".*\\.(spec|test)\\.ts$\" --testPathIgnorePatterns=\".*\\.e2e-spec\\.ts$\" --verbose",
+    "duration": 142123,
+    "exitCode": 1,
+    "memoryUsage": {
+      "rss": 44793856,
+      "heapTotal": 6135808,
+      "heapUsed": 5495096,
+      "external": 1834942,
+      "arrayBuffers": 16659
+    },
+    "timestamp": 1760006043820,
+    "fromCache": false
+  },
+  "timestamp": 1760006043821,
+  "cacheVersion": "2.0"
+}

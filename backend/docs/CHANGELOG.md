@@ -14,9 +14,15 @@
 
 ### 新增
 - 🔄 正在进行的改进工作
+- ✨ 增量更新：日志模块文档（异常过滤器与控制器统一、测试类型化）
+- ✨ 增量更新：OpenObserve 集成指南新增错误字段标准化说明
 
 ### 修改
 - 📝 持续优化中的文档
+- 📝 更新 `src/logging/TEST_EXECUTION_GUIDE.md`：加入近期改动摘要、快速验证步骤与关键文件清单
+- 📝 更新 `src/logging/LOGGING_MODULE_ERROR_ANALYSIS_REPORT.md`：记录统一错误处理与测试类型化改动
+- 📝 更新 `src/logging/LOGGING_MODULE_VERIFICATION_REPORT.md`：补充增量验证结论（0 错误）
+- 📝 更新 `docs/logging/error-analysis.md` 与 `docs/logging/openobserve-integration.md`：补充错误字段标准化与业务字段保留说明
 
 ### 修复
 - 🐛 待修复的问题

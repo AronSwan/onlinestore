@@ -2,30 +2,63 @@
 // 作者：后端开发团队
 // 时间：2025-10-05
 
+// Jest 全局类型声明
+declare const describe: any;
+declare const it: any;
+declare const expect: any;
+declare const beforeEach: any;
+declare const jest: any;
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { CommandBus } from './command.bus';
 import { ICommand, ICommandResult, CommandBase } from '../commands/command.base';
-import { ICommandHandler } from '../interfaces/command-handler.interface';
+import { ICommandHandler, ICommandMiddleware } from '../interfaces/command-handler.interface';
 import { TestMocker, TestAssertions, TestDataFactory } from '../test/test-utils';
+import { CqrsLoggingService } from '../logging/cqrs-logging.service';
+import { CqrsMetricsService } from '../metrics/cqrs-metrics.service';
+import { CqrsTracingService } from '../tracing/cqrs-tracing.service';
 
 describe('CommandBus', () => {
   let commandBus: CommandBus;
-  let mockHandler: jest.Mocked<ICommandHandler>;
+  let mockHandler: any;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [CommandBus],
+      providers: [
+        CommandBus,
+        {
+          provide: CqrsLoggingService,
+          useValue: {
+            logCommand: jest.fn(),
+            logError: jest.fn(),
+          },
+        },
+        {
+          provide: CqrsMetricsService,
+          useValue: {
+            recordCommand: jest.fn(),
+          },
+        },
+        {
+          provide: CqrsTracingService,
+          useValue: {
+            startCommandSpan: jest.fn().mockReturnValue({}),
+            getCurrentContext: jest.fn().mockReturnValue({ traceId: 'test-trace', spanId: 'test-span' }),
+            finishSpan: jest.fn(),
+          },
+        },
+      ],
     }).compile();
 
     commandBus = module.get<CommandBus>(CommandBus);
-    mockHandler = TestMocker.mockCommandHandler() as jest.Mocked<ICommandHandler>;
+    mockHandler = TestMocker.mockCommandHandler();
   });
 
   describe('execute', () => {
     it('应该成功执行命令', async () => {
       // 准备测试数据
       const command = new TestCommand(TestDataFactory.createUser());
-      commandBus.register('TestCommand', mockHandler);
+      commandBus.register('TestCommand', mockHandler as any);
 
       // 执行测试
       const result = await commandBus.execute(command);
@@ -52,7 +85,7 @@ describe('CommandBus', () => {
       const error = new Error('Handler error');
       mockHandler.handle.mockRejectedValue(error);
 
-      commandBus.register('TestCommand', mockHandler);
+      commandBus.register('TestCommand', mockHandler as any);
 
       // 执行测试
       const result = await commandBus.execute(command);
@@ -66,7 +99,7 @@ describe('CommandBus', () => {
     it('应该异步执行命令并返回命令ID', async () => {
       // 准备测试数据
       const command = new TestCommand(TestDataFactory.createUser());
-      commandBus.register('TestCommand', mockHandler);
+      commandBus.register('TestCommand', mockHandler as any);
 
       // 执行测试
       const commandId = await commandBus.executeAsync(command);
@@ -80,7 +113,7 @@ describe('CommandBus', () => {
     it('应该正确设置异步执行状态', async () => {
       // 准备测试数据
       const command = new TestCommand(TestDataFactory.createUser());
-      commandBus.register('TestCommand', mockHandler);
+      commandBus.register('TestCommand', mockHandler as any);
 
       // 执行测试
       const commandId = await commandBus.executeAsync(command);
@@ -97,7 +130,7 @@ describe('CommandBus', () => {
     it('应该返回正确的执行状态', async () => {
       // 准备测试数据
       const command = new TestCommand(TestDataFactory.createUser());
-      commandBus.register('TestCommand', mockHandler);
+      commandBus.register('TestCommand', mockHandler as any);
 
       // 执行异步命令
       const commandId = await commandBus.executeAsync(command);
@@ -127,7 +160,7 @@ describe('CommandBus', () => {
       const handler = mockHandler;
 
       // 执行测试
-      commandBus.register(commandType, handler);
+      commandBus.register(commandType, handler as any);
 
       // 验证结果
       const registeredHandler = (commandBus as any).handlers.get(commandType);
@@ -138,11 +171,11 @@ describe('CommandBus', () => {
       // 准备测试数据
       const commandType = 'TestCommand';
       const firstHandler = mockHandler;
-      const secondHandler = TestMocker.mockCommandHandler() as jest.Mocked<ICommandHandler>;
+      const secondHandler = TestMocker.mockCommandHandler();
 
       // 执行测试
-      commandBus.register(commandType, firstHandler);
-      commandBus.register(commandType, secondHandler);
+      commandBus.register(commandType, firstHandler as any);
+      commandBus.register(commandType, secondHandler as any);
 
       // 验证结果
       const registeredHandler = (commandBus as any).handlers.get(commandType);
@@ -153,7 +186,12 @@ describe('CommandBus', () => {
   describe('addMiddleware', () => {
     it('应该成功添加中间件', () => {
       // 准备测试数据
-      const middleware = TestMocker.mockMiddleware();
+      const middleware: ICommandMiddleware = {
+        name: 'TestMiddleware',
+        execute: jest.fn(async (_cmd, next) => {
+          return next();
+        }),
+      };
 
       // 执行测试
       commandBus.addMiddleware(middleware);
@@ -167,7 +205,12 @@ describe('CommandBus', () => {
   describe('removeMiddleware', () => {
     it('应该成功移除中间件', () => {
       // 准备测试数据
-      const middleware = TestMocker.mockMiddleware();
+      const middleware: ICommandMiddleware = {
+        name: 'TestMiddleware',
+        execute: jest.fn(async (_cmd, next) => {
+          return next();
+        }),
+      };
       commandBus.addMiddleware(middleware);
 
       // 执行测试
@@ -183,7 +226,7 @@ describe('CommandBus', () => {
     it('应该清理过期的执行状态', async () => {
       // 准备测试数据
       const command = new TestCommand(TestDataFactory.createUser());
-      commandBus.register('TestCommand', mockHandler);
+      commandBus.register('TestCommand', mockHandler as any);
 
       // 执行异步命令
       const commandId = await commandBus.executeAsync(command);
@@ -220,7 +263,7 @@ describe('CommandBus', () => {
       // 准备测试数据
       const commandTypes = ['TestCommand1', 'TestCommand2'];
       commandTypes.forEach(type => {
-        commandBus.register(type, mockHandler);
+        commandBus.register(type, mockHandler as any);
       });
 
       // 执行测试
@@ -236,8 +279,14 @@ describe('CommandBus', () => {
   describe('getMiddlewares', () => {
     it('应该返回所有中间件', () => {
       // 准备测试数据
-      const middleware1 = TestMocker.mockMiddleware();
-      const middleware2 = TestMocker.mockMiddleware();
+      const middleware1: ICommandMiddleware = {
+        name: 'TestMiddleware1',
+        execute: jest.fn(async (_cmd, next) => next()),
+      };
+      const middleware2: ICommandMiddleware = {
+        name: 'TestMiddleware2',
+        execute: jest.fn(async (_cmd, next) => next()),
+      };
       commandBus.addMiddleware(middleware1);
       commandBus.addMiddleware(middleware2);
 
@@ -256,7 +305,7 @@ describe('CommandBus', () => {
       // 准备测试数据
       const command1 = new TestCommand(TestDataFactory.createUser());
       const command2 = new TestCommand(TestDataFactory.createUser());
-      commandBus.register('TestCommand', mockHandler);
+      commandBus.register('TestCommand', mockHandler as any);
 
       // 执行异步命令
       const commandId1 = await commandBus.executeAsync(command1);

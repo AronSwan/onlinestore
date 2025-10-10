@@ -5,13 +5,14 @@ import { SearchManagerService } from './search/search-manager.service';
 import { SearchSuggestionService } from './search/search-suggestion.service';
 import { PopularSearchService } from './search/popular-search.service';
 import { ConfigService } from '@nestjs/config';
+import { createMockedFunction } from '../../test/utils/typed-mock-factory';
 
 describe('ProductsController', () => {
   let controller: ProductsController;
   let productsService: ProductsService;
 
   const mockConfigService = {
-    get: jest.fn(),
+    get: createMockedFunction<(key: string) => any>(),
   };
 
   beforeEach(async () => {
@@ -21,31 +22,31 @@ describe('ProductsController', () => {
         {
           provide: ProductsService,
           useValue: {
-            create: jest.fn(),
-            findAll: jest.fn(),
-            findOne: jest.fn(),
-            update: jest.fn(),
-            remove: jest.fn(),
-            search: jest.fn(),
-            findPopular: jest.fn(),
+            create: createMockedFunction<(dto: any) => Promise<any>>(),
+            findAll: createMockedFunction<(page?: number, size?: number) => Promise<any[]>>(),
+            findOne: createMockedFunction<(id: number | string) => Promise<any>>(),
+            update: createMockedFunction<(id: number | string, dto: any) => Promise<any>>(),
+            remove: createMockedFunction<(id: number | string) => Promise<{ affected?: number }>>(),
+            search: createMockedFunction<(keyword: string, options?: any) => Promise<{ items: any[]; total: number }>>(),
+            findPopular: createMockedFunction<() => Promise<any[]>>(),
           },
         },
         {
           provide: SearchManagerService,
           useValue: {
-            search: jest.fn(),
+            search: createMockedFunction<(keyword: string, options?: any) => Promise<{ hits: Array<{ id: string }>; total: number }>>(),
           },
         },
         {
           provide: SearchSuggestionService,
           useValue: {
-            getSuggestions: jest.fn(),
+            getSuggestions: createMockedFunction<(keyword: string, limit?: number) => Promise<string[]>>(),
           },
         },
         {
           provide: PopularSearchService,
           useValue: {
-            getPopularSearches: jest.fn(),
+            getPopularSearches: createMockedFunction<() => Promise<string[]>>(),
           },
         },
         {
@@ -1618,7 +1619,7 @@ describe('ProductsController', () => {
 
       expect(result.products).toEqual(searchResults);
       expect(productsService.search).toHaveBeenCalledWith(
-        expect.objectContaining({
+        (expect as any).objectContaining({
           keyword: 'multi',
           categoryId: 1,
           minPrice: 10,

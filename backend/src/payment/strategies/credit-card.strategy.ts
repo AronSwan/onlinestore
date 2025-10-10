@@ -1,15 +1,14 @@
+import { PaymentStrategy, PaymentRequest, RefundRequest } from './payment-strategy.interface';
 import {
-  PaymentStrategy,
-  PaymentRequest,
-  PaymentResponse,
-  PaymentQueryResponse,
-  PaymentCallbackResponse,
-  RefundRequest,
-  RefundResponse,
-} from './payment-strategy.interface';
+  GatewayResult,
+  CreatePaymentData,
+  QueryPaymentData,
+  CallbackData,
+  RefundData,
+} from '../common/gateway-result';
 
 export class CreditCardStrategy extends PaymentStrategy {
-  async createPayment(request: PaymentRequest): Promise<PaymentResponse> {
+  async createPayment(request: PaymentRequest): Promise<GatewayResult<CreatePaymentData>> {
     // TODO: 集成信用卡支付网关（如Stripe、银联等）
     // 这里是模拟实现
 
@@ -17,36 +16,46 @@ export class CreditCardStrategy extends PaymentStrategy {
 
     return {
       success: true,
-      paymentId,
-      redirectUrl: `https://payment-gateway.com/pay?payment_id=${paymentId}`,
-      thirdPartyTransactionId: paymentId,
+      data: {
+        paymentId,
+        redirectUrl: `https://payment-gateway.com/pay?payment_id=${paymentId}`,
+        thirdPartyTransactionId: paymentId,
+      },
     };
   }
 
-  async queryPayment(paymentId: string): Promise<PaymentQueryResponse> {
+  async queryPayment(paymentId: string): Promise<GatewayResult<QueryPaymentData>> {
     // TODO: 查询信用卡支付状态
     return {
-      status: 'success',
-      thirdPartyTransactionId: paymentId,
+      success: true,
+      data: {
+        status: 'success',
+        thirdPartyTransactionId: paymentId,
+      },
     };
   }
 
-  async handleCallback(data: any): Promise<PaymentCallbackResponse> {
+  async handleCallback(data: any): Promise<GatewayResult<CallbackData>> {
     // TODO: 处理信用卡支付回调
     return {
       success: true,
-      paymentId: data.payment_id,
-      status: 'success',
-      thirdPartyTransactionId: data.transaction_id,
+      data: {
+        paymentId: data.payment_id,
+        status: 'success',
+        thirdPartyTransactionId: data.transaction_id,
+      },
     };
   }
 
-  async refund(request: RefundRequest): Promise<RefundResponse> {
+  async refund(request: RefundRequest): Promise<GatewayResult<RefundData>> {
     // TODO: 信用卡退款
     return {
       success: true,
-      refundId: `REFUND_${request.paymentId}_${Date.now()}`,
-      message: '退款成功',
+      data: {
+        refundId: `REFUND_${request.paymentId}_${Date.now()}`,
+        status: 'SUCCESS',
+        message: '退款成功',
+      },
     };
   }
 

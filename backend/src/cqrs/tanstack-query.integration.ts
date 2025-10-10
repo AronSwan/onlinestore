@@ -2,7 +2,9 @@
 // 作者：后端开发团队
 // 时间：2025-10-05
 
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+/* ESM 兼容：p-retry 在 node_modules 为 ESM，Jest 默认不转换。这里使用 CommonJS 方式引入 */
+const pRetry = (require('p-retry').default ?? require('p-retry'));
 import { IQuery, IQueryResult } from './queries/query.base';
 import { IQueryBus } from './bus/query.bus';
 import { IQueryCache } from './interfaces/query-handler.interface';
@@ -50,6 +52,11 @@ export interface TanStackQueryConfig {
    * 是否在网络重连时重新获取
    */
   refetchOnReconnect?: boolean;
+
+  /**
+   * 并发去重：同一 queryKey 并发调用仅执行一次
+   */
+  dedupeConcurrent?: boolean;
 }
 
 /**
@@ -110,6 +117,16 @@ export interface TanStackQueryOptions {
    * 是否启用查询
    */
   enabled?: boolean;
+
+  /**
+   * 并发去重：同一 queryKey 并发调用仅执行一次
+   */
+  dedupeConcurrent?: boolean;
+
+  /**
+   * 取消信号：支持中途取消
+   */
+  abortSignal?: AbortSignal;
 
   /**
    * 选择器函数
@@ -297,10 +314,13 @@ export interface ITanStackQueryClient {
  * TanStack Query集成服务
  */
 @Injectable()
-export class TanStackQueryIntegrationService implements ITanStackQueryClient {
+export class TanStackQueryIntegrationService implements ITanStackQueryClient, OnModuleDestroy {
   private readonly logger = new Logger(TanStackQueryIntegrationService.name);
   private readonly queryCache = new Map<string, TanStackQueryState>();
   private readonly config: TanStackQueryConfig;
+  private readonly intervals = new Map<string, NodeJS.Timeout>();
+  // 并发去重映射：按 cacheKey 复用进行中的 Promise
+  private readonly inFlight = new Map<string, Promise<TanStackQueryState>>();
 
   constructor(
     private readonly queryBus: IQueryBus,
@@ -315,6 +335,7 @@ export class TanStackQueryIntegrationService implements ITanStackQueryClient {
       retryDelay: 1000,
       refetchOnWindowFocus: true,
       refetchOnReconnect: true,
+      dedupeConcurrent: false,
       ...config,
     };
   }
@@ -332,7 +353,7 @@ export class TanStackQueryIntegrationService implements ITanStackQueryClient {
       refreshInterval = this.config.refreshInterval,
       retry = this.config.retry,
       retryDelay = this.config.retryDelay,
-      refetchOnWindowFocus = this.config.refetchOnReconnect,
+      refetchOnWindowFocus = this.config.refetchOnWindowFocus, // 修复这里
       refetchOnReconnect = this.config.refetchOnReconnect,
       enabled = true,
       select,
@@ -371,6 +392,32 @@ export class TanStackQueryIntegrationService implements ITanStackQueryClient {
       };
     }
 
+    // SWR：若缓存存在但已过期，且启用后台刷新，则返回旧值并触发后台刷新
+    if (
+      cachedState &&
+      cachedState.data &&
+      cachedState.cacheExpiresAt &&
+      cachedState.cacheExpiresAt <= new Date() &&
+      (enableBackgroundRefresh || this.config.enableBackgroundRefresh)
+    ) {
+      this.logger.debug(`SWR stale return for query: ${cacheKey}, scheduling background refresh`);
+      // 立即后台刷新一次（不等待）：先删除缓存，确保下一次 query 走新请求路径而非再次 SWR 分支
+      setTimeout(() => {
+        try {
+          this.queryCache.delete(cacheKey);
+        } catch {}
+        this.query({ ...options }); // 触发更新
+      }, 0);
+      return {
+        ...cachedState,
+        isFetching: false,
+        isLoading: false,
+        isSuccess: true,
+        isError: false,
+        isFromCache: true,
+      } as TanStackQueryState<T>;
+    }
+
     // 执行查询
     this.logger.debug(`Executing query: ${cacheKey}`);
 
@@ -382,59 +429,122 @@ export class TanStackQueryIntegrationService implements ITanStackQueryClient {
       queryKey,
     };
 
+    // 并发去重：若启用且已有进行中的请求，直接复用
+    const dedupeOn = options.dedupeConcurrent ?? this.config.dedupeConcurrent;
+    if (dedupeOn && this.inFlight.has(cacheKey)) {
+      return (await this.inFlight.get(cacheKey)!) as TanStackQueryState<T>;
+    }
+
+    // 构造执行 Promise，支持 AbortSignal
+    const exec = async (): Promise<TanStackQueryState<T>> => {
+      try {
+        // 支持取消：若已取消，抛错
+        if (options.abortSignal?.aborted) {
+          throw new Error('aborted');
+        }
+
+        const runPromise = (async () => {
+          let res = await queryFn();
+          // 应用选择器
+          if (select) {
+            res = select(res);
+          }
+          const successState: TanStackQueryState<T> = {
+            data: res,
+            isLoading: false,
+            isFetching: false,
+            isSuccess: true,
+            isError: false,
+            isFromCache: false,
+            cacheExpiresAt: this.createCacheExpiration(cacheTime),
+            lastUpdated: new Date(),
+            queryKey,
+          };
+          // 缓存结果
+          this.queryCache.set(cacheKey, successState);
+
+          // 设置后台刷新
+          const interval = (refreshInterval ?? this.config.refreshInterval ?? 0);
+          if (enableBackgroundRefresh && interval > 0) {
+            this.setupBackgroundRefresh(cacheKey, options, interval);
+          }
+
+          return successState;
+        })();
+
+        if (options.abortSignal) {
+          const abortPromise = new Promise<TanStackQueryState<T>>((_, reject) => {
+            const onAbort = () => {
+              options.abortSignal?.removeEventListener('abort', onAbort);
+              reject(new Error('aborted'));
+            };
+            options.abortSignal!.addEventListener('abort', onAbort);
+          });
+          return await Promise.race([runPromise, abortPromise]);
+        }
+
+        return await runPromise;
+      } catch (error) {
+        this.logger.error(`Query failed: ${cacheKey}`, error);
+
+        const errorState: TanStackQueryState<T> = {
+          isLoading: false,
+          isFetching: false,
+          isSuccess: false,
+          isError: true,
+          error: error as Error,
+          queryKey,
+        };
+
+        // 重试逻辑
+        if (retry && retry > 0 && (error as Error)?.message !== 'aborted') {
+          this.logger.debug(`Retrying query: ${cacheKey}, attempts left: ${retry}`);
+          try {
+            const retryOptions = { ...options, retry: retry - 1 };
+            const retryState = await pRetry(() => this.query(retryOptions), {
+              retries: retry,
+              minTimeout: retryDelay,
+              onFailedAttempt: (err) => {
+                this.logger.error(
+                  `Query attempt ${err.attemptNumber} failed: ${cacheKey}`,
+                  err,
+                );
+              },
+            });
+            return retryState ?? errorState;
+          } catch (retryError) {
+            this.logger.error(`Query failed after retries: ${cacheKey}`, retryError);
+            return errorState;
+          }
+        }
+
+        return errorState;
+      }
+    };
+
     try {
-      let result = await queryFn();
-
-      // 应用选择器
-      if (select) {
-        result = select(result);
+      const promise = exec();
+      if (dedupeOn) {
+        this.inFlight.set(cacheKey, promise as Promise<TanStackQueryState>);
       }
-
-      // 更新状态
-      const successState: TanStackQueryState<T> = {
-        data: result,
-        isLoading: false,
-        isFetching: false,
-        isSuccess: true,
-        isError: false,
-        isFromCache: false,
-        cacheExpiresAt: new Date(Date.now() + (cacheTime || 300) * 1000),
-        lastUpdated: new Date(),
-        queryKey,
-      };
-
-      // 缓存结果
-      this.queryCache.set(cacheKey, successState);
-
-      // 设置后台刷新
-      if (enableBackgroundRefresh && refreshInterval && refreshInterval > 0) {
-        this.setupBackgroundRefresh(cacheKey, options, refreshInterval);
+      const finalState = await promise;
+      if (dedupeOn) {
+        this.inFlight.delete(cacheKey);
       }
-
-      return successState;
+      return finalState as TanStackQueryState<T>;
     } catch (error) {
-      this.logger.error(`Query failed: ${cacheKey}`, error);
-
-      const errorState: TanStackQueryState<T> = {
+      if (dedupeOn) {
+        this.inFlight.delete(cacheKey);
+      }
+      this.logger.error(`Query execution failed: ${cacheKey}`, error as Error);
+      return {
         isLoading: false,
         isFetching: false,
         isSuccess: false,
         isError: true,
         error: error as Error,
         queryKey,
-      };
-
-      // 重试逻辑
-      if (retry && retry > 0) {
-        this.logger.debug(`Retrying query: ${cacheKey}, attempts left: ${retry}`);
-
-        setTimeout(async () => {
-          const retryOptions = { ...options, retry: retry - 1 };
-          await this.query(retryOptions);
-        }, retryDelay);
-      }
-
-      return errorState;
+      } as TanStackQueryState<T>;
     }
   }
 
@@ -455,16 +565,22 @@ export class TanStackQueryIntegrationService implements ITanStackQueryClient {
    */
   async invalidateQueries(queryKey: string[]): Promise<void> {
     const cacheKey = queryKey.join('.');
-
+    
+    // 清理后台刷新定时器
+    if (this.intervals.has(cacheKey)) {
+      clearInterval(this.intervals.get(cacheKey)!);
+      this.intervals.delete(cacheKey);
+    }
+    
     // 从缓存中删除
     this.queryCache.delete(cacheKey);
-
-    // 如果查询总线支持，也使其缓存失效
+    
+    // 调用查询总线失效（如果需要）
     const [queryType, ...cacheKeyParts] = queryKey;
     if (queryType) {
       await this.queryBus.invalidateCache(queryType, cacheKeyParts.join('_'));
     }
-
+    
     this.logger.debug(`Invalidated query: ${cacheKey}`);
   }
 
@@ -473,6 +589,13 @@ export class TanStackQueryIntegrationService implements ITanStackQueryClient {
    */
   async resetQueries(queryKey: string[]): Promise<void> {
     const cacheKey = queryKey.join('.');
+    
+    // 清理后台刷新定时器
+    if (this.intervals.has(cacheKey)) {
+      clearInterval(this.intervals.get(cacheKey)!);
+      this.intervals.delete(cacheKey);
+    }
+    
     this.queryCache.delete(cacheKey);
     this.logger.debug(`Reset query: ${cacheKey}`);
   }
@@ -587,6 +710,15 @@ export class TanStackQueryIntegrationService implements ITanStackQueryClient {
   }
 
   /**
+   * 创建缓存过期时间
+   */
+  private createCacheExpiration(cacheTime: number | undefined): Date | undefined {
+    // 修复：cacheTime=0 严格禁用缓存
+    const expiresMs = cacheTime === 0 ? 0 : (cacheTime || this.config.defaultCacheTime || 300) * 1000;
+    return expiresMs ? new Date(Date.now() + expiresMs) : undefined;
+  }
+
+  /**
    * 设置后台刷新
    */
   private setupBackgroundRefresh(
@@ -594,10 +726,33 @@ export class TanStackQueryIntegrationService implements ITanStackQueryClient {
     options: TanStackQueryOptions,
     interval: number,
   ): void {
-    setInterval(async () => {
+    // 清理已存在的定时器
+    if (this.intervals.has(cacheKey)) {
+      clearInterval(this.intervals.get(cacheKey)!);
+    }
+    
+    const timer = setInterval(async () => {
       this.logger.debug(`Background refresh for query: ${cacheKey}`);
-      await this.query(options);
+      try {
+        await this.query(options);
+      } catch (error) {
+        this.logger.error(`Background refresh failed for query: ${cacheKey}`, error);
+      }
     }, interval * 1000);
+    
+    this.intervals.set(cacheKey, timer);
+  }
+
+  /**
+   * 清理资源
+   */
+  onModuleDestroy(): void {
+    // 清理所有定时器
+    for (const [cacheKey, timer] of this.intervals.entries()) {
+      clearInterval(timer);
+      this.logger.debug(`Cleaned up background refresh for query: ${cacheKey}`);
+    }
+    this.intervals.clear();
   }
 
   /**

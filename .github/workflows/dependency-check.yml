@@ -10,9 +10,17 @@ on:
     branches: [ main ]
   workflow_dispatch: # 允许手动触发
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   dependency-audit:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     
     strategy:
       matrix:
@@ -27,6 +35,9 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
+        cache-dependency-path: |
+          package-lock.json
+          backend/package-lock.json
         
     - name: 安装前端依赖
       run: npm ci
@@ -61,7 +72,17 @@ jobs:
       run: |
         node scripts/update-dependencies.js --verbose
         
-    - name: 上传依赖报告
+    - name: 导出安全审计 JSON（前端/后端）
+      if: always()
+      run: |
+        echo "=== 导出前端审计 JSON ==="
+        npm audit --json > frontend-audit.json || true
+        echo "=== 导出后端审计 JSON ==="
+        cd backend
+        npm audit --json > backend-audit.json || true
+      shell: bash
+
+    - name: 上传依赖报告与审计 JSON
       uses: actions/upload-artifact@v4
       if: always()
       with:
@@ -69,6 +90,8 @@ jobs:
         path: |
           docs/dependency-update-report.json
           logs/dependency-update.log
+          frontend-audit.json
+          backend/backend-audit.json
         retention-days: 30
         
     - name: 创建 Issue（如果发现安全漏洞）
@@ -131,6 +154,7 @@ jobs:
 
   license-check:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     
     steps:
     - name: 检出代码

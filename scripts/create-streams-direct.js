@@ -6,8 +6,9 @@
  */
 
 const axios = require('axios');
+const { env } = require('./openobserve/env-adapter.js');
 
-const OPENOBSERVE_URL = 'http://localhost:5080';
+const OPENOBSERVE_URL = env.url;
 
 // 数据流配置
 const streams = [
@@ -83,13 +84,15 @@ const streams = [
   }
 ];
 
+const OPENOBSERVE_ORGANIZATION = env.organization;
+
 async function createStreamByData(streamConfig) {
   console.log(`📊 创建数据流: ${streamConfig.name}`);
   
   try {
     // 通过发送数据来创建数据流
     const response = await axios.post(
-      `${OPENOBSERVE_URL}/api/default/${streamConfig.name}/_json`,
+      `${OPENOBSERVE_URL}/api/${OPENOBSERVE_ORGANIZATION}/${streamConfig.name}/_json`,
       streamConfig.sampleData,
       {
         headers: {
@@ -115,7 +118,7 @@ async function verifyStream(streamName) {
   
   try {
     const response = await axios.get(
-      `${OPENOBSERVE_URL}/api/default/${streamName}/_search`,
+      `${OPENOBSERVE_URL}/api/${OPENOBSERVE_ORGANIZATION}/${streamName}/_search`,
       {
         headers: {
           'Content-Type': 'application/json'
@@ -143,7 +146,7 @@ async function listStreams() {
   console.log('\n📋 列出所有数据流...');
   
   try {
-    const response = await axios.get(`${OPENOBSERVE_URL}/api/default/streams`);
+    const response = await axios.get(`${OPENOBSERVE_URL}/api/${OPENOBSERVE_ORGANIZATION}/streams`);
     console.log('✓ 数据流列表获取成功:');
     response.data.list?.forEach(stream => {
       console.log(`  - ${stream.name} (${stream.type})`);

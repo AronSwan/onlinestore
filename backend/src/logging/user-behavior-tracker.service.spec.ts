@@ -1,3 +1,4 @@
+/// <reference path="./jest.d.ts" />
 import { Test, TestingModule } from '@nestjs/testing';
 import { HttpModule } from '@nestjs/axios';
 import { UserBehaviorTracker } from './user-behavior-tracker.service';
@@ -8,6 +9,7 @@ describe('UserBehaviorTracker', () => {
   let service: UserBehaviorTracker;
   let mockConfig: OpenObserveConfig;
   let mockRequest: Partial<Request>;
+  let mockTransport: { log: jest.Mock; flush: jest.Mock };
 
   beforeEach(async () => {
     mockConfig = {
@@ -56,6 +58,8 @@ describe('UserBehaviorTracker', () => {
       ip: '192.168.1.1',
     } as Partial<Request>;
 
+    mockTransport = { log: jest.fn(), flush: jest.fn() };
+
     const module: TestingModule = await Test.createTestingModule({
       imports: [HttpModule],
       providers: [
@@ -63,6 +67,10 @@ describe('UserBehaviorTracker', () => {
         {
           provide: 'OPENOBSERVE_CONFIG',
           useValue: mockConfig,
+        },
+        {
+          provide: 'USER_BEHAVIOR_TRANSPORT',
+          useValue: mockTransport,
         },
       ],
     }).compile();
@@ -79,35 +87,39 @@ describe('UserBehaviorTracker', () => {
       const sessionId = 'session123';
       const page = '/home';
       const userId = 'user123';
-
-      // Mock the console.log to avoid actual logging during tests
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
       
       service.trackPageView(sessionId, page, userId, mockRequest as Request);
       
-      // Verify that no errors are thrown
-      expect(consoleSpy).not.toHaveBeenCalledWith(
-        expect.stringContaining('Failed to send user behavior log to OpenObserve')
+      expect(mockTransport.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          eventType: 'PAGE_VIEW',
+          sessionId,
+          userId,
+          eventData: expect.objectContaining({ page }),
+        }),
+        expect.any(Function)
       );
-      
-      consoleSpy.mockRestore();
     });
 
     it('should track page view without userId', () => {
       const sessionId = 'session123';
       const page = '/home';
-
-      // Mock the console.log to avoid actual logging during tests
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
       
       service.trackPageView(sessionId, page, undefined, mockRequest as Request);
       
-      // Verify that no errors are thrown
-      expect(consoleSpy).not.toHaveBeenCalledWith(
-        expect.stringContaining('Failed to send user behavior log to OpenObserve')
+      expect(mockTransport.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          eventType: 'PAGE_VIEW',
+          sessionId,
+          eventData: expect.objectContaining({ page }),
+        }),
+        expect.any(Function)
       );
-      
-      consoleSpy.mockRestore();
+    });
+
+    it('negative-path: does not throw when transport.log fails', () => {
+      mockTransport.log.mockImplementation(() => { throw new Error('network error'); });
+      expect(() => service.trackPageView('s', '/home', 'u', mockRequest as Request)).not.toThrow();
     });
   });
 
@@ -116,18 +128,23 @@ describe('UserBehaviorTracker', () => {
       const sessionId = 'session123';
       const productId = 'product123';
       const userId = 'user123';
-
-      // Mock the console.log to avoid actual logging during tests
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
       
       service.trackProductView(sessionId, productId, userId, mockRequest as Request);
       
-      // Verify that no errors are thrown
-      expect(consoleSpy).not.toHaveBeenCalledWith(
-        expect.stringContaining('Failed to send user behavior log to OpenObserve')
+      expect(mockTransport.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          eventType: 'PRODUCT_VIEW',
+          sessionId,
+          userId,
+          eventData: expect.objectContaining({ productId }),
+        }),
+        expect.any(Function)
       );
-      
-      consoleSpy.mockRestore();
+    });
+
+    it('negative-path: does not throw when transport.log fails', () => {
+      mockTransport.log.mockImplementation(() => { throw new Error('network error'); });
+      expect(() => service.trackProductView('s', 'p-001', 'u', mockRequest as Request)).not.toThrow();
     });
   });
 
@@ -136,18 +153,18 @@ describe('UserBehaviorTracker', () => {
       const sessionId = 'session123';
       const searchQuery = 'laptop';
       const userId = 'user123';
-
-      // Mock the console.log to avoid actual logging during tests
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
       
       service.trackSearch(sessionId, searchQuery, userId, mockRequest as Request);
       
-      // Verify that no errors are thrown
-      expect(consoleSpy).not.toHaveBeenCalledWith(
-        expect.stringContaining('Failed to send user behavior log to OpenObserve')
+      expect(mockTransport.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          eventType: 'SEARCH',
+          sessionId,
+          userId,
+          eventData: expect.objectContaining({ searchQuery }),
+        }),
+        expect.any(Function)
       );
-      
-      consoleSpy.mockRestore();
     });
   });
 
@@ -160,9 +177,6 @@ describe('UserBehaviorTracker', () => {
       const price = 99.99;
       const userId = 'user123';
       const cartId = 'cart123';
-
-      // Mock the console.log to avoid actual logging during tests
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
       
       service.trackCartOperation(
         sessionId, 
@@ -174,13 +188,15 @@ describe('UserBehaviorTracker', () => {
         cartId,
         mockRequest as Request
       );
-      
-      // Verify that no errors are thrown
-      expect(consoleSpy).not.toHaveBeenCalledWith(
-        expect.stringContaining('Failed to send user behavior log to OpenObserve')
+      expect(mockTransport.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          eventType: 'CART_ADD',
+          sessionId,
+          userId,
+          eventData: expect.objectContaining({ productId, quantity, price, cartId }),
+        }),
+        expect.any(Function)
       );
-      
-      consoleSpy.mockRestore();
     });
 
     it('should track cart remove correctly', () => {
@@ -191,9 +207,6 @@ describe('UserBehaviorTracker', () => {
       const price = 99.99;
       const userId = 'user123';
       const cartId = 'cart123';
-
-      // Mock the console.log to avoid actual logging during tests
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
       
       service.trackCartOperation(
         sessionId, 
@@ -205,13 +218,15 @@ describe('UserBehaviorTracker', () => {
         cartId,
         mockRequest as Request
       );
-      
-      // Verify that no errors are thrown
-      expect(consoleSpy).not.toHaveBeenCalledWith(
-        expect.stringContaining('Failed to send user behavior log to OpenObserve')
+      expect(mockTransport.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          eventType: 'CART_REMOVE',
+          sessionId,
+          userId,
+          eventData: expect.objectContaining({ productId, quantity, price, cartId }),
+        }),
+        expect.any(Function)
       );
-      
-      consoleSpy.mockRestore();
     });
   });
 

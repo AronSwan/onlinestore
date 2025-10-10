@@ -14,7 +14,7 @@
   "testEnvironment": "node",
   "moduleNameMapper": {
     "^src/(.*)$": "<rootDir>/src/$1",
-    "^uuid$": "<rootDir>/test/mocks/uuid.js"
+    "^uuid$": "<rootDir>/test/mocks/uuid.cjs"
   },
   "setupFilesAfterEnv": ["<rootDir>/test/setup.ts"],
   "transformIgnorePatterns": [

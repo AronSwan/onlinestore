@@ -1,4 +1,5 @@
 # 使用与集成（强化版）
+> 说明：本仓库标准环境变量命名为 OPENOBSERVE_*；本文示例中的 OO_* 为历史兼容写法，生产代码请使用 OPENOBSERVE_URL / OPENOBSERVE_ORGANIZATION / OPENOBSERVE_TOKEN 等标准变量。
 
 目标
 - 提供可直接复制并落地的接入方案：HTTP Ingest、OTLP（日志/指标/追踪）、代理/采集器（Fluent Bit/Vector）。

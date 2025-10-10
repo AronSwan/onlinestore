@@ -2,10 +2,21 @@
 // 作者：后端开发团队
 // 时间：2025-10-05
 
+// Jest 全局类型声明
+declare const describe: any;
+declare const it: any;
+declare const expect: any;
+declare const beforeEach: any;
+declare const jest: any;
+
 import { Test, TestingModule } from '@nestjs/testing';
+
 import { QueryBus } from './query.bus';
+import { CqrsLoggingService } from '../logging/cqrs-logging.service';
+import { CqrsMetricsService } from '../metrics/cqrs-metrics.service';
+import { CqrsTracingService } from '../tracing/cqrs-tracing.service';
 import { QueryBase, QuerySuccess, QueryFailure } from '../queries/query.base';
-import { IQueryHandler } from '../interfaces/query-handler.interface';
+import { IQueryHandler, IQueryMiddleware } from '../interfaces/query-handler.interface';
 import { TestMocker, TestAssertions, TestDataFactory } from '../test/test-utils';
 
 describe('QueryBus', () => {
@@ -13,36 +24,26 @@ describe('QueryBus', () => {
   let mockHandler: IQueryHandler;
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [QueryBus],
-    }).compile();
-
-    queryBus = module.get<QueryBus>(QueryBus);
-    mockHandler = TestMocker.mockQueryHandler();
-
-    // 设置模拟缓存服务
+    // 创建依赖服务的模拟实现，避免 Nest 测试模块编译失败
     const mockCacheService = TestMocker.mockCacheService();
-    // 添加缓存存储
+    // 添加缓存存储与行为模拟，确保未命中返回 null 而非 undefined
     (mockCacheService as any)._cache = {};
-
-    // 模拟缓存行为
     mockCacheService.get.mockImplementation(async (key: string) => {
-      return (mockCacheService as any)._cache?.[key] || null;
+      return (mockCacheService as any)._cache?.[key] ?? null;
     });
     mockCacheService.set.mockImplementation(async (key: string, value: any, ttl?: number) => {
       if (!(mockCacheService as any)._cache) (mockCacheService as any)._cache = {};
       (mockCacheService as any)._cache[key] = value;
-      return 'OK';
+      return;
     });
     mockCacheService.delete.mockImplementation(async (key: string) => {
       if ((mockCacheService as any)._cache) {
         delete (mockCacheService as any)._cache[key];
       }
-      return 1;
+      return;
     });
     mockCacheService.clearPattern.mockImplementation(async (pattern: string) => {
       if ((mockCacheService as any)._cache) {
-        // 简单实现：删除所有匹配模式的键
         const regex = new RegExp(pattern.replace(/\*/g, '.*'));
         Object.keys((mockCacheService as any)._cache).forEach(key => {
           if (regex.test(key)) {
@@ -51,7 +52,42 @@ describe('QueryBus', () => {
         });
       }
     });
-    queryBus.setQueryCache(mockCacheService);
+
+    const mockLoggingService: Partial<CqrsLoggingService> = {
+      logQuery: jest.fn(),
+    } as any;
+
+    const mockMetricsService: Partial<CqrsMetricsService> = {
+      recordQuery: jest.fn(),
+      incrementCounter: jest.fn(),
+      recordHistogramBuckets: jest.fn(),
+      // 防御性提供常见接口，避免未来测试报错
+      recordEvent: jest.fn(),
+      recordCommand: jest.fn(),
+    } as any;
+
+    const mockTracingService: Partial<CqrsTracingService> = {
+      startQuerySpan: jest.fn(() => ({ id: 'span-id' } as any)),
+      getCurrentContext: jest.fn(() => ({ traceId: 'trace-id', spanId: 'span-id' })),
+      finishSpan: jest.fn(),
+    } as any;
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        QueryBus,
+        { provide: CqrsLoggingService, useValue: mockLoggingService },
+        { provide: CqrsMetricsService, useValue: mockMetricsService },
+        { provide: CqrsTracingService, useValue: mockTracingService },
+        { provide: 'IQueryCache', useValue: mockCacheService },
+      ],
+    }).compile();
+
+    queryBus = module.get<QueryBus>(QueryBus);
+    mockHandler = TestMocker.mockQueryHandler();
+
+    // 由于已通过 DI 注入了缓存服务，这里继续显式设置以保持测试一致性
+    const injectedCache = module.get('IQueryCache');
+    queryBus.setQueryCache(injectedCache as any);
   });
 
   describe('execute', () => {
@@ -135,6 +171,54 @@ describe('QueryBus', () => {
     });
   });
 
+  describe('middlewares', () => {
+    it('应该在执行查询时调用中间件', async () => {
+      const query = new TestQuery('test-user-id');
+      queryBus.register('TestQuery', mockHandler);
+
+      const mw1Fn = jest.fn();
+      const mw2Fn = jest.fn();
+
+      const middleware1: IQueryMiddleware = {
+        name: 'TestQueryMiddleware1',
+        execute: jest.fn(async (q, next) => {
+          mw1Fn(q);
+          return next();
+        }),
+      };
+
+      const middleware2: IQueryMiddleware = {
+        name: 'TestQueryMiddleware2',
+        execute: jest.fn(async (q, next) => {
+          mw2Fn(q);
+          return next();
+        }),
+      };
+
+      queryBus.addMiddleware(middleware1);
+      queryBus.addMiddleware(middleware2);
+
+      const result = await queryBus.execute(query);
+
+      TestAssertions.assertSuccess(result);
+      expect(mw1Fn).toHaveBeenCalledWith(query);
+      expect(mw2Fn).toHaveBeenCalledWith(query);
+    });
+
+    it('应该返回添加的中间件列表', () => {
+      const middleware1: IQueryMiddleware = { name: 'ListQueryMiddleware1', execute: jest.fn(async (_q, next) => next()) };
+      const middleware2: IQueryMiddleware = { name: 'ListQueryMiddleware2', execute: jest.fn(async (_q, next) => next()) };
+
+      queryBus.addMiddleware(middleware1);
+      queryBus.addMiddleware(middleware2);
+
+      const middlewares = queryBus.getMiddlewares();
+      const names = middlewares.map(m => m.name);
+      expect(names).toContain('ListQueryMiddleware1');
+      expect(names).toContain('ListQueryMiddleware2');
+    });
+  });
+
   describe('prefetch', () => {
     it('应该预加载查询', async () => {
       // 准备测试数据
@@ -162,9 +246,12 @@ describe('QueryBus', () => {
       await queryBus.executeWithCache(query);
 
       // 执行测试
+      const swr = (queryBus as any).swrService;
+      const spyInvalidate = jest.spyOn(swr, 'invalidate');
       await queryBus.invalidateCache('TestQuery', 'user_test-user-id');
 
       // 验证结果
+      expect(spyInvalidate).toHaveBeenCalledWith('user_test-user-id');
       const result = await queryBus.executeWithCache(query);
       expect(mockHandler.handle).toHaveBeenCalledTimes(2); // 应该重新执行
     });
@@ -236,6 +323,68 @@ describe('QueryBus', () => {
     });
   });
 
+  describe('SWR 交互', () => {
+    it('缓存过期时应返回旧值并触发后台刷新', async () => {
+      const query = new TestQuery('stale-user', { cacheTime: 1, staleTime: 60 });
+      queryBus.register('TestQuery', mockHandler);
+
+      // 首次填充缓存
+      const first = await queryBus.executeWithCache(query);
+      TestAssertions.assertSuccess(first);
+
+      // 等待 TTL 过期，但仍在 stale 窗口
+      await new Promise(resolve => setTimeout(resolve, 1100));
+
+      const swr = (queryBus as any).swrService;
+      const spyGetWithSWR = jest.spyOn(swr, 'getWithSWR');
+
+      // 第二次调用，返回旧值并后台刷新
+      const second = await queryBus.executeWithCache(query);
+      TestAssertions.assertSuccess(second);
+      expect(second.fromCache).toBe(true);
+      expect(second.metadata?.swr?.isStale).toBe(true);
+
+      // 首次填充+第二次后台刷新共调用两次
+      expect(mockHandler.handle).toHaveBeenCalledTimes(2);
+      expect(spyGetWithSWR).toHaveBeenCalled();
+    });
+
+    it('SWR 标签构建：cache_key_prefix 与 domain 由环境变量控制', () => {
+      const qb = queryBus as any;
+      // 缓存键模拟
+      const cacheKey = 'products:list:hot';
+      process.env.CQRS_SWR_ENABLE_CACHE_KEY_PREFIX = '1';
+      process.env.CQRS_SWR_CACHE_KEY_PREFIX_SEGMENTS = '2';
+      process.env.CQRS_SWR_ENABLE_DOMAIN_LABEL = '1';
+      const labels = qb.buildSWRLabels('GetProductsQuery', 'GetProductsHandler', cacheKey);
+      expect(labels.type).toBe('GetProductsQuery');
+      expect(labels.handler).toBe('GetProductsHandler');
+      expect(labels.cache_key_prefix).toBe('products:list');
+      expect(labels.domain).toBe('product');
+
+      // 关闭前缀与域名
+      process.env.CQRS_SWR_ENABLE_CACHE_KEY_PREFIX = '0';
+      process.env.CQRS_SWR_ENABLE_DOMAIN_LABEL = '0';
+      const labels2 = qb.buildSWRLabels('GetUsersQuery', 'GetUsersHandler', 'users:detail:1');
+      expect(labels2.cache_key_prefix).toBeUndefined();
+      expect(labels2.domain).toBeUndefined();
+    });
+
+    it('prefetch 应通过 SWR 获取并缓存', async () => {
+      const query = new TestQuery('prefetch-user');
+      queryBus.register('TestQuery', mockHandler);
+
+      const swr = (queryBus as any).swrService;
+      const spyGetWithSWR = jest.spyOn(swr, 'getWithSWR');
+
+      await queryBus.prefetch(query);
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      expect(spyGetWithSWR).toHaveBeenCalled();
+      expect(mockHandler.handle).toHaveBeenCalled();
+    });
+  });
+
   describe('cleanupExpiredCache', () => {
     it('应该清理过期的缓存', async () => {
       // 准备测试数据
@@ -269,8 +418,8 @@ class TestQuery extends QueryBase {
   ) {
     super({
       cacheKey: options?.cacheKey || `user_${userId}`,
-      cacheTime: options?.cacheTime || 300,
-      staleTime: options?.staleTime || 60,
+      cacheTime: options?.cacheTime ?? 300,
+      staleTime: options?.staleTime ?? 60,
     });
   }
 

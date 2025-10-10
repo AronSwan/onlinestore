@@ -110,7 +110,7 @@ export class MonitoringController {
   @Get('prometheus')
   @ApiOperation({ summary: '获取Prometheus格式的指标' })
   @ApiResponse({ status: 200, description: 'Prometheus格式的指标数据' })
-  getPrometheusMetrics(@Res() res: Response) {
+  getPrometheusMetrics(@Res() res?: Response) {
     const metrics = this.metricsService.getMetrics();
     
     // 转换为Prometheus格式
@@ -156,7 +156,11 @@ export class MonitoringController {
     prometheusMetrics += `# TYPE active_connections gauge\n`;
     prometheusMetrics += `active_connections ${metrics.activeConnections}\n\n`;
     
-    res.set('Content-Type', 'text/plain');
-    res.send(prometheusMetrics);
+    if (res && typeof (res as any).send === 'function') {
+      res.set?.('Content-Type', 'text/plain');
+      (res as any).send(prometheusMetrics);
+      return;
+    }
+    return prometheusMetrics;
   }
 }

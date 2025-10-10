@@ -134,12 +134,54 @@ SHARDING_TABLES=4
 # 单元测试
 npm run test
 
+# 静默模式测试
+npm run test --silent
+
+# 并行测试
+npm run test:parallel
+
 # 集成测试
 npm run test:e2e
 
 # 测试覆盖率
 npm run test:cov
+
+# 验证测试运行器
+npm run test:validate
 ```
+
+### 测试运行器特性
+
+- **严格参数验证**：不认识的参数会导致错误退出，避免参数被忽略
+- **智能并行执行**：根据系统资源自动调整并行度
+- **静默模式**：减少输出信息，适合CI/CD环境
+- **性能监控**：提供详细的测试执行性能报告
+
+### 参数限制
+
+- `--watch` 和 `--parallel` 参数不能同时使用
+- `--watch` 和 `--coverage` 参数不能同时使用
+- 使用 `npm run test --help` 查看完整参数列表
+
+## 🧰 质量度量（Typed Mock 采纳）
+
+- 本地度量：`npm run metrics:typed-mock`
+- 报告文件：`backend/test-results/adoption-report.json`
+- 关键指标：采纳率（`adopted/total`）、模块分解、未替换的 `jest.fn()` 出现次数
+- CI 展示：查看工作流 `typed-mock-adoption.yml` 的 Step Summary 与工件 `typed-mock-adoption-report`
+- 详细说明与重构指南：见 `docs/quality/typed-mock-adoption.md`
+
+## 🧩 类型检查常见问题（Logging 模块）
+
+- 联合类型返回值的断言：避免直接访问 `result.data`，使用安全检查进行类型收窄，例如：
+  - `expect('data' in result && result.data).toBeDefined()`
+  - `expect('data' in result && Array.isArray(result.data)).toBe(true)`
+- 测试匹配器用法：目前测试代码仍可使用现有的全局匹配器别名（如 `stringContaining`、`arrayContaining`）。若希望更贴近官方习惯，建议逐步改为 `expect.stringContaining(...)`、`expect.arrayContaining(...)` 等形式。
+- tsconfig.strict.json include：若 Logging 模块存在跨目录依赖（例如 `../interfaces/*`、`../common/helpers/*`），请将对应路径加入 `backend/src/logging/tsconfig.strict.json` 的 `include` 字段。当前已包含：
+  - `../interfaces/**/*.ts`
+  - `../common/helpers/**/*.ts`
+  若后续出现新依赖（如其他 `../common/*` 子目录），请按需补充。
+- 运行类型检查：使用 `npm run -s typecheck:logging` 验证更改是否通过严格类型检查。
 
 ## 📈 性能优化
 

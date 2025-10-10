@@ -1,37 +1,11 @@
 {
+  // 文档入口：Logging 模块类型检查与联合类型断言参考
+  // 参见：backend/docs/logging/typecheck-guidelines.md
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "module": "commonjs",
     "declaration": true,
-    "composite": true,
-    "removeComments": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "useDefineForClassFields": false,
-    "allowSyntheticDefaultImports": true,
-    "target": "ES2020",
-    "sourceMap": true,
-    "outDir": "./dist",
-    "baseUrl": "./",
-    "incremental": true,
-    "skipLibCheck": true,
-    "strictNullChecks": true,
-    "noImplicitAny": false,
-    "strictBindCallApply": false,
-    "forceConsistentCasingInFileNames": true,
-    "noFallthroughCasesInSwitch": false,
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "esModuleInterop": true,
-    "downlevelIteration": true,
-    "allowJs": true,
-    "types": ["node"],
-    "strict": false,
-    "noImplicitReturns": false,
-    "noImplicitThis": false
+    "noImplicitAny": false
   },
-  "include": [
-    "src/**/*"
-  ],
   "exclude": [
     "node_modules",
     "dist",

@@ -6,13 +6,15 @@
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const { env } = require('./openobserve/env-adapter.js');
 
 class DistributedTracingSetup {
   constructor() {
     this.config = {
-      openobserveUrl: process.env.OPENOBSERVE_URL || 'http://localhost:5080',
-      organization: process.env.OPENOBSERVE_ORGANIZATION || 'default',
-      token: process.env.OPENOBSERVE_TOKEN || '',
+
+      openobserveUrl: env.url,
+      organization: env.organization,
+      token: env.token || '',
       serviceName: process.env.SERVICE_NAME || 'caddy-shopping-backend',
       environment: process.env.NODE_ENV || 'development'
     };

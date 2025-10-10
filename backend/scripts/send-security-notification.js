@@ -15,6 +15,7 @@
 const path = require('path');
 const fs = require('fs');
 const { NotificationService } = require('./modules/notification-service');
+const { getSlack, getEmail } = require('./modules/openobserve-adapter');
 
 // 项目根目录
 const PROJECT_ROOT = path.resolve(__dirname, '..');
@@ -39,22 +40,30 @@ function loadNotificationConfig(configFile) {
     return {
       slack: {
         enabled: false,
-        webhookUrl: process.env.SLACK_WEBHOOK_URL || '',
-        channel: process.env.SLACK_CHANNEL || '#security-alerts',
-        username: 'Security Bot',
+        // 统一读取 Slack 配置
+        ...getSlack(),
+        webhookUrl: undefined,
+        channel: (getSlack().channel || process.env.SLACK_CHANNEL || '#security-alerts'),
+        username: (getSlack().username || 'Security Bot'),
         iconEmoji: ':warning:'
       },
       email: {
         enabled: false,
-        smtpHost: process.env.SMTP_HOST || '',
-        smtpPort: parseInt(process.env.SMTP_PORT || '587'),
-        secure: process.env.SMTP_SECURE === 'true',
+        // 统一读取 Email 配置
+        ...getEmail(),
+        smtpHost: undefined,
+        smtpPort: parseInt((getEmail().smtpPort || process.env.SMTP_PORT || '587')),
+        secure: String(getEmail().secure || process.env.SMTP_SECURE || 'false').toLowerCase() === 'true',
         auth: {
-          user: process.env.SMTP_USER || '',
-          pass: process.env.SMTP_PASS || ''
+          user: (getEmail().auth && getEmail().auth.user) ? getEmail().auth.user : (process.env.SMTP_USER || ''),
+          pass: (getEmail().auth && getEmail().auth.pass) ? getEmail().auth.pass : (process.env.SMTP_PASS || '')
         },
-        from: process.env.EMAIL_FROM || '',
-        to: (process.env.EMAIL_TO || '').split(',').filter(email => email.trim())
+        from: (getEmail().from || process.env.EMAIL_FROM || ''),
+        to: (() => {
+          const fromAdapter = Array.isArray(getEmail().to) ? getEmail().to : (getEmail().to ? String(getEmail().to).split(',').map(s => s.trim()).filter(Boolean) : []);
+          const fromEnv = (process.env.EMAIL_TO || '').split(',').map(s => s.trim()).filter(Boolean);
+          return fromAdapter.length ? fromAdapter : fromEnv;
+        })()
       }
     };
   }

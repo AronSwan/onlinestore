@@ -4,12 +4,13 @@
 // 时间：2025-10-06 18:40:00
 
 const axios = require('axios');
+const { env } = require('./openobserve/env-adapter.js');
 
 // 配置信息 - 直接在脚本中定义，不依赖dotenv
 // 注意：这里硬编码用户名和密码，确保与docker-compose.openobserve.yml中的配置一致
 const config = {
-  url: process.env.OPENOBSERVE_URL || 'http://localhost:5080',
-  organization: process.env.ORGANIZATION || 'default',
+  url: env.url,
+  organization: env.organization,
   username: 'admin@example.com', // 硬编码为docker-compose中设置的用户名
   password: 'ComplexPass#123',   // 硬编码为docker-compose中设置的密码
   logStream: process.env.LOG_STREAM || 'application-logs', // 使用默认的流名称

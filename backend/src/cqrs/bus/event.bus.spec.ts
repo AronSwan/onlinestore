@@ -2,11 +2,21 @@
 // 作者：后端开发团队
 // 时间：2025-10-05
 
+// Jest 全局类型声明
+declare const describe: any;
+declare const it: any;
+declare const expect: any;
+declare const beforeEach: any;
+declare const jest: any;
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { EventBus } from './event.bus';
 import { EventBase, IEvent } from '../events/event.base';
-import { IEventHandler } from '../interfaces/event-handler.interface';
+import { IEventHandler, IEventMiddleware } from '../interfaces/event-handler.interface';
 import { TestMocker, TestAssertions, TestDataFactory } from '../test/test-utils';
+import { CqrsLoggingService } from '../logging/cqrs-logging.service';
+import { CqrsMetricsService } from '../metrics/cqrs-metrics.service';
+import { CqrsTracingService } from '../tracing/cqrs-tracing.service';
 
 describe('EventBus', () => {
   let eventBus: EventBus;
@@ -14,7 +24,32 @@ describe('EventBus', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [EventBus],
+      providers: [
+        EventBus,
+        {
+          provide: CqrsLoggingService,
+          useValue: {
+            logEvent: jest.fn(),
+            logError: jest.fn(),
+          },
+        },
+        {
+          provide: CqrsMetricsService,
+          useValue: {
+            recordEvent: jest.fn(),
+            recordEventMetrics: jest.fn(),
+            recordErrorMetrics: jest.fn(),
+          },
+        },
+        {
+          provide: CqrsTracingService,
+          useValue: {
+            startEventSpan: jest.fn().mockReturnValue({}),
+            getCurrentContext: jest.fn().mockReturnValue({ traceId: 'test-trace', spanId: 'test-span' }),
+            finishSpan: jest.fn(),
+          },
+        },
+      ],
     }).compile();
 
     eventBus = module.get<EventBus>(EventBus);
@@ -261,6 +296,54 @@ describe('EventBus', () => {
 
       // 验证结果
       expect(hasHandlers).toBe(false);
+    });
+  });
+
+  describe('middlewares', () => {
+    it('应该在执行事件时调用中间件', async () => {
+      const event = new TestEvent('user-created', 'user-123');
+      const mw1Fn = jest.fn();
+      const mw2Fn = jest.fn();
+
+      const middleware1: IEventMiddleware = {
+        name: 'TestEventMiddleware1',
+        execute: jest.fn(async (evt, next) => {
+          mw1Fn(evt);
+          return next();
+        }),
+      };
+
+      const middleware2: IEventMiddleware = {
+        name: 'TestEventMiddleware2',
+        execute: jest.fn(async (evt, next) => {
+          mw2Fn(evt);
+          return next();
+        }),
+      };
+
+      eventBus.addMiddleware(middleware1);
+      eventBus.addMiddleware(middleware2);
+      eventBus.register('user-created', mockHandler);
+
+      await eventBus.publish(event);
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      expect(mw1Fn).toHaveBeenCalledWith(event);
+      expect(mw2Fn).toHaveBeenCalledWith(event);
+      expect(mockHandler.handle).toHaveBeenCalledWith(event);
+    });
+
+    it('应该返回添加的中间件列表', () => {
+      const middleware1: IEventMiddleware = { name: 'ListEventMiddleware1', execute: jest.fn(async (_e, next) => next()) };
+      const middleware2: IEventMiddleware = { name: 'ListEventMiddleware2', execute: jest.fn(async (_e, next) => next()) };
+
+      eventBus.addMiddleware(middleware1);
+      eventBus.addMiddleware(middleware2);
+
+      const middlewares = eventBus.getMiddlewares();
+      const names = middlewares.map(m => m.name);
+      expect(names).toContain('ListEventMiddleware1');
+      expect(names).toContain('ListEventMiddleware2');
     });
   });
 

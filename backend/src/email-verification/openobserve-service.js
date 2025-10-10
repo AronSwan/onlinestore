@@ -17,17 +17,24 @@ class OpenObserveService extends EventEmitter {
     super();
     
     // OpenObserve配置
-    this.baseUrl = config.baseUrl || process.env.OPENOBSERVE_BASE_URL || 'http://openobserve:5080';
-    this.organization = config.organization || process.env.OPENOBSERVE_ORG || 'default';
+    let __adapterOO;
+    try {
+      const { getOpenObserve } = require('../config/environment-adapter.js');
+      __adapterOO = typeof getOpenObserve === 'function' ? getOpenObserve() : null;
+    } catch (_) {
+      __adapterOO = null;
+    }
+    this.baseUrl = config.baseUrl || (__adapterOO && __adapterOO.baseUrl) || process.env.OPENOBSERVE_BASE_URL || process.env.OPENOBSERVE_URL || 'http://openobserve:5080';
+    this.organization = config.organization || (__adapterOO && __adapterOO.organization) || process.env.OPENOBSERVE_ORG || process.env.OPENOBSERVE_ORGANIZATION || 'default';
     this.streamName = config.streamName || process.env.OPENOBSERVE_STREAM || 'email_verification';
-    this.token = config.token || process.env.OPENOBSERVE_TOKEN;
+    this.token = config.token || (__adapterOO && __adapterOO.token) || process.env.OPENOBSERVE_TOKEN || process.env.ZO_TOKEN;
     
     // 发送配置
     this.enabled = config.enabled !== false && process.env.OPENOBSERVE_ENABLED !== 'false';
-    this.batchSize = config.batchSize || parseInt(process.env.OPENOBSERVE_BATCH_SIZE) || 100;
-    this.flushInterval = config.flushInterval || parseInt(process.env.OPENOBSERVE_FLUSH_INTERVAL) || 5000;
-    this.maxRetries = config.maxRetries || parseInt(process.env.OPENOBSERVE_MAX_RETRIES) || 3;
-    this.retryDelay = config.retryDelay || parseInt(process.env.OPENOBSERVE_RETRY_DELAY) || 1000;
+    this.batchSize = config.batchSize || parseInt(process.env.OPENOBSERVE_BATCH_SIZE || '100', 10);
+    this.flushInterval = config.flushInterval || parseInt(process.env.OPENOBSERVE_FLUSH_INTERVAL || '5000', 10);
+    this.maxRetries = config.maxRetries || parseInt(process.env.OPENOBSERVE_MAX_RETRIES || '3', 10);
+    this.retryDelay = config.retryDelay || parseInt(process.env.OPENOBSERVE_RETRY_DELAY || '1000', 10);
     
     // 数据缓冲区
     this.buffer = [];

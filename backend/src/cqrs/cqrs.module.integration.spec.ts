@@ -10,7 +10,7 @@ import { EventBus } from './bus/event.bus';
 import { CommandBase } from './commands/command.base';
 import { QueryBase } from './queries/query.base';
 import { EventBase } from './events/event.base';
-import { ICommandHandler } from './interfaces/command-handler.interface';
+import { ICommandHandler, ICommandMiddleware } from './interfaces/command-handler.interface';
 import { IQueryHandler } from './interfaces/query-handler.interface';
 import { IEventHandler } from './interfaces/event-handler.interface';
 import { TestMocker, TestAssertions, TestDataFactory } from './test/test-utils';
@@ -132,8 +132,22 @@ describe('CQRS Module Integration', () => {
     it('应该支持中间件管道', async () => {
       // 准备测试数据
       const command = new CreateUserCommand(TestDataFactory.createUser());
-      const middleware1 = TestMocker.mockMiddleware();
-      const middleware2 = TestMocker.mockMiddleware();
+      const m1Fn = jest.fn();
+      const middleware1: ICommandMiddleware = {
+        name: 'm1',
+        execute: async (cmd, next) => {
+          m1Fn(cmd);
+          return next();
+        },
+      };
+      const m2Fn = jest.fn();
+      const middleware2: ICommandMiddleware = {
+        name: 'm2',
+        execute: async (cmd, next) => {
+          m2Fn(cmd);
+          return next();
+        },
+      };
 
       // 注册中间件
       commandBus.addMiddleware(middleware1);
@@ -148,8 +162,8 @@ describe('CQRS Module Integration', () => {
       await commandBus.execute(command);
 
       // 验证中间件执行
-      expect(middleware1.execute).toHaveBeenCalled();
-      expect(middleware2.execute).toHaveBeenCalled();
+      expect(m1Fn).toHaveBeenCalled();
+      expect(m2Fn).toHaveBeenCalled();
     });
   });
 

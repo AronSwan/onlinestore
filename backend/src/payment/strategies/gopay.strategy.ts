@@ -1,13 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { PaymentStrategy, PaymentRequest, RefundRequest } from './payment-strategy.interface';
 import {
-  PaymentStrategy,
-  PaymentRequest,
-  PaymentResponse,
-  PaymentQueryResponse,
-  PaymentCallbackResponse,
-  RefundRequest,
-  RefundResponse,
-} from './payment-strategy.interface';
+  GatewayResult,
+  CreatePaymentData,
+  QueryPaymentData,
+  CallbackData,
+  RefundData,
+} from '../common/gateway-result';
 import { GopayGatewayService } from '../gateways/gopay-gateway.service';
 import { PaymentMethod } from '../entities/payment.entity';
 
@@ -22,7 +21,7 @@ export class GopayStrategy extends PaymentStrategy {
     super();
   }
 
-  async createPayment(request: PaymentRequest): Promise<PaymentResponse> {
+  async createPayment(request: PaymentRequest): Promise<GatewayResult<CreatePaymentData>> {
     try {
       const gopayRequest = {
         method: this.method,
@@ -39,15 +38,17 @@ export class GopayStrategy extends PaymentStrategy {
 
       const response = await this.gopayGateway.createPayment(gopayRequest);
 
-      if (response.success && response.data) {
+      if (response.success) {
         return {
           success: true,
-          paymentId: response.data.paymentId,
-          redirectUrl: response.data.redirectUrl,
-          qrCode: response.data.qrCode,
-          deepLink: response.data.deepLink,
-          thirdPartyTransactionId: response.data.paymentId,
-          expiredAt: response.data.expiredAt ? new Date(response.data.expiredAt) : undefined,
+          data: {
+            paymentId: response.data!.paymentId,
+            redirectUrl: response.data?.redirectUrl,
+            qrCode: response.data?.qrCode,
+            deepLink: response.data?.deepLink,
+            thirdPartyTransactionId: response.data!.paymentId,
+            expiredAt: response.data?.expiredAt ? new Date(response.data.expiredAt) : undefined,
+          },
         };
       } else {
         return {
@@ -64,63 +65,65 @@ export class GopayStrategy extends PaymentStrategy {
     }
   }
 
-  async queryPayment(paymentId: string): Promise<PaymentQueryResponse> {
+  async queryPayment(paymentId: string): Promise<GatewayResult<QueryPaymentData>> {
     try {
       const response = await this.gopayGateway.queryPayment(paymentId);
 
-      if (response.success && response.data) {
+      if (response.success) {
         return {
-          status: this.mapStatus(response.data.status),
-          thirdPartyTransactionId: response.data.thirdPartyTransactionId,
-          paidAt: response.data.paidAt ? new Date(response.data.paidAt) : undefined,
-          amount: response.data.amount,
+          success: true,
+          data: {
+            status: this.mapStatus(response.data!.status),
+            thirdPartyTransactionId: response.data?.thirdPartyTransactionId,
+            paidAt: response.data?.paidAt ? new Date(response.data.paidAt) : undefined,
+            amount: response.data!.amount,
+          },
+          message: response.message,
         };
       } else {
         return {
-          status: 'failed',
+          success: false,
           message: response.message || '查询支付状态失败',
         };
       }
     } catch (error) {
       this.logger.error(`Gopay策略查询支付失败: ${error.message}`, error.stack);
       return {
-        status: 'failed',
+        success: false,
         message: error.message || '查询支付状态异常',
       };
     }
   }
 
-  async handleCallback(data: any): Promise<PaymentCallbackResponse> {
+  async handleCallback(data: any): Promise<GatewayResult<CallbackData>> {
     try {
       if (!this.validateCallback(data)) {
         return {
           success: false,
-          paymentId: data.paymentId || '',
-          status: 'failed',
           message: '回调签名验证失败',
         };
       }
 
       return {
         success: true,
-        paymentId: data.paymentId,
-        status: this.mapStatus(data.status),
-        amount: data.amount,
-        thirdPartyTransactionId: data.thirdPartyTransactionId,
-        paidAt: data.paidAt ? new Date(data.paidAt) : undefined,
+        data: {
+          paymentId: data.paymentId,
+          status: this.mapStatus(data.status),
+          amount: data.amount,
+          thirdPartyTransactionId: data.thirdPartyTransactionId,
+          paidAt: data.paidAt ? new Date(data.paidAt) : undefined,
+        },
       };
     } catch (error) {
       this.logger.error(`Gopay策略处理回调失败: ${error.message}`, error.stack);
       return {
         success: false,
-        paymentId: data.paymentId || '',
-        status: 'failed',
         message: error.message || '处理回调异常',
       };
     }
   }
 
-  async refund(request: RefundRequest): Promise<RefundResponse> {
+  async refund(request: RefundRequest): Promise<GatewayResult<RefundData>> {
     try {
       const response = await this.gopayGateway.refundPayment(
         request.paymentId,
@@ -128,10 +131,14 @@ export class GopayStrategy extends PaymentStrategy {
         request.reason,
       );
 
-      if (response.success && response.data) {
+      if (response.success) {
         return {
           success: true,
-          refundId: response.data.paymentId,
+          data: {
+            refundId: response.data!.paymentId,
+            status: 'SUCCESS',
+            message: response.message,
+          },
         };
       } else {
         return {

@@ -1,0 +1,99 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试运行器综合报告</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header { text-align: center; margin-bottom: 30px; }
+        .score { font-size: 48px; font-weight: bold; color: #FF9800; }
+        .status { font-size: 24px; margin-top: 10px; }
+        .section { margin: 20px 0; padding: 15px; border-left: 4px solid #2196F3; background-color: #f8f9fa; }
+        .test-suite { display: inline-block; margin: 10px; padding: 15px; border-radius: 8px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); min-width: 200px; }
+        .risk-critical { color: #F44336; }
+        .risk-high { color: #FF9800; }
+        .risk-medium { color: #FFC107; }
+        .recommendations { list-style-type: none; padding: 0; }
+        .recommendations li { margin: 8px 0; padding: 8px; background: #e3f2fd; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 测试运行器综合报告</h1>
+            <div class="score">65/100</div>
+            <div class="status">GOOD</div>
+            <p>生成时间: 2025/10/10 15:56:36</p>
+        </div>
+
+        <div class="section">
+            <h2>📊 测试套件概览</h2>
+            <div>
+                
+                    <div class="test-suite">
+                        <h3>STRESS</h3>
+                        <p>总测试: 5</p>
+                        <p>通过: 5</p>
+                        <p>失败: 0</p>
+                    </div>
+                    
+                    <div class="test-suite">
+                        <h3>SECURITY</h3>
+                        <p>总测试: 7</p>
+                        <p>通过: 2</p>
+                        <p>失败: 5</p>
+                    </div>
+                    
+                    <div class="test-suite">
+                        <h3>INTEGRATION</h3>
+                        <p>总测试: 5</p>
+                        <p>通过: 4</p>
+                        <p>失败: 1</p>
+                    </div>
+                    
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>⚠️ 风险评估</h2>
+            
+                    <div class="risk-critical">
+                        <strong>[CRITICAL] SECURITY:</strong> 发现 2 个严重安全漏洞
+                        <br><em>影响: 系统可能面临严重安全威胁</em>
+                    </div>
+                <br>
+                    <div class="risk-medium">
+                        <strong>[MEDIUM] INTEGRATION:</strong> 发现 1 个集成问题
+                        <br><em>影响: 系统组件间可能存在兼容性问题</em>
+                    </div>
+                
+        </div>
+
+        <div class="section">
+            <h2>💡 改进建议</h2>
+            <ul class="recommendations">
+                <li>修复发现的安全漏洞，加强安全防护</li><li>- Path Traversal: undefined</li><li>- Command Injection: undefined</li><li>- Command Injection: undefined</li><li>- Process Timeout Bypass: undefined</li><li>- Insecure Temp Directory: undefined</li><li>解决集成测试中发现的问题</li><li>- 大量测试文件处理: 处理大量文件时性能下降</li><li>定期运行完整的测试套件以确保系统稳定性</li><li>建立持续集成流程，自动化测试执行</li><li>监控系统性能指标，及时发现潜在问题</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>🚀 下一步行动</h2>
+            <ul>
+                <li>🚨 立即修复所有严重安全漏洞</li><li>📊 建立定期测试计划</li><li>🔍 实施持续监控</li><li>📚 更新安全和性能最佳实践</li><li>🛠️ 优化测试运行器性能</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>🔧 系统信息</h2>
+            <p><strong>平台:</strong> win32</p>
+            <p><strong>Node.js版本:</strong> v22.20.0</p>
+            <p><strong>架构:</strong> x64</p>
+            <p><strong>测试运行器版本:</strong> 2.0.0-enhanced</p>
+        </div>
+    </div>
+</body>
+</html>
+    

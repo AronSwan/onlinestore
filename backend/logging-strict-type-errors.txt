@@ -1,0 +1,42 @@
+src/logging/business-logger.service.ts(132,78): error TS2339: Property 'stack' does not exist on type '{}'.
+src/logging/business-logger.service.ts(148,69): error TS2339: Property 'stack' does not exist on type '{}'.
+src/logging/business-logger.service.ts(159,62): error TS2339: Property 'stack' does not exist on type '{}'.
+src/logging/dto/logging.dto.ts(24,3): error TS2564: Property 'sessionId' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(31,3): error TS2564: Property 'eventType' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(42,3): error TS2564: Property 'sessionId' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(50,3): error TS2564: Property 'page' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(62,3): error TS2564: Property 'sessionId' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(70,3): error TS2564: Property 'productId' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(82,3): error TS2564: Property 'sessionId' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(90,3): error TS2564: Property 'searchQuery' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(102,3): error TS2564: Property 'sessionId' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(109,3): error TS2564: Property 'operation' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(113,3): error TS2564: Property 'productId' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(116,3): error TS2564: Property 'quantity' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(119,3): error TS2564: Property 'price' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(135,3): error TS2564: Property 'sessionId' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(143,3): error TS2564: Property 'orderId' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(146,3): error TS2564: Property 'totalAmount' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(158,3): error TS2564: Property 'sessionId' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(166,3): error TS2564: Property 'orderId' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(169,3): error TS2564: Property 'totalAmount' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(181,3): error TS2564: Property 'customEventType' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(184,3): error TS2564: Property 'eventData' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(191,3): error TS2564: Property 'action' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(195,3): error TS2564: Property 'userId' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(206,3): error TS2564: Property 'orderId' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(210,3): error TS2564: Property 'event' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(221,3): error TS2564: Property 'paymentId' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(225,3): error TS2564: Property 'event' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(228,3): error TS2564: Property 'amount' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(232,3): error TS2564: Property 'status' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(243,3): error TS2564: Property 'productId' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(247,3): error TS2564: Property 'event' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(250,3): error TS2564: Property 'quantity' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(261,3): error TS2564: Property 'event' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(265,3): error TS2564: Property 'level' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(276,3): error TS2564: Property 'message' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(287,3): error TS2564: Property 'start' has no initializer and is not definitely assigned in the constructor.
+src/logging/dto/logging.dto.ts(291,3): error TS2564: Property 'end' has no initializer and is not definitely assigned in the constructor.
+src/logging/log-analytics.service.ts(194,67): error TS2339: Property 'stack' does not exist on type '{}'.
+src/logging/user-behavior-tracker.service.ts(167,83): error TS2339: Property 'stack' does not exist on type '{}'.

@@ -1,3 +1,5 @@
+/// <reference path="./jest.d.ts" />
+import { describe, it, expect, jest } from '@jest/globals';
 import { Test, TestingModule } from '@nestjs/testing';
 import { HttpModule } from '@nestjs/axios';
 import { BusinessLoggerService } from './business-logger.service';
@@ -6,6 +8,7 @@ import { OpenObserveConfig } from '../interfaces/logging.interface';
 describe('BusinessLoggerService', () => {
   let service: BusinessLoggerService;
   let mockConfig: OpenObserveConfig;
+  let mockTransport: { log: jest.Mock; flush: jest.Mock };
 
   beforeEach(async () => {
     mockConfig = {
@@ -44,6 +47,8 @@ describe('BusinessLoggerService', () => {
       },
     };
 
+    mockTransport = { log: jest.fn(), flush: jest.fn() };
+
     const module: TestingModule = await Test.createTestingModule({
       imports: [HttpModule],
       providers: [
@@ -51,6 +56,10 @@ describe('BusinessLoggerService', () => {
         {
           provide: 'OPENOBSERVE_CONFIG',
           useValue: mockConfig,
+        },
+        {
+          provide: 'OPENOBSERVE_TRANSPORT',
+          useValue: mockTransport,
         },
       ],
     }).compile();
@@ -67,18 +76,23 @@ describe('BusinessLoggerService', () => {
       const userId = 'user123';
       const action = 'LOGIN';
       const metadata = { ip: '192.168.1.1' };
-
-      // Mock the console.log to avoid actual logging during tests
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
       
       service.logUserAction(action, userId, metadata);
       
-      // Verify that no errors are thrown
-      expect(consoleSpy).not.toHaveBeenCalledWith(
-        expect.stringContaining('Failed to send business log to OpenObserve')
+      expect(mockTransport.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 'INFO',
+          category: 'USER',
+          action,
+          userId,
+        }),
+        expect.any(Function)
       );
-      
-      consoleSpy.mockRestore();
+    });
+
+    it('negative-path: does not throw when transport.log fails', () => {
+      mockTransport.log.mockImplementation(() => { throw new Error('network error'); });
+      expect(() => service.logUserAction('LOGIN', 'user123', {})).not.toThrow();
     });
   });
 
@@ -87,18 +101,24 @@ describe('BusinessLoggerService', () => {
       const orderId = 'order123';
       const event = 'ORDER_CREATED';
       const metadata = { userId: 'user123', totalAmount: 100 };
-
-      // Mock the console.log to avoid actual logging during tests
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
       
       service.logOrderEvent(orderId, event, metadata);
       
-      // Verify that no errors are thrown
-      expect(consoleSpy).not.toHaveBeenCalledWith(
-        expect.stringContaining('Failed to send business log to OpenObserve')
+      expect(mockTransport.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          category: 'ORDER',
+          action: event,
+          businessContext: expect.objectContaining({ orderId })
+        }),
+        expect.any(Function)
       );
-      
-      consoleSpy.mockRestore();
+    });
+
+    it('negative-path: does not throw when transport.log fails', () => {
+      mockTransport.log.mockImplementation(() => { throw new Error('network error'); });
+      expect(() =>
+        service.logOrderEvent('ORDER_CREATED', 'order-001', { amount: 199, currency: 'USD' })
+      ).not.toThrow();
     });
   });
 
@@ -109,18 +129,17 @@ describe('BusinessLoggerService', () => {
       const amount = 100;
       const status = 'PENDING';
       const metadata = { userId: 'user123' };
-
-      // Mock the console.log to avoid actual logging during tests
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
       
       service.logPaymentEvent(paymentId, event, amount, status, metadata);
       
-      // Verify that no errors are thrown
-      expect(consoleSpy).not.toHaveBeenCalledWith(
-        expect.stringContaining('Failed to send business log to OpenObserve')
+      expect(mockTransport.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          category: 'PAYMENT',
+          action: event,
+          businessContext: expect.objectContaining({ paymentId, amount, status }),
+        }),
+        expect.any(Function)
       );
-      
-      consoleSpy.mockRestore();
     });
   });
 
@@ -130,18 +149,17 @@ describe('BusinessLoggerService', () => {
       const event = 'STOCK_UPDATED';
       const quantity = 50;
       const metadata = { userId: 'admin123' };
-
-      // Mock the console.log to avoid actual logging during tests
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
       
       service.logInventoryEvent(productId, event, quantity, metadata);
       
-      // Verify that no errors are thrown
-      expect(consoleSpy).not.toHaveBeenCalledWith(
-        expect.stringContaining('Failed to send business log to OpenObserve')
+      expect(mockTransport.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          category: 'INVENTORY',
+          action: event,
+          businessContext: expect.objectContaining({ productId, quantity }),
+        }),
+        expect.any(Function)
       );
-      
-      consoleSpy.mockRestore();
     });
   });
 
@@ -150,18 +168,22 @@ describe('BusinessLoggerService', () => {
       const event = 'SYSTEM_STARTUP';
       const level = 'INFO';
       const metadata = { version: '1.0.0' };
-
-      // Mock the console.log to avoid actual logging during tests
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
       
       service.logSystemEvent(event, level, metadata);
       
-      // Verify that no errors are thrown
-      expect(consoleSpy).not.toHaveBeenCalledWith(
-        expect.stringContaining('Failed to send business log to OpenObserve')
+      expect(mockTransport.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          category: 'SYSTEM',
+          action: event,
+          level,
+        }),
+        expect.any(Function)
       );
-      
-      consoleSpy.mockRestore();
+    });
+
+    it('negative-path: error log does not leak exception', () => {
+      mockTransport.log.mockImplementation(() => { throw new Error('network error'); });
+      expect(() => service.logError(new Error('boom'), {})).not.toThrow();
     });
   });
 
@@ -169,25 +191,24 @@ describe('BusinessLoggerService', () => {
     it('should log error correctly', () => {
       const error = new Error('Test error');
       const context = { userId: 'user123', action: 'TEST_ACTION' };
-
-      // Mock the console.log to avoid actual logging during tests
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
       
       service.logError(error, context);
       
-      // Verify that no errors are thrown
-      expect(consoleSpy).not.toHaveBeenCalledWith(
-        expect.stringContaining('Failed to send business log to OpenObserve')
+      expect(mockTransport.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          category: 'SYSTEM',
+          action: 'ERROR_OCCURRED',
+          level: 'ERROR',
+        }),
+        expect.any(Function)
       );
-      
-      consoleSpy.mockRestore();
     });
   });
 
   describe('flush', () => {
     it('should flush logs without errors', () => {
       // Mock the console.log to avoid actual logging during tests
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => undefined);
       
       service.flush();
       

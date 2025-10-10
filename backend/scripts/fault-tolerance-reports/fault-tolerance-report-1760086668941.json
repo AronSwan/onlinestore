@@ -1,0 +1,94 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "timestamp": "2025-10-10T08:57:48.941Z",
+    "systemInfo": {
+      "platform": "win32",
+      "arch": "x64",
+      "cpus": 24,
+      "totalMemory": 32609,
+      "freeMemory": 15314,
+      "loadAverage": "0.00"
+    }
+  },
+  "summary": {
+    "total": 9,
+    "passed": 8,
+    "failed": 1,
+    "passRate": "88.89"
+  },
+  "testDetails": [
+    {
+      "name": "网络超时处理测试",
+      "success": true,
+      "error": "命令超时并被强制终止 (30000ms)",
+      "duration": 30009.8464
+    },
+    {
+      "name": "网络中断恢复测试",
+      "success": true,
+      "error": "",
+      "duration": 5171.321599999999
+    },
+    {
+      "name": "文件权限错误处理测试",
+      "success": true,
+      "error": "",
+      "duration": 62.58309999999619
+    },
+    {
+      "name": "文件损坏处理测试",
+      "success": true,
+      "error": "",
+      "duration": 61.359199999998964
+    },
+    {
+      "name": "磁盘空间不足处理测试",
+      "success": true,
+      "error": "",
+      "duration": 10066.4487
+    },
+    {
+      "name": "内存耗尽处理测试",
+      "success": true,
+      "error": "",
+      "duration": 30332.995200000005
+    },
+    {
+      "name": "文件描述符耗尽处理测试",
+      "success": true,
+      "error": "",
+      "duration": 30180.422300000006
+    },
+    {
+      "name": "子进程崩溃处理测试",
+      "success": false,
+      "error": "node:internal/modules/cjs/loader:1386\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'spawn'\r\nRequire stack:\r\n- D:\\onlinestore\\backend\\scripts\\fault-tolerance-test-data\\crash-monitor.js\r\n    at Function._resolveFilename (node:internal/modules/cjs/loader:1383:15)\r\n    at defaultResolveImpl (node:internal/modules/cjs/loader:1025:19)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1030:22)\r\n    at Function._load (node:internal/modules/cjs/loader:1192:37)\r\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)\r\n    at Module.require (node:internal/modules/cjs/loader:1463:12)\r\n    at require (node:internal/modules/helpers:147:16)\r\n    at Object.<anonymous> (D:\\onlinestore\\backend\\scripts\\fault-tolerance-test-data\\crash-monitor.js:2:19)\r\n    at Module._compile (node:internal/modules/cjs/loader:1706:14) {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: [\r\n    'D:\\\\onlinestore\\\\backend\\\\scripts\\\\fault-tolerance-test-data\\\\crash-monitor.js'\r\n  ]\r\n}\r\n\r\nNode.js v22.20.0\r\n",
+      "duration": 76.47809999999299
+    },
+    {
+      "name": "工作线程崩溃处理测试",
+      "success": true,
+      "error": "",
+      "duration": 30100.564599999998
+    }
+  ],
+  "config": {
+    "testRunnerPath": "D:\\onlinestore\\backend\\scripts\\test-runner-secure.cjs",
+    "timeout": {
+      "quick": 10000,
+      "short": 30000,
+      "medium": 120000,
+      "long": 300000
+    },
+    "testDataDir": "D:\\onlinestore\\backend\\scripts\\fault-tolerance-test-data",
+    "reportDir": "D:\\onlinestore\\backend\\scripts\\fault-tolerance-reports",
+    "faultInjection": {
+      "networkLatency": 5000,
+      "packetLoss": 0.3,
+      "diskFailureRate": 0.2,
+      "memoryLeakRate": 0.1,
+      "processCrashRate": 0.15
+    }
+  }
+}

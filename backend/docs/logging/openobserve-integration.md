@@ -4,6 +4,13 @@
 
 本文档介绍如何将后端日志系统与OpenObserve集成，实现集中式日志管理和分析。
 
+## 更新记录（2025-10-09）
+
+- 传输器输出字段标准化：错误对象统一序列化为 `error_name`、`error_message`、`error_stack`。
+- 保留完整业务字段：日志 payload 合并业务字段（如 `category`、`action`、`businessContext`、`tags`、`traceId`、`spanId`），避免丢失。
+- 安全展开 meta：当 `meta` 未定义时不再触发展开异常，确保缓冲与批量发送稳定。
+- 查询兼容性建议：如仪表盘或查询依赖旧错误字段名，请同步更新到新字段以获得更完整的错误上下文。
+
 ## 功能特性
 
 - ✅ 支持OpenObserve REST API

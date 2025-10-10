@@ -1,0 +1,95 @@
+{
+  "summary": {
+    "timestamp": "2025-10-10T07:54:31.236Z",
+    "totalTests": 7,
+    "passed": 2,
+    "failed": 5,
+    "vulnerabilities": 5,
+    "securityScore": 29
+  },
+  "vulnerabilities": [
+    {
+      "type": "Path Traversal",
+      "payload": "%2e%2e%2f%2e%2e%2f%2e%2e%2fetc%2fpasswd",
+      "severity": "HIGH",
+      "description": "路径遍历攻击未被阻止"
+    },
+    {
+      "type": "Command Injection",
+      "payload": "test\nrm -rf /",
+      "severity": "CRITICAL",
+      "description": "命令注入攻击未被阻止"
+    },
+    {
+      "type": "Command Injection",
+      "payload": "test\r\nformat c:",
+      "severity": "CRITICAL",
+      "description": "命令注入攻击未被阻止"
+    },
+    {
+      "type": "Process Timeout Bypass",
+      "payload": "Long running process not terminated",
+      "severity": "MEDIUM",
+      "description": "长时间运行的进程未被终止"
+    },
+    {
+      "type": "Insecure Temp Directory",
+      "payload": "Directory permissions: 666",
+      "severity": "MEDIUM",
+      "description": "临时目录权限不安全"
+    }
+  ],
+  "testResults": [
+    {
+      "testName": "路径遍历攻击防护",
+      "totalAttempts": 8,
+      "blocked": 7,
+      "vulnerabilities": 1,
+      "success": false
+    },
+    {
+      "testName": "命令注入攻击防护",
+      "totalAttempts": 10,
+      "blocked": 8,
+      "vulnerabilities": 2,
+      "success": false
+    },
+    {
+      "testName": "文件大小限制",
+      "fileSize": "15MB",
+      "blocked": true,
+      "success": true
+    },
+    {
+      "testName": "进程超时保护",
+      "timedOut": false,
+      "success": false
+    },
+    {
+      "testName": "内存限制保护",
+      "memoryExceeded": false,
+      "allocatedChunks": 0,
+      "success": false
+    },
+    {
+      "testName": "临时文件安全",
+      "securePermissions": false,
+      "fileCreated": true,
+      "cleanedUp": true,
+      "success": false
+    },
+    {
+      "testName": "并发限制保护",
+      "totalProcesses": 10,
+      "rejected": 5,
+      "concurrencyLimited": true,
+      "success": true
+    }
+  ],
+  "recommendations": [
+    "加强路径验证，使用白名单方式验证允许的路径",
+    "实施严格的输入验证，避免直接执行用户输入",
+    "设置合理的进程超时时间，防止长时间运行的恶意进程",
+    "确保临时文件和目录使用安全的权限设置"
+  ]
+}

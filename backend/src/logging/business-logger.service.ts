@@ -1,23 +1,16 @@
 import { Injectable, Logger, Inject } from '@nestjs/common';
+import { extractErrorInfo } from './utils/logging-error.util';
 import { BusinessLogEntry, OpenObserveConfig } from '../interfaces/logging.interface';
 import OpenObserveTransport from './openobserve-transport';
 
 @Injectable()
 export class BusinessLoggerService {
   private readonly logger = new Logger(BusinessLoggerService.name);
-  private readonly openObserveTransport: OpenObserveTransport;
 
   constructor(
     @Inject('OPENOBSERVE_CONFIG') private readonly config: OpenObserveConfig,
-  ) {
-    this.openObserveTransport = new OpenObserveTransport({
-      endpoint: `${config.url}/api/${config.organization}/business-events/_json`,
-      token: config.auth.token || '',
-      batchSize: config.performance.batch_size,
-      flushInterval: config.performance.flush_interval,
-      service: 'caddy-shopping-backend',
-    });
-  }
+    @Inject('OPENOBSERVE_TRANSPORT') private readonly openObserveTransport: OpenObserveTransport,
+  ) {}
 
   // 记录用户操作日志
   logUserAction(action: string, userId: string, metadata: any = {}): void {
@@ -110,42 +103,48 @@ export class BusinessLoggerService {
 
   // 记录错误日志
   logError(error: Error, context: any = {}): void {
+    const errorInfo = extractErrorInfo(error);
+    const sanitized = { ...context };
+    delete (sanitized as any).level;
+    delete (sanitized as any).category;
+    delete (sanitized as any).action;
     const logEntry: BusinessLogEntry = {
       timestamp: new Date().toISOString(),
-      level: 'ERROR',
       service: 'caddy-shopping-backend',
+      message: errorInfo.message,
+      tags: {
+        errorName: errorInfo.name,
+        stackTrace: errorInfo.stack,
+      },
+      ...sanitized,
+      level: 'ERROR',
       category: 'SYSTEM',
       action: 'ERROR_OCCURRED',
-      message: error.message,
-      tags: {
-        errorName: error.name,
-        stackTrace: error.stack,
-      },
-      ...context,
     };
 
     this.sendLog(logEntry);
   }
 
   // 发送日志到OpenObserve
-  private sendLog(logEntry: BusinessLogEntry): void {
+  private async sendLog(logEntry: BusinessLogEntry): Promise<void> {
     try {
       // 添加追踪信息
       if (this.config.tracing.enabled) {
-        this.addTracingInfo(logEntry);
+        await this.addTracingInfo(logEntry);
       }
 
       this.openObserveTransport.log(logEntry, () => {});
     } catch (error) {
-      this.logger.error('Failed to send business log to OpenObserve', error);
+      const errorInfo = extractErrorInfo(error);
+      this.logger.error('Failed to send business log to OpenObserve', errorInfo.stack);
     }
   }
 
   // 添加追踪信息
-  private addTracingInfo(logEntry: BusinessLogEntry): void {
+  private async addTracingInfo(logEntry: BusinessLogEntry): Promise<void> {
     try {
-      const trace = require('@opentelemetry/api');
-      const activeSpan = trace.trace.getActiveSpan();
+      const { trace } = await import('@opentelemetry/api');
+      const activeSpan = trace.getActiveSpan();
       if (activeSpan) {
         const spanContext = activeSpan.spanContext();
         logEntry.traceId = spanContext.traceId;
@@ -153,16 +152,32 @@ export class BusinessLoggerService {
       }
     } catch (error) {
       // 忽略追踪错误，不影响日志发送
-      this.logger.debug('Failed to add tracing info to log', error);
+      const errorInfo = extractErrorInfo(error);
+      this.logger.debug('Failed to add tracing info to log', errorInfo.stack);
+    }
+  }
+
+  // 通用日志入口（结构化日志直发 OpenObserve）
+  logRaw(entry: any): void {
+    try {
+      this.openObserveTransport.log(entry, () => {});
+    } catch (error) {
+      const errorInfo = extractErrorInfo(error);
+      this.logger.error('Failed to send raw business log to OpenObserve', errorInfo.stack);
     }
   }
 
   // 强制刷新缓冲区
   flush(): void {
     try {
-      (this.openObserveTransport as any).flush();
+      if (this.openObserveTransport && typeof this.openObserveTransport.flush === 'function') {
+        this.openObserveTransport.flush();
+      }
     } catch (error) {
-      this.logger.error('Failed to flush log buffer', error);
+      const errorInfo = extractErrorInfo(error);
+      this.logger.error('Failed to flush log buffer', errorInfo.stack);
     }
   }
+
+  
 }

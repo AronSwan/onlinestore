@@ -1,0 +1,163 @@
+{
+  "timestamp": "2025-10-10T07:49:20.713Z",
+  "summary": {
+    "total": 15,
+    "passed": 14,
+    "failed": 1,
+    "skipped": 0,
+    "passRate": "93.33"
+  },
+  "systemInfo": {
+    "memory": {
+      "total": 34193149952,
+      "free": 20463898624,
+      "usage": 0.4015202798008658
+    },
+    "cpu": {
+      "count": 24,
+      "load": [
+        0,
+        0,
+        0
+      ]
+    },
+    "platform": "win32"
+  },
+  "testDetails": [
+    {
+      "name": "路径验证安全性测试",
+      "category": "安全验证",
+      "passed": true,
+      "timestamp": "2025-10-10T07:41:26.133Z",
+      "details": {}
+    },
+    {
+      "name": "命令注入防护测试",
+      "category": "安全验证",
+      "passed": true,
+      "timestamp": "2025-10-10T07:41:56.300Z",
+      "details": {}
+    },
+    {
+      "name": "文件权限验证测试",
+      "category": "安全验证",
+      "passed": true,
+      "timestamp": "2025-10-10T07:41:57.570Z",
+      "details": {}
+    },
+    {
+      "name": "内存使用限制测试",
+      "category": "资源管理",
+      "passed": true,
+      "timestamp": "2025-10-10T07:42:27.582Z",
+      "details": {
+        "output": "\u001b[95m[Nest] 20700  - \u001b[39m2025/10/10 15:42:17 \u001b[95m  DEBUG\u001b[39m \u001b[38;5;3m[TanStackQueryIntegrationService] \u001b[39m\u001b[95mExecuting query: user.1\u001b[39m\n\u001b[95m[Nest] 20700  - \u001b[39m2025/10/10 15:42:17 \u001b[95m  DEBUG\u001b[39m \u001b[38;5;3m[TanStackQueryIntegrationService] \u001b[39m\u001b[95mCache hit for query: user.1\u001b[39m\n\u001b[95m[Nest] 20700  - \u001b[39m2025/10/10 15:42:17 \u001b[95m  DEBUG\u001b[39m \u001b[38;5;3m[TanStackQueryIntegrationService] \u001b[39m\u001b[95mExecuting query: abort.nocache\u001b[39m\n\u001b[95m[Nest] 20700  - \u001b[39m2025/10/10 15:42:17 \u001b[95m"
+      }
+    },
+    {
+      "name": "并发限制测试",
+      "category": "资源管理",
+      "passed": true,
+      "timestamp": "2025-10-10T07:42:52.597Z",
+      "details": {}
+    },
+    {
+      "name": "超时处理测试",
+      "category": "资源管理",
+      "passed": true,
+      "timestamp": "2025-10-10T07:44:11.385Z",
+      "details": {
+        "exitCode": 1
+      }
+    },
+    {
+      "name": "网络故障恢复测试",
+      "category": "错误恢复",
+      "passed": true,
+      "timestamp": "2025-10-10T07:44:41.394Z",
+      "details": {
+        "exitCode": 1
+      }
+    },
+    {
+      "name": "文件系统错误恢复测试",
+      "category": "错误恢复",
+      "passed": true,
+      "timestamp": "2025-10-10T07:44:42.637Z",
+      "details": {}
+    },
+    {
+      "name": "无效参数处理测试",
+      "category": "错误恢复",
+      "passed": true,
+      "timestamp": "2025-10-10T07:44:42.927Z",
+      "details": {}
+    },
+    {
+      "name": "空测试套件处理测试",
+      "category": "边界条件",
+      "passed": false,
+      "timestamp": "2025-10-10T07:44:42.999Z",
+      "details": {}
+    },
+    {
+      "name": "大文件处理测试",
+      "category": "边界条件",
+      "passed": true,
+      "timestamp": "2025-10-10T07:44:44.233Z",
+      "details": {}
+    },
+    {
+      "name": "极端参数值测试",
+      "category": "边界条件",
+      "passed": true,
+      "timestamp": "2025-10-10T07:45:44.397Z",
+      "details": {}
+    },
+    {
+      "name": "并行性能测试",
+      "category": "性能测试",
+      "passed": true,
+      "timestamp": "2025-10-10T07:46:10.099Z",
+      "details": {
+        "duration": 25701,
+        "exitCode": 1
+      }
+    },
+    {
+      "name": "串行性能测试",
+      "category": "性能测试",
+      "passed": true,
+      "timestamp": "2025-10-10T07:46:56.958Z",
+      "details": {
+        "duration": 46858,
+        "exitCode": 1
+      }
+    },
+    {
+      "name": "多实例并发测试",
+      "category": "并发测试",
+      "passed": true,
+      "timestamp": "2025-10-10T07:49:20.712Z",
+      "details": {
+        "instances": 3,
+        "completed": 3
+      }
+    }
+  ],
+  "config": {
+    "testRunnerPath": "D:\\onlinestore\\backend\\scripts\\test-runner-secure.cjs",
+    "timeout": {
+      "short": 30000,
+      "medium": 120000,
+      "long": 300000
+    },
+    "resourceLimits": {
+      "maxMemoryMB": 1024,
+      "maxFileSizeMB": 10,
+      "maxConcurrentTests": 8
+    },
+    "testDataDir": "D:\\onlinestore\\backend\\scripts\\test-data",
+    "reportDir": "D:\\onlinestore\\backend\\scripts\\robustness-reports"
+  }
+}

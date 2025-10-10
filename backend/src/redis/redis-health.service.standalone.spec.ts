@@ -1,5 +1,13 @@
 /// <reference types="jest" />
 
+declare var jest: {
+  mock: (moduleName: string, factory?: () => any) => void;
+  resetModules: () => void;
+  clearAllMocks: () => void;
+  fn: <T = any>(implementation?: (...args: any[]) => any) => jest.Mock<T>;
+  spyOn: <T>(object: T, method: keyof T) => jest.SpyInstance;
+};
+
 // 用途：Redis健康检查服务单元测试（独立运行版本）
 // 依赖文件：redis-health.service.ts, unified-master.config.ts
 // 作者：后端开发团队

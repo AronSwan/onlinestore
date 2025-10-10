@@ -1,8 +1,9 @@
 
 const axios = require('axios');
+const { env } = require('./openobserve/env-adapter.js');
 
-const OPENOBSERVE_URL = 'http://localhost:5080';
-const OPENOBSERVE_ORGANIZATION = 'caddy-shopping';
+const OPENOBSERVE_URL = env.url;
+const OPENOBSERVE_ORGANIZATION = env.organization;
 
 async function simulateAlerts() {
   console.log('🧪 模拟告警场景...');

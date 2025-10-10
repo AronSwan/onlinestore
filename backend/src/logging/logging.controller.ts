@@ -1,20 +1,56 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  Query, 
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Query,
   Req,
   Param,
   UseGuards,
-  Logger 
+  UseFilters,
+  UsePipes,
+  Logger,
+  HttpStatus,
+  HttpException,
+  ValidationPipe,
+  Inject,
 } from '@nestjs/common';
+import axios from 'axios';
 import { Request } from 'express';
 import { BusinessLoggerService } from './business-logger.service';
+import { OpenObserveConfig } from '../interfaces/logging.interface';
 import { UserBehaviorTracker } from './user-behavior-tracker.service';
 import { LogAnalyticsService } from './log-analytics.service';
+import { LoggingExceptionFilter } from './filters/logging-exception.filter';
+import { extractErrorInfo } from './utils/logging-error.util';
+import { buildErrorResponse } from '../common/helpers/error-response.helper';
+import {
+  BusinessLogDto,
+  OrderEventDto,
+  PaymentEventDto,
+  InventoryEventDto,
+  SystemEventDto,
+  ErrorLogDto,
+  PageViewDto,
+  ProductViewDto,
+  SearchDto,
+  CartOperationDto,
+  CheckoutDto,
+  PurchaseDto,
+  CustomEventDto,
+  AnalyticsQueryDto,
+  UserBehaviorAnalyticsQueryDto,
+  PopularPagesQueryDto,
+} from './dto/logging.dto';
 
 @Controller('api/logging')
+@UseFilters(LoggingExceptionFilter)
+@UsePipes(new ValidationPipe({
+  whitelist: true,
+  forbidNonWhitelisted: true,
+  transform: true,
+  transformOptions: { enableImplicitConversion: true },
+}))
 export class LoggingController {
   private readonly logger = new Logger(LoggingController.name);
 
@@ -22,76 +58,55 @@ export class LoggingController {
     private readonly businessLoggerService: BusinessLoggerService,
     private readonly userBehaviorTracker: UserBehaviorTracker,
     private readonly logAnalyticsService: LogAnalyticsService,
+    @Inject('OPENOBSERVE_CONFIG') private readonly openObserveConfig: OpenObserveConfig,
   ) {}
 
   // 记录用户操作日志
   @Post('user-action')
   logUserAction(
-    @Body() body: { action: string; userId: string; metadata?: any },
+    @Body() businessLogDto: BusinessLogDto,
   ): { success: boolean; message: string } {
-    try {
-      this.businessLoggerService.logUserAction(
-        body.action,
-        body.userId,
-        body.metadata,
-      );
-      
-      return {
-        success: true,
-        message: 'User action logged successfully',
-      };
-    } catch (error) {
-      this.logger.error('Failed to log user action', error);
-      return {
-        success: false,
-        message: 'Failed to log user action',
-      };
-    }
+    this.businessLoggerService.logUserAction(
+      businessLogDto.action,
+      businessLogDto.userId,
+      businessLogDto.metadata,
+    );
+    
+    return {
+      success: true,
+      message: 'User action logged successfully',
+    };
   }
 
   // 记录订单事件日志
   @Post('order-event')
   logOrderEvent(
-    @Body() body: { orderId: string; event: string; metadata?: any },
+    @Body() orderEventDto: OrderEventDto,
   ): { success: boolean; message: string } {
-    try {
-      this.businessLoggerService.logOrderEvent(
-        body.orderId,
-        body.event,
-        body.metadata,
-      );
-      
-      return {
-        success: true,
-        message: 'Order event logged successfully',
-      };
-    } catch (error) {
-      this.logger.error('Failed to log order event', error);
-      return {
-        success: false,
-        message: 'Failed to log order event',
-      };
-    }
+    this.businessLoggerService.logOrderEvent(
+      orderEventDto.orderId,
+      orderEventDto.event,
+      orderEventDto.metadata,
+    );
+    
+    return {
+      success: true,
+      message: 'Order event logged successfully',
+    };
   }
 
   // 记录支付事件日志
   @Post('payment-event')
   logPaymentEvent(
-    @Body() body: { 
-      paymentId: string; 
-      event: string; 
-      amount: number; 
-      status: string; 
-      metadata?: any 
-    },
+    @Body() paymentEventDto: PaymentEventDto,
   ): { success: boolean; message: string } {
     try {
       this.businessLoggerService.logPaymentEvent(
-        body.paymentId,
-        body.event,
-        body.amount,
-        body.status,
-        body.metadata,
+        paymentEventDto.paymentId,
+        paymentEventDto.event,
+        paymentEventDto.amount,
+        paymentEventDto.status,
+        paymentEventDto.metadata,
       );
       
       return {
@@ -110,19 +125,14 @@ export class LoggingController {
   // 记录库存事件日志
   @Post('inventory-event')
   logInventoryEvent(
-    @Body() body: { 
-      productId: string; 
-      event: string; 
-      quantity: number; 
-      metadata?: any 
-    },
+    @Body() inventoryEventDto: InventoryEventDto,
   ): { success: boolean; message: string } {
     try {
       this.businessLoggerService.logInventoryEvent(
-        body.productId,
-        body.event,
-        body.quantity,
-        body.metadata,
+        inventoryEventDto.productId,
+        inventoryEventDto.event,
+        inventoryEventDto.quantity,
+        inventoryEventDto.metadata,
       );
       
       return {
@@ -141,107 +151,98 @@ export class LoggingController {
   // 记录页面访问
   @Post('page-view')
   trackPageView(
-    @Body() body: { sessionId: string; page: string; userId?: string },
+    @Body() input: { sessionId: string; page: string; userId?: string },
     @Req() req: Request,
   ): { success: boolean; message: string } {
-    try {
-      this.userBehaviorTracker.trackPageView(
-        body.sessionId,
-        body.page,
-        body.userId,
-        req,
-      );
-      
-      return {
-        success: true,
-        message: 'Page view tracked successfully',
-      };
-    } catch (error) {
-      this.logger.error('Failed to track page view', error);
-      return {
-        success: false,
-        message: 'Failed to track page view',
-      };
-    }
+    this.userBehaviorTracker.trackPageView(
+      PageViewDto.createFromInput(input).sessionId,
+      PageViewDto.createFromInput(input).page,
+      PageViewDto.createFromInput(input).userId,
+      req,
+    );
+    
+    return {
+      success: true,
+      message: 'Page view tracked successfully',
+    };
   }
 
   // 记录商品浏览
   @Post('product-view')
   trackProductView(
-    @Body() body: { sessionId: string; productId: string; userId?: string },
+    @Body() input: { sessionId: string; productId: string; userId?: string },
     @Req() req: Request,
   ): { success: boolean; message: string } {
     try {
-      this.userBehaviorTracker.trackProductView(
-        body.sessionId,
-        body.productId,
-        body.userId,
-        req,
-      );
+      const dto = ProductViewDto.createFromInput(input);
+      this.userBehaviorTracker.trackProductView(dto.sessionId, dto.productId, dto.userId, req);
       
       return {
         success: true,
         message: 'Product view tracked successfully',
       };
     } catch (error) {
-      this.logger.error('Failed to track product view', error);
-      return {
-        success: false,
-        message: 'Failed to track product view',
-      };
+      const errorInfo = extractErrorInfo(error);
+      this.logger.error('Failed to track product view', errorInfo.stack);
+      return buildErrorResponse(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Failed to track product view',
+        req,
+        error,
+      );
     }
   }
 
   // 记录搜索行为
   @Post('search')
   trackSearch(
-    @Body() body: { sessionId: string; searchQuery: string; userId?: string },
+    @Body() input: { sessionId: string; searchQuery: string; userId?: string },
     @Req() req: Request,
   ): { success: boolean; message: string } {
     try {
-      this.userBehaviorTracker.trackSearch(
-        body.sessionId,
-        body.searchQuery,
-        body.userId,
-        req,
-      );
+      const dto = SearchDto.createFromInput(input);
+      this.userBehaviorTracker.trackSearch(dto.sessionId, dto.searchQuery, dto.userId, req);
       
       return {
         success: true,
         message: 'Search tracked successfully',
       };
     } catch (error) {
-      this.logger.error('Failed to track search', error);
-      return {
-        success: false,
-        message: 'Failed to track search',
-      };
+      const errorInfo = extractErrorInfo(error);
+      this.logger.error('Failed to track search', errorInfo.stack);
+      return buildErrorResponse(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Failed to track search',
+        req,
+        error,
+      );
     }
   }
 
   // 记录购物车操作
   @Post('cart-operation')
   trackCartOperation(
-    @Body() body: { 
-      sessionId: string; 
-      operation: 'CART_ADD' | 'CART_REMOVE'; 
-      productId: string; 
-      quantity: number; 
-      price: number; 
-      userId?: string; 
-      cartId?: string 
+    @Body() input: {
+      sessionId: string;
+      operation: any;
+      productId: string;
+      quantity: number | string;
+      price: number | string;
+      userId?: string;
+      cartId?: string;
     },
     @Req() req: Request,
   ): { success: boolean; message: string } {
     try {
+      const dto = CartOperationDto.createFromInput(input);
       this.userBehaviorTracker.trackCartOperation(
-        body.sessionId,
-        body.operation,
-        body.productId,
-        body.quantity,
-        body.price,
-        body.userId,
-        body.cartId,
+        dto.sessionId,
+        dto.operation,
+        dto.productId,
+        dto.quantity,
+        dto.price,
+        dto.userId,
+        dto.cartId,
         req,
       );
       
@@ -250,26 +251,30 @@ export class LoggingController {
         message: 'Cart operation tracked successfully',
       };
     } catch (error) {
-      this.logger.error('Failed to track cart operation', error);
-      return {
-        success: false,
-        message: 'Failed to track cart operation',
-      };
+      const errorInfo = extractErrorInfo(error);
+      this.logger.error('Failed to track cart operation', errorInfo.stack);
+      return buildErrorResponse(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Failed to track cart operation',
+        req,
+        error,
+      );
     }
   }
 
   // 记录结账行为
   @Post('checkout')
   trackCheckout(
-    @Body() body: { sessionId: string; orderId: string; totalAmount: number; userId?: string },
+    @Body() input: { sessionId: string; orderId: string; totalAmount: number | string; userId?: string },
     @Req() req: Request,
   ): { success: boolean; message: string } {
     try {
+      const dto = CheckoutDto.createFromInput(input);
       this.userBehaviorTracker.trackCheckout(
-        body.sessionId,
-        body.orderId,
-        body.totalAmount,
-        body.userId,
+        dto.sessionId,
+        dto.orderId,
+        dto.totalAmount,
+        dto.userId,
         req,
       );
       
@@ -278,26 +283,30 @@ export class LoggingController {
         message: 'Checkout tracked successfully',
       };
     } catch (error) {
-      this.logger.error('Failed to track checkout', error);
-      return {
-        success: false,
-        message: 'Failed to track checkout',
-      };
+      const errorInfo = extractErrorInfo(error);
+      this.logger.error('Failed to track checkout', errorInfo.stack);
+      return buildErrorResponse(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Failed to track checkout',
+        req,
+        error,
+      );
     }
   }
 
   // 记录购买行为
   @Post('purchase')
   trackPurchase(
-    @Body() body: { sessionId: string; orderId: string; totalAmount: number; userId?: string },
+    @Body() input: { sessionId: string; orderId: string; totalAmount: number | string; userId?: string },
     @Req() req: Request,
   ): { success: boolean; message: string } {
     try {
+      const dto = PurchaseDto.createFromInput(input);
       this.userBehaviorTracker.trackPurchase(
-        body.sessionId,
-        body.orderId,
-        body.totalAmount,
-        body.userId,
+        dto.sessionId,
+        dto.orderId,
+        dto.totalAmount,
+        dto.userId,
         req,
       );
       
@@ -306,36 +315,29 @@ export class LoggingController {
         message: 'Purchase tracked successfully',
       };
     } catch (error) {
-      this.logger.error('Failed to track purchase', error);
-      return {
-        success: false,
-        message: 'Failed to track purchase',
-      };
+      const errorInfo = extractErrorInfo(error);
+      this.logger.error('Failed to track purchase', errorInfo.stack);
+      return buildErrorResponse(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Failed to track purchase',
+        req,
+        error,
+      );
     }
   }
 
   // 获取日志统计
   @Get('stats')
   async getLogStats(
-    @Query('start') start: string,
-    @Query('end') end: string,
-    @Query() filters: any,
+    @Query() analyticsQueryDto: AnalyticsQueryDto,
   ) {
-    try {
-      const timeRange = { start, end };
-      const stats = await this.logAnalyticsService.getLogStats(timeRange, filters);
-      
-      return {
-        success: true,
-        data: stats,
-      };
-    } catch (error) {
-      this.logger.error('Failed to get log stats', error);
-      return {
-        success: false,
-        message: 'Failed to get log stats',
-      };
-    }
+    const timeRange = { start: analyticsQueryDto.start, end: analyticsQueryDto.end };
+    const stats = await this.logAnalyticsService.getLogStats(timeRange, analyticsQueryDto.filters);
+    
+    return {
+      success: true,
+      data: stats,
+    };
   }
 
   // 获取用户行为分析
@@ -354,11 +356,14 @@ export class LoggingController {
         data: analytics,
       };
     } catch (error) {
-      this.logger.error('Failed to get user behavior analytics', error);
-      return {
-        success: false,
-        message: 'Failed to get user behavior analytics',
-      };
+      const errorInfo = extractErrorInfo(error);
+      this.logger.error('Failed to get user behavior analytics', errorInfo.stack);
+      return buildErrorResponse(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Failed to get user behavior analytics',
+        undefined,
+        error,
+      );
     }
   }
 
@@ -377,11 +382,14 @@ export class LoggingController {
         data: anomalies,
       };
     } catch (error) {
-      this.logger.error('Failed to detect anomalous patterns', error);
-      return {
-        success: false,
-        message: 'Failed to detect anomalous patterns',
-      };
+      const errorInfo = extractErrorInfo(error);
+      this.logger.error('Failed to detect anomalous patterns', errorInfo.stack);
+      return buildErrorResponse(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Failed to detect anomalous patterns',
+        undefined,
+        error,
+      );
     }
   }
 
@@ -425,11 +433,34 @@ export class LoggingController {
         data: funnel,
       };
     } catch (error) {
-      this.logger.error('Failed to get conversion funnel', error);
+      const errorInfo = extractErrorInfo(error);
+      this.logger.error('Failed to get conversion funnel', errorInfo.stack);
       return {
         success: false,
         message: 'Failed to get conversion funnel',
       };
+    }
+  }
+
+  // 统一配置读取（只读），用于直接调用 OpenObserve API 的场景
+  getOpenObserveConfig(): Readonly<OpenObserveConfig> {
+    return this.openObserveConfig;
+  }
+
+  // 验证：控制器直接调用 OpenObserve 健康检查
+  @Get('openobserve/health')
+  async getOpenObserveHealth(): Promise<{ success: boolean; status?: any; message?: string }> {
+    try {
+      const cfg = this.getOpenObserveConfig();
+      const resp = await axios.get(`${cfg.url}/health`, {
+        headers: cfg.auth?.token ? { Authorization: `Bearer ${cfg.auth.token}` } : undefined,
+        timeout: 5000,
+      });
+      return { success: true, status: resp.data };
+    } catch (error) {
+      const msg = (error as Error).message;
+      this.logger.error('Failed to call OpenObserve health from Controller:', (error as Error).stack);
+      return { success: false, message: msg };
     }
   }
 
@@ -445,11 +476,14 @@ export class LoggingController {
         message: 'Log buffers flushed successfully',
       };
     } catch (error) {
-      this.logger.error('Failed to flush log buffers', error);
-      return {
-        success: false,
-        message: 'Failed to flush log buffers',
-      };
+      const errorInfo = extractErrorInfo(error);
+      this.logger.error('Failed to flush log buffers', errorInfo.stack);
+      return buildErrorResponse(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Failed to flush log buffers',
+        undefined,
+        error,
+      );
     }
   }
 }

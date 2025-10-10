@@ -8,11 +8,13 @@
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const { getOpenObserve } = require('./modules/openobserve-adapter');
 
 // 从环境变量或默认值获取配置
-const OPENOBSERVE_URL = process.env.OPENOBSERVE_URL || 'http://localhost:5080';
-const OPENOBSERVE_ORG = process.env.OPENOBSERVE_ORGANIZATION || 'default';
-const OPENOBSERVE_TOKEN = process.env.OPENOBSERVE_TOKEN;
+const { baseUrl: ADAPTER_URL, organization: ADAPTER_ORG, token: ADAPTER_TOKEN } = getOpenObserve();
+const OPENOBSERVE_URL = ADAPTER_URL || (process.env.OPENOBSERVE_URL || 'http://localhost:5080');
+const OPENOBSERVE_ORG = ADAPTER_ORG || (process.env.OPENOBSERVE_ORGANIZATION || 'default');
+const OPENOBSERVE_TOKEN = ADAPTER_TOKEN || process.env.OPENOBSERVE_TOKEN;
 const OPENOBSERVE_USERNAME = process.env.OPENOBSERVE_USERNAME;
 const OPENOBSERVE_PASSWORD = process.env.OPENOBSERVE_PASSWORD;
 

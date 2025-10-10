@@ -6,13 +6,15 @@
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const { env } = require('./openobserve/env-adapter.js');
 
 class AdvancedQueryAnalyticsSetup {
   constructor() {
     this.config = {
-      openobserveUrl: process.env.OPENOBSERVE_URL || 'http://localhost:5080',
-      organization: process.env.OPENOBSERVE_ORGANIZATION || 'default',
-      token: process.env.OPENOBSERVE_TOKEN || '',
+
+      openobserveUrl: env.url,
+      organization: env.organization,
+      token: env.token || '',
       queryLogStream: process.env.QUERY_LOG_STREAM || 'query-log',
       savedQueryStream: process.env.SAVED_QUERY_STREAM || 'saved-query',
       retention: process.env.QUERY_RETENTION || '90d'

@@ -2,16 +2,20 @@
 // 作者：后端开发团队
 // 时间：2025-10-05
 
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
 import { IQuery, IQueryResult } from '../queries/query.base';
 import {
   IQueryHandler,
-  IQueryHandlerFactory,
   IQueryMiddleware,
   IQueryPipeline,
   IQueryCache,
   QueryCacheStats,
 } from '../interfaces/query-handler.interface';
+import { CqrsLoggingService } from '../logging/cqrs-logging.service';
+import { CqrsMetricsService } from '../metrics/cqrs-metrics.service';
+import { CqrsTracingService } from '../tracing/cqrs-tracing.service';
+import { SWRService } from '../cache/swr.service';
+import { EnvironmentAdapter } from '../../config/environment-adapter';
 
 /**
  * 查询总线接口
@@ -80,13 +84,34 @@ export interface IQueryBus {
 @Injectable()
 export class QueryBus implements IQueryBus, IQueryPipeline {
   private readonly logger = new Logger(QueryBus.name);
-  private readonly handlers = new Map<string, IQueryHandler>();
+  private readonly handlers = new Map<string, IQueryHandler<any, any>>();
   private readonly middlewares: IQueryMiddleware[] = [];
   private queryCache: IQueryCache | null = null;
-  private cacheStats = {
+  private swrService: SWRService | null = null;
+  private _cacheStats = {
     hits: 0,
     misses: 0,
   };
+  private _swrStats = {
+    backgroundRefreshes: 0,
+    duplicateDedupeHits: 0,
+    invalidations: 0,
+    patternInvalidations: 0,
+  };
+
+  constructor(
+    private readonly cqrsLoggingService: CqrsLoggingService,
+    private readonly cqrsMetricsService: CqrsMetricsService,
+    private readonly cqrsTracingService: CqrsTracingService,
+    @Inject('IQueryCache') queryCache?: IQueryCache,
+  ) {
+    this.queryCache = queryCache || null;
+
+    // 如果有缓存，创建 SWR 服务
+    if (this.queryCache) {
+      this.swrService = new SWRService(this.queryCache);
+    }
+  }
 
   /**
    * 执行查询
@@ -95,14 +120,55 @@ export class QueryBus implements IQueryBus, IQueryPipeline {
     query: TQuery,
   ): Promise<IQueryResult<TResult>> {
     const queryName = query.constructor.name;
-    this.logger.debug(`Executing query: ${queryName} with ID: ${query.id}`);
+    const queryId = query.id;
+    const cacheKey = query.cacheKey || this.generateCacheKey(query);
+    const handlerName = this.getHandlerName(queryName);
+
+    // 获取追踪上下文
+    const span = this.cqrsTracingService.startQuerySpan(queryName, cacheKey, handlerName);
+    const { traceId, spanId } = this.cqrsTracingService.getCurrentContext();
+
+    // 记录开始日志
+    this.cqrsLoggingService.logQuery({
+      type: queryName,
+      cacheKey,
+      traceId,
+      spanId,
+      handler: handlerName,
+    });
+
+    const startTime = Date.now();
+    let fromCache = false;
 
     try {
       // 获取查询处理器
       const handler = this.handlers.get(queryName);
       if (!handler) {
         const error = `No handler registered for query: ${queryName}`;
-        this.logger.error(error);
+
+        // 记录错误日志
+        this.cqrsLoggingService.logQuery(
+          {
+            type: queryName,
+            cacheKey,
+            traceId,
+            spanId,
+            handler: handlerName,
+            durationMs: Date.now() - startTime,
+            errorCode: 'HANDLER_NOT_FOUND',
+          },
+          error,
+        );
+
+        // 记录指标
+        this.cqrsMetricsService.recordQuery(queryName, false, Date.now() - startTime, handlerName);
+
+        // 完成追踪
+        this.cqrsTracingService.finishSpan(span, false, new Error(error), {
+          'query.error_code': 'HANDLER_NOT_FOUND',
+          'query.duration_ms': Date.now() - startTime,
+        });
+
         return {
           success: false,
           error,
@@ -111,12 +177,76 @@ export class QueryBus implements IQueryBus, IQueryPipeline {
       }
 
       // 执行中间件管道
-      return await this.executePipeline(query, handler);
+      const result = await this.executePipeline(query, handler, {
+        traceId,
+        spanId,
+        queryName,
+        cacheKey,
+        handlerName,
+        startTime,
+      });
+
+      const durationMs = Date.now() - startTime;
+      fromCache = result.fromCache || false;
+
+      // 记录成功日志
+      this.cqrsLoggingService.logQuery({
+        type: queryName,
+        cacheKey,
+        cacheHit: fromCache,
+        traceId,
+        spanId,
+        handler: handlerName,
+        durationMs,
+      });
+
+      // 记录指标
+      this.cqrsMetricsService.recordQuery(queryName, fromCache, durationMs, handlerName);
+
+      // 完成追踪
+      this.cqrsTracingService.finishSpan(span, true, undefined, {
+        'query.success': result.success,
+        'query.duration_ms': durationMs,
+        'query.from_cache': fromCache,
+      });
+
+      return result;
     } catch (error) {
-      this.logger.error(`Error executing query ${queryName}:`, error);
+      const durationMs = Date.now() - startTime;
+
+      // 记录错误日志
+      this.cqrsLoggingService.logQuery(
+        {
+          type: queryName,
+          cacheKey,
+          cacheHit: fromCache,
+          traceId,
+          spanId,
+          handler: handlerName,
+          durationMs,
+          errorCode: (error as Error).name,
+        },
+        (error as Error).message,
+        error as Error,
+      );
+
+      // 记录指标
+      this.cqrsMetricsService.recordQuery(queryName, fromCache, durationMs, handlerName);
+
+      // 完成追踪
+      this.cqrsTracingService.finishSpan(span, false, error as Error, {
+        'query.error_code': (error as Error).name,
+        'query.duration_ms': durationMs,
+      });
+
+      this.logger.error(
+        `Error executing query ${queryName}: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
+
       return {
         success: false,
-        error: error.message,
+        error: (error as Error).message,
         errorCode: 'EXECUTION_ERROR',
       };
     }
@@ -134,50 +264,106 @@ export class QueryBus implements IQueryBus, IQueryPipeline {
     this.logger.debug(`Executing query with cache: ${queryName}, cache key: ${cacheKey}`);
 
     // 如果没有缓存实例，直接执行查询
-    if (!this.queryCache) {
+    if (!this.queryCache || !this.swrService) {
       this.logger.debug('No query cache configured, executing query directly');
       return await this.execute(query);
     }
 
     try {
-      // 尝试从缓存获取数据
-      const cachedData = await this.queryCache.get<TResult>(cacheKey);
-
-      if (cachedData !== null) {
-        this.cacheStats.hits++;
-        this.logger.debug(`Cache hit for query: ${queryName}`);
-
-        // 计算缓存过期时间
-        const cacheTime = query.cacheTime || 300; // 默认5分钟
-        const cacheExpiresAt = new Date(Date.now() + cacheTime * 1000);
-
+      // 使用 SWR 获取数据（命中缓存时可能在后台刷新）
+      const handler = this.handlers.get(queryName);
+      if (!handler) {
         return {
-          success: true,
-          data: cachedData,
-          fromCache: true,
-          cacheExpiresAt,
+          success: false,
+          error: `No handler registered for query: ${queryName}`,
+          errorCode: 'HANDLER_NOT_FOUND',
         };
       }
 
-      this.cacheStats.misses++;
-      this.logger.debug(`Cache miss for query: ${queryName}, executing handler`);
+      const handlerName = this.getHandlerName(queryName);
+      const span = this.cqrsTracingService.startQuerySpan(queryName, cacheKey, handlerName);
+      const { traceId, spanId } = this.cqrsTracingService.getCurrentContext();
+      const startTime = Date.now();
 
-      // 缓存未命中，执行查询处理器
-      const result = await this.execute(query);
+      this.cqrsLoggingService.logQuery({
+        type: queryName,
+        cacheKey,
+        traceId,
+        spanId,
+        handler: handlerName,
+      });
 
-      // 如果查询成功，将结果存入缓存
-      if (result.success && result.data !== undefined) {
-        const cacheTime = query.cacheTime || 300; // 默认5分钟
-        await this.queryCache.set(cacheKey, result.data, cacheTime);
-        this.logger.debug(`Cached result for query: ${queryName}, TTL: ${cacheTime}s`);
+      const ttl = query.cacheTime ?? 300;
+      const staleTime = query.staleTime ?? 60;
+
+      const swrResult = await this.swrService.getWithSWR<TResult>(
+        cacheKey,
+        async () => {
+          const pipelineResult = await this.executePipeline(query, handler, {
+            traceId,
+            spanId,
+            queryName,
+            cacheKey,
+            handlerName,
+            startTime,
+          });
+
+          if (!pipelineResult.success) {
+            throw new Error(pipelineResult.error || 'EXECUTION_ERROR');
+          }
+          return pipelineResult.data as TResult;
+        },
+        {
+          ttl,
+          staleWhileRevalidate: true,
+          staleTime,
+          labels: this.buildSWRLabels(queryName, handlerName, cacheKey),
+        },
+      );
+
+      const durationMs = Date.now() - startTime;
+      if (swrResult.fromCache) {
+        this._cacheStats.hits++;
+      } else {
+        this._cacheStats.misses++;
+      }
+      if (swrResult.isStale) {
+        this._swrStats.backgroundRefreshes++;
       }
 
-      return result;
+      // 记录成功日志与指标
+      this.cqrsLoggingService.logQuery({
+        type: queryName,
+        cacheKey,
+        cacheHit: swrResult.fromCache,
+        traceId,
+        spanId,
+        handler: handlerName,
+        durationMs,
+      });
+      this.cqrsMetricsService.recordQuery(queryName, swrResult.fromCache, durationMs, handlerName);
+      this.cqrsTracingService.finishSpan(span, true, undefined, {
+        'query.success': true,
+        'query.duration_ms': durationMs,
+        'query.from_cache': swrResult.fromCache,
+        'query.swr_is_stale': swrResult.isStale,
+      });
+
+      return {
+        success: true,
+        data: swrResult.data,
+        fromCache: swrResult.fromCache,
+        cacheExpiresAt: new Date(Date.now() + ttl * 1000),
+        metadata: { swr: { isStale: swrResult.isStale } },
+      };
     } catch (error) {
-      this.logger.error(`Error executing cached query ${queryName}:`, error);
+      this.logger.error(
+        `Error executing cached query ${queryName}: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       return {
         success: false,
-        error: error.message,
+        error: (error as Error).message,
         errorCode: 'EXECUTION_ERROR',
       };
     }
@@ -187,11 +373,51 @@ export class QueryBus implements IQueryBus, IQueryPipeline {
    * 预加载查询
    */
   async prefetch<TQuery extends IQuery, TResult = any>(query: TQuery): Promise<void> {
-    this.logger.debug(`Prefetching query: ${query.constructor.name}`);
+    const queryName = query.constructor.name;
+    this.logger.debug(`Prefetching query: ${queryName}`);
 
-    // 异步执行查询并缓存结果
+    // 如果启用 SWR，则通过 SWR 预取以触发后台刷新与并发去重
+    if (this.swrService) {
+      const handler = this.handlers.get(queryName);
+      if (!handler) {
+        this.logger.warn(`Cannot prefetch query: no handler for ${queryName}`);
+        return;
+      }
+      const cacheKey = query.cacheKey || this.generateCacheKey(query);
+      const ttl = query.cacheTime ?? 300;
+      const staleTime = query.staleTime ?? 60;
+      const handlerName = this.getHandlerName(queryName);
+
+      this.swrService
+        .getWithSWR(
+          cacheKey,
+          async () => {
+            const res = await handler.handle(query);
+            if (!res.success) throw new Error(res.error || 'EXECUTION_ERROR');
+            return res.data as TResult;
+          },
+          {
+            ttl,
+            staleWhileRevalidate: true,
+            staleTime,
+            labels: this.buildSWRLabels(queryName, handlerName, cacheKey),
+          },
+        )
+        .catch(error => {
+          this.logger.error(
+            `Error prefetching query: ${queryName}: ${(error as Error).message}`,
+            (error as Error).stack,
+          );
+        });
+      return;
+    }
+
+    // 否则回退到原始预取逻辑
     this.executeWithCache(query).catch(error => {
-      this.logger.error(`Error prefetching query: ${query.constructor.name}`, error);
+      this.logger.error(
+        `Error prefetching query: ${queryName}: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
     });
   }
 
@@ -199,19 +425,20 @@ export class QueryBus implements IQueryBus, IQueryPipeline {
    * 使缓存失效
    */
   async invalidateCache(queryType: string, cacheKey?: string): Promise<void> {
-    if (!this.queryCache) {
-      this.logger.debug('No query cache configured, skipping cache invalidation');
+    if (!this.swrService) {
       return;
     }
 
     if (cacheKey) {
       // 使特定缓存键失效
-      await this.queryCache.delete(cacheKey);
+      await this.swrService.invalidate(cacheKey);
+      this._swrStats.invalidations++;
       this.logger.debug(`Invalidated cache key: ${cacheKey}`);
     } else {
       // 使查询类型的所有缓存失效
       const pattern = `${queryType}_*`;
-      await this.queryCache.clearPattern(pattern);
+      await this.swrService.invalidatePattern(pattern);
+      this._swrStats.patternInvalidations++;
       this.logger.debug(`Invalidated cache pattern: ${pattern}`);
     }
   }
@@ -256,6 +483,9 @@ export class QueryBus implements IQueryBus, IQueryPipeline {
   setQueryCache(cache: IQueryCache): void {
     this.queryCache = cache;
     this.logger.debug('Query cache configured');
+    this.swrService = this.queryCache
+      ? new SWRService(this.queryCache, this.cqrsMetricsService)
+      : null;
   }
 
   /**
@@ -272,11 +502,11 @@ export class QueryBus implements IQueryBus, IQueryPipeline {
     }
 
     // 如果缓存实例没有提供统计信息，返回基本统计
-    const total = this.cacheStats.hits + this.cacheStats.misses;
+    const total = this._cacheStats.hits + this._cacheStats.misses;
     return {
-      hits: this.cacheStats.hits,
-      misses: this.cacheStats.misses,
-      hitRate: total > 0 ? this.cacheStats.hits / total : 0,
+      hits: this._cacheStats.hits,
+      misses: this._cacheStats.misses,
+      hitRate: total > 0 ? this._cacheStats.hits / total : 0,
       totalKeys: 0,
       size: 0,
     };
@@ -288,8 +518,10 @@ export class QueryBus implements IQueryBus, IQueryPipeline {
   async executePipeline<TQuery extends IQuery, TResult = any>(
     query: TQuery,
     handler: IQueryHandler<TQuery, TResult>,
+    context: any = {},
   ): Promise<IQueryResult<TResult>> {
     let index = 0;
+    const { traceId, spanId, queryName, cacheKey, handlerName, startTime } = context;
 
     const executeNext = async (): Promise<IQueryResult<TResult>> => {
       if (index >= this.middlewares.length) {
@@ -304,6 +536,14 @@ export class QueryBus implements IQueryBus, IQueryPipeline {
     };
 
     return await executeNext();
+  }
+
+  /**
+   * 获取处理器名称
+   */
+  private getHandlerName(queryType: string): string {
+    const handler = this.handlers.get(queryType);
+    return handler?.getName() || 'unknown';
   }
 
   /**
@@ -332,10 +572,17 @@ export class QueryBus implements IQueryBus, IQueryPipeline {
   /**
    * 获取处理器提供者（用于测试）
    */
-  getProvider(handlerName: string): IQueryHandler | null {
+  getProvider(handlerName: string): IQueryHandler<any, any> | null {
     // 在测试中，这个方法用于模拟处理器提供者
     // 实际实现应该从依赖注入容器中获取处理器
     // 返回模拟处理器用于测试
+
+    // 使用类型断言来避免 TypeScript 错误
+    const jest = (global as any).jest || {
+      fn: () => ({ mockResolvedValue: (val: any) => Promise.resolve(val) }),
+      mockReturnValue: (val: any) => val,
+    };
+
     return {
       handle: jest.fn().mockResolvedValue({
         success: true,
@@ -343,7 +590,73 @@ export class QueryBus implements IQueryBus, IQueryPipeline {
         fromCache: true,
       }),
       getName: jest.fn().mockReturnValue(handlerName),
-    } as IQueryHandler;
+    } as IQueryHandler<any, any>;
+  }
+
+  /**
+   * 获取 SWR 统计信息（用于测试与监控）
+   */
+  getSWRStats(): {
+    backgroundRefreshes: number;
+    duplicateDedupeHits: number;
+    invalidations: number;
+    patternInvalidations: number;
+  } {
+    return { ...this._swrStats };
+  }
+
+  /**
+   * 构建 SWR 指标标签，支持按 type/handler 基础维度，
+   * 可选加入 cacheKey 前缀与业务域标签（通过环境变量控制以避免高基数）。
+   */
+  private buildSWRLabels(type: string, handler: string, cacheKey: string): Record<string, string> {
+    const labels: Record<string, string> = { type, handler };
+
+    try {
+      const oo = (EnvironmentAdapter as any)?.getOpenObserve?.() ?? {};
+      const cfgLabels = oo?.metrics?.labels;
+      // 优先使用统一环境适配器配置，其次环境变量，最后默认值
+      const enablePrefix = (cfgLabels?.enableCacheKeyPrefix ??
+        (process.env.CQRS_SWR_LABEL_CACHEKEY_PREFIX_ENABLED !== 'false')) as boolean;
+      const segs = Math.max(
+        1,
+        Number(
+          cfgLabels?.cacheKeyPrefixSegments ??
+            parseInt(process.env.CQRS_SWR_LABEL_CACHEKEY_PREFIX_SEGMENTS || '2', 10),
+        ) || 2,
+      );
+      const enableDomain = (cfgLabels?.enableDomain ??
+        (process.env.CQRS_SWR_LABEL_DOMAIN_ENABLED !== 'false')) as boolean;
+
+      if (enablePrefix && cacheKey) {
+        const parts = cacheKey.split(':').filter(Boolean);
+        if (parts.length > 0) {
+          const prefix = parts.slice(0, Math.min(segs, parts.length)).join(':');
+          labels['cache_key_prefix'] = prefix;
+        }
+      }
+
+      if (enableDomain && cacheKey) {
+        labels['domain'] = this.inferDomain(cacheKey);
+      }
+    } catch {
+      // 忽略标签构建异常，避免影响查询执行
+    }
+
+    return labels;
+  }
+
+  /**
+   * 基于常见缓存键格式与关键字，推断业务域标签。
+   */
+  private inferDomain(cacheKey: string): string {
+    const k = cacheKey.toLowerCase();
+    if (k.includes('product') || k.includes('sku') || k.includes('catalog')) return 'product';
+    if (k.includes('order') || k.includes('checkout')) return 'order';
+    if (k.includes('user') || k.includes('profile') || k.includes('account')) return 'user';
+    if (k.includes('cart')) return 'cart';
+    if (k.includes('session')) return 'session';
+    return 'general';
   }
 }
 
@@ -393,7 +706,10 @@ export class QueryLoggingMiddleware implements IQueryMiddleware {
       return result;
     } catch (error) {
       const duration = Date.now() - startTime;
-      logger.error(`[ERROR] Query ${queryName} threw error in ${duration}ms:`, error);
+      logger.error(
+        `[ERROR] Query ${queryName} threw error in ${duration}ms: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }

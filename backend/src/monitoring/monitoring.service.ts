@@ -164,15 +164,13 @@ export class MonitoringService {
 
   // Connection tracking
   incrementActiveConnections() {
-    this.metricsService.updateActiveConnections(
-      this.metricsService['metrics'].activeConnections + 1,
-    );
+    const current = (this.metricsService as any)?.metrics?.activeConnections ?? 0;
+    this.metricsService.updateActiveConnections(current + 1);
   }
 
   decrementActiveConnections() {
-    this.metricsService.updateActiveConnections(
-      Math.max(0, this.metricsService['metrics'].activeConnections - 1),
-    );
+    const current = (this.metricsService as any)?.metrics?.activeConnections ?? 0;
+    this.metricsService.updateActiveConnections(Math.max(0, current - 1));
   }
 
   // HTTP request tracking
@@ -447,7 +445,9 @@ export class MonitoringService {
       if (dailyMetrics.length === 0) {
         return {
           status: 'no_data',
+          period: 'daily',
           message: 'No metrics data available for the selected period',
+          generatedAt: new Date().toISOString(),
         };
       }
 

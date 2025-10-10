@@ -6,12 +6,14 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ICommand, ICommandResult } from '../commands/command.base';
 import {
   ICommandHandler,
-  ICommandHandlerFactory,
   ICommandMiddleware,
   ICommandPipeline,
   CommandExecutionStatus,
   CommandExecutionStatusInfo,
 } from '../interfaces/command-handler.interface';
+import { CqrsLoggingService } from '../logging/cqrs-logging.service';
+import { CqrsMetricsService } from '../metrics/cqrs-metrics.service';
+import { CqrsTracingService } from '../tracing/cqrs-tracing.service';
 
 /**
  * 命令总线接口
@@ -61,23 +63,77 @@ export interface ICommandBus {
 @Injectable()
 export class CommandBus implements ICommandBus, ICommandPipeline {
   private readonly logger = new Logger(CommandBus.name);
-  private readonly handlers = new Map<string, ICommandHandler>();
+  private readonly handlers = new Map<string, ICommandHandler<any>>();
   private readonly middlewares: ICommandMiddleware[] = [];
   private readonly executionStatus = new Map<string, CommandExecutionStatusInfo>();
+
+  constructor(
+    private readonly cqrsLoggingService: CqrsLoggingService,
+    private readonly cqrsMetricsService: CqrsMetricsService,
+    private readonly cqrsTracingService: CqrsTracingService,
+  ) {}
 
   /**
    * 执行命令
    */
   async execute<TCommand extends ICommand>(command: TCommand): Promise<ICommandResult> {
     const commandName = command.constructor.name;
-    this.logger.debug(`Executing command: ${commandName} with ID: ${command.id}`);
+    const commandId = command.id;
+    const handlerName = this.getHandlerName(commandName);
+
+    // 获取追踪上下文
+    const span = this.cqrsTracingService.startCommandSpan(commandName, commandId, handlerName);
+    const { traceId, spanId } = this.cqrsTracingService.getCurrentContext();
+
+    // 记录开始日志
+    this.cqrsLoggingService.logCommand({
+      type: commandName,
+      id: commandId,
+      status: 'start',
+      handler: handlerName,
+      traceId,
+      spanId,
+    });
+
+    const startTime = Date.now();
+    let retryCount = 0;
 
     try {
       // 获取命令处理器
       const handler = this.handlers.get(commandName);
       if (!handler) {
         const error = `No handler registered for command: ${commandName}`;
-        this.logger.error(error);
+
+        // 记录错误日志
+        this.cqrsLoggingService.logCommand(
+          {
+            type: commandName,
+            id: commandId,
+            status: 'error',
+            handler: handlerName,
+            traceId,
+            spanId,
+            errorCode: 'HANDLER_NOT_FOUND',
+            durationMs: Date.now() - startTime,
+          },
+          error,
+        );
+
+        // 记录指标
+        this.cqrsMetricsService.recordCommand(
+          commandName,
+          'error',
+          Date.now() - startTime,
+          handlerName,
+          retryCount,
+        );
+
+        // 完成追踪
+        this.cqrsTracingService.finishSpan(span, false, new Error(error), {
+          'command.error_code': 'HANDLER_NOT_FOUND',
+          'command.duration_ms': Date.now() - startTime,
+        });
+
         return {
           success: false,
           error,
@@ -86,12 +142,87 @@ export class CommandBus implements ICommandBus, ICommandPipeline {
       }
 
       // 执行中间件管道
-      return await this.executePipeline(command, handler);
+      const result = await this.executePipeline(command, handler, {
+        traceId,
+        spanId,
+        commandName,
+        commandId,
+        handlerName,
+        startTime,
+        retryCount,
+      });
+
+      const durationMs = Date.now() - startTime;
+
+      // 记录成功日志
+      this.cqrsLoggingService.logCommand({
+        type: commandName,
+        id: commandId,
+        status: 'success',
+        handler: handlerName,
+        traceId,
+        spanId,
+        durationMs,
+      });
+
+      // 记录指标
+      this.cqrsMetricsService.recordCommand(
+        commandName,
+        'success',
+        durationMs,
+        handlerName,
+        retryCount,
+      );
+
+      // 完成追踪
+      this.cqrsTracingService.finishSpan(span, true, undefined, {
+        'command.success': result.success,
+        'command.duration_ms': durationMs,
+      });
+
+      return result;
     } catch (error) {
-      this.logger.error(`Error executing command ${commandName}:`, error);
+      const durationMs = Date.now() - startTime;
+
+      // 记录错误日志
+      this.cqrsLoggingService.logCommand(
+        {
+          type: commandName,
+          id: commandId,
+          status: 'error',
+          handler: handlerName,
+          traceId,
+          spanId,
+          durationMs,
+          errorCode: error.name,
+        },
+        (error as Error).message,
+        error as Error,
+      );
+
+      // 记录指标
+      this.cqrsMetricsService.recordCommand(
+        commandName,
+        'error',
+        durationMs,
+        handlerName,
+        retryCount,
+      );
+
+      // 完成追踪
+      this.cqrsTracingService.finishSpan(span, false, error as Error, {
+        'command.error_code': error.name,
+        'command.duration_ms': durationMs,
+      });
+
+      this.logger.error(
+        `Error executing command ${commandName}: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
+
       return {
         success: false,
-        error: error.message,
+        error: (error as Error).message,
         errorCode: 'EXECUTION_ERROR',
       };
     }
@@ -188,8 +319,10 @@ export class CommandBus implements ICommandBus, ICommandPipeline {
   async executePipeline<TCommand extends ICommand>(
     command: TCommand,
     handler: ICommandHandler<TCommand>,
+    context: any = {},
   ): Promise<ICommandResult> {
     let index = 0;
+    const { traceId, spanId, commandName, commandId, handlerName, startTime, retryCount } = context;
 
     const executeNext = async (): Promise<ICommandResult> => {
       if (index >= this.middlewares.length) {
@@ -210,6 +343,14 @@ export class CommandBus implements ICommandBus, ICommandPipeline {
     };
 
     return await executeNext();
+  }
+
+  /**
+   * 获取处理器名称
+   */
+  private getHandlerName(commandType: string): string {
+    const handler = this.handlers.get(commandType);
+    return handler?.getName() || 'unknown';
   }
 
   /**
@@ -251,17 +392,24 @@ export class CommandBus implements ICommandBus, ICommandPipeline {
   /**
    * 获取处理器提供者（用于测试）
    */
-  getProvider(handlerName: string): ICommandHandler | null {
+  getProvider(handlerName: string): ICommandHandler<any> | null {
     // 在测试中，这个方法用于模拟处理器提供者
     // 实际实现应该从依赖注入容器中获取处理器
     // 返回模拟处理器用于测试
+
+    // 使用类型断言来避免 TypeScript 错误
+    const jest = (global as any).jest || {
+      fn: () => ({ mockResolvedValue: (val: any) => Promise.resolve(val) }),
+      mockReturnValue: (val: any) => val,
+    };
+
     return {
       handle: jest.fn().mockResolvedValue({
         success: true,
         data: { userId: 'test-user-id' },
       }),
       getName: jest.fn().mockReturnValue(handlerName),
-    } as ICommandHandler;
+    } as ICommandHandler<any>;
   }
 }
 
@@ -309,7 +457,10 @@ export class LoggingMiddleware implements ICommandMiddleware {
       return result;
     } catch (error) {
       const duration = Date.now() - startTime;
-      logger.error(`[ERROR] Command ${commandName} threw error in ${duration}ms:`, error);
+      logger.error(
+        `[ERROR] Command ${commandName} threw error in ${duration}ms: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }

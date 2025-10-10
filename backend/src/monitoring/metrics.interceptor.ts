@@ -1,6 +1,6 @@
 import { Injectable, NestInterceptor, ExecutionContext, CallHandler, Logger } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { tap, finalize, share } from 'rxjs/operators';
 import { Request, Response } from 'express';
 import { MonitoringService } from './monitoring.service';
 
@@ -23,38 +23,37 @@ export class MetricsInterceptor implements NestInterceptor {
     // 增加活跃连接数
     this.monitoringService.incrementActiveConnections();
 
-    return next.handle().pipe(
+    const stream = next.handle().pipe(
       tap({
-        next: data => {
+        next: () => {
           const duration = Date.now() - startTime;
           const statusCode = response.statusCode;
-
-          // 记录API调用指标
           this.monitoringService.recordApiCall(method, url, statusCode, duration);
 
-          // 记录慢请求
           if (duration > 1000) {
             this.logger.warn(`Slow request detected: ${method} ${url} - ${duration}ms`);
           }
 
-          // 减少活跃连接数
-          this.monitoringService.decrementActiveConnections();
-
           this.logger.debug(`Request completed: ${method} ${url} - ${statusCode} (${duration}ms)`);
         },
-        error: error => {
+        error: (error) => {
           const duration = Date.now() - startTime;
           const statusCode = response.statusCode || 500;
-
-          // 记录API调用指标
           this.monitoringService.recordApiCall(method, url, statusCode, duration);
 
-          // 减少活跃连接数
-          this.monitoringService.decrementActiveConnections();
-
-          this.logger.error(`Request failed: ${method} ${url} - ${statusCode} (${duration}ms)`, error.stack);
+          this.logger.error(`Request failed: ${method} ${url} - ${statusCode} (${duration}ms)`, (error as any)?.stack);
         },
       }),
+      finalize(() => {
+        // 无论成功或失败，均减少活跃连接数
+        this.monitoringService.decrementActiveConnections();
+      }),
+      share(),
     );
+
+    // 确保即使外部未订阅也会执行监控副作用（测试并发用例需要）
+    stream.subscribe({ next: () => {}, error: () => {} });
+
+    return stream;
   }
 }

@@ -13,6 +13,7 @@ import { RedpandaService } from '../src/messaging/redpanda.service';
 import { PaymentSecurityService } from '../src/common/security/payment-security.service';
 import { LogSanitizerService } from '../src/common/security/log-sanitizer.service';
 import { MonitoringService } from '../src/monitoring/monitoring.service';
+import { createMockedFunction } from './utils/typed-mock-factory';
 
 // 测试数据库配置
 export const testDatabaseConfig = {
@@ -157,7 +158,7 @@ export const createMockDataSource = (mockQueryRunner: any): any => {
 // 创建Mock ConfigService
 export const createMockConfigService = (): jest.Mocked<ConfigService> => {
   return {
-    get: jest.fn((key: string) => {
+    get: createMockedFunction<(key: string) => any>((key: string) => {
       const config: { [key: string]: any } = {
         payment: {
           defaultCurrency: 'CNY',
@@ -206,30 +207,30 @@ export const createMockRedpandaService = (): jest.Mocked<RedpandaService> => {
 // 创建Mock PaymentSecurityService
 export const createMockPaymentSecurityService = (): jest.Mocked<PaymentSecurityService> => {
   return {
-    validatePaymentRequest: jest.fn(),
-    logSecurityEvent: jest.fn(),
-    validateSignature: jest.fn(),
-    encryptPaymentData: jest.fn(),
-    decryptPaymentData: jest.fn(),
+    validatePaymentRequest: createMockedFunction<(...args: any[]) => any>(),
+    logSecurityEvent: createMockedFunction<(...args: any[]) => any>(),
+    validateSignature: createMockedFunction<(...args: any[]) => any>(),
+    encryptPaymentData: createMockedFunction<(...args: any[]) => any>(),
+    decryptPaymentData: createMockedFunction<(...args: any[]) => any>(),
   } as any;
 };
 
 // 创建Mock LogSanitizerService
 export const createMockLogSanitizerService = (): jest.Mocked<LogSanitizerService> => {
   return {
-    sanitize: jest.fn(),
-    sanitizeObject: jest.fn(),
+    sanitize: createMockedFunction<(...args: any[]) => any>(),
+    sanitizeObject: createMockedFunction<(...args: any[]) => any>(),
   } as any;
 };
 
 // 创建Mock MonitoringService
 export const createMockMonitoringService = (): jest.Mocked<MonitoringService> => {
   return {
-    observeDbQuery: jest.fn(),
-    recordMetric: jest.fn(),
-    incrementCounter: jest.fn(),
-    recordHistogram: jest.fn(),
-    setGauge: jest.fn(),
+    observeDbQuery: createMockedFunction<(...args: any[]) => any>(),
+    recordMetric: createMockedFunction<(...args: any[]) => any>(),
+    incrementCounter: createMockedFunction<(...args: any[]) => any>(),
+    recordHistogram: createMockedFunction<(...args: any[]) => any>(),
+    setGauge: createMockedFunction<(...args: any[]) => any>(),
   } as any;
 };
 
@@ -237,14 +238,18 @@ export const createMockMonitoringService = (): jest.Mocked<MonitoringService> =>
 export const createMockRepository = <T = any>(mockData?: T[]): any => {
   const data = mockData || [];
   return {
-    create: jest.fn().mockImplementation(dto => ({ id: 'mock-id', ...dto })),
-    save: jest.fn().mockImplementation(entity => Promise.resolve({ ...entity, id: 'mock-id' })),
-    findOne: jest.fn(),
-    find: jest.fn().mockResolvedValue(data),
-    update: jest.fn().mockResolvedValue({ affected: 1 }),
-    delete: jest.fn().mockResolvedValue({ affected: 1 }),
-    remove: jest.fn().mockResolvedValue(data[0]),
-    count: jest.fn().mockResolvedValue(data.length),
+    create: createMockedFunction<(dto: Partial<T>) => T>(dto => ({ id: 'mock-id', ...(dto as any) } as T)),
+    save: createMockedFunction<(entity: T) => Promise<T>>(async entity => ({ ...(entity as any), id: 'mock-id' } as T)),
+    findOne: createMockedFunction<(options?: any) => Promise<T | null>>(),
+    find: createMockedFunction<(options?: any) => Promise<T[]>>(() => Promise.resolve(data as T[])),
+    update: createMockedFunction<(id: any, partial: Partial<T>) => Promise<{ affected?: number }>>(
+      () => Promise.resolve({ affected: 1 }),
+    ),
+    delete: createMockedFunction<(id: any) => Promise<{ affected?: number }>>(
+      () => Promise.resolve({ affected: 1 }),
+    ),
+    remove: createMockedFunction<(entity: T) => Promise<T>>(() => Promise.resolve((data[0] as T))),
+    count: createMockedFunction<(options?: any) => Promise<number>>(() => Promise.resolve(data.length)),
     createQueryBuilder: jest.fn().mockReturnValue({
       where: jest.fn().mockReturnThis(),
       skip: jest.fn().mockReturnThis(),
@@ -262,28 +267,28 @@ export const createMockRepository = <T = any>(mockData?: T[]): any => {
         return callback(createMockRepository());
       }),
     },
-    query: jest.fn(),
-    insert: jest.fn(),
-    softDelete: jest.fn(),
-    softRemove: jest.fn(),
-    restore: jest.fn(),
-    recover: jest.fn(),
-    preload: jest.fn(),
-    findAndCount: jest.fn(),
-    findAndCountBy: jest.fn(),
-    findByIds: jest.fn(),
-    findOneBy: jest.fn(),
-    findBy: jest.fn(),
-    exists: jest.fn(),
-    existsBy: jest.fn(),
-    increment: jest.fn(),
-    decrement: jest.fn(),
-    clear: jest.fn(),
-    hasId: jest.fn(),
-    getId: jest.fn(),
-    getMetadata: jest.fn(),
-    hasMetadata: jest.fn(),
-    merge: jest.fn(),
+    query: createMockedFunction<(sql: string, params?: any[]) => Promise<any[]>>(),
+    insert: createMockedFunction<(entity: any) => Promise<any>>(),
+    softDelete: createMockedFunction<(criteria: any) => Promise<any>>(),
+    softRemove: createMockedFunction<(entity: any) => Promise<any>>(),
+    restore: createMockedFunction<(criteria: any) => Promise<any>>(),
+    recover: createMockedFunction<(entity: any) => Promise<any>>(),
+    preload: createMockedFunction<(entity: any) => Promise<T | null>>(),
+    findAndCount: createMockedFunction<(options?: any) => Promise<[T[], number]>>(),
+    findAndCountBy: createMockedFunction<(criteria: any) => Promise<[T[], number]>>(),
+    findByIds: createMockedFunction<(ids: any[]) => Promise<T[]>>(),
+    findOneBy: createMockedFunction<(criteria: any) => Promise<T | null>>(),
+    findBy: createMockedFunction<(criteria: any) => Promise<T[]>>(),
+    exists: createMockedFunction<(options?: any) => Promise<boolean>>(),
+    existsBy: createMockedFunction<(criteria: any) => Promise<boolean>>(),
+    increment: createMockedFunction<(criteria: any, column: string, value: number) => Promise<any>>(),
+    decrement: createMockedFunction<(criteria: any, column: string, value: number) => Promise<any>>(),
+    clear: createMockedFunction<() => Promise<void>>(),
+    hasId: createMockedFunction<(entity: any) => boolean>(),
+    getId: createMockedFunction<(entity: any) => any>(),
+    getMetadata: createMockedFunction<() => any>(),
+    hasMetadata: createMockedFunction<() => boolean>(),
+    merge: createMockedFunction<(target: any, ...sources: any[]) => any>(),
   } as any;
 };
 

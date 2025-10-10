@@ -31,7 +31,7 @@ export class UsersService {
     });
 
     if (existingUser) {
-      throw new ConflictException('邮箱已被注册');
+      throw new ConflictException();
     }
 
     // 加密密码
@@ -62,7 +62,7 @@ export class UsersService {
   async findOne(id: number): Promise<User> {
     const user = await this.findById(id);
     if (!user) {
-      throw new NotFoundException('用户不存在');
+      throw new NotFoundException();
     }
     return user;
   }
@@ -139,7 +139,7 @@ export class UsersService {
   async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findById(id);
     if (!user) {
-      throw new NotFoundException('用户不存在');
+      throw new NotFoundException();
     }
 
     // 如果更新密码，需要加密
@@ -157,7 +157,7 @@ export class UsersService {
   async delete(id: number): Promise<void> {
     const user = await this.findById(id);
     if (!user) {
-      throw new NotFoundException('用户不存在');
+      throw new NotFoundException();
     }
 
     await this.userRepository.delete(id);

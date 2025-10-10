@@ -4,16 +4,11 @@
 // 时间：2025-06-17 12:05:00
 
 const Redis = require('ioredis');
+const { getRedis } = require('./modules/openobserve-adapter');
 
-// 从环境变量获取Redis配置
-const redisConfig = {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT) || 6379,
-    password: process.env.REDIS_PASSWORD || '',
-    db: parseInt(process.env.REDIS_DB) || 0,
-    connectTimeout: 5000,
-    commandTimeout: 3000
-};
+// 统一从适配器获取Redis配置，保留 commandTimeout 兜底
+const baseCfg = getRedis();
+const redisConfig = { ...baseCfg, commandTimeout: baseCfg.commandTimeout ?? 3000 };
 
 async function testRedisConnection() {
     console.log('🔍 开始测试Redis连接...');

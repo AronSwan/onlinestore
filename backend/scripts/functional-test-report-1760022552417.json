@@ -1,0 +1,146 @@
+{
+  "summary": {
+    "totalTests": 16,
+    "passedTests": 1,
+    "failedTests": 15,
+    "passRate": 6.25,
+    "totalTime": 77665,
+    "timestamp": "2025-10-09T15:09:12.417Z"
+  },
+  "testResults": [
+    {
+      "name": "测试类型支持: 单元测试",
+      "passed": false,
+      "duration": 8017,
+      "details": "--unit 参数处理失败",
+      "error": null,
+      "timestamp": "2025-10-09T15:08:02.768Z"
+    },
+    {
+      "name": "测试类型支持: 集成测试",
+      "passed": false,
+      "duration": 8011,
+      "details": "--integration 参数处理失败",
+      "error": null,
+      "timestamp": "2025-10-09T15:08:10.779Z"
+    },
+    {
+      "name": "测试类型支持: 组件测试",
+      "passed": false,
+      "duration": 2019,
+      "details": "--component 参数处理失败",
+      "error": null,
+      "timestamp": "2025-10-09T15:08:12.799Z"
+    },
+    {
+      "name": "测试类型支持: E2E测试",
+      "passed": false,
+      "duration": 8012,
+      "details": "--e2e 参数处理失败",
+      "error": null,
+      "timestamp": "2025-10-09T15:08:20.811Z"
+    },
+    {
+      "name": "测试类型支持: 所有测试",
+      "passed": false,
+      "duration": 116,
+      "details": "--all 参数处理失败",
+      "error": null,
+      "timestamp": "2025-10-09T15:08:20.928Z"
+    },
+    {
+      "name": "配置参数: 帮助信息",
+      "passed": true,
+      "duration": 124,
+      "details": "参数正常处理，内容正确",
+      "error": null,
+      "timestamp": "2025-10-09T15:08:21.054Z"
+    },
+    {
+      "name": "配置参数: 版本信息",
+      "passed": false,
+      "duration": 141,
+      "details": "参数正常处理，内容不正确",
+      "error": null,
+      "timestamp": "2025-10-09T15:08:21.195Z"
+    },
+    {
+      "name": "配置参数: 详细模式",
+      "passed": false,
+      "duration": 8422,
+      "details": "参数处理失败，内容正确",
+      "error": null,
+      "timestamp": "2025-10-09T15:08:29.617Z"
+    },
+    {
+      "name": "配置参数: 静默模式",
+      "passed": false,
+      "duration": 11527,
+      "details": "参数处理失败，内容正确",
+      "error": null,
+      "timestamp": "2025-10-09T15:08:41.147Z"
+    },
+    {
+      "name": "配置参数: 超时设置",
+      "passed": false,
+      "duration": 2868,
+      "details": "参数处理失败，内容正确",
+      "error": null,
+      "timestamp": "2025-10-09T15:08:44.015Z"
+    },
+    {
+      "name": "输出格式: JSON输出格式",
+      "passed": false,
+      "duration": 130,
+      "details": "格式不正确，输出异常",
+      "error": null,
+      "timestamp": "2025-10-09T15:08:44.146Z"
+    },
+    {
+      "name": "输出格式: JUnit输出格式",
+      "passed": false,
+      "duration": 113,
+      "details": "格式不正确，输出异常",
+      "error": null,
+      "timestamp": "2025-10-09T15:08:44.259Z"
+    },
+    {
+      "name": "输出格式: 覆盖率报告",
+      "passed": false,
+      "duration": 12025,
+      "details": "格式正确，输出异常",
+      "error": null,
+      "timestamp": "2025-10-09T15:08:56.285Z"
+    },
+    {
+      "name": "监控日志: 基础监控",
+      "passed": false,
+      "duration": 8021,
+      "details": "监控功能异常，内容完整",
+      "error": null,
+      "timestamp": "2025-10-09T15:09:04.307Z"
+    },
+    {
+      "name": "监控日志: 性能报告",
+      "passed": false,
+      "duration": 90,
+      "details": "监控功能异常，内容完整",
+      "error": null,
+      "timestamp": "2025-10-09T15:09:04.397Z"
+    },
+    {
+      "name": "监控日志: 详细日志",
+      "passed": false,
+      "duration": 8019,
+      "details": "监控功能异常，内容完整",
+      "error": null,
+      "timestamp": "2025-10-09T15:09:12.415Z"
+    }
+  ],
+  "systemInfo": {
+    "platform": "win32",
+    "arch": "x64",
+    "nodeVersion": "v22.20.0",
+    "scriptPath": "D:\\onlinestore\\backend\\scripts\\test-runner-secure.cjs"
+  }
+}

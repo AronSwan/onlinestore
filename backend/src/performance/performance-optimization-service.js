@@ -13,10 +13,17 @@ class PerformanceOptimizationService extends EventEmitter {
   constructor(config = {}) {
     super();
     
+    // 统一环境适配器桥接（优先使用 dist，失败则回退 env）
+    let adapterOO = null;
+    try {
+      const { getOpenObserve } = require('../config/environment-adapter.js');
+      adapterOO = getOpenObserve();
+    } catch (_) {}
+    
     this.config = {
-      openobserveUrl: config.openobserveUrl || 'http://localhost:5080',
-      organization: config.organization || 'default',
-      token: config.token || '',
+      openobserveUrl: (adapterOO && adapterOO.baseUrl) || (config.openobserveUrl || 'http://localhost:5080'),
+      organization: (adapterOO && adapterOO.organization) || (config.organization || 'default'),
+      token: (adapterOO && adapterOO.token) || (config.token || ''),
       metricsStream: config.metricsStream || 'performance-metrics',
       optimizationStream: config.optimizationStream || 'optimization-recommendations',
       enableAutoOptimization: config.enableAutoOptimization !== false,

@@ -1,4 +1,5 @@
 # Nest 集成示例（apiserver + Redis 缓存 + Bull 批量 + OpenObserve 监控）
+> 说明：本仓库标准环境变量命名为 OPENOBSERVE_*；本文示例中的 OO_* 为历史兼容写法，生产代码请使用 OPENOBSERVE_URL / OPENOBSERVE_ORGANIZATION / OPENOBSERVE_TOKEN 等标准变量。
 
 ## 目录
 - [架构设计与集成模式](#架构设计与集成模式)

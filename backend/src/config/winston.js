@@ -6,10 +6,20 @@ const config = require('../../config/openobserve-config.json');
 // 创建OpenObserve传输器
 const openobserveTransport = new OpenObserveTransport({
   endpoint: config.endpoints.logs,
-  token: process.env.OPENOBSERVE_TOKEN || 'your-token-here',
+  token: (() => { try { const { getOpenObserve } = require('../config/environment-adapter.js'); const oo = typeof getOpenObserve === 'function' ? getOpenObserve() : null; return (oo && oo.token) || process.env.OPENOBSERVE_TOKEN || 'your-token-here'; } catch(_) { return process.env.OPENOBSERVE_TOKEN || 'your-token-here'; } })(),
   service: 'caddy-shopping-app',
   batchSize: 10,
-  flushInterval: 5000
+  flushInterval: 5000,
+  staticLabels: (() => { 
+    try { 
+      const { getOpenObserve } = require('../config/environment-adapter.js'); 
+      const oo = typeof getOpenObserve === 'function' ? getOpenObserve() : null; 
+      const labels = (oo && oo.metrics && oo.metrics.labels) ? oo.metrics.labels : {}; 
+      return { domain: process.env.SERVICE_DOMAIN || process.env.DOMAIN || 'default', ...labels }; 
+    } catch(_) { 
+      return { domain: process.env.SERVICE_DOMAIN || process.env.DOMAIN || 'default' }; 
+    } 
+  })()
 });
 
 // 创建日志器

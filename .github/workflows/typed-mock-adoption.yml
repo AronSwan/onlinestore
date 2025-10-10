@@ -1,0 +1,98 @@
+name: Typed Mock Adoption Metrics
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'backend/**'
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'backend/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  measure-adoption:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Restore previous adoption report cache
+        id: cache-restore
+        uses: actions/cache@v4
+        with:
+          path: backend/cache/typed-mock
+          key: typed-mock-adoption-${{ github.ref }}
+          restore-keys: |
+            typed-mock-adoption-${{ github.ref }}-
+
+      - name: Install deps (backend)
+        run: |
+          cd backend
+          npm ci
+
+      - name: Run typed mock adoption script
+        run: |
+          node backend/scripts/typed-mock-adoption.cjs
+
+      - name: Upload adoption report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: typed-mock-adoption-report
+          path: backend/test-results/adoption-report.json
+
+      - name: Save current report to cache for next run
+        uses: actions/cache@v4
+        with:
+          path: backend/cache/typed-mock
+          key: typed-mock-adoption-${{ github.ref }}-${{ hashFiles('backend/test-results/adoption-report.json') }}
+
+      - name: Summarize adoption rate with history (Step Summary)
+        run: |
+          node -e "
+            const fs=require('fs');
+            const cur=JSON.parse(fs.readFileSync('backend/test-results/adoption-report.json','utf8'));
+            const curS=cur.summary;
+            let prevS=null;
+            const prevPath='backend/cache/typed-mock/previous-adoption-report.json';
+            try { prevS = JSON.parse(fs.readFileSync(prevPath,'utf8')).summary; } catch(e) {}
+            const lines=[];
+            lines.push(`# Typed Mock Adoption`);
+            lines.push(`Current Rate: ${curS.adoptionRate} (${curS.adoptedFiles}/${curS.totalFiles})`);
+            lines.push(`未替换的 jest.fn() 出现次数: ${curS.bareJestFnOccurrences}`);
+            if(prevS){
+              const delta=(curS.adoptionRate - prevS.adoptionRate).toFixed(4);
+              lines.push(`Previous Rate: ${prevS.adoptionRate} (${prevS.adoptedFiles}/${prevS.totalFiles})`);
+              lines.push(`Delta: ${delta}`);
+            } else {
+              lines.push(`Previous Rate: N/A (no cache yet)`);
+            }
+            lines.push(`\n## Module Breakdown`);
+            for(const [mod,stats] of Object.entries(curS.modules)){
+              lines.push(`- ${mod}: rate=${stats.rate} (${stats.adopted}/${stats.total})`);
+            }
+            fs.mkdirSync('backend/cache/typed-mock',{recursive:true});
+            fs.writeFileSync(prevPath, JSON.stringify(cur,null,2));
+            const summary = lines.join('\n');
+            console.log(summary);
+            if(process.env.GITHUB_STEP_SUMMARY){
+              fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary+'\n');
+            }
+          "

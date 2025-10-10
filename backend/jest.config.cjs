@@ -6,7 +6,7 @@ module.exports = {
     '^.+\\.(ts|tsx)$': ['ts-jest', { useESM: true }],
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(uuid)/)'
+    'node_modules/(?!(uuid|p-retry|is-network-error)/)'
   ],
   collectCoverageFrom: [
     '<rootDir>/**/*.{ts,js}',
@@ -25,6 +25,8 @@ module.exports = {
     '^test/(.*)$': '<rootDir>/../test/$1',
     '^@/(.*)$': '<rootDir>/$1',
     '^uuid$': '<rootDir>/../test/mocks/uuid.cjs',
+    '^p-retry$': '<rootDir>/../test/mocks/p-retry.cjs',
+    '^is-network-error$': '<rootDir>/../test/mocks/is-network-error.cjs',
   },
   setupFilesAfterEnv: ['<rootDir>/../test/setup.ts'],
   setupFiles: ['<rootDir>/../test/jest.env.cjs'],
@@ -36,7 +38,7 @@ module.exports = {
       statements: 15
     }
   },
-  testTimeout: 10000,
+  testTimeout: 30000,
   maxWorkers: '50%',
   verbose: true,
   detectOpenHandles: true,

@@ -1,0 +1,9 @@
+name: "CodeQL Config"
+paths:
+  - backend
+  - js
+paths-ignore:
+  - node_modules
+  - backend/node_modules
+  - backend/coverage
+  - backend/dist

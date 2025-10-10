@@ -4,6 +4,7 @@ import { OrdersService } from './orders.service';
 import { ProductsService } from '../products/products.service';
 import { UsersService } from '../users/users.service';
 import { ConfigService } from '@nestjs/config';
+import { createMockedFunction } from '../../test/utils/typed-mock-factory';
 import { Order, OrderStatus, PaymentStatus } from './entities/order.entity';
 import { NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 
@@ -12,28 +13,28 @@ describe('OrdersController', () => {
   let ordersService: OrdersService;
 
   const mockOrdersService = {
-    create: jest.fn(),
-    findAll: jest.fn(),
-    findOne: jest.fn(),
-    update: jest.fn(),
-    remove: jest.fn(),
-    findByUserId: jest.fn(),
-    updateStatus: jest.fn(),
-    getStatistics: jest.fn(),
-    findById: jest.fn(),
-    delete: jest.fn(),
+    create: createMockedFunction<(dto: any) => Promise<any>>(),
+    findAll: createMockedFunction<(query?: any) => Promise<any>>(),
+    findOne: createMockedFunction<(id: number | string) => Promise<any>>(),
+    update: createMockedFunction<(id: number | string, dto: any) => Promise<any>>(),
+    remove: createMockedFunction<(id: number | string) => Promise<{ affected?: number }>>(),
+    findByUserId: createMockedFunction<(userId: number | string, pagination?: any) => Promise<any>>(),
+    updateStatus: createMockedFunction<(id: number | string, status: any) => Promise<any>>(),
+    getStatistics: createMockedFunction<(range?: any) => Promise<{ total: number }>>(),
+    findById: createMockedFunction<(id: number | string) => Promise<any>>(),
+    delete: createMockedFunction<(id: number | string) => Promise<{ affected?: number }>>(),
   };
 
   const mockProductsService = {
-    findOne: jest.fn(),
+    findOne: createMockedFunction<(id: number | string) => Promise<any>>(),
   };
 
   const mockUsersService = {
-    findOne: jest.fn(),
+    findOne: createMockedFunction<(id: number | string) => Promise<any>>(),
   };
 
   const mockConfigService = {
-    get: jest.fn(),
+    get: createMockedFunction<(key: string) => any>(),
   };
 
   beforeEach(async () => {
@@ -63,7 +64,7 @@ describe('OrdersController', () => {
     ordersService = module.get<OrdersService>(OrdersService);
 
     // Reset all mocks before each test
-    jest.clearAllMocks();
+    (jest as any).clearAllMocks();
   });
 
   describe('POST /orders', () => {
@@ -154,7 +155,7 @@ describe('OrdersController', () => {
 
       jest.spyOn(ordersService, 'create').mockRejectedValue(new NotFoundException('用户不存在'));
 
-      await expect(controller.create(createOrderDto)).rejects.toThrow(NotFoundException);
+      await expect(controller.create(createOrderDto)).rejects.toThrow(new NotFoundException('用户不存在'));
     });
 
     it('should throw error for invalid product', async () => {
@@ -178,7 +179,7 @@ describe('OrdersController', () => {
 
       jest.spyOn(ordersService, 'create').mockRejectedValue(new NotFoundException('产品不存在'));
 
-      await expect(controller.create(createOrderDto)).rejects.toThrow(NotFoundException);
+      await expect(controller.create(createOrderDto)).rejects.toThrow(new NotFoundException('产品不存在'));
     });
 
     it('should throw error for insufficient stock', async () => {
@@ -202,7 +203,7 @@ describe('OrdersController', () => {
 
       jest.spyOn(ordersService, 'create').mockRejectedValue(new BadRequestException('库存不足'));
 
-      await expect(controller.create(createOrderDto)).rejects.toThrow(BadRequestException);
+      await expect(controller.create(createOrderDto)).rejects.toThrow(new BadRequestException('库存不足'));
     });
 
     it('should validate required fields', async () => {
@@ -220,7 +221,7 @@ describe('OrdersController', () => {
 
       jest.spyOn(ordersService, 'create').mockRejectedValue(new Error('无效的订单数据'));
 
-      await expect(controller.create(invalidDto)).rejects.toThrow(Error);
+      await expect(controller.create(invalidDto)).rejects.toThrow(new Error('无效的订单数据'));
     });
 
     it('should calculate total amount correctly', async () => {
@@ -461,7 +462,7 @@ describe('OrdersController', () => {
         .spyOn(ordersService, 'findByUserId')
         .mockRejectedValue(new NotFoundException('用户不存在'));
 
-      await expect(controller.findByUserId(userId, 1, 10)).rejects.toThrow(NotFoundException);
+      await expect(controller.findByUserId(userId, 1, 10)).rejects.toThrow(new NotFoundException('用户不存在'));
     });
 
     it('should handle pagination parameters', async () => {
@@ -533,7 +534,7 @@ describe('OrdersController', () => {
     it('should throw error for non-existent order', async () => {
       jest.spyOn(ordersService, 'findById').mockRejectedValue(new NotFoundException('订单不存在'));
 
-      await expect(controller.findOne(999)).rejects.toThrow(NotFoundException);
+      await expect(controller.findOne(999)).rejects.toThrow(new NotFoundException('订单不存在'));
     });
 
     it('should handle invalid id format', async () => {
@@ -541,7 +542,7 @@ describe('OrdersController', () => {
         .spyOn(ordersService, 'findById')
         .mockRejectedValue(new BadRequestException('无效的订单ID'));
 
-      await expect(controller.findOne(0)).rejects.toThrow(BadRequestException);
+      await expect(controller.findOne(0)).rejects.toThrow(new BadRequestException('无效的订单ID'));
     });
 
     it('should include user information', async () => {
@@ -664,7 +665,7 @@ describe('OrdersController', () => {
 
       const updateDto = { status: 'processing' };
 
-      await expect(controller.update(999, updateDto)).rejects.toThrow(Error);
+      await expect(controller.update(999, updateDto)).rejects.toThrow(new Error('订单不存在'));
     });
 
     it('should validate status update', async () => {
@@ -704,7 +705,7 @@ describe('OrdersController', () => {
 
       jest.spyOn(ordersService, 'update').mockRejectedValue(new Error('无效的订单状态'));
 
-      await expect(controller.update(1, invalidUpdateDto)).rejects.toThrow(Error);
+      await expect(controller.update(1, invalidUpdateDto)).rejects.toThrow(new Error('无效的订单状态'));
     });
 
     it('should not allow update of immutable fields', async () => {
@@ -768,19 +769,19 @@ describe('OrdersController', () => {
     it('should throw error for non-existent order', async () => {
       jest.spyOn(ordersService, 'delete').mockRejectedValue(new Error('订单不存在'));
 
-      await expect(controller.remove(999)).rejects.toThrow(Error);
+      await expect(controller.remove(999)).rejects.toThrow(new Error('订单不存在'));
     });
 
     it('should handle invalid id format', async () => {
       jest.spyOn(ordersService, 'delete').mockRejectedValue(new Error('无效的订单ID'));
 
-      await expect(controller.remove(0)).rejects.toThrow(Error);
+      await expect(controller.remove(0)).rejects.toThrow(new Error('无效的订单ID'));
     });
 
     it('should not allow deletion of completed orders', async () => {
       jest.spyOn(ordersService, 'delete').mockRejectedValue(new Error('无法删除已完成的订单'));
 
-      await expect(controller.remove(1)).rejects.toThrow(Error);
+      await expect(controller.remove(1)).rejects.toThrow(new Error('无法删除已完成的订单'));
     });
   });
 

@@ -1,15 +1,18 @@
 import {
   PaymentStrategy,
   PaymentRequest,
-  PaymentResponse,
-  PaymentQueryResponse,
-  PaymentCallbackResponse,
   RefundRequest,
-  RefundResponse,
 } from './payment-strategy.interface';
+import {
+  GatewayResult,
+  CreatePaymentData,
+  QueryPaymentData,
+  CallbackData,
+  RefundData,
+} from '../common/gateway-result';
 
 export class WechatPayStrategy extends PaymentStrategy {
-  async createPayment(request: PaymentRequest): Promise<PaymentResponse> {
+  async createPayment(request: PaymentRequest): Promise<GatewayResult<CreatePaymentData>> {
     // TODO: 集成微信支付SDK
     // 这里是模拟实现，实际需要调用微信支付API
 
@@ -17,36 +20,46 @@ export class WechatPayStrategy extends PaymentStrategy {
 
     return {
       success: true,
-      paymentId,
-      qrCode: `weixin://wxpay/bizpayurl?payment_id=${paymentId}`,
-      thirdPartyTransactionId: paymentId,
+      data: {
+        paymentId,
+        qrCode: `weixin://wxpay/bizpayurl?payment_id=${paymentId}`,
+        thirdPartyTransactionId: paymentId,
+      },
     };
   }
 
-  async queryPayment(paymentId: string): Promise<PaymentQueryResponse> {
+  async queryPayment(paymentId: string): Promise<GatewayResult<QueryPaymentData>> {
     // TODO: 查询微信支付状态
     return {
-      status: 'success',
-      thirdPartyTransactionId: paymentId,
+      success: true,
+      data: {
+        status: 'success',
+        thirdPartyTransactionId: paymentId,
+      },
     };
   }
 
-  async handleCallback(data: any): Promise<PaymentCallbackResponse> {
+  async handleCallback(data: any): Promise<GatewayResult<CallbackData>> {
     // TODO: 处理微信支付回调
     return {
       success: true,
-      paymentId: data.out_trade_no,
-      status: 'success',
-      thirdPartyTransactionId: data.transaction_id,
+      data: {
+        paymentId: data.out_trade_no,
+        status: 'success',
+        thirdPartyTransactionId: data.transaction_id,
+      },
     };
   }
 
-  async refund(request: RefundRequest): Promise<RefundResponse> {
+  async refund(request: RefundRequest): Promise<GatewayResult<RefundData>> {
     // TODO: 微信支付退款
     return {
       success: true,
-      refundId: `REFUND_${request.paymentId}_${Date.now()}`,
-      message: '退款成功',
+      data: {
+        refundId: `REFUND_${request.paymentId}_${Date.now()}`,
+        status: 'SUCCESS',
+        message: '退款成功',
+      },
     };
   }
 

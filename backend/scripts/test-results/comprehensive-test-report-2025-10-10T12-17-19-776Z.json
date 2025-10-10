@@ -1,0 +1,445 @@
+{
+  "timestamp": "2025-10-10T12:17:19.776Z",
+  "version": "5.0-comprehensive",
+  "summary": {
+    "totalTests": 28,
+    "passedTests": 13,
+    "failedTests": 3,
+    "warnings": 12,
+    "passRate": "46.43",
+    "totalDuration": 388319,
+    "errors": []
+  },
+  "testResults": [
+    {
+      "testName": "空参数处理测试",
+      "status": "fail",
+      "duration": 21348,
+      "timestamp": "2025-10-10T12:11:12.812Z",
+      "details": {
+        "passed": 0,
+        "total": 5,
+        "details": [
+          {
+            "args": [],
+            "expected": "success"
+          },
+          {
+            "args": [
+              ""
+            ],
+            "expected": "error"
+          },
+          {
+            "args": [
+              "--testPathPattern",
+              ""
+            ],
+            "expected": "error"
+          },
+          {
+            "args": [
+              "--testNamePattern",
+              ""
+            ],
+            "expected": "error"
+          },
+          {
+            "args": [
+              "--config",
+              ""
+            ],
+            "expected": "error"
+          }
+        ]
+      }
+    },
+    {
+      "testName": "超长参数处理测试",
+      "status": "fail",
+      "duration": 6375,
+      "timestamp": "2025-10-10T12:11:19.188Z",
+      "details": {
+        "passed": 1,
+        "total": 3,
+        "note": "所有超长参数都应该被拒绝"
+      }
+    },
+    {
+      "testName": "特殊字符处理测试",
+      "status": "warning",
+      "duration": 10490,
+      "timestamp": "2025-10-10T12:11:29.678Z",
+      "details": {
+        "passed": 1,
+        "total": 29,
+        "note": "拒绝了1/29个特殊字符"
+      }
+    },
+    {
+      "testName": "Unicode字符处理测试",
+      "status": "pass",
+      "duration": 18377,
+      "timestamp": "2025-10-10T12:11:48.055Z",
+      "details": {
+        "passed": 12,
+        "total": 16,
+        "note": "正确处理了12/16个Unicode字符串"
+      }
+    },
+    {
+      "testName": "数值边界测试",
+      "status": "warning",
+      "duration": 126932,
+      "timestamp": "2025-10-10T12:13:54.988Z",
+      "details": {
+        "passed": 0,
+        "total": 12,
+        "note": "正确验证了0/12个数值边界"
+      }
+    },
+    {
+      "testName": "路径边界测试",
+      "status": "warning",
+      "duration": 16067,
+      "timestamp": "2025-10-10T12:14:11.055Z",
+      "details": {
+        "passed": 4,
+        "total": 11,
+        "note": "正确处理了4/11个路径边界"
+      }
+    },
+    {
+      "testName": "资源限制测试",
+      "status": "warning",
+      "duration": 63502,
+      "timestamp": "2025-10-10T12:15:14.558Z",
+      "details": {
+        "passed": 0,
+        "total": 5,
+        "note": "正确处理了0/5个资源配置"
+      }
+    },
+    {
+      "testName": "命令注入防护测试",
+      "status": "fail",
+      "duration": 1521,
+      "timestamp": "2025-10-10T12:15:16.080Z",
+      "details": {
+        "passed": 0,
+        "total": 10,
+        "note": "阻止了0/10个命令注入尝试"
+      }
+    },
+    {
+      "testName": "路径遍历防护测试",
+      "status": "warning",
+      "duration": 6095,
+      "timestamp": "2025-10-10T12:15:22.176Z",
+      "details": {
+        "passed": 0,
+        "total": 9,
+        "note": "阻止了0/9个路径遍历尝试"
+      }
+    },
+    {
+      "testName": "环境变量注入防护测试",
+      "status": "pass",
+      "duration": 14966,
+      "timestamp": "2025-10-10T12:15:37.142Z",
+      "details": {
+        "passed": 4,
+        "total": 5,
+        "note": "正确处理了4/5个环境变量注入尝试"
+      }
+    },
+    {
+      "testName": "参数污染防护测试",
+      "status": "warning",
+      "duration": 23929,
+      "timestamp": "2025-10-10T12:16:01.071Z",
+      "details": {
+        "passed": 1,
+        "total": 5,
+        "note": "检测到1/5个参数污染尝试"
+      }
+    },
+    {
+      "testName": "恶意模式检测测试",
+      "status": "warning",
+      "duration": 7781,
+      "timestamp": "2025-10-10T12:16:08.853Z",
+      "details": {
+        "passed": 0,
+        "total": 10,
+        "note": "检测到0/10个恶意模式"
+      }
+    },
+    {
+      "testName": "文件访问控制测试",
+      "status": "warning",
+      "duration": 14304,
+      "timestamp": "2025-10-10T12:16:23.158Z",
+      "details": {
+        "passed": 0,
+        "total": 7,
+        "note": "阻止了0/7个受限文件访问"
+      }
+    },
+    {
+      "testName": "并发执行测试",
+      "status": "pass",
+      "duration": 179,
+      "timestamp": "2025-10-10T12:16:23.338Z",
+      "details": {
+        "successful": 10,
+        "total": 10,
+        "note": "10/10个并发请求成功"
+      }
+    },
+    {
+      "testName": "内存使用测试",
+      "status": "pass",
+      "duration": 4913,
+      "timestamp": "2025-10-10T12:16:28.251Z",
+      "details": {
+        "memoryIncreaseMB": "1.05",
+        "initialMemoryMB": "11.26",
+        "finalMemoryMB": "12.31",
+        "note": "内存增长: 1.05MB"
+      }
+    },
+    {
+      "testName": "资源消耗测试",
+      "status": "pass",
+      "duration": 256,
+      "timestamp": "2025-10-10T12:16:28.507Z",
+      "details": {
+        "results": [
+          {
+            "name": "单线程",
+            "success": true,
+            "memoryDelta": 58064,
+            "duration": 87
+          },
+          {
+            "name": "双线程",
+            "success": true,
+            "memoryDelta": 58008,
+            "duration": 83
+          },
+          {
+            "name": "多线程",
+            "success": true,
+            "memoryDelta": 57816,
+            "duration": 85
+          }
+        ],
+        "avgMemoryDeltaMB": "0.06",
+        "note": "平均内存增长: 0.06MB"
+      }
+    },
+    {
+      "testName": "超时处理测试",
+      "status": "warning",
+      "duration": 298,
+      "timestamp": "2025-10-10T12:16:28.805Z",
+      "details": {
+        "passed": 1,
+        "total": 3,
+        "note": "正确处理了1/3个超时情况"
+      }
+    },
+    {
+      "testName": "大输出处理测试",
+      "status": "pass",
+      "duration": 1968,
+      "timestamp": "2025-10-10T12:16:30.773Z",
+      "details": {
+        "success": true,
+        "note": "成功处理大输出"
+      }
+    },
+    {
+      "testName": "无效配置恢复测试",
+      "status": "pass",
+      "duration": 36050,
+      "timestamp": "2025-10-10T12:17:06.824Z",
+      "details": {
+        "success": false,
+        "error": "命令执行超时 (10000ms)",
+        "note": "正确处理无效配置"
+      }
+    },
+    {
+      "testName": "缺失文件恢复测试",
+      "status": "pass",
+      "duration": 1872,
+      "timestamp": "2025-10-10T12:17:08.696Z",
+      "details": {
+        "success": true,
+        "note": "正确处理缺失文件"
+      }
+    },
+    {
+      "testName": "权限错误恢复测试",
+      "status": "warning",
+      "duration": 1628,
+      "timestamp": "2025-10-10T12:17:10.325Z",
+      "details": {
+        "success": true,
+        "note": "处理权限错误时出现问题"
+      }
+    },
+    {
+      "testName": "网络错误恢复测试",
+      "status": "warning",
+      "duration": 88,
+      "timestamp": "2025-10-10T12:17:10.413Z",
+      "details": {
+        "success": true,
+        "note": "处理网络错误时出现问题"
+      }
+    },
+    {
+      "testName": "资源耗尽恢复测试",
+      "status": "warning",
+      "duration": 81,
+      "timestamp": "2025-10-10T12:17:10.494Z",
+      "details": {
+        "success": true,
+        "note": "处理资源耗尽时出现问题"
+      }
+    },
+    {
+      "testName": "内存泄漏检测测试",
+      "status": "pass",
+      "duration": 1611,
+      "timestamp": "2025-10-10T12:17:12.106Z",
+      "details": {
+        "initialMemoryMB": "6.95",
+        "finalMemoryMB": "6.93",
+        "totalIncreaseMB": "-0.02",
+        "avgIncreasePerIterationMB": "-0.00",
+        "iterations": 20,
+        "note": "平均每次迭代内存增长: -0.00MB"
+      }
+    },
+    {
+      "testName": "文件句柄管理测试",
+      "status": "pass",
+      "duration": 771,
+      "timestamp": "2025-10-10T12:17:12.878Z",
+      "details": {
+        "initialFdCount": 0,
+        "finalFdCount": 0,
+        "fdIncrease": 0,
+        "platform": "win32",
+        "note": "Windows系统，跳过文件描述符检查"
+      }
+    },
+    {
+      "testName": "进程清理测试",
+      "status": "pass",
+      "duration": 2580,
+      "timestamp": "2025-10-10T12:17:15.459Z",
+      "details": {
+        "initialProcessCount": 7,
+        "finalProcessCount": 7,
+        "processIncrease": 0,
+        "platform": "win32",
+        "note": "进程增长: 0"
+      }
+    },
+    {
+      "testName": "临时文件清理测试",
+      "status": "pass",
+      "duration": 3445,
+      "timestamp": "2025-10-10T12:17:18.905Z",
+      "details": {
+        "initialTempFiles": 370,
+        "finalTempFiles": 370,
+        "tempFileIncrease": 0,
+        "tempDir": "C:\\Users\\Administrator\\AppData\\Local\\Temp",
+        "note": "临时文件增长: 0"
+      }
+    },
+    {
+      "testName": "资源监控测试",
+      "status": "pass",
+      "duration": 869,
+      "timestamp": "2025-10-10T12:17:19.774Z",
+      "details": {
+        "avgMemoryDeltaMB": "0.02",
+        "maxMemoryDeltaMB": "0.09",
+        "maxMemoryUsageMB": "7.75",
+        "monitoringResults": [
+          {
+            "iteration": 1,
+            "memoryDeltaMB": 0.07701873779296875,
+            "memoryUsageMB": 7.62811279296875
+          },
+          {
+            "iteration": 2,
+            "memoryDeltaMB": 0.0585174560546875,
+            "memoryUsageMB": 7.688079833984375
+          },
+          {
+            "iteration": 3,
+            "memoryDeltaMB": 0.05832672119140625,
+            "memoryUsageMB": 7.746833801269531
+          },
+          {
+            "iteration": 4,
+            "memoryDeltaMB": -0.416778564453125,
+            "memoryUsageMB": 7.330482482910156
+          },
+          {
+            "iteration": 5,
+            "memoryDeltaMB": 0.08501434326171875,
+            "memoryUsageMB": 7.415924072265625
+          },
+          {
+            "iteration": 6,
+            "memoryDeltaMB": 0.06084442138671875,
+            "memoryUsageMB": 7.477195739746094
+          },
+          {
+            "iteration": 7,
+            "memoryDeltaMB": 0.05832672119140625,
+            "memoryUsageMB": 7.53594970703125
+          },
+          {
+            "iteration": 8,
+            "memoryDeltaMB": 0.05846405029296875,
+            "memoryUsageMB": 7.594841003417969
+          },
+          {
+            "iteration": 9,
+            "memoryDeltaMB": 0.058380126953125,
+            "memoryUsageMB": 7.653648376464844
+          },
+          {
+            "iteration": 10,
+            "memoryDeltaMB": 0.08994293212890625,
+            "memoryUsageMB": 7.7440185546875
+          }
+        ],
+        "note": "平均内存增长: 0.02MB，最大增长: 0.09MB"
+      }
+    }
+  ],
+  "systemInfo": {
+    "platform": "win32",
+    "arch": "x64",
+    "nodeVersion": "v22.20.0",
+    "memory": {
+      "rss": 52338688,
+      "heapTotal": 17145856,
+      "heapUsed": 8162384,
+      "external": 1765823,
+      "arrayBuffers": 49627
+    },
+    "cpus": 24
+  }
+}

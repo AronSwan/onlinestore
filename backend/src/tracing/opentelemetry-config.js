@@ -14,9 +14,18 @@ const { RandomIdGenerator } = require('@opentelemetry/sdk-trace-base');
 
 // 配置OpenTelemetry SDK
 function initializeTracing() {
-  // 从环境变量获取配置
-  const openobserveUrl = process.env.OPENOBSERVE_URL || 'http://localhost:5080';
-  const organization = process.env.OPENOBSERVE_ORGANIZATION || 'default';
+  // 统一环境适配器（若 dist 存在则使用，否则回退 env）
+  let adapterOO = null;
+  try {
+    const { EnvironmentAdapter } = require('../../dist/src/config/environment-adapter.js');
+    adapterOO = EnvironmentAdapter && typeof EnvironmentAdapter.getOpenObserve === 'function'
+      ? EnvironmentAdapter.getOpenObserve()
+      : null;
+  } catch (_) {}
+
+  // 从环境变量获取或适配器获取配置
+  const openobserveUrl = (adapterOO && adapterOO.baseUrl) || process.env.OPENOBSERVE_URL || 'http://localhost:5080';
+  const organization = (adapterOO && adapterOO.organization) || process.env.OPENOBSERVE_ORGANIZATION || 'default';
   const serviceName = process.env.SERVICE_NAME || 'caddy-shopping-backend';
   const serviceVersion = process.env.SERVICE_VERSION || '1.0.0';
   const environment = process.env.NODE_ENV || 'development';
@@ -25,7 +34,7 @@ function initializeTracing() {
   const traceExporter = new OTLPTraceExporter({
     url: `${openobserveUrl}/api/${organization}/traces`,
     headers: {
-      'Authorization': `Bearer ${process.env.OPENOBSERVE_TOKEN || ''}`,
+      'Authorization': `Bearer ${((adapterOO && adapterOO.token) || process.env.OPENOBSERVE_TOKEN || '')}`,
       'Content-Type': 'application/json'
     }
   });

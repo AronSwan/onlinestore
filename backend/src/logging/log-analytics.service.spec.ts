@@ -1,3 +1,4 @@
+/// <reference path="./jest.d.ts" />
 import { Test, TestingModule } from '@nestjs/testing';
 import { HttpModule, HttpService } from '@nestjs/axios';
 import { LogAnalyticsService } from './log-analytics.service';
@@ -7,7 +8,7 @@ import { of } from 'rxjs';
 describe('LogAnalyticsService', () => {
   let service: LogAnalyticsService;
   let mockConfig: OpenObserveConfig;
-  let mockHttpService: any;
+  let mockHttpService: jest.Mocked<HttpService> | any;
 
   beforeEach(async () => {
     mockConfig = {
@@ -47,8 +48,8 @@ describe('LogAnalyticsService', () => {
     };
 
     mockHttpService = {
-      post: jest.fn(),
-    };
+      post: (jest.fn() as unknown) as jest.MockedFunction<HttpService['post']>,
+    } as any;
 
     const module: TestingModule = await Test.createTestingModule({
       imports: [HttpModule],
@@ -154,7 +155,7 @@ describe('LogAnalyticsService', () => {
     it('should throw error when request fails', async () => {
       const timeRange = { start: '2023-01-01T00:00:00Z', end: '2023-01-02T00:00:00Z' };
       
-      mockHttpService.post.mockReturnValue(of(null));
+      mockHttpService.post.mockReturnValue(of({ data: null }));
 
       await expect(service.getLogStats(timeRange)).rejects.toThrow('No response received from OpenObserve');
     });

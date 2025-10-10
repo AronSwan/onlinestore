@@ -1,0 +1,197 @@
+{
+  "metadata": {
+    "version": "3.0",
+    "timestamp": "2025-10-10T08:58:13.556Z",
+    "duration": 770207,
+    "systemInfo": {
+      "platform": "win32",
+      "arch": "x64",
+      "nodeVersion": "v22.20.0",
+      "cpus": 24,
+      "cpuModel": "Intel(R) Xeon(R) CPU E5-2673 v3 @ 2.40GHz",
+      "totalMemory": 32609,
+      "freeMemory": 17864,
+      "loadAverage": [
+        0,
+        0,
+        0
+      ],
+      "uptime": 21161.25,
+      "timestamp": "2025-10-10T08:45:23.346Z"
+    }
+  },
+  "summary": {
+    "totalTests": 47,
+    "passedTests": 41,
+    "failedTests": 6,
+    "skippedTests": 0,
+    "warningTests": 0,
+    "overallPassRate": "87.23"
+  },
+  "modules": {
+    "basic": {
+      "name": "basic",
+      "path": "D:\\onlinestore\\backend\\scripts\\test-runner-secure.test.cjs",
+      "startTime": 1760085923350,
+      "endTime": 1760085924594,
+      "duration": 1244,
+      "success": false,
+      "skipped": false,
+      "error": "",
+      "output": "🚀 开始全面测试 test-runner-secure.cjs\n============================================================\n\n🧪 基础功能测试\n❌ 显示帮助信息\n   输出: node:internal/modules/cjs/loader:1386\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'D:\\onlinestore\\backend\\scripts\\scripts\\test-runner-secure.cjs'\r\n    at Function._resolveFilename (node:internal/m...\n❌ 显示版本信息\n   输出: node:internal/modules/cjs/loader:1386\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'D:\\onlinestore\\backend\\scripts\\scripts\\test-runner-secure.cjs'\r\n    at Function._resolveFilename (node:internal/m...\n❌ 默认运行单元测试\n   输出: node:internal/modules/cjs/loader:1386\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'D:\\onlinestore\\backend\\scripts\\scripts\\test-runner-secure.cjs'\r\n    at Function._resolveFilename (node:internal/m...\n\n🔒 参数验证测试\n❌ 拒绝未知参数\n   输出: node:internal/modules/cjs/loader:1386\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'D:\\onlinestore\\backend\\scripts\\scripts\\test-runner-secure.cjs'\r\n    at Function._resolveFilename (node:internal/m...\n❌ 验证超时参数范围\n   输出: node:internal/modules/cjs/loader:1386\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'D:\\onlinestore\\backend\\scripts\\scripts\\test-runner-secure.cjs'\r\n    at Function._resolveFilename (node:internal/m...\n❌ 验证资源阈值范围\n   输出: node:internal/modules/cjs/loader:1386\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'D:\\onlinestore\\backend\\scripts\\scripts\\test-runner-secure.cjs'\r\n    at Function._resolveFilename (node:internal/m...\n❌ 检测参数冲突\n   输出: node:internal/modules/cjs/loader:1386\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'D:\\onlinestore\\backend\\scripts\\scripts\\test-runner-secure.cjs'\r\n    at Function._resolveFilename (node:internal/m...\n\n🛡️ 安全功能测试\n❌ 路径遍历攻击防护\n   输出: node:internal/modules/cjs/loader:1386\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'D:\\onlinestore\\backend\\scripts\\scripts\\test-runner-secure.cjs'\r\n    at Function._resolveFilename (node:internal/m...\n❌ 命令注入防护\n   输出: node:internal/modules/cjs/loader:1386\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'D:\\onlinestore\\backend\\scripts\\scripts\\test-runner-secure.cjs'\r\n    at Function._resolveFilename (node:internal/m...\n❌ 特殊字符过滤\n   输出: node:internal/modules/cjs/loader:1386\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'D:\\onlinestore\\backend\\scripts\\scripts\\test-runner-secure.cjs'\r\n    at Function._resolveFilename (node:internal/m...\n\n⚡ 性能测试\n   期望: \"测试运行器启动\"\n   实际输出包含期望值: false\n   命令成功: false\n❌ 并行模式性能\n   详情: 耗时: 68ms\n   输出: node:internal/modules/cjs/loader:1386\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'D:\\onlinestore\\backend\\scripts\\scripts\\test-runner-secure.cjs'\r\n    at Function._resolveFilename (node:internal/m...\n   期望: \"测试运行器启动\"\n   实际输出包含期望值: false\n   命令成功: false\n❌ 自适应并行度\n   详情: 耗时: 79ms\n   输出: node:internal/modules/cjs/loader:1386\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'D:\\onlinestore\\backend\\scripts\\scripts\\test-runner-secure.cjs'\r\n    at Function._resolveFilename (node:internal/m...\n   期望: \"测试运行器启动\"\n   实际输出包含期望值: false\n   命令成功: false\n❌ 闲时模式\n   详情: 耗时: 71ms\n   输出: node:internal/modules/cjs/loader:1386\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'D:\\onlinestore\\backend\\scripts\\scripts\\test-runner-secure.cjs'\r\n    at Function._resolveFilename (node:internal/m...\n\n🔄 错误处理测试\n❌ 处理不存在的测试文件\n   输出: node:internal/modules/cjs/loader:1386\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'D:\\onlinestore\\backend\\scripts\\scripts\\test-runner-secure.cjs'\r\n    at Function._resolveFilename (node:internal/m...\n❌ 处理无效配置\n   输出: node:internal/modules/cjs/loader:1386\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'D:\\onlinestore\\backend\\scripts\\scripts\\test-runner-secure.cjs'\r\n    at Function._resolveFilename (node:internal/m...\n\n💾 资源管理测试\n❌ 内存压力下的执行\n   输出: node:internal/modules/cjs/loader:1386\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'D:\\onlinestore\\backend\\scripts\\scripts\\test-runner-secure.cjs'\r\n    at Function._resolveFilename (node:internal/m...\n\n🎯 边界条件测试\n❌ 空参数处理\n   输出: node:internal/modules/cjs/loader:1386\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'D:\\onlinestore\\backend\\scripts\\scripts\\test-runner-secure.cjs'\r\n    at Function._resolveFilename (node:internal/m...\n❌ 超长参数处理\n   输出: node:internal/modules/cjs/loader:1386\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'D:\\onlinestore\\backend\\scripts\\scripts\\test-runner-secure.cjs'\r\n    at Function._resolveFilename (node:internal/m...\n\n============================================================\n📊 测试总结\n============================================================\nbasicFunctionality: 0/3 (0.0%)\nparameterValidation: 0/4 (0.0%)\nsecurityFeatures: 0/3 (0.0%)\nperformanceTests: 0/3 (0.0%)\nerrorHandling: 0/2 (0.0%)\nresourceManagement: 0/1 (0.0%)\nedgeCases: 0/2 (0.0%)\n\n总计: 0/18 (0.0%)\n💥 测试通过率较低，需要修复问题\n",
+      "reportPath": "D:\\onlinestore\\backend\\scripts\\comprehensive-test-reports\\basic-report-1760085924595.json",
+      "details": {
+        "totalTests": 3,
+        "passedTests": 0,
+        "failedTests": 3,
+        "skippedTests": 0,
+        "warningTests": 0,
+        "passRate": 0
+      }
+    },
+    "robustness": {
+      "name": "robustness",
+      "path": "D:\\onlinestore\\backend\\scripts\\robustness-test-suite.cjs",
+      "startTime": 1760085926598,
+      "endTime": 1760086226616,
+      "duration": 300018,
+      "success": false,
+      "skipped": false,
+      "error": "命令超时并被强制终止 (300000ms)",
+      "output": "🧪 开始测试运行器健壮性测试套件...\n\n📊 系统信息:\n  平台: win32\n  CPU: 24 核心\n  内存: 31.84GB\n  内存使用率: 45.4%\n\n🔒 运行安全验证测试...\n✅ [安全验证] 路径验证安全性测试\n✅ [安全验证] 命令注入防护测试\n✅ [安全验证] 文件权限验证测试\n\n💾 运行资源管理测试...\n✅ [资源管理] 内存使用限制测试\n✅ [资源管理] 并发限制测试\n✅ [资源管理] 超时处理测试\n\n🔄 运行错误恢复测试...\n✅ [错误恢复] 网络故障恢复测试\n✅ [错误恢复] 文件系统错误恢复测试\n✅ [错误恢复] 无效参数处理测试\n\n📏 运行边界条件测试...\n✅ [边界条件] 空测试套件处理测试\n✅ [边界条件] 大文件处理测试\n✅ [边界条件] 极端参数值测试\n\n⚡ 运行性能测试...\n✅ [性能测试] 并行性能测试\n",
+      "reportPath": "D:\\onlinestore\\backend\\scripts\\comprehensive-test-reports\\robustness-report-1760086226617.json",
+      "details": {
+        "totalTests": 13,
+        "passedTests": 13,
+        "failedTests": 0,
+        "skippedTests": 0,
+        "warningTests": 0,
+        "passRate": 100
+      }
+    },
+    "enhanced": {
+      "name": "enhanced",
+      "path": "D:\\onlinestore\\backend\\scripts\\test-runner-secure.enhanced-test-suite.cjs",
+      "startTime": 1760086228633,
+      "endTime": 1760086528644,
+      "duration": 300011,
+      "success": false,
+      "skipped": false,
+      "error": "命令超时并被强制终止 (300000ms)",
+      "output": "🚀 开始运行 test-runner-secure.cjs 增强测试套件...\n\n📊 系统信息:\n  平台: win32 (x64)\n  CPU: 24 核心 - Intel(R) Xeon(R) CPU E5-2673 v3 @ 2.40GHz\n  内存: 32609MB 总计, 17577MB 可用\n  负载: 0.00\n  进程内存: 4.69MB\n\n🔒 运行高级安全测试...\n✅ [安全验证] 高级路径遍历攻击防护测试\n✅ [安全验证] 高级命令注入攻击防护测试\n❌ [安全验证] Unicode和编码攻击防护测试\n   错误: The argument 'args[2]' must be a string without null bytes. Received '\\x00test'\n✅ [安全验证] 正则表达式DoS攻击防护测试\n\n🎯 运行极端条件测试...\n✅ [边界条件] 极端参数组合测试\n✅ [边界条件] 极端文件系统条件测试\n✅ [边界条件] 极端资源限制测试\n\n🖥️ 运行系统级健壮性测试...\n❌ [系统集成] 系统信号处理测试\n   错误: 进程未能优雅退出且未生成中断报告\n✅ [系统集成] 崩溃恢复机制测试\n✅ [系统集成] 并发实例隔离测试\n\n⚡ 运行增强性能测试...\n",
+      "reportPath": "D:\\onlinestore\\backend\\scripts\\comprehensive-test-reports\\enhanced-report-1760086528644.json",
+      "details": {
+        "totalTests": 10,
+        "passedTests": 8,
+        "failedTests": 2,
+        "skippedTests": 0,
+        "warningTests": 0,
+        "passRate": 80
+      }
+    },
+    "faultTolerance": {
+      "name": "faultTolerance",
+      "path": "D:\\onlinestore\\backend\\scripts\\test-runner-secure.fault-tolerance-tests.cjs",
+      "startTime": 1760086530655,
+      "endTime": 1760086668952,
+      "duration": 138297,
+      "success": false,
+      "skipped": false,
+      "error": "",
+      "output": "🛡️ 开始运行 test-runner-secure.cjs 容错和错误恢复测试...\n\n📊 系统信息:\n  平台: win32 (x64)\n  CPU: 24 核心\n  内存: 32609MB 总计, 15314MB 可用\n  负载: 0.00\n\n🌐 运行网络故障容错测试...\n  ✅ 网络超时处理测试通过\n  ✅ 网络中断恢复测试通过\n\n📁 运行文件系统故障容错测试...\n  ✅ 文件权限错误处理测试通过\n  ✅ 文件损坏处理测试通过\n  ✅ 磁盘空间不足处理测试通过\n\n💾 运行资源耗尽容错测试...\n  ✅ 内存耗尽处理测试通过\n  ✅ 文件描述符耗尽处理测试通过\n\n💥 运行进程崩溃恢复测试...\n  ❌ 子进程崩溃处理测试失败: node:internal/modules/cjs/loader:1386\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'spawn'\r\nRequire stack:\r\n- D:\\onlinestore\\backend\\scripts\\fault-tolerance-test-data\\crash-monitor.js\r\n    at Function._resolveFilename (node:internal/modules/cjs/loader:1383:15)\r\n    at defaultResolveImpl (node:internal/modules/cjs/loader:1025:19)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1030:22)\r\n    at Function._load (node:internal/modules/cjs/loader:1192:37)\r\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)\r\n    at Module.require (node:internal/modules/cjs/loader:1463:12)\r\n    at require (node:internal/modules/helpers:147:16)\r\n    at Object.<anonymous> (D:\\onlinestore\\backend\\scripts\\fault-tolerance-test-data\\crash-monitor.js:2:19)\r\n    at Module._compile (node:internal/modules/cjs/loader:1706:14) {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: [\r\n    'D:\\\\onlinestore\\\\backend\\\\scripts\\\\fault-tolerance-test-data\\\\crash-monitor.js'\r\n  ]\r\n}\r\n\r\nNode.js v22.20.0\r\n\n  ✅ 工作线程崩溃处理测试通过\n\n📊 生成容错测试报告...\n📊 容错测试报告已生成: D:\\onlinestore\\backend\\scripts\\fault-tolerance-reports\\fault-tolerance-report-1760086668941.json\n\n============================================================\n🎯 容错和错误恢复测试完成！\n============================================================\n总测试数: 9\n通过数: 8\n失败数: 1\n通过率: 88.89%\n============================================================\n\n⚠️ 部分容错测试失败，建议增强错误处理能力\n",
+      "reportPath": "D:\\onlinestore\\backend\\scripts\\comprehensive-test-reports\\faultTolerance-report-1760086668952.json",
+      "details": {
+        "totalTests": 9,
+        "passedTests": 8,
+        "failedTests": 1,
+        "skippedTests": 0,
+        "warningTests": 0,
+        "passRate": 88.89
+      }
+    },
+    "integration": {
+      "name": "integration",
+      "path": "D:\\onlinestore\\backend\\scripts\\integration-test-runner.js",
+      "startTime": 1760086670961,
+      "endTime": 1760086691552,
+      "duration": 20591,
+      "success": false,
+      "skipped": false,
+      "error": "",
+      "output": "🚀 初始化集成测试环境...\n✅ 所有必需文件检查通过\n🔍 启动资源监控...\n[资源监控] 🔍 开始资源监控 (间隔: 2000ms)\n✅ 资源监控已启动\n\n🧪 运行基础功能测试...\n  运行: 帮助信息显示...\n  ✅ 帮助信息显示: PASS\n  运行: 版本信息显示...\n  ✅ 版本信息显示: PASS\n  运行: 空参数测试...\n  ✅ 空参数测试: PASS\n\n🔍 运行参数验证测试...\n  运行: 危险路径测试...\n  ✅ 危险路径测试: PASS\n  运行: 无效超时值...\n  ✅ 无效超时值: PASS\n  运行: 冲突参数测试...\n  ✅ 冲突参数测试: PASS\n  运行: 超长参数值...\n  ✅ 超长参数值: PASS\n\n🛡️ 运行安全测试...\n  运行: 简化安全验证...\n  ✅ 简化安全验证: PASS\n\n⚡ 运行性能测试...\n  运行: 并行执行测试...\n  ✅ 并行执行测试: PASS\n  运行: 自适应并行度...\n  ✅ 自适应并行度: PASS\n  运行: 简化性能验证...\n  ✅ 简化性能验证: PASS\n\n🔄 运行错误恢复测试...\n  运行: 简化错误处理验证...\n  ✅ 简化错误处理验证: PASS\n🛑 停止资源监控...\n✅ 资源监控已停止\n\n📊 测试报告已保存: D:\\onlinestore\\backend\\scripts\\integration-test-report.json\n📝 Markdown报告已生成: D:\\onlinestore\\backend\\scripts\\integration-test-report.md\n\n============================================================\n🎯 集成测试完成！\n============================================================\n总测试数: 12\n通过数: 12\n失败数: 0\n成功率: 100.0%\n============================================================\n",
+      "reportPath": "D:\\onlinestore\\backend\\scripts\\comprehensive-test-reports\\integration-report-1760086691552.json",
+      "details": {
+        "totalTests": 12,
+        "passedTests": 12,
+        "failedTests": 0,
+        "skippedTests": 0,
+        "warningTests": 0,
+        "passRate": 0
+      }
+    }
+  },
+  "recommendations": [
+    {
+      "priority": "medium",
+      "category": "overall",
+      "title": "测试通过率有提升空间",
+      "description": "当前通过率为 87.23%，建议关注失败的测试用例。"
+    },
+    {
+      "priority": "high",
+      "category": "module",
+      "title": "basic 模块测试失败",
+      "description": "检查 basic 模块的错误日志，修复导致测试失败的问题。"
+    },
+    {
+      "priority": "high",
+      "category": "module",
+      "title": "robustness 模块测试失败",
+      "description": "检查 robustness 模块的错误日志，修复导致测试失败的问题。"
+    },
+    {
+      "priority": "high",
+      "category": "module",
+      "title": "enhanced 模块测试失败",
+      "description": "检查 enhanced 模块的错误日志，修复导致测试失败的问题。"
+    },
+    {
+      "priority": "high",
+      "category": "module",
+      "title": "faultTolerance 模块测试失败",
+      "description": "检查 faultTolerance 模块的错误日志，修复导致测试失败的问题。"
+    },
+    {
+      "priority": "high",
+      "category": "module",
+      "title": "integration 模块测试失败",
+      "description": "检查 integration 模块的错误日志，修复导致测试失败的问题。"
+    }
+  ],
+  "config": {
+    "testRunnerPath": "D:\\onlinestore\\backend\\scripts\\test-runner-secure.cjs",
+    "timeout": {
+      "quick": 60000,
+      "short": 300000,
+      "medium": 900000,
+      "long": 1800000,
+      "extended": 3600000
+    },
+    "testModules": {
+      "basic": "D:\\onlinestore\\backend\\scripts\\test-runner-secure.test.cjs",
+      "robustness": "D:\\onlinestore\\backend\\scripts\\robustness-test-suite.cjs",
+      "enhanced": "D:\\onlinestore\\backend\\scripts\\test-runner-secure.enhanced-test-suite.cjs",
+      "faultTolerance": "D:\\onlinestore\\backend\\scripts\\test-runner-secure.fault-tolerance-tests.cjs",
+      "integration": "D:\\onlinestore\\backend\\scripts\\integration-test-runner.js"
+    },
+    "reportDir": "D:\\onlinestore\\backend\\scripts\\comprehensive-test-reports",
+    "testCategories": {
+      "BASIC": "基础功能测试",
+      "SECURITY": "安全验证测试",
+      "ROBUSTNESS": "健壮性测试",
+      "PERFORMANCE": "性能测试",
+      "FAULT_TOLERANCE": "容错测试",
+      "INTEGRATION": "集成测试"
+    }
+  }
+}

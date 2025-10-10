@@ -1,0 +1,377 @@
+{
+  "timestamp": "2025-10-09T08:16:41.616Z",
+  "root": "backend",
+  "summary": {
+    "totalFiles": 43,
+    "adoptedFiles": 14,
+    "notAdoptedFiles": 23,
+    "bareJestFnOccurrences": 494,
+    "adoptionRate": 0.3256,
+    "modules": {
+      "src/logging": {
+        "total": 4,
+        "adopted": 2,
+        "notAdopted": 0,
+        "rate": 0.5
+      },
+      "src/products": {
+        "total": 2,
+        "adopted": 2,
+        "notAdopted": 0,
+        "rate": 1
+      },
+      "src/orders": {
+        "total": 2,
+        "adopted": 2,
+        "notAdopted": 0,
+        "rate": 1
+      },
+      "src/payment": {
+        "total": 1,
+        "adopted": 1,
+        "notAdopted": 0,
+        "rate": 1
+      },
+      "src/messaging": {
+        "total": 0,
+        "adopted": 0,
+        "notAdopted": 0,
+        "rate": 0
+      }
+    }
+  },
+  "files": [
+    {
+      "file": "src/address/address.controller.spec.ts",
+      "adopted": false,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 5,
+      "patternsFound": []
+    },
+    {
+      "file": "src/address/address.spec.ts",
+      "adopted": false,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 24,
+      "patternsFound": []
+    },
+    {
+      "file": "src/app.controller.spec.ts",
+      "adopted": false,
+      "hasBareJestFn": false,
+      "bareJestFnCount": 0,
+      "patternsFound": []
+    },
+    {
+      "file": "src/auth/auth.controller.spec.ts",
+      "adopted": false,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 11,
+      "patternsFound": []
+    },
+    {
+      "file": "src/auth/auth.service.spec.ts",
+      "adopted": true,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 15,
+      "patternsFound": [
+        "jest\\.Mocked\\s*<"
+      ]
+    },
+    {
+      "file": "src/auth/decorators/roles.decorator.spec.ts",
+      "adopted": true,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 1,
+      "patternsFound": [
+        "jest\\.MockedFunction\\s*<"
+      ]
+    },
+    {
+      "file": "src/auth/guards/jwt-auth.guard.debug.spec.ts",
+      "adopted": false,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 5,
+      "patternsFound": []
+    },
+    {
+      "file": "src/auth/guards/jwt-auth.guard.spec.ts",
+      "adopted": false,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 6,
+      "patternsFound": []
+    },
+    {
+      "file": "src/auth/guards/roles.guard.spec.ts",
+      "adopted": false,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 2,
+      "patternsFound": []
+    },
+    {
+      "file": "src/cache/cache.service.spec.ts",
+      "adopted": false,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 12,
+      "patternsFound": []
+    },
+    {
+      "file": "src/cache/enhanced-cache.spec.ts",
+      "adopted": false,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 20,
+      "patternsFound": []
+    },
+    {
+      "file": "src/cart/interfaces/cart.controller.spec.ts",
+      "adopted": false,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 10,
+      "patternsFound": []
+    },
+    {
+      "file": "src/cart/test/cart-concurrency.spec.ts",
+      "adopted": false,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 9,
+      "patternsFound": []
+    },
+    {
+      "file": "src/cart/test/cart.integration.spec.ts",
+      "adopted": false,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 8,
+      "patternsFound": []
+    },
+    {
+      "file": "src/common/alerting/alerting.service.spec.ts",
+      "adopted": false,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 13,
+      "patternsFound": []
+    },
+    {
+      "file": "src/common/filters/global-exception.filter.spec.ts",
+      "adopted": true,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 4,
+      "patternsFound": [
+        "jest\\.Mocked\\s*<"
+      ]
+    },
+    {
+      "file": "src/common/openobserve/openobserve.service.spec.ts",
+      "adopted": true,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 10,
+      "patternsFound": [
+        "jest\\.Mocked\\s*<"
+      ]
+    },
+    {
+      "file": "src/common/security/encryption.service.spec.ts",
+      "adopted": false,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 30,
+      "patternsFound": []
+    },
+    {
+      "file": "src/config/configuration.spec.ts",
+      "adopted": false,
+      "hasBareJestFn": false,
+      "bareJestFnCount": 0,
+      "patternsFound": []
+    },
+    {
+      "file": "src/cqrs/bus/command.bus.spec.ts",
+      "adopted": false,
+      "hasBareJestFn": false,
+      "bareJestFnCount": 0,
+      "patternsFound": []
+    },
+    {
+      "file": "src/cqrs/bus/event.bus.spec.ts",
+      "adopted": false,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 1,
+      "patternsFound": []
+    },
+    {
+      "file": "src/cqrs/bus/query.bus.spec.ts",
+      "adopted": false,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 1,
+      "patternsFound": []
+    },
+    {
+      "file": "src/cqrs/cqrs.module.integration.spec.ts",
+      "adopted": false,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 4,
+      "patternsFound": []
+    },
+    {
+      "file": "src/database/database.module.spec.ts",
+      "adopted": false,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 2,
+      "patternsFound": []
+    },
+    {
+      "file": "src/health/health.controller.spec.ts",
+      "adopted": false,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 6,
+      "patternsFound": []
+    },
+    {
+      "file": "src/logging/business-logger.service.spec.ts",
+      "adopted": false,
+      "hasBareJestFn": false,
+      "bareJestFnCount": 0,
+      "patternsFound": []
+    },
+    {
+      "file": "src/logging/log-analytics.service.spec.ts",
+      "adopted": true,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 1,
+      "patternsFound": [
+        "jest\\.Mocked\\s*<",
+        "jest\\.MockedFunction\\s*<"
+      ]
+    },
+    {
+      "file": "src/logging/logging.integration.spec.ts",
+      "adopted": true,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 1,
+      "patternsFound": [
+        "jest\\.Mocked\\s*<",
+        "jest\\.MockedFunction\\s*<"
+      ]
+    },
+    {
+      "file": "src/logging/user-behavior-tracker.service.spec.ts",
+      "adopted": false,
+      "hasBareJestFn": false,
+      "bareJestFnCount": 0,
+      "patternsFound": []
+    },
+    {
+      "file": "src/monitoring/metrics.interceptor.spec.ts",
+      "adopted": true,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 6,
+      "patternsFound": [
+        "jest\\.Mocked\\s*<"
+      ]
+    },
+    {
+      "file": "src/monitoring/monitoring.controller.spec.ts",
+      "adopted": true,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 15,
+      "patternsFound": [
+        "jest\\.Mocked\\s*<"
+      ]
+    },
+    {
+      "file": "src/monitoring/monitoring.service.spec.ts",
+      "adopted": false,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 16,
+      "patternsFound": []
+    },
+    {
+      "file": "src/notification/notification.service.spec.ts",
+      "adopted": false,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 8,
+      "patternsFound": []
+    },
+    {
+      "file": "src/orders/orders.controller.spec.ts",
+      "adopted": true,
+      "hasBareJestFn": false,
+      "bareJestFnCount": 0,
+      "patternsFound": [
+        "createMockedFunction\\s*<"
+      ]
+    },
+    {
+      "file": "src/orders/orders.service.spec.ts",
+      "adopted": true,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 118,
+      "patternsFound": [
+        "createMockedFunction\\s*<"
+      ]
+    },
+    {
+      "file": "src/payment/payment.service.spec.ts",
+      "adopted": true,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 1,
+      "patternsFound": [
+        "createMockedFunction\\s*<",
+        "jest\\.Mocked\\s*<"
+      ]
+    },
+    {
+      "file": "src/products/products.controller.spec.ts",
+      "adopted": true,
+      "hasBareJestFn": false,
+      "bareJestFnCount": 0,
+      "patternsFound": [
+        "createMockedFunction\\s*<"
+      ]
+    },
+    {
+      "file": "src/products/products.service.spec.ts",
+      "adopted": true,
+      "hasBareJestFn": false,
+      "bareJestFnCount": 0,
+      "patternsFound": [
+        "createMockedFunction\\s*<"
+      ]
+    },
+    {
+      "file": "src/redis/redis-health.service.spec.ts",
+      "adopted": false,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 10,
+      "patternsFound": []
+    },
+    {
+      "file": "src/redis/redis-health.service.standalone.spec.ts",
+      "adopted": false,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 81,
+      "patternsFound": []
+    },
+    {
+      "file": "src/users/users.controller.spec.ts",
+      "adopted": false,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 24,
+      "patternsFound": []
+    },
+    {
+      "file": "src/users/users.service.spec.ts",
+      "adopted": true,
+      "hasBareJestFn": true,
+      "bareJestFnCount": 14,
+      "patternsFound": [
+        "jest\\.MockedFunction\\s*<"
+      ]
+    },
+    {
+      "file": "test/security/payment-security.spec.ts",
+      "adopted": false,
+      "hasBareJestFn": false,
+      "bareJestFnCount": 0,
+      "patternsFound": []
+    }
+  ]
+}

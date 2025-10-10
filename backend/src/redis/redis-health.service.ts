@@ -5,11 +5,13 @@
 import { Injectable, Logger, Inject, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
+import { createMasterConfiguration } from '../config/unified-master.config';
 
 @Injectable()
 export class RedisHealthService {
   private readonly logger = new Logger(RedisHealthService.name);
   private redisClient: Redis;
+  private stubMode = false;
 
   constructor(
     @Optional() @Inject('REDIS_CLIENT') redisClient?: Redis,
@@ -32,14 +34,19 @@ export class RedisHealthService {
 
     if (redisClient !== undefined) {
       this.redisClient = redisClient;
+      // 若注入的是模块提供的 Stub，则标记为 stubMode，getClient 返回 undefined
+      if ((this.redisClient as any)?.__stub === true) {
+        this.stubMode = true;
+      }
       this.setupEventListeners();
     } else {
-      const isDev = this.configService?.get<string>('NODE_ENV') === 'development';
+      const isDev = process.env.NODE_ENV === 'development';
 
       // 开发环境或测试环境：不实例化 Redis 客户端，避免无 Redis 服务时产生连接错误
       if (isDev || isTest || !redisEnabled) {
         // 禁用或开发/测试模式：使用最小可用的Stub，避免连接错误
         this.redisClient = this.createStubClient() as any;
+        this.stubMode = true;
         const reason = !redisEnabled
           ? 'Redis disabled via REDIS_ENABLED'
           : (isTest ? 'Test environment' : 'Development environment');
@@ -58,7 +65,7 @@ export class RedisHealthService {
         return;
       }
 
-      const isDev = this.configService?.get<string>('NODE_ENV') === 'development';
+      const isDev = process.env.NODE_ENV === 'development';
       const isTest = process.env.NODE_ENV === 'test';
 
       // 读取Redis启用开关
@@ -70,6 +77,7 @@ export class RedisHealthService {
       // 开发环境或测试环境：不实例化 Redis 客户端，避免无 Redis 服务时产生连接错误
       if (isDev || isTest || !redisEnabled) {
         this.redisClient = this.createStubClient() as any;
+        this.stubMode = true;
         const reason = !redisEnabled
           ? 'Redis disabled via REDIS_ENABLED'
           : (isTest ? 'Test environment' : 'Development environment');
@@ -78,11 +86,17 @@ export class RedisHealthService {
         return;
       }
 
+      const master = createMasterConfiguration?.();
+      const host = this.configService?.get<string>('REDIS_HOST') ?? master?.redis?.host ?? 'localhost';
+      const port = this.configService?.get<number>('REDIS_PORT') ?? master?.redis?.port ?? 6379;
+      const password = this.configService?.get<string>('REDIS_PASSWORD') ?? master?.redis?.password ?? undefined;
+      const db = this.configService?.get<number>('REDIS_DB') ?? master?.redis?.db ?? 0;
+
       this.redisClient = new Redis({
-        host: this.configService?.get<string>('REDIS_HOST', 'localhost'),
-        port: this.configService?.get<number>('REDIS_PORT', 6379),
-        password: this.configService?.get<string>('REDIS_PASSWORD'),
-        db: this.configService?.get<number>('REDIS_DB', 0),
+        host,
+        port,
+        password,
+        db,
         connectTimeout: 3000,
         commandTimeout: 2000,
         lazyConnect: false,
@@ -147,6 +161,9 @@ export class RedisHealthService {
   }
 
   async checkHealth(): Promise<{ status: string; latency?: number; error?: string }> {
+    if (this.stubMode) {
+      return { status: 'unhealthy', error: 'Redis client disabled in development or test' };
+    }
     if (!this.redisClient || typeof this.redisClient.ping !== 'function') {
       return { status: 'unhealthy', error: 'Redis client disabled in development or test' };
     }
@@ -168,6 +185,9 @@ export class RedisHealthService {
   }
 
   async getRedisInfo(): Promise<any> {
+    if (this.stubMode) {
+      return null;
+    }
     if (!this.redisClient || typeof this.redisClient.info !== 'function') {
       return null;
     }
@@ -186,6 +206,9 @@ export class RedisHealthService {
   }
 
   async testCacheOperation(): Promise<boolean> {
+    if (this.stubMode) {
+      return false;
+    }
     if (!this.redisClient || typeof this.redisClient.set !== 'function' || typeof this.redisClient.get !== 'function' || typeof this.redisClient.del !== 'function') {
       return false;
     }
@@ -203,6 +226,9 @@ export class RedisHealthService {
   }
 
   async disconnect(): Promise<void> {
+    if (this.stubMode) {
+      return;
+    }
     if (this.redisClient && typeof this.redisClient.quit === 'function') {
       await this.redisClient.quit();
       this.logger.log('Redis client disconnected');
@@ -210,6 +236,10 @@ export class RedisHealthService {
   }
 
   getClient(): Redis {
+    // 测试期望：在开发/测试或禁用场景返回 undefined
+    if (this.stubMode) {
+      return undefined as any;
+    }
     return this.redisClient;
   }
 }

@@ -1,0 +1,29 @@
+{
+  "summary": {
+    "timestamp": "2025-10-09T15:09:12.449Z",
+    "totalSuites": 1,
+    "passedSuites": 0,
+    "failedSuites": 1,
+    "successRate": 0,
+    "totalDuration": 77757,
+    "averageDuration": 77757
+  },
+  "systemInfo": {
+    "platform": "win32",
+    "arch": "x64",
+    "nodeVersion": "v22.20.0",
+    "cpus": 24,
+    "totalMemory": 32609,
+    "freeMemory": 3472,
+    "uptime": 36631,
+    "scriptPath": "D:\\onlinestore\\backend\\scripts\\test-runner-secure.cjs"
+  },
+  "testSuites": [
+    {
+      "name": "基础功能测试",
+      "success": false,
+      "duration": 77757,
+      "error": "Command failed: node D:\\onlinestore\\backend\\scripts\\test-runner-secure.functional.test.js --skip-slow\n"
+    }
+  ]
+}

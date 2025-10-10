@@ -7,6 +7,14 @@ import { CommandBus } from '../bus/command.bus';
 import { QueryBus } from '../bus/query.bus';
 import { EventBus } from '../bus/event.bus';
 import { CqrsModule } from '../cqrs.module';
+import { createMockedFunction } from '../../test/utils/typed-mock-factory';
+import { ICommand, ICommandResult } from '../commands/command.base';
+import { IQueryResult } from '../queries/query.base';
+import { IEventHandlerResult, IEvent } from '../events/event.base';
+import { IQuery } from '../queries/query.base';
+import { ICommandHandler } from '../interfaces/command-handler.interface';
+import { IQueryHandler, IQueryCache, QueryCacheStats } from '../interfaces/query-handler.interface';
+import { IEventHandler } from '../interfaces/event-handler.interface';
 
 /**
  * 测试工具类
@@ -162,40 +170,43 @@ export class TestMocker {
    * 模拟命令处理器
    */
   static mockCommandHandler() {
-    return {
-      handle: jest.fn().mockResolvedValue({
+    const handler: ICommandHandler = {
+      handle: (jest.fn(async (_command: ICommand) => ({
         success: true,
         data: TestDataFactory.createUser(),
-      }),
-      getName: jest.fn().mockReturnValue('MockCommandHandler'),
+      })) as unknown) as (command: ICommand) => Promise<ICommandResult<any>>,
+      getName: () => 'MockCommandHandler',
     };
+    return handler;
   }
 
   /**
    * 模拟查询处理器
    */
   static mockQueryHandler() {
-    return {
-      handle: jest.fn().mockResolvedValue({
+    const handler: IQueryHandler = {
+      handle: (jest.fn(async (_query: IQuery<any>) => ({
         success: true,
         data: TestDataFactory.createUser(),
         fromCache: false,
-      }),
-      getName: jest.fn().mockReturnValue('MockQueryHandler'),
+      })) as unknown) as (query: IQuery<any>) => Promise<IQueryResult<any>>,
+      getName: () => 'MockQueryHandler',
     };
+    return handler;
   }
 
   /**
    * 模拟事件处理器
    */
   static mockEventHandler() {
-    return {
-      handle: jest.fn().mockResolvedValue({
+    const handler: IEventHandler = {
+      handle: (jest.fn(async (_event: IEvent) => ({
         success: true,
-      }),
-      getName: jest.fn().mockReturnValue('MockEventHandler'),
-      getEventType: jest.fn().mockReturnValue('TestEvent'),
+      })) as unknown) as (event: IEvent) => Promise<IEventHandlerResult>,
+      getName: () => 'MockEventHandler',
+      getEventType: () => 'TestEvent',
     };
+    return handler;
   }
 
   /**
@@ -204,8 +215,11 @@ export class TestMocker {
   static mockMiddleware() {
     return {
       name: 'TestMiddleware',
-      execute: jest.fn().mockImplementation(async (command, next) => {
-        return await next();
+      execute: createMockedFunction<(
+        command: any,
+        next: () => Promise<any>,
+      ) => Promise<any>>(async (_command, next) => {
+        return next();
       }),
     };
   }
@@ -214,15 +228,16 @@ export class TestMocker {
    * 模拟缓存服务
    */
   static mockCacheService() {
-    return {
-      get: jest.fn(),
-      set: jest.fn(),
-      del: jest.fn(),
-      delete: jest.fn(),
-      exists: jest.fn(),
-      clearPattern: jest.fn(),
-      clear: jest.fn(),
-    };
+    const cache = {
+      get: createMockedFunction<(key: string) => Promise<any>>(),
+      set: createMockedFunction<(key: string, value: any, ttl?: number) => Promise<void>>(),
+      delete: createMockedFunction<(key: string) => Promise<void>>(),
+      exists: createMockedFunction<(key: string) => Promise<boolean>>(),
+      clearPattern: createMockedFunction<(pattern: string) => Promise<void>>(),
+      clear: createMockedFunction<() => Promise<void>>(),
+      getStats: createMockedFunction<() => Promise<QueryCacheStats | undefined>>(),
+    } as unknown as IQueryCache;
+    return cache as any;
   }
 }
 

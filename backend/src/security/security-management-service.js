@@ -12,10 +12,19 @@ class SecurityManagementService extends EventEmitter {
   constructor(config = {}) {
     super();
     
+    // 统一环境适配器（若 dist 存在则使用，否则回退 env）
+    let adapterOO = null;
+    try {
+      const { EnvironmentAdapter } = require('../dist/src/config/environment-adapter.js');
+      adapterOO = EnvironmentAdapter && typeof EnvironmentAdapter.getOpenObserve === 'function'
+        ? EnvironmentAdapter.getOpenObserve()
+        : null;
+    } catch (_) {}
+
     this.config = {
-      openobserveUrl: config.openobserveUrl || 'http://localhost:5080',
-      organization: config.organization || 'default',
-      token: config.token || '',
+      openobserveUrl: (adapterOO && adapterOO.baseUrl) || config.openobserveUrl || 'http://localhost:5080',
+      organization: (adapterOO && adapterOO.organization) || config.organization || 'default',
+      token: (adapterOO && adapterOO.token) || config.token || '',
       auditLogStream: config.auditLogStream || 'security-audit-log',
       accessControlStream: config.accessControlStream || 'access-control',
       jwtSecret: config.jwtSecret || crypto.randomBytes(64).toString('hex'),

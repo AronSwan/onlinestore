@@ -37,6 +37,7 @@ tags: ["documentation", "backend", "microservice", "nestjs"]
 ### 🔌 API 开发
 - [完整API文档](./API_DOCUMENTATION.md) | [OpenAPI规范](./api/openapi.json) | [认证授权](./JWT_SECURITY_CONFIG.md)
 - [错误处理](./API_DOCUMENTATION.md#错误处理) | [限流策略](./API_DOCUMENTATION.md#限流) | [版本管理](./API_DOCUMENTATION.md#版本)
+ - [DTO 默认值与初始化指南](./logging/DTO_DEFAULTS_AND_INITIALIZATION.md)
 
 ### 🚀 部署运维
 - [Docker部署](./DEPLOYMENT_GUIDE.md) | [K8s集群](./DEPLOYMENT_GUIDE.md#kubernetes) | [监控告警](./MONITORING_PERFORMANCE_REPORT.md)
@@ -49,6 +50,7 @@ tags: ["documentation", "backend", "microservice", "nestjs"]
 ### 🧪 测试质量
 - [测试策略](./quality/TEST_COVERAGE_REPORT.md) | [代码质量](./quality/CODE_QUALITY_REPORT.md) | [性能基准](./performance/README.md)
 - [自动化测试](./tools/README.md) | [覆盖率分析](./quality/TEST_COVERAGE_REPORT.md) | [质量门禁](./quality/README.md)
+ - [Jest Typed Mock 采用率](./quality/JEST_TYPED_MOCK_ADOPTION.md)
 
 </details>
 
@@ -69,6 +71,10 @@ tags: ["documentation", "backend", "microservice", "nestjs"]
 **必读文档**: [安全配置](./JWT_SECURITY_CONFIG.md) → [最佳实践](./JWT_BEST_PRACTICES.md) → [审计日志](./AUDIT_LOGGING.md)  
 **安全工具**: [漏洞扫描](./security/README.md) | [安全仪表板](./security/security-dashboard.html) | [风险评估](./security/security-risk-heatmap.svg)  
 **合规管理**: [密钥轮换](./KEY_MANAGEMENT_GUIDE.md) | [权限管理](./JWT_SECURITY_CONFIG.md) | [安全培训](./training/SECURITY_TRAINING_GUIDE.md)
+
+### 🧪 测试与类型安全
+- 联合类型断言与类型检查指南：[Logging 模块类型检查与联合类型断言指南](./logging/typecheck-guidelines.md)
+- Typed Mock 采纳与度量：[Typed Mock 采纳度量与重构建议](./quality/typed-mock-adoption.md)
 
 ### 📊 产品经理
 **必读文档**: [业务架构](./ARCHITECTURE_DOCUMENTATION.md) → [API概览](./API_DOCUMENTATION.md) → [性能指标](./MONITORING_PERFORMANCE_REPORT.md)  

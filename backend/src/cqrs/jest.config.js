@@ -3,29 +3,28 @@
 // 时间：2025-10-05
 
 module.exports = {
+  displayName: 'CQRS',
   preset: 'ts-jest',
   testEnvironment: 'node',
-  roots: ['<rootDir>/src/cqrs'],
-  testMatch: ['**/__tests__/**/*.ts', '**/*.spec.ts', '**/*.test.ts'],
+  roots: ['<rootDir>/src', '<rootDir>/test'],
+  testMatch: [
+    '<rootDir>/src/cqrs/**/*.spec.ts',
+    '<rootDir>/src/cqrs/**/*.test.ts',
+    '<rootDir>/test/**/*.spec.ts',
+    '<rootDir>/test/**/*.test.ts'
+  ],
   transform: {
     '^.+\\.ts$': 'ts-jest',
   },
   collectCoverageFrom: [
-    'src/cqrs/**/*.ts',
-    '!src/cqrs/**/*.d.ts',
-    '!src/cqrs/**/*.spec.ts',
-    '!src/cqrs/**/*.test.ts',
+    '<rootDir>/src/cqrs/**/*.ts',
+    '!<rootDir>/src/cqrs/**/*.d.ts',
+    '!<rootDir>/src/cqrs/index.ts',
   ],
-  coverageDirectory: 'coverage/cqrs',
-  coverageReporters: ['text', 'lcov', 'html'],
-  setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
-  moduleNameMapping: {
+  moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^@cqrs/(.*)$': '<rootDir>/src/cqrs/$1',
   },
+  setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
   testTimeout: 10000,
-  verbose: true,
-  forceExit: true,
-  clearMocks: true,
-  resetMocks: true,
-  restoreMocks: true,
 };

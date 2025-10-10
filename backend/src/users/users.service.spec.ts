@@ -3,10 +3,20 @@
 // 作者：后端开发团队
 // 时间：2025-09-29 23:55:00
 
+declare const jest: any;
+declare const describe: any;
+declare const it: any;
+declare const beforeEach: any;
+declare const expect: any;
+declare namespace jest {
+  type Mock = any;
+  type MockedFunction<T> = any;
+}
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+jest.mock('bcrypt');
 import { UsersService } from './users.service';
 import { User, UserRole } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -15,7 +25,7 @@ import { MonitoringService } from '../monitoring/monitoring.service';
 import { createMockRepository, createMockMonitoringService } from '../../test/test-setup-helper';
 
 // Mock bcrypt functions
-jest.mock('bcrypt', () => ({
+(jest as any).mock('bcrypt', () => ({
   hash: jest.fn(),
   compare: jest.fn(),
 }));
@@ -43,7 +53,7 @@ describe('UsersService', () => {
   const mockMonitoringService = createMockMonitoringService();
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    (jest as any).clearAllMocks();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -67,7 +77,7 @@ describe('UsersService', () => {
       };
 
       mockUserRepository.findOne.mockResolvedValue(null);
-      (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
+      (bcrypt.hash as unknown as any).mockImplementation(async () => 'hashedPassword');
       mockUserRepository.save.mockResolvedValue(mockUser);
 
       const result = await service.create(createUserDto);
@@ -100,7 +110,7 @@ describe('UsersService', () => {
 
       mockUserRepository.findOne.mockResolvedValue(mockUser);
 
-      await expect(service.create(createUserDto)).rejects.toThrow(ConflictException);
+      await expect(service.create(createUserDto)).rejects.toThrow(new ConflictException());
     });
   });
 
@@ -140,7 +150,7 @@ describe('UsersService', () => {
     it('should throw NotFoundException if user not found', async () => {
       mockUserRepository.findOne.mockResolvedValueOnce(null);
 
-      await expect(service.findOne(999)).rejects.toThrow(NotFoundException);
+      await expect(service.findOne(999)).rejects.toThrow(new NotFoundException());
     });
   });
 
@@ -280,7 +290,7 @@ describe('UsersService', () => {
 
       mockUserRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.update(999, updateUserDto)).rejects.toThrow(NotFoundException);
+      await expect(service.update(999, updateUserDto)).rejects.toThrow(new NotFoundException());
     });
 
     it('should hash password if provided', async () => {
@@ -315,7 +325,7 @@ describe('UsersService', () => {
     it('should throw NotFoundException if user not found', async () => {
       mockUserRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.delete(999)).rejects.toThrow(NotFoundException);
+      await expect(service.delete(999)).rejects.toThrow(new NotFoundException());
     });
   });
 
@@ -332,7 +342,7 @@ describe('UsersService', () => {
     it('should throw NotFoundException if user not found', async () => {
       mockUserRepository.findOne.mockResolvedValueOnce(null);
 
-      await expect(service.remove(999)).rejects.toThrow(NotFoundException);
+      await expect(service.remove(999)).rejects.toThrow(new NotFoundException());
     });
   });
 

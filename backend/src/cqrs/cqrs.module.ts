@@ -2,7 +2,7 @@
 // 作者：后端开发团队
 // 时间：2025-10-05
 
-import { DynamicModule, Module, OnModuleInit, Provider } from '@nestjs/common';
+import { DynamicModule, Module, OnModuleInit, OnModuleDestroy, Provider, Inject, Logger } from '@nestjs/common';
 import { DiscoveryModule, DiscoveryService } from '@nestjs/core';
 import { Reflector } from '@nestjs/core';
 import { COMMAND_HANDLER_METADATA } from './decorators/command-handler.decorator';
@@ -93,16 +93,25 @@ export interface CqrsModuleAsyncOptions
 }
 
 /**
+ * CQRS模块选项提供者
+ */
+export const CQRS_MODULE_OPTIONS = 'CQRS_MODULE_OPTIONS';
+
+/**
  * CQRS模块
  */
 @Module({})
-export class CqrsModule implements OnModuleInit {
+export class CqrsModule implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(CqrsModule.name);
+
   constructor(
     private readonly discoveryService: DiscoveryService,
     private readonly reflector: Reflector,
+    @Inject(CQRS_MODULE_OPTIONS) private readonly options: CqrsModuleOptions,
     private readonly commandBus?: CommandBus,
     private readonly queryBus?: QueryBus,
     private readonly eventBus?: EventBus,
+    @Inject('IQueryCache') private readonly queryCache?: IQueryCache,
   ) {}
 
   /**
@@ -124,6 +133,12 @@ export class CqrsModule implements OnModuleInit {
     } = options;
 
     const providers: Provider[] = [];
+
+    // 添加模块选项
+    providers.push({
+      provide: CQRS_MODULE_OPTIONS,
+      useValue: options,
+    });
 
     // 添加发现服务
     providers.push(DiscoveryService, Reflector);
@@ -184,7 +199,7 @@ export class CqrsModule implements OnModuleInit {
         ...(enableQueryBus ? [QueryBus, 'IQueryBus'] : []),
         ...(enableEventBus ? [EventBus, 'IEventBus'] : []),
       ],
-      global: true,
+      global: false, // 默认不设为全局模块
     };
   }
 
@@ -205,6 +220,12 @@ export class CqrsModule implements OnModuleInit {
     } = options;
 
     const providers: Provider[] = [];
+
+    // 添加模块选项
+    providers.push({
+      provide: CQRS_MODULE_OPTIONS,
+      useValue: options,
+    });
 
     // 添加发现服务
     providers.push(DiscoveryService, Reflector);
@@ -290,7 +311,7 @@ export class CqrsModule implements OnModuleInit {
         ...(enableQueryBus ? [QueryBus, 'IQueryBus'] : []),
         ...(enableEventBus ? [EventBus, 'IEventBus'] : []),
       ],
-      global: true,
+      global: false, // 默认不设为全局模块
     };
   }
 
@@ -298,8 +319,24 @@ export class CqrsModule implements OnModuleInit {
    * 模块初始化
    */
   async onModuleInit(): Promise<void> {
-    await this.discoverHandlers();
-    this.setupDefaultMiddleware();
+    // 尊重配置选项
+    if (this.options.autoDiscoverHandlers !== false) {
+      await this.discoverHandlers();
+    }
+    
+    if (this.options.enableDefaultMiddleware !== false) {
+      this.setupDefaultMiddleware();
+    }
+  }
+
+  /**
+   * 模块销毁
+   */
+  async onModuleDestroy(): Promise<void> {
+    // 清理资源
+    if (this.queryBus && 'onModuleDestroy' in this.queryBus) {
+      (this.queryBus as any).onModuleDestroy();
+    }
   }
 
   /**
@@ -318,7 +355,7 @@ export class CqrsModule implements OnModuleInit {
 
       if (commandType && this.commandBus && provider.instance.handle) {
         this.commandBus.register(commandType, provider.instance);
-        console.log(`Registered command handler for ${commandType}`);
+        this.logger.debug(`Registered command handler for ${commandType}`);
       }
 
       // 发现查询处理器
@@ -326,7 +363,7 @@ export class CqrsModule implements OnModuleInit {
 
       if (queryType && this.queryBus && provider.instance.handle) {
         this.queryBus.register(queryType, provider.instance);
-        console.log(`Registered query handler for ${queryType}`);
+        this.logger.debug(`Registered query handler for ${queryType}`);
       }
 
       // 发现事件处理器
@@ -334,7 +371,7 @@ export class CqrsModule implements OnModuleInit {
 
       if (eventType && this.eventBus && provider.instance.handle) {
         this.eventBus.register(eventType, provider.instance);
-        console.log(`Registered event handler for ${eventType}`);
+        this.logger.debug(`Registered event handler for ${eventType}`);
       }
     }
   }
@@ -345,29 +382,33 @@ export class CqrsModule implements OnModuleInit {
   private setupDefaultMiddleware(): void {
     // 为命令总线添加默认中间件
     if (this.commandBus) {
-      // 可以在这里添加默认的命令中间件
-      console.log('Command bus initialized with default middleware');
+      // TODO: 将在阶段二实现中间件
+      // this.commandBus.addMiddleware(new LoggingMiddleware());
+      // this.commandBus.addMiddleware(new MetricsMiddleware());
+      this.logger.debug('Command bus initialized with default middleware');
     }
 
     // 为查询总线添加默认中间件
     if (this.queryBus) {
+      // TODO: 将在阶段二实现中间件
+      // this.queryBus.addMiddleware(new QueryLoggingMiddleware());
+      // this.queryBus.addMiddleware(new PerformanceMonitoringMiddleware());
+      
       // 设置查询缓存（如果提供了）
-      const queryCache = this.discoveryService
-        .getProviders()
-        .find((provider: any) => provider.provide === 'IQueryCache');
-
-      if (queryCache && queryCache.instance) {
-        this.queryBus.setQueryCache(queryCache.instance);
-        console.log('Query cache configured for query bus');
+      if (this.queryCache) {
+        this.queryBus.setQueryCache(this.queryCache);
+        this.logger.debug('Query cache configured for query bus');
       }
-
-      console.log('Query bus initialized with default middleware');
+      
+      this.logger.debug('Query bus initialized with default middleware');
     }
 
     // 为事件总线添加默认中间件
     if (this.eventBus) {
-      // 可以在这里添加默认的事件中间件
-      console.log('Event bus initialized with default middleware');
+      // TODO: 将在阶段二实现中间件
+      // this.eventBus.addMiddleware(new EventLoggingMiddleware());
+      // this.eventBus.addMiddleware(new RetryMiddleware());
+      this.logger.debug('Event bus initialized with default middleware');
     }
   }
 }

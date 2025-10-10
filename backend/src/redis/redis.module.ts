@@ -7,6 +7,7 @@ import { Module, Global } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 import { RedisHealthService } from './redis-health.service';
+import { EnvironmentAdapter } from '../config/environment-adapter';
 
 @Global()
 @Module({
@@ -16,18 +17,19 @@ import { RedisHealthService } from './redis-health.service';
     {
       provide: 'REDIS_CLIENT',
       useFactory: (configService: ConfigService) => {
-        const isDev = configService.get<string>('NODE_ENV') === 'development';
+        const nodeEnv = configService.get<string>('NODE_ENV') ?? process.env.NODE_ENV;
+        const isDev = nodeEnv === 'development';
         const isTest = process.env.NODE_ENV === 'test';
+        const adapterRedis = EnvironmentAdapter.getRedis();
 
         // 允许通过环境变量禁用Redis，在生产环境下也可降级为Stub
         const redisEnabledRaw = configService.get<string>('REDIS_ENABLED', 'true');
-        const redisEnabled = typeof redisEnabledRaw === 'string'
-          ? ['true', '1', 'yes', 'on'].includes(redisEnabledRaw.toLowerCase())
-          : !!redisEnabledRaw;
+        const redisEnabled = adapterRedis.enabled;
 
         if (isDev || isTest || !redisEnabled) {
           // 提供一个最小可用的Stub，避免开发环境无Redis时阻断启动
           const stub: any = {
+            __stub: true,
             async get() { return null; },
             async set() { return 'OK'; },
             async del() { return 0; },
@@ -54,10 +56,10 @@ import { RedisHealthService } from './redis-health.service';
         }
 
         const client = new Redis({
-          host: configService.get<string>('REDIS_HOST', 'localhost'),
-          port: configService.get<number>('REDIS_PORT', 6379),
-          password: configService.get<string>('REDIS_PASSWORD'),
-          db: configService.get<number>('REDIS_DB', 0),
+          host: adapterRedis.host ?? configService.get<string>('REDIS_HOST', 'localhost'),
+          port: adapterRedis.port ?? configService.get<number>('REDIS_PORT', 6379),
+          password: adapterRedis.password ?? configService.get<string>('REDIS_PASSWORD'),
+          db: adapterRedis.db ?? configService.get<number>('REDIS_DB', 0),
           lazyConnect: true,
           enableOfflineQueue: true,
           retryStrategy: times => Math.min(times * 200, 2000),

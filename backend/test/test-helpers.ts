@@ -3,6 +3,9 @@
  * 提供通用的测试工具函数和模拟对象
  */
 
+// 引入统一的 typed mock 工厂，提升 jest.fn 的类型安全
+import { createMockedFunction } from './utils/typed-mock-factory';
+
 // 创建测试用户数据
 export const createTestUser = (overrides: any = {}) => ({
   id: 1,
@@ -53,11 +56,12 @@ export const createMockConfigService = (overrides: Record<string, any> = {}) => 
   };
 
   const mockConfig = {
-    get: jest.fn((key: string) => {
+    get: createMockedFunction<(key: string) => any>((key: string) => {
       return defaults[key] || overrides[key] || null;
     }),
-    getOrThrow: jest.fn((key: string) => {
-      const value: any = mockConfig.get(key);
+    getOrThrow: createMockedFunction<(key: string) => any>((key: string) => {
+      // 显式调用签名，避免 MockInstance 类型在 ts-jest 下的可调用性误判
+      const value: any = (mockConfig.get as unknown as (k: string) => any)(key);
       if (value === null) {
         throw new Error(`Configuration key "${key}" is required`);
       }
@@ -70,33 +74,33 @@ export const createMockConfigService = (overrides: Record<string, any> = {}) => 
 // 创建模拟的Repository
 export const createMockRepository = <T = any>() => {
   return {
-    create: jest.fn(),
-    save: jest.fn(),
-    find: jest.fn(),
-    findOne: jest.fn(),
-    findBy: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-    count: jest.fn(),
-    query: jest.fn(),
-    createQueryBuilder: jest.fn(),
+    create: createMockedFunction<(...args: any[]) => any>(),
+    save: createMockedFunction<(...args: any[]) => any>(),
+    find: createMockedFunction<(...args: any[]) => any>(),
+    findOne: createMockedFunction<(...args: any[]) => any>(),
+    findBy: createMockedFunction<(...args: any[]) => any>(),
+    update: createMockedFunction<(...args: any[]) => any>(),
+    delete: createMockedFunction<(...args: any[]) => any>(),
+    count: createMockedFunction<(...args: any[]) => any>(),
+    query: createMockedFunction<(...args: any[]) => any>(),
+    createQueryBuilder: createMockedFunction<(...args: any[]) => any>(),
   } as any;
 };
 
 // 创建模拟的DataSource
 export const createMockDataSource = () => {
   return {
-    initialize: jest.fn(),
-    destroy: jest.fn(),
+    initialize: createMockedFunction<() => Promise<void>>(async () => undefined),
+    destroy: createMockedFunction<() => Promise<void>>(async () => undefined),
     isInitialized: true,
-    getRepository: jest.fn(() => createMockRepository()),
-    createQueryRunner: jest.fn(),
+    getRepository: createMockedFunction<(...args: any[]) => any>(() => createMockRepository()),
+    createQueryRunner: createMockedFunction<(...args: any[]) => any>(),
     manager: {
-      query: jest.fn(),
-      find: jest.fn(),
-      findOne: jest.fn(),
-      save: jest.fn(),
-      remove: jest.fn(),
+      query: createMockedFunction<(...args: any[]) => any>(),
+      find: createMockedFunction<(...args: any[]) => any>(),
+      findOne: createMockedFunction<(...args: any[]) => any>(),
+      save: createMockedFunction<(...args: any[]) => any>(),
+      remove: createMockedFunction<(...args: any[]) => any>(),
     },
   } as any;
 };
@@ -104,17 +108,17 @@ export const createMockDataSource = () => {
 // 创建模拟的QueryRunner
 export const createMockQueryRunner = () => {
   return {
-    connect: jest.fn(),
-    startTransaction: jest.fn(),
-    commitTransaction: jest.fn(),
-    rollbackTransaction: jest.fn(),
-    release: jest.fn(),
+    connect: createMockedFunction<() => Promise<void>>(async () => undefined),
+    startTransaction: createMockedFunction<() => Promise<void>>(async () => undefined),
+    commitTransaction: createMockedFunction<() => Promise<void>>(async () => undefined),
+    rollbackTransaction: createMockedFunction<() => Promise<void>>(async () => undefined),
+    release: createMockedFunction<() => Promise<void>>(async () => undefined),
     manager: {
-      query: jest.fn(),
-      find: jest.fn(),
-      findOne: jest.fn(),
-      save: jest.fn(),
-      remove: jest.fn(),
+      query: createMockedFunction<(...args: any[]) => any>(),
+      find: createMockedFunction<(...args: any[]) => any>(),
+      findOne: createMockedFunction<(...args: any[]) => any>(),
+      save: createMockedFunction<(...args: any[]) => any>(),
+      remove: createMockedFunction<(...args: any[]) => any>(),
     },
   } as any;
 };

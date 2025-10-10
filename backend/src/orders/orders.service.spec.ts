@@ -15,16 +15,44 @@ import { Product } from '../products/entities/product.entity';
 import { OrderStatus, PaymentStatus } from './entities/order.entity';
 import { MonitoringService } from '../monitoring/monitoring.service';
 import { OrderEventsService } from '../messaging/order-events.service';
+import { createMockedFunction } from '../../test/utils/typed-mock-factory';
 
 // Mock entities
+const mockCategory = {
+  id: 1,
+  name: '测试分类',
+  slug: 'test-category',
+  description: '测试分类描述',
+  icon: '',
+  isActive: true,
+  sortOrder: 1,
+  children: [],
+  parent: undefined as any,
+  products: [],
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
+
 const mockProduct = {
   id: 1,
   name: '测试产品',
+  description: '测试产品描述',
   price: 100,
+  originalPrice: 120,
   stock: 50,
+  views: 0,
+  sales: 0,
+  favorites: 0,
   isActive: true,
+  mainImage: '',
+  tags: [],
+  specifications: {},
+  category: mockCategory,
+  images: [],
+  publishedAt: new Date(),
   createdAt: new Date(),
   updatedAt: new Date(),
+  version: 1,
 };
 
 const mockOrder = {
@@ -42,7 +70,7 @@ const mockOrder = {
   createdAt: new Date(),
   updatedAt: new Date(),
   items: [],
-  user: null,
+  user: undefined,
 };
 
 const mockOrderItem = {
@@ -58,41 +86,41 @@ const mockOrderItem = {
 
 // Mock repositories
 const mockOrderRepository = {
-  create: jest.fn(),
-  save: jest.fn(),
-  findOne: jest.fn(),
-  findAndCount: jest.fn(),
-  update: jest.fn(),
-  delete: jest.fn(),
-  count: jest.fn(),
-  createQueryBuilder: jest.fn(),
+  create: createMockedFunction<(dto: Partial<Order>) => Order>(),
+  save: createMockedFunction<(entity: Order) => Promise<Order>>(),
+  findOne: createMockedFunction<(options: any) => Promise<Order | null>>(),
+  findAndCount: createMockedFunction<(options: any) => Promise<[Order[], number]>>(),
+  update: createMockedFunction<(criteria: any, partial: Partial<Order>) => Promise<any>>(),
+  delete: createMockedFunction<(criteria: any) => Promise<any>>(),
+  count: createMockedFunction<(options?: any) => Promise<number>>(),
+  createQueryBuilder: createMockedFunction<(alias?: string) => any>(),
   manager: {
-    transaction: jest.fn(),
+    transaction: createMockedFunction<(...args: any[]) => any>(),
   },
 };
 
 const mockOrderItemRepository = {
-  create: jest.fn(),
-  save: jest.fn(),
-  find: jest.fn(),
+  create: createMockedFunction<(dto: Partial<OrderItem>) => OrderItem>(),
+  save: createMockedFunction<(entity: OrderItem) => Promise<OrderItem>>(),
+  find: createMockedFunction<(options?: any) => Promise<OrderItem[]>>(),
 };
 
 const mockProductRepository = {
-  findOne: jest.fn(),
-  createQueryBuilder: jest.fn(),
+  findOne: createMockedFunction<(options: any) => Promise<Product | null>>(),
+  createQueryBuilder: createMockedFunction<(alias?: string) => any>(),
 };
 
 // Mock services
 const mockMonitoringService = {
-  observeDbQuery: jest.fn(),
-  incrementKafkaDlqMessages: jest.fn(),
-  getCurrentTraceId: jest.fn(),
+  observeDbQuery: createMockedFunction<(label: string, fn: () => Promise<any>) => Promise<any>>(),
+  incrementKafkaDlqMessages: createMockedFunction<(topic?: string) => void>(),
+  getCurrentTraceId: createMockedFunction<() => string | undefined>(),
 };
 
 const mockOrderEventsService = {
-  publishOrderCreated: jest.fn(),
-  publishOrderStatusUpdated: jest.fn(),
-  getMessageHistory: jest.fn(),
+  publishOrderCreated: createMockedFunction<(order: Order) => Promise<void>>(),
+  publishOrderStatusUpdated: createMockedFunction<(orderId: number, status: OrderStatus) => Promise<void>>(),
+  getMessageHistory: createMockedFunction<(orderId: number) => Promise<any[]>>(),
 };
 
 // Mock QueryBuilder
@@ -153,7 +181,7 @@ describe('OrdersService', () => {
     orderEventsService = module.get<OrderEventsService>(OrderEventsService);
 
     // 重置所有 mock
-    jest.clearAllMocks();
+    (jest as any).clearAllMocks();
 
     // Setup default mock returns
     mockOrderRepository.manager.transaction.mockImplementation(async callback => {
@@ -265,7 +293,7 @@ describe('OrdersService', () => {
       });
       expect(orderRepo.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          orderNumber: expect.stringMatching(/^ORD/),
+          orderNumber: (expect as any).stringMatching(/^ORD/),
           userId: 1,
           totalAmount: 200,
           status: OrderStatus.PENDING,
@@ -750,7 +778,7 @@ describe('OrdersService', () => {
         await (service as any).publishOrderCreatedEvent(mockOrder, items);
 
         expect(mockOrderEventsService.publishOrderCreated).toHaveBeenCalledWith({
-          eventId: expect.stringMatching(/^evt_\d+_[a-zA-Z0-9]+$/),
+          eventId: (expect as any).stringMatching(/^evt_\d+_[a-zA-Z0-9]+$/),
           orderId: 1,
           orderNumber: 'ORD1234567890',
           userId: 1,
@@ -1409,8 +1437,8 @@ describe('OrdersService', () => {
       it('should record metrics for failed operations', async () => {
         // 设置mock，使findOne在调用监控服务之前抛出错误
         mockOrderRepository.findOne.mockImplementation(() => {
-          // 先调用监控服务
-          mockMonitoringService.observeDbQuery('detail', 'orders', expect.any(Number));
+          // 先调用监控服务（符合签名：label + 异步函数）
+          mockMonitoringService.observeDbQuery('detail', async () => Promise.resolve());
           // 然后抛出错误
           throw new Error('DB Error');
         });
@@ -1424,8 +1452,7 @@ describe('OrdersService', () => {
         // 确保监控服务被调用，即使在错误情况下
         expect(mockMonitoringService.observeDbQuery).toHaveBeenCalledWith(
           'detail',
-          'orders',
-          expect.any(Number),
+          expect.any(Function),
         );
       });
 

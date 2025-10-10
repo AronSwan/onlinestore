@@ -1,0 +1,282 @@
+{
+  "metadata": {
+    "generatedAt": "2025-10-10T07:56:36.282Z",
+    "testRunnerVersion": "2.0.0-enhanced",
+    "systemInfo": {
+      "platform": "win32",
+      "nodeVersion": "v22.20.0",
+      "architecture": "x64"
+    }
+  },
+  "summary": {
+    "overallScore": 65,
+    "totalTestSuites": 3,
+    "status": "GOOD"
+  },
+  "testSuiteResults": {
+    "stress": {
+      "timestamp": "2025-10-10T07:54:19.309Z",
+      "totalTime": "42325ms",
+      "totalTests": 5,
+      "passed": 5,
+      "failed": 0,
+      "successRate": "100.00%"
+    },
+    "security": {
+      "timestamp": "2025-10-10T07:54:31.236Z",
+      "totalTests": 7,
+      "passed": 2,
+      "failed": 5,
+      "vulnerabilities": 5,
+      "securityScore": 29
+    },
+    "integration": {
+      "timestamp": "2025-10-10T07:56:36.281Z",
+      "totalTests": 5,
+      "passed": 4,
+      "failed": 1,
+      "issues": 1,
+      "successRate": 80
+    },
+    "comprehensive": null
+  },
+  "detailedResults": {
+    "stress": {
+      "summary": {
+        "timestamp": "2025-10-10T07:54:19.309Z",
+        "totalTime": "42325ms",
+        "totalTests": 5,
+        "passed": 5,
+        "failed": 0,
+        "successRate": "100.00%"
+      },
+      "systemInfo": {
+        "platform": "win32",
+        "arch": "x64",
+        "nodeVersion": "v22.20.0",
+        "cpuCount": 24,
+        "totalMemory": "32GB",
+        "freeMemory": "18GB"
+      },
+      "testResults": [
+        {
+          "testName": "并发文件处理",
+          "duration": 98,
+          "successful": 100,
+          "failed": 0,
+          "throughput": 1020
+        },
+        {
+          "testName": "内存压力测试",
+          "allocatedChunks": 0,
+          "accessTime": 20,
+          "checksum": 12845350,
+          "peakMemory": 4786319.559565008
+        },
+        {
+          "testName": "CPU密集型测试",
+          "workerCount": 24,
+          "totalIterations": 1982400000,
+          "avgDuration": 30023.833333333332,
+          "iterationsPerSecond": 66027545
+        },
+        {
+          "testName": "文件系统I/O压力测试",
+          "fileCount": 1000,
+          "totalBytes": 1024000,
+          "writeTime": 158,
+          "readTime": 126,
+          "deleteTime": 102,
+          "writeSpeed": 6481013,
+          "readSpeed": 8126984
+        },
+        {
+          "testName": "网络连接压力测试",
+          "connectionCount": 100,
+          "successful": 85,
+          "failed": 15,
+          "avgDuration": 506.46,
+          "successRate": "85.00%"
+        }
+      ],
+      "errors": []
+    },
+    "security": {
+      "summary": {
+        "timestamp": "2025-10-10T07:54:31.236Z",
+        "totalTests": 7,
+        "passed": 2,
+        "failed": 5,
+        "vulnerabilities": 5,
+        "securityScore": 29
+      },
+      "vulnerabilities": [
+        {
+          "type": "Path Traversal",
+          "payload": "%2e%2e%2f%2e%2e%2f%2e%2e%2fetc%2fpasswd",
+          "severity": "HIGH",
+          "description": "路径遍历攻击未被阻止"
+        },
+        {
+          "type": "Command Injection",
+          "payload": "test\nrm -rf /",
+          "severity": "CRITICAL",
+          "description": "命令注入攻击未被阻止"
+        },
+        {
+          "type": "Command Injection",
+          "payload": "test\r\nformat c:",
+          "severity": "CRITICAL",
+          "description": "命令注入攻击未被阻止"
+        },
+        {
+          "type": "Process Timeout Bypass",
+          "payload": "Long running process not terminated",
+          "severity": "MEDIUM",
+          "description": "长时间运行的进程未被终止"
+        },
+        {
+          "type": "Insecure Temp Directory",
+          "payload": "Directory permissions: 666",
+          "severity": "MEDIUM",
+          "description": "临时目录权限不安全"
+        }
+      ],
+      "testResults": [
+        {
+          "testName": "路径遍历攻击防护",
+          "totalAttempts": 8,
+          "blocked": 7,
+          "vulnerabilities": 1,
+          "success": false
+        },
+        {
+          "testName": "命令注入攻击防护",
+          "totalAttempts": 10,
+          "blocked": 8,
+          "vulnerabilities": 2,
+          "success": false
+        },
+        {
+          "testName": "文件大小限制",
+          "fileSize": "15MB",
+          "blocked": true,
+          "success": true
+        },
+        {
+          "testName": "进程超时保护",
+          "timedOut": false,
+          "success": false
+        },
+        {
+          "testName": "内存限制保护",
+          "memoryExceeded": false,
+          "allocatedChunks": 0,
+          "success": false
+        },
+        {
+          "testName": "临时文件安全",
+          "securePermissions": false,
+          "fileCreated": true,
+          "cleanedUp": true,
+          "success": false
+        },
+        {
+          "testName": "并发限制保护",
+          "totalProcesses": 10,
+          "rejected": 5,
+          "concurrencyLimited": true,
+          "success": true
+        }
+      ],
+      "recommendations": [
+        "加强路径验证，使用白名单方式验证允许的路径",
+        "实施严格的输入验证，避免直接执行用户输入",
+        "设置合理的进程超时时间，防止长时间运行的恶意进程",
+        "确保临时文件和目录使用安全的权限设置"
+      ]
+    },
+    "integration": {
+      "summary": {
+        "timestamp": "2025-10-10T07:56:36.281Z",
+        "totalTests": 5,
+        "passed": 4,
+        "failed": 1,
+        "issues": 1,
+        "successRate": 80
+      },
+      "integrationIssues": [
+        {
+          "testName": "大量测试文件处理",
+          "issue": "处理大量文件时性能下降",
+          "severity": "MEDIUM"
+        }
+      ],
+      "testResults": [
+        {
+          "testName": "完整测试流程",
+          "success": true,
+          "exitCode": 0
+        },
+        {
+          "testName": "错误处理和恢复",
+          "success": true,
+          "hasError": true,
+          "continuesAfterError": true
+        },
+        {
+          "testName": "大量测试文件处理",
+          "success": false,
+          "fileCount": 50,
+          "duration": 45000
+        },
+        {
+          "testName": "资源清理验证",
+          "success": true,
+          "memoryLeakDetected": false,
+          "handleLeakDetected": false
+        },
+        {
+          "testName": "配置和环境变量处理",
+          "success": true,
+          "exitCode": 0
+        }
+      ]
+    },
+    "comprehensive": null
+  },
+  "recommendations": [
+    "修复发现的安全漏洞，加强安全防护",
+    "- Path Traversal: undefined",
+    "- Command Injection: undefined",
+    "- Command Injection: undefined",
+    "- Process Timeout Bypass: undefined",
+    "- Insecure Temp Directory: undefined",
+    "解决集成测试中发现的问题",
+    "- 大量测试文件处理: 处理大量文件时性能下降",
+    "定期运行完整的测试套件以确保系统稳定性",
+    "建立持续集成流程，自动化测试执行",
+    "监控系统性能指标，及时发现潜在问题"
+  ],
+  "riskAssessment": [
+    {
+      "type": "SECURITY",
+      "level": "CRITICAL",
+      "description": "发现 2 个严重安全漏洞",
+      "impact": "系统可能面临严重安全威胁"
+    },
+    {
+      "type": "INTEGRATION",
+      "level": "MEDIUM",
+      "description": "发现 1 个集成问题",
+      "impact": "系统组件间可能存在兼容性问题"
+    }
+  ],
+  "nextSteps": [
+    "🚨 立即修复所有严重安全漏洞",
+    "📊 建立定期测试计划",
+    "🔍 实施持续监控",
+    "📚 更新安全和性能最佳实践",
+    "🛠️ 优化测试运行器性能"
+  ]
+}

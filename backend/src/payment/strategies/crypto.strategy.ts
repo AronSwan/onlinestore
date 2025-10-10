@@ -1,13 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { PaymentStrategy, PaymentRequest, RefundRequest } from './payment-strategy.interface';
 import {
-  PaymentStrategy,
-  PaymentRequest,
-  PaymentResponse,
-  PaymentQueryResponse,
-  PaymentCallbackResponse,
-  RefundRequest,
-  RefundResponse,
-} from './payment-strategy.interface';
+  GatewayResult,
+  CreatePaymentData,
+  QueryPaymentData,
+  CallbackData,
+  RefundData,
+} from '../common/gateway-result';
 import { CryptoGatewayService } from '../gateways/crypto-gateway.service';
 import { PaymentMethod } from '../entities/payment.entity';
 
@@ -22,7 +21,7 @@ export class CryptoStrategy extends PaymentStrategy {
     super();
   }
 
-  async createPayment(request: PaymentRequest): Promise<PaymentResponse> {
+  async createPayment(request: PaymentRequest): Promise<GatewayResult<CreatePaymentData>> {
     try {
       const { currency, network } = this.parseCryptoMethod(this.method);
 
@@ -32,7 +31,7 @@ export class CryptoStrategy extends PaymentStrategy {
         currency,
         network,
         userId: request.userId,
-        expireMinutes: request.expireMinutes || 60, // 加密货币支付通常给更长时间
+        expireMinutes: request.expireMinutes || 60,
         metadata: request.metadata,
       };
 
@@ -41,11 +40,13 @@ export class CryptoStrategy extends PaymentStrategy {
       if (response.success) {
         return {
           success: true,
-          paymentId: response.paymentId,
-          cryptoAddress: response.address,
-          qrCode: response.qrCode,
-          thirdPartyTransactionId: response.paymentId,
-          expiredAt: response.expiredAt,
+          data: {
+            paymentId: response.paymentId!,
+            cryptoAddress: response.address,
+            qrCode: response.qrCode,
+            thirdPartyTransactionId: response.paymentId!,
+            expiredAt: response.expiredAt,
+          },
         };
       } else {
         return {
@@ -53,7 +54,7 @@ export class CryptoStrategy extends PaymentStrategy {
           message: response.message || '创建加密货币支付失败',
         };
       }
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`加密货币策略创建支付失败: ${error.message}`, error.stack);
       return {
         success: false,
@@ -62,45 +63,45 @@ export class CryptoStrategy extends PaymentStrategy {
     }
   }
 
-  async queryPayment(paymentId: string): Promise<PaymentQueryResponse> {
+  async queryPayment(paymentId: string): Promise<GatewayResult<QueryPaymentData>> {
     try {
       const response = await this.cryptoGateway.queryPayment(paymentId);
 
       if (response.success) {
         return {
-          status: this.mapStatus(response.status),
-          blockchainTxHash: response.txHash,
-          paidAt: response.paidAt,
-          amount: response.actualAmount,
+          success: true,
+          data: {
+            status: this.mapStatus(response.status),
+            blockchainTxHash: response.txHash,
+            paidAt: response.paidAt,
+            amount: response.actualAmount,
+          },
           message: response.message,
         };
       } else {
         return {
-          status: 'failed',
+          success: false,
           message: response.message || '查询加密货币支付状态失败',
         };
       }
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`加密货币策略查询支付失败: ${error.message}`, error.stack);
       return {
-        status: 'failed',
+        success: false,
         message: error.message || '查询加密货币支付状态异常',
       };
     }
   }
 
-  async handleCallback(data: any): Promise<PaymentCallbackResponse> {
+  async handleCallback(data: any): Promise<GatewayResult<CallbackData>> {
     try {
       if (!this.validateCallback(data)) {
         return {
           success: false,
-          paymentId: data.paymentId || '',
-          status: 'failed',
           message: '加密货币回调签名验证失败',
         };
       }
 
-      // 验证区块链交易
       if (data.txHash) {
         const { currency, network } = this.parseCryptoMethod(this.method);
         const isValid = await this.cryptoGateway.validateTransaction(
@@ -112,8 +113,6 @@ export class CryptoStrategy extends PaymentStrategy {
         if (!isValid) {
           return {
             success: false,
-            paymentId: data.paymentId,
-            status: 'failed',
             message: '区块链交易验证失败',
           };
         }
@@ -121,25 +120,24 @@ export class CryptoStrategy extends PaymentStrategy {
 
       return {
         success: true,
-        paymentId: data.paymentId,
-        status: this.mapStatus(data.status),
-        amount: data.amount,
-        blockchainTxHash: data.txHash,
-        paidAt: data.paidAt ? new Date(data.paidAt) : undefined,
+        data: {
+          paymentId: data.paymentId,
+          status: this.mapStatus(data.status),
+          amount: data.amount,
+          blockchainTxHash: data.txHash,
+          paidAt: data.paidAt ? new Date(data.paidAt) : undefined,
+        },
       };
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`加密货币策略处理回调失败: ${error.message}`, error.stack);
       return {
         success: false,
-        paymentId: data.paymentId || '',
-        status: 'failed',
         message: error.message || '处理加密货币回调异常',
       };
     }
   }
 
-  async refund(request: RefundRequest): Promise<RefundResponse> {
-    // 加密货币支付通常不支持自动退款
+  async refund(request: RefundRequest): Promise<GatewayResult<RefundData>> {
     this.logger.warn(`加密货币支付不支持自动退款: ${request.paymentId}`);
     return {
       success: false,
@@ -150,7 +148,7 @@ export class CryptoStrategy extends PaymentStrategy {
   validateCallback(data: any): boolean {
     try {
       return this.cryptoGateway.validateCallback(data, data.signature);
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`加密货币策略验证回调失败: ${error.message}`, error.stack);
       return false;
     }

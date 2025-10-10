@@ -1,0 +1,60 @@
+{
+  "summary": {
+    "timestamp": "2025-10-10T08:00:31.488Z",
+    "totalTime": "42125ms",
+    "totalTests": 5,
+    "passed": 5,
+    "failed": 0,
+    "successRate": "100.00%"
+  },
+  "systemInfo": {
+    "platform": "win32",
+    "arch": "x64",
+    "nodeVersion": "v22.20.0",
+    "cpuCount": 24,
+    "totalMemory": "32GB",
+    "freeMemory": "19GB"
+  },
+  "testResults": [
+    {
+      "testName": "并发文件处理",
+      "duration": 100,
+      "successful": 100,
+      "failed": 0,
+      "throughput": 1000
+    },
+    {
+      "testName": "内存压力测试",
+      "allocatedChunks": 0,
+      "accessTime": 24,
+      "checksum": 12845350,
+      "peakMemory": 5215191.904919293
+    },
+    {
+      "testName": "CPU密集型测试",
+      "workerCount": 24,
+      "totalIterations": 2028000000,
+      "avgDuration": 30018.625,
+      "iterationsPerSecond": 67558058
+    },
+    {
+      "testName": "文件系统I/O压力测试",
+      "fileCount": 1000,
+      "totalBytes": 1024000,
+      "writeTime": 117,
+      "readTime": 84,
+      "deleteTime": 69,
+      "writeSpeed": 8752137,
+      "readSpeed": 12190476
+    },
+    {
+      "testName": "网络连接压力测试",
+      "connectionCount": 100,
+      "successful": 88,
+      "failed": 12,
+      "avgDuration": 527.79,
+      "successRate": "88.00%"
+    }
+  ],
+  "errors": []
+}
