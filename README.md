@@ -1,5 +1,7 @@
 [![CI](https://github.com/AronSwan/onlinestore/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/AronSwan/onlinestore/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/AronSwan/onlinestore/actions/workflows/codeql-analysis.yml/badge.svg?branch=master)](https://github.com/AronSwan/onlinestore/actions/workflows/codeql-analysis.yml)
+[![依赖安全检查](https://github.com/AronSwan/onlinestore/actions/workflows/dependency-check.yml/badge.svg?branch=master)](https://github.com/AronSwan/onlinestore/actions/workflows/dependency-check.yml)
+[![SBOM & 签名](https://github.com/AronSwan/onlinestore/actions/workflows/sbom-sign.yml/badge.svg?branch=master)](https://github.com/AronSwan/onlinestore/actions/workflows/sbom-sign.yml)
 
 # Gucci在线商店 - NextChat高级AI助手集成与OpenObserve监控架构
 
