@@ -1,4 +1,5 @@
 # Gucci在线商店 - NextChat高级AI助手集成与OpenObserve监控架构
+[![CI](https://github.com/AronSwan/onlinestore/actions/workflows/ci.yml/badge.svg)](https://github.com/AronSwan/onlinestore/actions/workflows/ci.yml) [![CodeQL](https://github.com/AronSwan/onlinestore/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/AronSwan/onlinestore/actions/workflows/codeql-analysis.yml)
 
 ## 项目概述
 
