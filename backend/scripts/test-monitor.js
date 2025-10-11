@@ -20,7 +20,7 @@ class TestMonitor {
     const timestamp = new Date().toISOString();
     const logMessage = `[${timestamp}] ${message}\n`;
     console.log(logMessage.trim());
-    
+
     // 写入日志文件
     fs.appendFileSync(this.logFile, logMessage);
   }
@@ -28,12 +28,12 @@ class TestMonitor {
   runTest() {
     try {
       this.log('🚀 开始运行测试...');
-      
+
       const command = 'node scripts/test-runner.cjs --coverage';
       const output = execSync(command, {
         encoding: 'utf8',
         cwd: this.backendDir,
-        stdio: 'pipe'
+        stdio: 'pipe',
       });
 
       this.log('✅ 测试执行完成');
@@ -61,7 +61,7 @@ class TestMonitor {
         coveredBranches: 0,
         totalStatements: 0,
         coveredStatements: 0,
-        files: Object.keys(coverageData).length
+        files: Object.keys(coverageData).length,
       };
 
       Object.values(coverageData).forEach(file => {
@@ -84,16 +84,28 @@ class TestMonitor {
       });
 
       const percentages = {
-        lines: summary.totalLines > 0 ? (summary.coveredLines / summary.totalLines * 100).toFixed(2) : 0,
-        functions: summary.totalFunctions > 0 ? (summary.coveredFunctions / summary.totalFunctions * 100).toFixed(2) : 0,
-        branches: summary.totalBranches > 0 ? (summary.coveredBranches / summary.totalBranches * 100).toFixed(2) : 0,
-        statements: summary.totalStatements > 0 ? (summary.coveredStatements / summary.totalStatements * 100).toFixed(2) : 0
+        lines:
+          summary.totalLines > 0
+            ? ((summary.coveredLines / summary.totalLines) * 100).toFixed(2)
+            : 0,
+        functions:
+          summary.totalFunctions > 0
+            ? ((summary.coveredFunctions / summary.totalFunctions) * 100).toFixed(2)
+            : 0,
+        branches:
+          summary.totalBranches > 0
+            ? ((summary.coveredBranches / summary.totalBranches) * 100).toFixed(2)
+            : 0,
+        statements:
+          summary.totalStatements > 0
+            ? ((summary.coveredStatements / summary.totalStatements) * 100).toFixed(2)
+            : 0,
       };
 
       return {
         summary,
         percentages,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
     } catch (error) {
       this.log(`❌ 覆盖率分析失败: ${error.message}`);
@@ -108,20 +120,26 @@ class TestMonitor {
     }
 
     const { summary, percentages } = coverageData;
-    
+
     this.log('\n📊 覆盖率报告');
     this.log('='.repeat(50));
     this.log(`📁 文件数量: ${summary.files}`);
     this.log(`📏 行覆盖率: ${percentages.lines}% (${summary.coveredLines}/${summary.totalLines})`);
-    this.log(`⚙️  函数覆盖率: ${percentages.functions}% (${summary.coveredFunctions}/${summary.totalFunctions})`);
-    this.log(`🔀 分支覆盖率: ${percentages.branches}% (${summary.coveredBranches}/${summary.totalBranches})`);
-    this.log(`📝 语句覆盖率: ${percentages.statements}% (${summary.coveredStatements}/${summary.totalStatements})`);
+    this.log(
+      `⚙️  函数覆盖率: ${percentages.functions}% (${summary.coveredFunctions}/${summary.totalFunctions})`,
+    );
+    this.log(
+      `🔀 分支覆盖率: ${percentages.branches}% (${summary.coveredBranches}/${summary.totalBranches})`,
+    );
+    this.log(
+      `📝 语句覆盖率: ${percentages.statements}% (${summary.coveredStatements}/${summary.totalStatements})`,
+    );
     this.log('='.repeat(50));
 
     // 检查是否达到目标
     const target = 80;
     const overall = parseFloat(percentages.statements);
-    
+
     if (overall >= target) {
       this.log(`🎉 恭喜！整体覆盖率 (${overall}%) 已达到目标 (${target}%)`);
     } else {
@@ -141,7 +159,7 @@ class TestMonitor {
       'src/products/products.service.ts',
       'src/products/products.controller.ts',
       'src/orders/orders.service.ts',
-      'src/orders/orders.controller.ts'
+      'src/orders/orders.controller.ts',
     ];
 
     this.log('\n🔍 关键模块分析');
@@ -152,10 +170,13 @@ class TestMonitor {
       if (fileData && file.s) {
         const totalLines = fileData.s.l;
         const uncoveredLines = (fileData.s.h || 0) + (fileData.s.u || 0);
-        const coverage = totalLines > 0 ? ((totalLines - uncoveredLines) / totalLines * 100).toFixed(2) : 0;
-        
+        const coverage =
+          totalLines > 0 ? (((totalLines - uncoveredLines) / totalLines) * 100).toFixed(2) : 0;
+
         const status = coverage >= 80 ? '✅' : coverage >= 60 ? '⚠️' : '❌';
-        this.log(`${status} ${module}: ${coverage}% (${totalLines - uncoveredLines}/${totalLines})`);
+        this.log(
+          `${status} ${module}: ${coverage}% (${totalLines - uncoveredLines}/${totalLines})`,
+        );
       } else {
         this.log(`❌ ${module}: 无覆盖率数据`);
       }
@@ -171,7 +192,7 @@ class TestMonitor {
       lines: 75,
       functions: 75,
       branches: 75,
-      statements: 75
+      statements: 75,
     };
 
     let allPassed = true;
@@ -194,16 +215,16 @@ class TestMonitor {
 
     // 运行测试
     const testResult = this.runTest();
-    
+
     // 分析覆盖率
     const coverageData = this.analyzeCoverage();
-    
+
     // 生成报告
     this.generateReport(coverageData);
-    
+
     // 检查阈值
     const thresholdsMet = this.checkCoverageThresholds();
-    
+
     // 输出总结
     this.log('\n📋 监控总结');
     this.log('='.repeat(50));
@@ -215,19 +236,19 @@ class TestMonitor {
     return {
       testSuccess: testResult.success,
       thresholdsMet,
-      coverageData
+      coverageData,
     };
   }
 
   // 定时运行监控
   startMonitoring(intervalMinutes = 60) {
     const intervalMs = intervalMinutes * 60 * 1000;
-    
+
     this.log(`🔄 启动定时监控，间隔: ${intervalMinutes} 分钟`);
-    
+
     // 立即运行一次
     this.run();
-    
+
     // 设置定时器
     setInterval(() => {
       this.log('\n⏰ 执行定时监控...');
@@ -239,10 +260,10 @@ class TestMonitor {
 // 命令行接口
 if (require.main === module) {
   const monitor = new TestMonitor();
-  
+
   const args = process.argv.slice(2);
   const interval = parseInt(args[0]) || 60;
-  
+
   if (args.includes('--once')) {
     // 只运行一次
     monitor.run();

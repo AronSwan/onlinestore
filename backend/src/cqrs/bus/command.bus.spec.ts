@@ -43,7 +43,9 @@ describe('CommandBus', () => {
           provide: CqrsTracingService,
           useValue: {
             startCommandSpan: jest.fn().mockReturnValue({}),
-            getCurrentContext: jest.fn().mockReturnValue({ traceId: 'test-trace', spanId: 'test-span' }),
+            getCurrentContext: jest
+              .fn()
+              .mockReturnValue({ traceId: 'test-trace', spanId: 'test-span' }),
             finishSpan: jest.fn(),
           },
         },

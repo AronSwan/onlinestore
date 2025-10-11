@@ -20,10 +20,7 @@ import { NotificationModule } from '../notification/notification.module';
     ScheduleModule.forRoot(),
     forwardRef(() => NotificationModule),
   ],
-  controllers: [
-    MonitoringController,
-    AlertController,
-  ],
+  controllers: [MonitoringController, AlertController],
   providers: [
     MonitoringService,
     MetricsService,
@@ -33,10 +30,6 @@ import { NotificationModule } from '../notification/notification.module';
       useClass: MetricsInterceptor,
     },
   ],
-  exports: [
-    MonitoringService,
-    MetricsService,
-    AlertService,
-  ],
+  exports: [MonitoringService, MetricsService, AlertService],
 })
 export class MonitoringModule {}

@@ -9,19 +9,19 @@ class DocumentationCoverageChecker {
     this.coverage = {
       modules: { total: 0, documented: 0, coverage: 0 },
       apis: { total: 0, documented: 0, coverage: 0 },
-      functions: { total: 0, documented: 0, coverage: 0 }
+      functions: { total: 0, documented: 0, coverage: 0 },
     };
   }
 
   async checkCoverage() {
     console.log('🔍 开始检查文档覆盖率...');
-    
+
     await this.checkModuleCoverage();
     await this.checkApiCoverage();
     await this.checkFunctionCoverage();
-    
+
     await this.generateReport();
-    
+
     return this.coverage;
   }
 
@@ -29,7 +29,8 @@ class DocumentationCoverageChecker {
     try {
       // 获取所有模块目录
       const modulePattern = path.join(this.srcDir, '**/');
-      const moduleDirs = glob.sync(modulePattern, { onlyDirectories: true })
+      const moduleDirs = glob
+        .sync(modulePattern, { onlyDirectories: true })
         .filter(dir => !dir.includes('node_modules'))
         .filter(dir => !dir.includes('test'))
         .filter(dir => !dir.includes('spec'));
@@ -40,7 +41,7 @@ class DocumentationCoverageChecker {
       for (const moduleDir of moduleDirs) {
         const moduleName = path.basename(moduleDir);
         const docPath = path.join(this.docsDir, 'modules', moduleName, 'README.md');
-        
+
         try {
           await fs.access(docPath);
           this.coverage.modules.documented++;
@@ -49,9 +50,9 @@ class DocumentationCoverageChecker {
         }
       }
 
-      this.coverage.modules.coverage = 
-        Math.round((this.coverage.modules.documented / this.coverage.modules.total) * 100);
-
+      this.coverage.modules.coverage = Math.round(
+        (this.coverage.modules.documented / this.coverage.modules.total) * 100,
+      );
     } catch (error) {
       console.error('❌ 检查模块覆盖率失败:', error);
     }
@@ -68,7 +69,7 @@ class DocumentationCoverageChecker {
 
       for (const file of controllerFiles) {
         const content = await fs.readFile(file, 'utf8');
-        
+
         // 统计 API 方法 (简单的正则匹配)
         const apiMethods = content.match(/@(Get|Post|Put|Delete|Patch)\(/g) || [];
         totalApis += apiMethods.length;
@@ -80,9 +81,8 @@ class DocumentationCoverageChecker {
 
       this.coverage.apis.total = totalApis;
       this.coverage.apis.documented = documentedApis;
-      this.coverage.apis.coverage = totalApis > 0 ? 
-        Math.round((documentedApis / totalApis) * 100) : 100;
-
+      this.coverage.apis.coverage =
+        totalApis > 0 ? Math.round((documentedApis / totalApis) * 100) : 100;
     } catch (error) {
       console.error('❌ 检查 API 覆盖率失败:', error);
     }
@@ -93,7 +93,7 @@ class DocumentationCoverageChecker {
       // 查找所有 TypeScript 文件
       const tsPattern = path.join(this.srcDir, '**/*.ts');
       const tsFiles = glob.sync(tsPattern, {
-        ignore: ['**/*.spec.ts', '**/*.test.ts']
+        ignore: ['**/*.spec.ts', '**/*.test.ts'],
       });
 
       let totalFunctions = 0;
@@ -101,21 +101,24 @@ class DocumentationCoverageChecker {
 
       for (const file of tsFiles) {
         const content = await fs.readFile(file, 'utf8');
-        
+
         // 统计函数和方法 (简单的正则匹配)
-        const functions = content.match(/(function\s+\w+|async\s+\w+\s*\(|\w+\s*\([^)]*\)\s*{)/g) || [];
+        const functions =
+          content.match(/(function\s+\w+|async\s+\w+\s*\(|\w+\s*\([^)]*\)\s*{)/g) || [];
         totalFunctions += functions.length;
 
         // 统计有 JSDoc 注释的函数
-        const documentedFuncs = content.match(/\/\*\*[\s\S]*?\*\/\s*(function\s+\w+|async\s+\w+\s*\(|\w+\s*\([^)]*\)\s*{)/g) || [];
+        const documentedFuncs =
+          content.match(
+            /\/\*\*[\s\S]*?\*\/\s*(function\s+\w+|async\s+\w+\s*\(|\w+\s*\([^)]*\)\s*{)/g,
+          ) || [];
         documentedFunctions += documentedFuncs.length;
       }
 
       this.coverage.functions.total = totalFunctions;
       this.coverage.functions.documented = documentedFunctions;
-      this.coverage.functions.coverage = totalFunctions > 0 ? 
-        Math.round((documentedFunctions / totalFunctions) * 100) : 100;
-
+      this.coverage.functions.coverage =
+        totalFunctions > 0 ? Math.round((documentedFunctions / totalFunctions) * 100) : 100;
     } catch (error) {
       console.error('❌ 检查函数覆盖率失败:', error);
     }
@@ -166,9 +169,10 @@ ${this.getImprovementSuggestions()}
   }
 
   getAverageCoverage() {
-    const total = this.coverage.modules.coverage + 
-                  this.coverage.apis.coverage + 
-                  this.coverage.functions.coverage;
+    const total =
+      this.coverage.modules.coverage +
+      this.coverage.apis.coverage +
+      this.coverage.functions.coverage;
     return Math.round(total / 3);
   }
 
@@ -179,23 +183,23 @@ ${this.getImprovementSuggestions()}
 
   getImprovementSuggestions() {
     const suggestions = [];
-    
+
     if (this.coverage.modules.coverage < 95) {
       suggestions.push('- 📦 为缺少文档的模块创建 README.md 文件');
     }
-    
+
     if (this.coverage.apis.coverage < 95) {
       suggestions.push('- 🔌 为 API 方法添加 @ApiOperation 注解');
     }
-    
+
     if (this.coverage.functions.coverage < 95) {
       suggestions.push('- 📝 为重要函数添加 JSDoc 注释');
     }
-    
+
     if (suggestions.length === 0) {
       suggestions.push('- 🎉 文档覆盖率已达标，继续保持！');
     }
-    
+
     return suggestions.join('\n');
   }
 }
@@ -204,13 +208,13 @@ ${this.getImprovementSuggestions()}
 async function main() {
   const checker = new DocumentationCoverageChecker();
   const coverage = await checker.checkCoverage();
-  
+
   console.log('\n📊 文档覆盖率结果:');
   console.log(`模块覆盖率: ${coverage.modules.coverage}%`);
   console.log(`API 覆盖率: ${coverage.apis.coverage}%`);
   console.log(`函数覆盖率: ${coverage.functions.coverage}%`);
   console.log(`平均覆盖率: ${checker.getAverageCoverage()}%`);
-  
+
   // 如果覆盖率低于阈值，退出码为 1
   const avgCoverage = checker.getAverageCoverage();
   if (avgCoverage < 80) {

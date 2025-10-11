@@ -77,16 +77,23 @@ export const EnvironmentAdapter = {
 
   // OpenObserve 统一读取（供日志/追踪/监控初始化）
   getOpenObserve(): OpenObserveRuntimeConfig {
-    const baseUrl = process.env.OPENOBSERVE_URL || master.monitoring.openobserveUrl || 'http://localhost:5080';
+    const baseUrl =
+      process.env.OPENOBSERVE_URL || master.monitoring.openobserveUrl || 'http://localhost:5080';
     const organization = process.env.OPENOBSERVE_ORG || 'default';
     const token = process.env.OPENOBSERVE_TOKEN || '';
     // 运行时指标配置（适配器提供，供上层配置复用或覆盖）
     const swrBucketsEnv = process.env.CQRS_SWR_REFRESH_BUCKETS;
     const swrRefreshMs = (swrBucketsEnv
-      ? swrBucketsEnv.split(',').map(v => parseInt(v.trim(), 10)).filter(v => !isNaN(v))
+      ? swrBucketsEnv
+          .split(',')
+          .map(v => parseInt(v.trim(), 10))
+          .filter(v => !isNaN(v))
       : undefined) || [50, 100, 200, 500, 1000, 2000, 5000, 10000];
     const enableCacheKeyPrefix = process.env.CQRS_SWR_LABEL_CACHEKEY_PREFIX_ENABLED !== 'false';
-    const cacheKeyPrefixSegments = parseInt(process.env.CQRS_SWR_LABEL_CACHEKEY_PREFIX_SEGMENTS || '2', 10);
+    const cacheKeyPrefixSegments = parseInt(
+      process.env.CQRS_SWR_LABEL_CACHEKEY_PREFIX_SEGMENTS || '2',
+      10,
+    );
     const enableDomain = process.env.CQRS_SWR_LABEL_DOMAIN_ENABLED !== 'false';
     return {
       baseUrl,
@@ -111,12 +118,15 @@ export const EnvironmentAdapter = {
         timeout: parseInt(process.env.OPENOBSERVE_TIMEOUT || '10000', 10),
       },
       tracing: {
-        enabled: (process.env.OPENOBSERVE_TRACING_ENABLED !== 'false'),
+        enabled: process.env.OPENOBSERVE_TRACING_ENABLED !== 'false',
         samplingRate: parseFloat(process.env.OPENOBSERVE_TRACING_SAMPLING_RATE || '0.1'),
       },
       alerts: {
-        enabled: (process.env.OPENOBSERVE_ALERTS_ENABLED !== 'false'),
-        evaluationInterval: parseInt(process.env.OPENOBSERVE_ALERTS_EVALUATION_INTERVAL || '60000', 10),
+        enabled: process.env.OPENOBSERVE_ALERTS_ENABLED !== 'false',
+        evaluationInterval: parseInt(
+          process.env.OPENOBSERVE_ALERTS_EVALUATION_INTERVAL || '60000',
+          10,
+        ),
       },
       metrics: {
         histogramBuckets: {

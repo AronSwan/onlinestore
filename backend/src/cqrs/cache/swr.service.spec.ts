@@ -56,8 +56,12 @@ describe('SWRService', () => {
   it('后台刷新应上报直方图与计数器（带 metrics mock）', async () => {
     const calls: any[] = [];
     const metrics = {
-      incrementCounter: jest.fn((name: string, v: number, labels?: any) => { calls.push(['counter', name, v, labels]); }),
-      recordHistogramBuckets: jest.fn((name: string, v: number, labels?: any) => { calls.push(['hist', name, v, labels]); }),
+      incrementCounter: jest.fn((name: string, v: number, labels?: any) => {
+        calls.push(['counter', name, v, labels]);
+      }),
+      recordHistogramBuckets: jest.fn((name: string, v: number, labels?: any) => {
+        calls.push(['hist', name, v, labels]);
+      }),
     } as any;
     const serviceWithMetrics = new SWRService(mockCache, metrics);
 
@@ -72,14 +76,23 @@ describe('SWRService', () => {
       return 'new';
     });
 
-    const res = await serviceWithMetrics.getWithSWR(key, fetcher, { ttl: 2, staleWhileRevalidate: true, staleTime: 2, labels: { type: 't', handler: 'h' } });
+    const res = await serviceWithMetrics.getWithSWR(key, fetcher, {
+      ttl: 2,
+      staleWhileRevalidate: true,
+      staleTime: 2,
+      labels: { type: 't', handler: 'h' },
+    });
     expect(res.isStale).toBe(true);
 
     // 等待后台刷新完成
     await new Promise(r => setTimeout(r, 20));
 
     expect(metrics.incrementCounter).toHaveBeenCalled();
-    expect(metrics.recordHistogramBuckets).toHaveBeenCalledWith('cqrs_swr_refresh_duration_ms', expect.any(Number), expect.objectContaining({ type: 't', handler: 'h' }));
+    expect(metrics.recordHistogramBuckets).toHaveBeenCalledWith(
+      'cqrs_swr_refresh_duration_ms',
+      expect.any(Number),
+      expect.objectContaining({ type: 't', handler: 'h' }),
+    );
   });
 
   it('未过期缓存应直接返回且不调用 fetcher', async () => {
@@ -107,7 +120,11 @@ describe('SWRService', () => {
 
     const fetcher = jest.fn(async () => 'new');
 
-    const res = await swrService.getWithSWR(key, fetcher, { ttl: 2, staleWhileRevalidate: true, staleTime: 2 });
+    const res = await swrService.getWithSWR(key, fetcher, {
+      ttl: 2,
+      staleWhileRevalidate: true,
+      staleTime: 2,
+    });
     expect(res.data).toBe('old');
     expect(res.fromCache).toBe(true);
     expect(res.isStale).toBe(true);

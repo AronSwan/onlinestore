@@ -615,18 +615,31 @@ export class QueryBus implements IQueryBus, IQueryPipeline {
     try {
       const oo = (EnvironmentAdapter as any)?.getOpenObserve?.() ?? {};
       const cfgLabels = oo?.metrics?.labels;
-      // 优先使用统一环境适配器配置，其次环境变量，最后默认值
-      const enablePrefix = (cfgLabels?.enableCacheKeyPrefix ??
-        (process.env.CQRS_SWR_LABEL_CACHEKEY_PREFIX_ENABLED !== 'false')) as boolean;
-      const segs = Math.max(
-        1,
-        Number(
-          cfgLabels?.cacheKeyPrefixSegments ??
-            parseInt(process.env.CQRS_SWR_LABEL_CACHEKEY_PREFIX_SEGMENTS || '2', 10),
-        ) || 2,
-      );
-      const enableDomain = (cfgLabels?.enableDomain ??
-        (process.env.CQRS_SWR_LABEL_DOMAIN_ENABLED !== 'false')) as boolean;
+      // 统一布尔解析：默认启用，'0'/'false'/'no' 关闭，'1'/'true'/'yes' 启用
+      const parseBool = (val: unknown, def = true): boolean => {
+        if (val === undefined || val === null) return def;
+        const s = String(val).trim().toLowerCase();
+        if (['0', 'false', 'no', 'off'].includes(s)) return false;
+        if (['1', 'true', 'yes', 'on'].includes(s)) return true;
+        return def;
+      };
+
+      // 兼容两套环境变量命名：旧版（测试使用）与新版（LABEL_*），并以环境变量优先
+      const envEnablePrefix =
+        process.env.CQRS_SWR_ENABLE_CACHE_KEY_PREFIX ??
+        process.env.CQRS_SWR_LABEL_CACHEKEY_PREFIX_ENABLED;
+      const envPrefixSegs =
+        process.env.CQRS_SWR_CACHE_KEY_PREFIX_SEGMENTS ??
+        process.env.CQRS_SWR_LABEL_CACHEKEY_PREFIX_SEGMENTS;
+      const envEnableDomain =
+        process.env.CQRS_SWR_ENABLE_DOMAIN_LABEL ?? process.env.CQRS_SWR_LABEL_DOMAIN_ENABLED;
+
+      // 优先使用环境变量，其次使用配置，最后默认值
+      const enablePrefix = parseBool(envEnablePrefix ?? cfgLabels?.enableCacheKeyPrefix, true);
+      const segsRaw = envPrefixSegs ?? cfgLabels?.cacheKeyPrefixSegments ?? '2';
+      const segsNum = parseInt(String(segsRaw), 10);
+      const segs = Math.max(1, Number.isFinite(segsNum) ? segsNum : 2);
+      const enableDomain = parseBool(envEnableDomain ?? cfgLabels?.enableDomain, true);
 
       if (enablePrefix && cacheKey) {
         const parts = cacheKey.split(':').filter(Boolean);

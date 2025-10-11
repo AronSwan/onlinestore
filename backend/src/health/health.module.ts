@@ -8,16 +8,8 @@ import { MessagingModule } from '../messaging/messaging.module';
 import { RedpandaHealthIndicator } from './redpanda.health';
 
 @Module({
-  imports: [
-    TerminusModule,
-    TypeOrmModule.forFeature([]),
-    HttpModule,
-    RedisModule,
-    MessagingModule,
-  ],
+  imports: [TerminusModule, TypeOrmModule.forFeature([]), HttpModule, RedisModule, MessagingModule],
   controllers: [HealthController],
-  providers: [
-    RedpandaHealthIndicator,
-  ],
+  providers: [RedpandaHealthIndicator],
 })
 export class HealthModule {}

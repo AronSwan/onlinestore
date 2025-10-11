@@ -4,7 +4,7 @@
 
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 /* ESM 兼容：p-retry 在 node_modules 为 ESM，Jest 默认不转换。这里使用 CommonJS 方式引入 */
-const pRetry = (require('p-retry').default ?? require('p-retry'));
+const pRetry = require('p-retry').default ?? require('p-retry');
 import { IQuery, IQueryResult } from './queries/query.base';
 import { IQueryBus } from './bus/query.bus';
 import { IQueryCache } from './interfaces/query-handler.interface';
@@ -464,7 +464,7 @@ export class TanStackQueryIntegrationService implements ITanStackQueryClient, On
           this.queryCache.set(cacheKey, successState);
 
           // 设置后台刷新
-          const interval = (refreshInterval ?? this.config.refreshInterval ?? 0);
+          const interval = refreshInterval ?? this.config.refreshInterval ?? 0;
           if (enableBackgroundRefresh && interval > 0) {
             this.setupBackgroundRefresh(cacheKey, options, interval);
           }
@@ -504,11 +504,8 @@ export class TanStackQueryIntegrationService implements ITanStackQueryClient, On
             const retryState = await pRetry(() => this.query(retryOptions), {
               retries: retry,
               minTimeout: retryDelay,
-              onFailedAttempt: (err) => {
-                this.logger.error(
-                  `Query attempt ${err.attemptNumber} failed: ${cacheKey}`,
-                  err,
-                );
+              onFailedAttempt: err => {
+                this.logger.error(`Query attempt ${err.attemptNumber} failed: ${cacheKey}`, err);
               },
             });
             return retryState ?? errorState;
@@ -565,22 +562,22 @@ export class TanStackQueryIntegrationService implements ITanStackQueryClient, On
    */
   async invalidateQueries(queryKey: string[]): Promise<void> {
     const cacheKey = queryKey.join('.');
-    
+
     // 清理后台刷新定时器
     if (this.intervals.has(cacheKey)) {
       clearInterval(this.intervals.get(cacheKey)!);
       this.intervals.delete(cacheKey);
     }
-    
+
     // 从缓存中删除
     this.queryCache.delete(cacheKey);
-    
+
     // 调用查询总线失效（如果需要）
     const [queryType, ...cacheKeyParts] = queryKey;
     if (queryType) {
       await this.queryBus.invalidateCache(queryType, cacheKeyParts.join('_'));
     }
-    
+
     this.logger.debug(`Invalidated query: ${cacheKey}`);
   }
 
@@ -589,13 +586,13 @@ export class TanStackQueryIntegrationService implements ITanStackQueryClient, On
    */
   async resetQueries(queryKey: string[]): Promise<void> {
     const cacheKey = queryKey.join('.');
-    
+
     // 清理后台刷新定时器
     if (this.intervals.has(cacheKey)) {
       clearInterval(this.intervals.get(cacheKey)!);
       this.intervals.delete(cacheKey);
     }
-    
+
     this.queryCache.delete(cacheKey);
     this.logger.debug(`Reset query: ${cacheKey}`);
   }
@@ -714,7 +711,8 @@ export class TanStackQueryIntegrationService implements ITanStackQueryClient, On
    */
   private createCacheExpiration(cacheTime: number | undefined): Date | undefined {
     // 修复：cacheTime=0 严格禁用缓存
-    const expiresMs = cacheTime === 0 ? 0 : (cacheTime || this.config.defaultCacheTime || 300) * 1000;
+    const expiresMs =
+      cacheTime === 0 ? 0 : (cacheTime || this.config.defaultCacheTime || 300) * 1000;
     return expiresMs ? new Date(Date.now() + expiresMs) : undefined;
   }
 
@@ -730,7 +728,7 @@ export class TanStackQueryIntegrationService implements ITanStackQueryClient, On
     if (this.intervals.has(cacheKey)) {
       clearInterval(this.intervals.get(cacheKey)!);
     }
-    
+
     const timer = setInterval(async () => {
       this.logger.debug(`Background refresh for query: ${cacheKey}`);
       try {
@@ -739,7 +737,7 @@ export class TanStackQueryIntegrationService implements ITanStackQueryClient, On
         this.logger.error(`Background refresh failed for query: ${cacheKey}`, error);
       }
     }, interval * 1000);
-    
+
     this.intervals.set(cacheKey, timer);
   }
 

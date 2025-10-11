@@ -103,6 +103,7 @@ export interface HealthCheckConfig {
   interval: number;
   timeout: number;
   retries: number;
+  retryBackoffMs?: number;
   gracefulShutdownTimeout: number;
   endpoints: {
     health: string;
@@ -158,6 +159,10 @@ export interface HealthCheckStats {
   successfulChecks: number;
   failedChecks: number;
   averageResponseTime: number;
+  minResponseTime?: number;
+  maxResponseTime?: number;
+  timeoutCount: number;
+  consecutiveFailures: number;
   uptime: number;
   lastCheck: Date;
   checkHistory: HealthCheckResult[];
@@ -229,6 +234,10 @@ export class HealthCheckService implements OnModuleInit, OnModuleDestroy {
       successfulChecks: 0,
       failedChecks: 0,
       averageResponseTime: 0,
+      minResponseTime: undefined,
+      maxResponseTime: undefined,
+      timeoutCount: 0,
+      consecutiveFailures: 0,
       uptime: 0,
       lastCheck: new Date(),
       checkHistory: [],
@@ -283,52 +292,87 @@ export class HealthCheckService implements OnModuleInit, OnModuleDestroy {
       };
     }
 
-    const startTime = performance.now();
-    let result: HealthCheckResult;
+    const attempts = Math.max(1, checker.retries ?? this.config.retries);
+    const backoffMs = this.configService.get<number>('health.retryBackoffMs', 200);
+    const attemptDurations: number[] = [];
+    // 为避免TS“未赋值前使用”错误，预先初始化一个默认结果
+    let result: HealthCheckResult = {
+      name,
+      status: HealthStatus.UNKNOWN,
+      type: checker.type,
+      severity: checker.severity,
+      message: 'No health check result yet',
+      duration: 0,
+      timestamp: new Date(),
+      metadata: { attempts, attemptDurations, attempt: 0 },
+    };
+    let lastError: Error | undefined;
 
-    try {
-      // 执行检查（带超时）
-      const checkPromise = checker.check();
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(
-          () => reject(new Error('Health check timeout')),
-          checker.timeout || this.config.timeout,
-        );
-      });
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+      const startTime = performance.now();
+      try {
+        const checkPromise = checker.check();
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(
+            () => reject(new Error('Health check timeout')),
+            checker.timeout || this.config.timeout,
+          );
+        });
 
-      const checkResult = await Promise.race([checkPromise, timeoutPromise]);
-      const duration = performance.now() - startTime;
+        const checkResult = await Promise.race([checkPromise, timeoutPromise]);
+        const duration = performance.now() - startTime;
+        attemptDurations.push(duration);
 
-      result = {
-        ...checkResult,
-        duration,
-        timestamp: new Date(),
-      };
+        result = {
+          ...checkResult,
+          duration,
+          timestamp: new Date(),
+          metadata: {
+            ...(checkResult.metadata || {}),
+            attempts,
+            attemptDurations,
+            attempt: attempt,
+          },
+        };
 
-      // 更新统计
-      this.updateStats(name, result, true);
+        // 如果成功，更新统计并处理状态变化，直接跳出重试
+        const isSuccess = result.status === HealthStatus.HEALTHY;
+        this.updateStats(name, result, isSuccess);
+        await this.handleStatusChange(name, result);
+        if (isSuccess) {
+          break;
+        }
+      } catch (error) {
+        const duration = performance.now() - startTime;
+        attemptDurations.push(duration);
+        lastError = error as Error;
 
-      // 检查状态变化
-      await this.handleStatusChange(name, result);
-    } catch (error) {
-      const duration = performance.now() - startTime;
+        result = {
+          name,
+          status: HealthStatus.UNHEALTHY,
+          type: checker.type,
+          severity: checker.severity,
+          message: (error as Error).message,
+          duration,
+          timestamp: new Date(),
+          error: error as Error,
+          metadata: {
+            attempts,
+            attemptDurations,
+            attempt: attempt,
+            timeout: (error as Error).message?.toLowerCase().includes('timeout') || false,
+          },
+        };
 
-      result = {
-        name,
-        status: HealthStatus.UNHEALTHY,
-        type: checker.type,
-        severity: checker.severity,
-        message: error.message,
-        duration,
-        timestamp: new Date(),
-        error,
-      };
+        this.updateStats(name, result, false);
+        await this.handleCheckError(name, result, error as Error);
+      }
 
-      // 更新统计
-      this.updateStats(name, result, false);
-
-      // 处理错误
-      await this.handleCheckError(name, result, error);
+      // 如果未成功且还有重试机会，进行退避
+      const isLastAttempt = attempt >= attempts;
+      if (!isLastAttempt && result.status !== HealthStatus.HEALTHY) {
+        await new Promise(res => setTimeout(res, backoffMs * attempt));
+      }
     }
 
     // 存储结果
@@ -531,6 +575,7 @@ export class HealthCheckService implements OnModuleInit, OnModuleDestroy {
       interval: this.configService.get('health.interval', 30000),
       timeout: this.configService.get('health.timeout', 5000),
       retries: this.configService.get('health.retries', 3),
+      retryBackoffMs: this.configService.get('health.retryBackoffMs', 200),
       gracefulShutdownTimeout: this.configService.get('health.gracefulShutdownTimeout', 10000),
       endpoints: {
         health: this.configService.get('health.endpoints.health', '/health'),
@@ -688,13 +733,28 @@ export class HealthCheckService implements OnModuleInit, OnModuleDestroy {
 
     if (success) {
       stats.successfulChecks++;
+      stats.consecutiveFailures = 0;
     } else {
       stats.failedChecks++;
+      stats.consecutiveFailures = (stats.consecutiveFailures || 0) + 1;
+      if (result.message?.toLowerCase().includes('timeout') || (result as any)?.metadata?.timeout) {
+        stats.timeoutCount = (stats.timeoutCount || 0) + 1;
+      }
     }
 
     // 更新平均响应时间
     stats.averageResponseTime =
       (stats.averageResponseTime * (stats.totalChecks - 1) + result.duration) / stats.totalChecks;
+
+    // 更新最短/最长响应时间
+    stats.minResponseTime =
+      stats.minResponseTime === undefined
+        ? result.duration
+        : Math.min(stats.minResponseTime, result.duration);
+    stats.maxResponseTime =
+      stats.maxResponseTime === undefined
+        ? result.duration
+        : Math.max(stats.maxResponseTime, result.duration);
 
     // 更新历史记录（保留最近100条）
     stats.checkHistory.push(result);

@@ -58,7 +58,10 @@ export class OpenObserveConfigService {
   private initializeConfig(): void {
     // 计算启用开关：优先使用全局 OPENOBSERVE_ENABLED，其次 LOGGING_OPENOBSERVE_ENABLED
     const envFlag = process.env.OPENOBSERVE_ENABLED;
-    const rawCfg = this.configService.get<string | boolean>('LOGGING_OPENOBSERVE_ENABLED', false as any);
+    const rawCfg = this.configService.get<string | boolean>(
+      'LOGGING_OPENOBSERVE_ENABLED',
+      false as any,
+    );
     const parseBool = (v: any): boolean => {
       if (typeof v === 'boolean') return v;
       if (typeof v === 'string') {

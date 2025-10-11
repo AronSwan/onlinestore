@@ -33,6 +33,9 @@
     },
     {
       "files": ["**/*.spec.ts", "**/*.test.ts", "**/*.spec.js", "**/*.test.js"],
+      "parserOptions": {
+        "project": ["./tsconfig.spec.json"]
+      },
       "rules": {
         "jest/expect-expect": "off"
       }

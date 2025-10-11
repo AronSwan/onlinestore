@@ -355,14 +355,9 @@ export class LoggingCoreModule {
         ScheduleModule.forRoot(),
         OpenObserveModule,
         WinstonModule.forRoot({
-          format: winston.format.combine(
-            winston.format.timestamp(),
-            winston.format.json(),
-          ),
-          transports: [
-            new winston.transports.Console(),
-          ],
-        })
+          format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
+          transports: [new winston.transports.Console()],
+        }),
       ],
       providers: [
         {
@@ -386,15 +381,10 @@ export class LoggingCoreModule {
         ScheduleModule.forRoot(),
         OpenObserveModule,
         WinstonModule.forRoot({
-          format: winston.format.combine(
-            winston.format.timestamp(),
-            winston.format.json(),
-          ),
-          transports: [
-            new winston.transports.Console(),
-          ],
+          format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
+          transports: [new winston.transports.Console()],
         }),
-        ...(options.imports || [])
+        ...(options.imports || []),
       ],
       providers: [
         {

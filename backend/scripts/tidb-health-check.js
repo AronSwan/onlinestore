@@ -63,7 +63,9 @@ function pick(...keys) {
     const tTemp = Date.now();
     const tbl = `__health_tmp_${tTemp}`;
     const t2 = process.hrtime.bigint();
-    await conn.query(`CREATE TABLE IF NOT EXISTS ${tbl} (id BIGINT PRIMARY KEY, note VARCHAR(255))`);
+    await conn.query(
+      `CREATE TABLE IF NOT EXISTS ${tbl} (id BIGINT PRIMARY KEY, note VARCHAR(255))`,
+    );
     await conn.query(`INSERT INTO ${tbl} (id, note) VALUES (?, ?)`, [1, 'ok']);
     const [cntRows] = await conn.query(`SELECT COUNT(*) as cnt FROM ${tbl}`);
     await conn.query(`DROP TABLE ${tbl}`);
@@ -83,7 +85,9 @@ function pick(...keys) {
     summary.errors.push(err.message || String(err));
     summary.status = 'down';
   } finally {
-    try { if (conn) await conn.end(); } catch (_) {}
+    try {
+      if (conn) await conn.end();
+    } catch (_) {}
   }
 
   const endAll = process.hrtime.bigint();

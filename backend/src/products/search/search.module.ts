@@ -12,7 +12,13 @@ import { PopularSearchService } from './popular-search.service';
 import { SearchController } from './search.controller';
 
 @Module({
-  imports: [ConfigModule, HttpModule, UnifiedCacheModule, CacheStrategiesModule, forwardRef(() => ProductsModule)],
+  imports: [
+    ConfigModule,
+    HttpModule,
+    UnifiedCacheModule,
+    CacheStrategiesModule,
+    forwardRef(() => ProductsModule),
+  ],
   providers: [
     MeiliSearchService,
     ZincSearchService,

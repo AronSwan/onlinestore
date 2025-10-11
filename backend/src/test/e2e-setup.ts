@@ -8,7 +8,7 @@ jest.setTimeout(120000); // E2E测试需要更长时间
 beforeAll(async () => {
   // 在测试前设置全局变量
   process.env.NODE_ENV = 'test';
-  
+
   // 可以在这里设置测试数据库或其他外部服务
 });
 

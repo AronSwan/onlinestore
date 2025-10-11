@@ -42,7 +42,7 @@ const ERROR_CODES = {
   OUTPUT_GENERATION_ERROR: 'OUTPUT_GENERATION_ERROR',
   FILE_SYSTEM_ERROR: 'FILE_SYSTEM_ERROR',
   VALIDATION_ERROR: 'VALIDATION_ERROR',
-  TIMEOUT_ERROR: 'TIMEOUT_ERROR'
+  TIMEOUT_ERROR: 'TIMEOUT_ERROR',
 };
 
 /**
@@ -66,22 +66,21 @@ function handleError(error, options = {}, context = {}) {
     } else if (error.message.includes('validation')) {
       code = ERROR_CODES.VALIDATION_ERROR;
     }
-    
-    securityError = new SecurityCheckError(
-      error.message,
-      code,
-      { originalError: error, ...context }
-    );
+
+    securityError = new SecurityCheckError(error.message, code, {
+      originalError: error,
+      ...context,
+    });
   }
-  
+
   // 记录错误
   logError(securityError, options);
-  
+
   // 在CI模式下生成错误报告
   if (options.ci) {
     generateErrorReport(securityError, options);
   }
-  
+
   return securityError;
 }
 
@@ -93,17 +92,17 @@ function handleError(error, options = {}, context = {}) {
 function logError(error, options) {
   const timestamp = new Date().toISOString();
   const logLevel = options.ci ? 'error' : 'error';
-  
+
   console.error(`[${timestamp}] [${logLevel}] ${error.name}: ${error.message}`);
   console.error(`错误代码: ${error.code}`);
-  
+
   if (error.details && Object.keys(error.details).length > 0) {
     console.error('错误详情:');
     Object.entries(error.details).forEach(([key, value]) => {
       console.error(`  ${key}: ${value}`);
     });
   }
-  
+
   // 在非CI模式下显示堆栈跟踪
   if (!options.ci && error.details.originalError && error.details.originalError.stack) {
     console.error('堆栈跟踪:');
@@ -120,7 +119,7 @@ function generateErrorReport(error, options) {
   try {
     const fs = require('fs');
     const path = require('path');
-    
+
     const reportPath = options.errorReportPath || 'security-error-report.json';
     const report = {
       timestamp: new Date().toISOString(),
@@ -128,7 +127,7 @@ function generateErrorReport(error, options) {
         name: error.name,
         message: error.message,
         code: error.code,
-        details: error.details
+        details: error.details,
       },
       options: {
         category: options.category,
@@ -136,15 +135,15 @@ function generateErrorReport(error, options) {
         format: options.format,
         output: options.output,
         failOn: options.failOn,
-        ci: options.ci
+        ci: options.ci,
       },
       environment: {
         nodeVersion: process.version,
         platform: process.platform,
-        arch: process.arch
-      }
+        arch: process.arch,
+      },
     };
-    
+
     fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
     console.error(`错误报告已生成: ${reportPath}`);
   } catch (reportError) {
@@ -163,36 +162,35 @@ function validateOptions(options) {
     throw new SecurityCheckError(
       `无效的类别: ${options.category}。有效类别: ${SECURITY_CATEGORIES.join(', ')}`,
       ERROR_CODES.VALIDATION_ERROR,
-      { providedCategory: options.category, validCategories: SECURITY_CATEGORIES }
+      { providedCategory: options.category, validCategories: SECURITY_CATEGORIES },
     );
   }
-  
+
   // 验证规则
   if (options.rule && !SECURITY_RULES[options.rule]) {
-    throw new SecurityCheckError(
-      `无效的规则: ${options.rule}`,
-      ERROR_CODES.VALIDATION_ERROR,
-      { providedRule: options.rule, validRules: Object.keys(SECURITY_RULES) }
-    );
+    throw new SecurityCheckError(`无效的规则: ${options.rule}`, ERROR_CODES.VALIDATION_ERROR, {
+      providedRule: options.rule,
+      validRules: Object.keys(SECURITY_RULES),
+    });
   }
-  
+
   // 验证格式
   const validFormats = ['json', 'sarif', 'table', 'markdown'];
   if (options.format && !validFormats.includes(options.format)) {
     throw new SecurityCheckError(
       `无效的格式: ${options.format}。有效格式: ${validFormats.join(', ')}`,
       ERROR_CODES.VALIDATION_ERROR,
-      { providedFormat: options.format, validFormats }
+      { providedFormat: options.format, validFormats },
     );
   }
-  
+
   // 验证失败阈值
   const validFailOn = ['low', 'medium', 'high', 'critical'];
   if (options.failOn && !validFailOn.includes(options.failOn)) {
     throw new SecurityCheckError(
       `无效的失败阈值: ${options.failOn}。有效阈值: ${validFailOn.join(', ')}`,
       ERROR_CODES.VALIDATION_ERROR,
-      { providedFailOn: options.failOn, validFailOn }
+      { providedFailOn: options.failOn, validFailOn },
     );
   }
 }
@@ -206,13 +204,11 @@ function validateOptions(options) {
 function withTimeout(timeout, callback) {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
-      reject(new SecurityCheckError(
-        `操作超时 (${timeout}ms)`,
-        ERROR_CODES.TIMEOUT_ERROR,
-        { timeout }
-      ));
+      reject(
+        new SecurityCheckError(`操作超时 (${timeout}ms)`, ERROR_CODES.TIMEOUT_ERROR, { timeout }),
+      );
     }, timeout);
-    
+
     callback()
       .then(result => {
         clearTimeout(timer);
@@ -233,15 +229,15 @@ async function runSecurityChecksMain(options = {}) {
   try {
     // 验证选项
     validateOptions(options);
-    
+
     // 设置默认超时时间（5分钟）
     const timeout = options.timeout || 5 * 60 * 1000;
-    
+
     // 运行安全检查（带超时）
     const checkResult = await withTimeout(timeout, async () => {
       return await runSecurityChecks(options);
     });
-    
+
     // 生成输出
     try {
       generateOutput(checkResult, options);
@@ -249,10 +245,10 @@ async function runSecurityChecksMain(options = {}) {
       throw new SecurityCheckError(
         `生成输出失败: ${outputError.message}`,
         ERROR_CODES.OUTPUT_GENERATION_ERROR,
-        { originalError: outputError, outputPath: options.output }
+        { originalError: outputError, outputPath: options.output },
       );
     }
-    
+
     // 确保文件写入完成
     if (options.output) {
       try {
@@ -262,14 +258,14 @@ async function runSecurityChecksMain(options = {}) {
         throw new SecurityCheckError(
           `文件同步失败: ${fileError.message}`,
           ERROR_CODES.FILE_SYSTEM_ERROR,
-          { originalError: fileError, outputPath: options.output }
+          { originalError: fileError, outputPath: options.output },
         );
       }
     }
-    
+
     // 检查是否应该失败
     const shouldFailResult = shouldFail(checkResult.results, options.failOn);
-    
+
     if (shouldFailResult) {
       const exitCode = getExitCode(checkResult.results, options.failOn);
       console.log(`安全检查失败，退出代码: ${exitCode}`);
@@ -281,30 +277,38 @@ async function runSecurityChecksMain(options = {}) {
   } catch (error) {
     const securityError = handleError(error, options, {
       phase: 'main',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-    
+
     process.exit(1);
   }
 }
 
 // 未捕获异常处理
-process.on('uncaughtException', (error) => {
-  const securityError = handleError(error, {}, {
-    phase: 'uncaughtException',
-    timestamp: new Date().toISOString()
-  });
+process.on('uncaughtException', error => {
+  const securityError = handleError(
+    error,
+    {},
+    {
+      phase: 'uncaughtException',
+      timestamp: new Date().toISOString(),
+    },
+  );
   process.exit(1);
 });
 
 // 未处理的Promise拒绝
 process.on('unhandledRejection', (reason, promise) => {
   const error = reason instanceof Error ? reason : new Error(String(reason));
-  const securityError = handleError(error, {}, {
-    phase: 'unhandledRejection',
-    timestamp: new Date().toISOString(),
-    promise: promise.toString()
-  });
+  const securityError = handleError(
+    error,
+    {},
+    {
+      phase: 'unhandledRejection',
+      timestamp: new Date().toISOString(),
+      promise: promise.toString(),
+    },
+  );
   process.exit(1);
 });
 
@@ -315,10 +319,10 @@ if (require.main === module) {
 }
 
 // 导出模块
-module.exports = { 
-  runSecurityChecks: runSecurityChecksMain, 
-  SECURITY_RULES, 
+module.exports = {
+  runSecurityChecks: runSecurityChecksMain,
+  SECURITY_RULES,
   SECURITY_CATEGORIES,
   SecurityCheckError,
-  ERROR_CODES
+  ERROR_CODES,
 };

@@ -48,56 +48,71 @@ export interface CqrsOpenObserveConfig {
 }
 
 export default registerAs('cqrsOpenObserve', (): CqrsOpenObserveConfig => {
-  const oo = (EnvironmentAdapter as any)?.getOpenObserve?.() ?? {} as any;
+  const oo = (EnvironmentAdapter as any)?.getOpenObserve?.() ?? ({} as any);
   const baseUrl = oo.baseUrl || process.env.OPENOBSERVE_URL || 'http://localhost:5080';
   const organization = oo.organization || process.env.OPENOBSERVE_ORG || 'default';
   const token = oo.token || process.env.OPENOBSERVE_TOKEN || '';
   const swrBucketsEnv = process.env.CQRS_SWR_REFRESH_BUCKETS;
   const swrBuckets = (swrBucketsEnv
-    ? swrBucketsEnv.split(',').map(v => parseInt(v.trim(), 10)).filter(v => !isNaN(v))
+    ? swrBucketsEnv
+        .split(',')
+        .map(v => parseInt(v.trim(), 10))
+        .filter(v => !isNaN(v))
     : undefined) || [50, 100, 200, 500, 1000, 2000, 5000, 10000];
   const enableCacheKeyPrefix = process.env.CQRS_SWR_LABEL_CACHEKEY_PREFIX_ENABLED !== 'false';
-  const cacheKeyPrefixSegments = parseInt(process.env.CQRS_SWR_LABEL_CACHEKEY_PREFIX_SEGMENTS || '2', 10);
+  const cacheKeyPrefixSegments = parseInt(
+    process.env.CQRS_SWR_LABEL_CACHEKEY_PREFIX_SEGMENTS || '2',
+    10,
+  );
   const enableDomain = process.env.CQRS_SWR_LABEL_DOMAIN_ENABLED !== 'false';
   return {
-  baseUrl: baseUrl,
-  organization: organization,
-  token: token,
-  streams: {
-    commands: process.env.CQRS_STREAM_COMMANDS || 'cqrs-commands',
-    queries: process.env.CQRS_STREAM_QUERIES || 'cqrs-queries',
-    events: process.env.CQRS_STREAM_EVENTS || 'cqrs-events',
-    metrics: process.env.CQRS_STREAM_METRICS || 'cqrs-metrics',
-    traces: process.env.CQRS_STREAM_TRACES || 'traces',
-  },
-  endpoints: {
-    logs: oo.endpoints?.logs || `${baseUrl}/otlp/v1/logs`,
-    metrics: oo.endpoints?.metrics || `${baseUrl}/otlp/v1/metrics`,
-    traces: oo.endpoints?.traces || `${baseUrl}/otlp/v1/traces`,
-  },
-  performance: {
-    batchSize: oo.performance?.batchSize ?? parseInt(process.env.OPENOBSERVE_BATCH_SIZE || '100', 10),
-    flushInterval: oo.performance?.flushInterval ?? parseInt(process.env.OPENOBSERVE_FLUSH_INTERVAL || '5000', 10),
-    maxRetries: oo.performance?.maxRetries ?? parseInt(process.env.OPENOBSERVE_MAX_RETRIES || '3', 10),
-    timeout: oo.performance?.timeout ?? parseInt(process.env.OPENOBSERVE_TIMEOUT || '10000', 10),
-  },
-  tracing: {
-    enabled: oo.tracing?.enabled ?? (process.env.OPENOBSERVE_TRACING_ENABLED !== 'false'),
-    samplingRate: oo.tracing?.samplingRate ?? parseFloat(process.env.OPENOBSERVE_TRACING_SAMPLING_RATE || '0.1'),
-  },
-  alerts: {
-    enabled: oo.alerts?.enabled ?? (process.env.OPENOBSERVE_ALERTS_ENABLED !== 'false'),
-    evaluationInterval: oo.alerts?.evaluationInterval ?? parseInt(process.env.OPENOBSERVE_ALERTS_EVALUATION_INTERVAL || '60000', 10),
-  },
-  metrics: {
-    histogramBuckets: {
-      swrRefreshMs: oo.metrics?.histogramBuckets?.swrRefreshMs || swrBuckets,
+    baseUrl: baseUrl,
+    organization: organization,
+    token: token,
+    streams: {
+      commands: process.env.CQRS_STREAM_COMMANDS || 'cqrs-commands',
+      queries: process.env.CQRS_STREAM_QUERIES || 'cqrs-queries',
+      events: process.env.CQRS_STREAM_EVENTS || 'cqrs-events',
+      metrics: process.env.CQRS_STREAM_METRICS || 'cqrs-metrics',
+      traces: process.env.CQRS_STREAM_TRACES || 'traces',
     },
-    labels: {
-      enableCacheKeyPrefix: oo.metrics?.labels?.enableCacheKeyPrefix ?? enableCacheKeyPrefix,
-      cacheKeyPrefixSegments: oo.metrics?.labels?.cacheKeyPrefixSegments ?? cacheKeyPrefixSegments,
-      enableDomain: oo.metrics?.labels?.enableDomain ?? enableDomain,
+    endpoints: {
+      logs: oo.endpoints?.logs || `${baseUrl}/otlp/v1/logs`,
+      metrics: oo.endpoints?.metrics || `${baseUrl}/otlp/v1/metrics`,
+      traces: oo.endpoints?.traces || `${baseUrl}/otlp/v1/traces`,
     },
-  },
+    performance: {
+      batchSize:
+        oo.performance?.batchSize ?? parseInt(process.env.OPENOBSERVE_BATCH_SIZE || '100', 10),
+      flushInterval:
+        oo.performance?.flushInterval ??
+        parseInt(process.env.OPENOBSERVE_FLUSH_INTERVAL || '5000', 10),
+      maxRetries:
+        oo.performance?.maxRetries ?? parseInt(process.env.OPENOBSERVE_MAX_RETRIES || '3', 10),
+      timeout: oo.performance?.timeout ?? parseInt(process.env.OPENOBSERVE_TIMEOUT || '10000', 10),
+    },
+    tracing: {
+      enabled: oo.tracing?.enabled ?? process.env.OPENOBSERVE_TRACING_ENABLED !== 'false',
+      samplingRate:
+        oo.tracing?.samplingRate ??
+        parseFloat(process.env.OPENOBSERVE_TRACING_SAMPLING_RATE || '0.1'),
+    },
+    alerts: {
+      enabled: oo.alerts?.enabled ?? process.env.OPENOBSERVE_ALERTS_ENABLED !== 'false',
+      evaluationInterval:
+        oo.alerts?.evaluationInterval ??
+        parseInt(process.env.OPENOBSERVE_ALERTS_EVALUATION_INTERVAL || '60000', 10),
+    },
+    metrics: {
+      histogramBuckets: {
+        swrRefreshMs: oo.metrics?.histogramBuckets?.swrRefreshMs || swrBuckets,
+      },
+      labels: {
+        enableCacheKeyPrefix: oo.metrics?.labels?.enableCacheKeyPrefix ?? enableCacheKeyPrefix,
+        cacheKeyPrefixSegments:
+          oo.metrics?.labels?.cacheKeyPrefixSegments ?? cacheKeyPrefixSegments,
+        enableDomain: oo.metrics?.labels?.enableDomain ?? enableDomain,
+      },
+    },
   };
 });

@@ -23,9 +23,7 @@ export class CreateUsersSession20251001000004 implements MigrationInterface {
       [tableName],
     );
     if (!idxUserExists?.cnt) {
-      await queryRunner.query(
-        `CREATE INDEX IDX_users_session_user ON ${tableName} (user_id)`,
-      );
+      await queryRunner.query(`CREATE INDEX IDX_users_session_user ON ${tableName} (user_id)`);
     }
     const [idxExpiresExists] = await queryRunner.query(
       `SELECT COUNT(1) AS cnt FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = 'IDX_users_session_expires'`,

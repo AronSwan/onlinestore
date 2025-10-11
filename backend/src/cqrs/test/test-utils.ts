@@ -171,10 +171,10 @@ export class TestMocker {
    */
   static mockCommandHandler() {
     const handler: ICommandHandler = {
-      handle: (jest.fn(async (_command: ICommand) => ({
+      handle: jest.fn(async (_command: ICommand) => ({
         success: true,
         data: TestDataFactory.createUser(),
-      })) as unknown) as (command: ICommand) => Promise<ICommandResult<any>>,
+      })) as unknown as (command: ICommand) => Promise<ICommandResult<any>>,
       getName: () => 'MockCommandHandler',
     };
     return handler;
@@ -185,11 +185,11 @@ export class TestMocker {
    */
   static mockQueryHandler() {
     const handler: IQueryHandler = {
-      handle: (jest.fn(async (_query: IQuery<any>) => ({
+      handle: jest.fn(async (_query: IQuery<any>) => ({
         success: true,
         data: TestDataFactory.createUser(),
         fromCache: false,
-      })) as unknown) as (query: IQuery<any>) => Promise<IQueryResult<any>>,
+      })) as unknown as (query: IQuery<any>) => Promise<IQueryResult<any>>,
       getName: () => 'MockQueryHandler',
     };
     return handler;
@@ -200,9 +200,9 @@ export class TestMocker {
    */
   static mockEventHandler() {
     const handler: IEventHandler = {
-      handle: (jest.fn(async (_event: IEvent) => ({
+      handle: jest.fn(async (_event: IEvent) => ({
         success: true,
-      })) as unknown) as (event: IEvent) => Promise<IEventHandlerResult>,
+      })) as unknown as (event: IEvent) => Promise<IEventHandlerResult>,
       getName: () => 'MockEventHandler',
       getEventType: () => 'TestEvent',
     };
@@ -215,12 +215,11 @@ export class TestMocker {
   static mockMiddleware() {
     return {
       name: 'TestMiddleware',
-      execute: createMockedFunction<(
-        command: any,
-        next: () => Promise<any>,
-      ) => Promise<any>>(async (_command, next) => {
-        return next();
-      }),
+      execute: createMockedFunction<(command: any, next: () => Promise<any>) => Promise<any>>(
+        async (_command, next) => {
+          return next();
+        },
+      ),
     };
   }
 

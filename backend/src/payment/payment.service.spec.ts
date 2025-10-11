@@ -4,7 +4,11 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository, DataSource, QueryRunner } from 'typeorm';
 import { PaymentService } from './payment.service';
 import { Payment, PaymentMethod, PaymentStatus, PaymentGateway } from './entities/payment.entity';
-import { PaymentStrategy, PaymentRequest, RefundRequest } from './strategies/payment-strategy.interface';
+import {
+  PaymentStrategy,
+  PaymentRequest,
+  RefundRequest,
+} from './strategies/payment-strategy.interface';
 import {
   GatewayResult,
   CreatePaymentData,
@@ -38,34 +42,22 @@ describe('PaymentService', () => {
   const mockConfigService = createMockConfigService();
 
   const mockAlipayStrategy: jest.Mocked<PaymentStrategy> = {
-    createPayment: createMockedFunction<(
-      req: PaymentRequest,
-    ) => Promise<GatewayResult<CreatePaymentData>>>(),
-    queryPayment: createMockedFunction<(
-      paymentId: string,
-    ) => Promise<GatewayResult<QueryPaymentData>>>(),
-    handleCallback: createMockedFunction<(
-      data: any,
-    ) => Promise<GatewayResult<CallbackData>>>(),
-    refund: createMockedFunction<(
-      req: RefundRequest,
-    ) => Promise<GatewayResult<RefundData>>>(),
+    createPayment:
+      createMockedFunction<(req: PaymentRequest) => Promise<GatewayResult<CreatePaymentData>>>(),
+    queryPayment:
+      createMockedFunction<(paymentId: string) => Promise<GatewayResult<QueryPaymentData>>>(),
+    handleCallback: createMockedFunction<(data: any) => Promise<GatewayResult<CallbackData>>>(),
+    refund: createMockedFunction<(req: RefundRequest) => Promise<GatewayResult<RefundData>>>(),
     validateCallback: createMockedFunction<(data: any) => boolean>(),
   } as any;
 
   const mockWechatStrategy: jest.Mocked<PaymentStrategy> = {
-    createPayment: createMockedFunction<(
-      req: PaymentRequest,
-    ) => Promise<GatewayResult<CreatePaymentData>>>(),
-    queryPayment: createMockedFunction<(
-      paymentId: string,
-    ) => Promise<GatewayResult<QueryPaymentData>>>(),
-    handleCallback: createMockedFunction<(
-      data: any,
-    ) => Promise<GatewayResult<CallbackData>>>(),
-    refund: createMockedFunction<(
-      req: RefundRequest,
-    ) => Promise<GatewayResult<RefundData>>>(),
+    createPayment:
+      createMockedFunction<(req: PaymentRequest) => Promise<GatewayResult<CreatePaymentData>>>(),
+    queryPayment:
+      createMockedFunction<(paymentId: string) => Promise<GatewayResult<QueryPaymentData>>>(),
+    handleCallback: createMockedFunction<(data: any) => Promise<GatewayResult<CallbackData>>>(),
+    refund: createMockedFunction<(req: RefundRequest) => Promise<GatewayResult<RefundData>>>(),
     validateCallback: createMockedFunction<(data: any) => boolean>(),
   } as any;
 
@@ -185,7 +177,9 @@ describe('PaymentService', () => {
     it('should throw error when payment not found', async () => {
       mockPaymentRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.getPaymentStatus('NON_EXISTENT')).rejects.toThrow(new BadRequestException());
+      await expect(service.getPaymentStatus('NON_EXISTENT')).rejects.toThrow(
+        new BadRequestException(),
+      );
     });
   });
 
@@ -276,7 +270,9 @@ describe('PaymentService', () => {
         amount: -10,
       };
 
-      await expect(service.createPayment(invalidAmountDto)).rejects.toThrow(new BadRequestException());
+      await expect(service.createPayment(invalidAmountDto)).rejects.toThrow(
+        new BadRequestException(),
+      );
     });
 
     it('should validate payment method', async () => {
@@ -285,7 +281,9 @@ describe('PaymentService', () => {
         method: 'invalid-method' as PaymentMethod,
       };
 
-      await expect(service.createPayment(invalidMethodDto)).rejects.toThrow(new BadRequestException());
+      await expect(service.createPayment(invalidMethodDto)).rejects.toThrow(
+        new BadRequestException(),
+      );
     });
 
     it('should handle strategy creation failure', async () => {
@@ -303,7 +301,9 @@ describe('PaymentService', () => {
       (mockQueryRunner.rollbackTransaction as jest.Mock).mockResolvedValue(undefined);
       (mockQueryRunner.release as jest.Mock).mockResolvedValue(undefined);
 
-      await expect(service.createPayment(invalidMethodDto)).rejects.toThrow(new BadRequestException());
+      await expect(service.createPayment(invalidMethodDto)).rejects.toThrow(
+        new BadRequestException(),
+      );
 
       // 验证事务回滚
       expect(mockQueryRunner.rollbackTransaction).toHaveBeenCalled();
@@ -528,7 +528,9 @@ describe('PaymentService', () => {
 
       mockPaymentRepository.findOne.mockResolvedValue(mockPayment);
 
-      await expect(service.refundPayment('PAY_123', 99.99)).rejects.toThrow(new BadRequestException());
+      await expect(service.refundPayment('PAY_123', 99.99)).rejects.toThrow(
+        new BadRequestException(),
+      );
     });
 
     it('should reject refund amount exceeding payment amount', async () => {
@@ -558,7 +560,9 @@ describe('PaymentService', () => {
 
       mockPaymentRepository.findOne.mockResolvedValue(mockPayment);
 
-      await expect(service.refundPayment('PAY_123', 299.99)).rejects.toThrow(new BadRequestException());
+      await expect(service.refundPayment('PAY_123', 299.99)).rejects.toThrow(
+        new BadRequestException(),
+      );
     });
   });
 
@@ -601,7 +605,9 @@ describe('PaymentService', () => {
     it('should reject batch query with too many IDs', async () => {
       const paymentIds = Array.from({ length: 101 }, (_, i) => `PAY_${i}`);
 
-      await expect(service.batchGetPaymentStatus(paymentIds)).rejects.toThrow(new BadRequestException());
+      await expect(service.batchGetPaymentStatus(paymentIds)).rejects.toThrow(
+        new BadRequestException(),
+      );
     });
   });
 

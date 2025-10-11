@@ -1,7 +1,7 @@
 # 后端服务 Dockerfile（修订版，兼容 Nest 构建与健康检查）
 
 # 构建阶段：安装全部依赖并进行编译
-FROM node:18-alpine AS builder
+FROM node:22-alpine AS builder
 
 RUN apk add --no-cache python3 make g++
 WORKDIR /app
@@ -24,7 +24,7 @@ RUN npm run build
 RUN npm prune --production && npm cache clean --force
 
 # 运行时阶段：精简镜像并配置健康检查
-FROM node:18-alpine AS runtime
+FROM node:22-alpine AS runtime
 
 RUN apk add --no-cache dumb-init curl
 WORKDIR /app

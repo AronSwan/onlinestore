@@ -95,7 +95,9 @@ export class RedpandaService implements OnModuleInit, OnModuleDestroy {
       const kafkaEnabledEnv = process.env.KAFKA_ENABLED;
       const kafkaEnabled = kafkaEnabledEnv === undefined ? !isDev : kafkaEnabledEnv !== 'false';
       if (isDev || !kafkaEnabled) {
-        this.logger.warn('Failed to connect to Redpanda in development mode, continuing without it');
+        this.logger.warn(
+          'Failed to connect to Redpanda in development mode, continuing without it',
+        );
         // 创建一个空的 producer，避免运行时错误
         this.producer = {
           connect: async () => {},

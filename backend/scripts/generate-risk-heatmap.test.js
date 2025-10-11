@@ -22,7 +22,7 @@ const {
   generateSVGHeatmap,
   generateNoDataPlaceholder,
   updateHeatmapSection,
-  DEFAULT_CONFIG
+  DEFAULT_CONFIG,
 } = require('./generate-risk-heatmap.js');
 
 // 检测是否在Jest环境中运行
@@ -31,46 +31,46 @@ const isJest = process.env.NODE_ENV === 'test' || typeof jest !== 'undefined';
 // 默认配置
 const TEST_CONFIG = {
   systemMapping: {
-    '性能问题': {
+    性能问题: {
       keywords: ['索引', '查询', '性能', '缓存', '优化'],
       priority: 1,
-      color: '#43a047'
+      color: '#43a047',
     },
-    '支付系统': {
+    支付系统: {
       keywords: ['支付', '交易', '结算', '账单'],
       priority: 2,
-      color: '#e53935'
+      color: '#e53935',
     },
-    '认证授权': {
+    认证授权: {
       keywords: ['认证', '角色', 'JWT', '授权', '登录', '权限', '守卫'],
       priority: 3,
-      color: '#fb8c00'
+      color: '#fb8c00',
     },
-    '数据安全': {
+    数据安全: {
       keywords: ['密码', '用户', '数据', '敏感', '加密', '解密'],
       priority: 4,
-      color: '#fdd835'
+      color: '#fdd835',
     },
-    '其他': {
+    其他: {
       keywords: [],
       priority: 5,
-      color: '#1e88e5'
-    }
+      color: '#1e88e5',
+    },
   },
   severityColors: {
-    '严重': '#d32f2f',
-    '高': '#f57c00',
-    '中': '#fbc02d',
-    '低': '#388e3c',
-    'empty': '#f5f5f5'
+    严重: '#d32f2f',
+    高: '#f57c00',
+    中: '#fbc02d',
+    低: '#388e3c',
+    empty: '#f5f5f5',
   },
   dimensions: {
     cellWidth: 120,
     cellHeight: 40,
     headerHeight: 30,
     headerWidth: 100,
-    legendHeight: 50
-  }
+    legendHeight: 50,
+  },
 };
 
 // 测试用例
@@ -95,9 +95,9 @@ const testCases = [
         system: '认证授权',
         severity: '高',
         cvss: 7.5,
-        status: '待修复'
-      }
-    }
+        status: '待修复',
+      },
+    },
   },
   {
     name: '系统分类测试',
@@ -106,29 +106,29 @@ const testCases = [
       { title: 'JWT认证守卫实现过于简单', expected: '认证授权' },
       { title: '用户实体密码字段处理不当', expected: '数据安全' },
       { title: '订单实体缺乏数据库索引', expected: '性能问题' },
-      { title: '未知类型的漏洞', expected: '其他' }
-    ]
+      { title: '未知类型的漏洞', expected: '其他' },
+    ],
   },
   {
     name: '颜色梯度测试',
     input: [
       { baseColor: '#d32f2f', count: 0, maxCount: 5, expected: '#f5f5f5' },
       { baseColor: '#d32f2f', count: 5, maxCount: 5, expected: '#d32f2f' },
-      { baseColor: '#d32f2f', count: 3, maxCount: 5, expected: '#a92626' }
-    ]
-  }
+      { baseColor: '#d32f2f', count: 3, maxCount: 5, expected: '#a92626' },
+    ],
+  },
 ];
 
 // Jest测试套件
 if (isJest) {
   // 模拟文件系统操作
   jest.mock('fs');
-  
+
   describe('风险热力图生成脚本测试', () => {
     beforeEach(() => {
       // 重置所有模拟
       jest.clearAllMocks();
-      
+
       // 设置默认的文件系统模拟
       fs.existsSync.mockReturnValue(true);
       fs.readFileSync.mockReturnValue('');
@@ -153,7 +153,10 @@ if (isJest) {
       });
 
       test('应该处理英文关键词', () => {
-        const result = mapToSystem('Payment controller lacks input validation', DEFAULT_CONFIG.systemMapping);
+        const result = mapToSystem(
+          'Payment controller lacks input validation',
+          DEFAULT_CONFIG.systemMapping,
+        );
         expect(result).toBe('支付系统');
       });
 
@@ -188,19 +191,19 @@ if (isJest) {
     describe('getMaxCount', () => {
       test('应该找到最大计数值', () => {
         const heatmapData = {
-          '支付系统': { '严重': 1, '高': 2, '中': 0, '低': 0 },
-          '认证授权': { '严重': 0, '高': 3, '中': 1, '低': 0 }
+          支付系统: { 严重: 1, 高: 2, 中: 0, 低: 0 },
+          认证授权: { 严重: 0, 高: 3, 中: 1, 低: 0 },
         };
-        
+
         const result = getMaxCount(heatmapData);
         expect(result).toBe(3);
       });
 
       test('应该处理空数据', () => {
         const heatmapData = {
-          '支付系统': { '严重': 0, '高': 0, '中': 0, '低': 0 }
+          支付系统: { 严重: 0, 高: 0, 中: 0, 低: 0 },
         };
-        
+
         const result = getMaxCount(heatmapData);
         expect(result).toBe(0);
       });
@@ -212,11 +215,11 @@ if (isJest) {
           { system: '支付系统', severity: '严重' },
           { system: '支付系统', severity: '高' },
           { system: '认证授权', severity: '高' },
-          { system: '数据安全', severity: '中' }
+          { system: '数据安全', severity: '中' },
         ];
-        
+
         const result = groupBySystemAndSeverity(vulnerabilities, DEFAULT_CONFIG);
-        
+
         expect(result['支付系统']['严重']).toBe(1);
         expect(result['支付系统']['高']).toBe(1);
         expect(result['认证授权']['高']).toBe(1);
@@ -227,12 +230,12 @@ if (isJest) {
     describe('generateSVGHeatmap', () => {
       test('应该生成有效的SVG', () => {
         const heatmapData = {
-          '支付系统': { '严重': 1, '高': 2, '中': 0, '低': 0 },
-          '认证授权': { '严重': 0, '高': 1, '中': 1, '低': 0 }
+          支付系统: { 严重: 1, 高: 2, 中: 0, 低: 0 },
+          认证授权: { 严重: 0, 高: 1, 中: 1, 低: 0 },
         };
-        
+
         const svg = generateSVGHeatmap(heatmapData, DEFAULT_CONFIG, 'zh');
-        
+
         expect(svg).toContain('<svg');
         expect(svg).toContain('</svg>');
         expect(svg).toContain('支付系统');
@@ -242,11 +245,11 @@ if (isJest) {
 
       test('应该支持英文标签', () => {
         const heatmapData = {
-          'Payment System': { 'Critical': 1, 'High': 0, 'Medium': 0, 'Low': 0 }
+          'Payment System': { Critical: 1, High: 0, Medium: 0, Low: 0 },
         };
-        
+
         const svg = generateSVGHeatmap(heatmapData, DEFAULT_CONFIG, 'en');
-        
+
         expect(svg).toContain('System/Severity');
         expect(svg).toContain('Critical');
         expect(svg).toContain('Legend:');
@@ -264,9 +267,9 @@ if (isJest) {
 **数据来源**: 漏洞追踪表中的CVSS评分和优先级
 
 ## 其他部分`;
-      
+
         const result = updateHeatmapSection(content, 'docs/new-heatmap.svg', 'zh');
-        
+
         expect(result).toContain('docs/new-heatmap.svg');
       });
 
@@ -280,9 +283,9 @@ if (isJest) {
 **Data Source**: Vulnerability tracking table
 
 ## Other Section`;
-      
+
         const result = updateHeatmapSection(content, 'docs/new-heatmap.svg', 'en');
-        
+
         expect(result).toContain('docs/new-heatmap.svg');
       });
 
@@ -290,9 +293,9 @@ if (isJest) {
         const content = `# 文档标题
 
 ## 其他部分`;
-      
+
         const result = updateHeatmapSection(content, 'docs/security-risk-heatmap.svg', 'zh');
-        
+
         expect(result).toContain('## 风险热力图');
         expect(result).toContain('docs/security-risk-heatmap.svg');
       });
@@ -301,7 +304,7 @@ if (isJest) {
     describe('异常路径测试', () => {
       test('应该处理不存在的文件', () => {
         fs.existsSync.mockReturnValue(false);
-        
+
         expect(() => {
           generateRiskHeatmap();
         }).not.toThrow(); // V2版本有错误处理，不会抛出异常
@@ -311,7 +314,7 @@ if (isJest) {
         fs.readFileSync.mockImplementation(() => {
           throw new Error('文件读取失败');
         });
-        
+
         expect(() => {
           generateRiskHeatmap();
         }).not.toThrow(); // V2版本有错误处理，不会抛出异常
@@ -321,7 +324,7 @@ if (isJest) {
         fs.writeFileSync.mockImplementation(() => {
           throw new Error('文件写入失败');
         });
-        
+
         expect(() => {
           generateRiskHeatmap();
         }).not.toThrow(); // V2版本有错误处理，不会抛出异常
@@ -344,22 +347,22 @@ if (isJest) {
               priority: '高',
               businessImpact: '可能导致未授权访问',
               firstFound: '2025-10-01',
-              targetDate: '2025-10-05'
-            }
-          ]
+              targetDate: '2025-10-05',
+            },
+          ],
         };
 
         // 模拟JSON文件读取
-        fs.readFileSync.mockImplementation((filePath) => {
+        fs.readFileSync.mockImplementation(filePath => {
           if (filePath.includes('security-vulnerabilities.json')) {
             return JSON.stringify(mockData);
           }
           return '';
         });
-        
+
         // 执行生成流程
         generateRiskHeatmap();
-        
+
         // 验证文件操作调用
         expect(fs.existsSync).toHaveBeenCalled();
         expect(fs.readFileSync).toHaveBeenCalled();
@@ -371,10 +374,10 @@ if (isJest) {
   // 自定义测试框架实现
   function runTests() {
     console.log('开始运行风险热力图生成脚本测试...\n');
-    
+
     let passedTests = 0;
     let totalTests = 0;
-    
+
     // 测试1: 系统分类
     console.log('测试1: 系统分类');
     totalTests++;
@@ -383,7 +386,9 @@ if (isJest) {
       for (const testCase of testCases[1].input) {
         const result = mapToSystem(testCase.title, TEST_CONFIG.systemMapping);
         if (result !== testCase.expected) {
-          console.log(`✗ 失败 - "${testCase.title}" 期望 "${testCase.expected}" 但得到 "${result}"`);
+          console.log(
+            `✗ 失败 - "${testCase.title}" 期望 "${testCase.expected}" 但得到 "${result}"`,
+          );
           allPassed = false;
         }
       }
@@ -394,7 +399,7 @@ if (isJest) {
     } catch (error) {
       console.log('✗ 失败 - 异常:', error.message);
     }
-    
+
     // 测试2: 颜色梯度
     console.log('\n测试2: 颜色梯度');
     totalTests++;
@@ -414,7 +419,7 @@ if (isJest) {
     } catch (error) {
       console.log('✗ 失败 - 异常:', error.message);
     }
-    
+
     // 测试3: 分组功能
     console.log('\n测试3: 分组功能');
     totalTests++;
@@ -423,15 +428,17 @@ if (isJest) {
         { system: '支付系统', severity: '严重' },
         { system: '支付系统', severity: '高' },
         { system: '认证授权', severity: '高' },
-        { system: '数据安全', severity: '中' }
+        { system: '数据安全', severity: '中' },
       ];
-      
+
       const result = groupBySystemAndSeverity(vulnerabilities, TEST_CONFIG);
-      
-      if (result['支付系统']['严重'] === 1 &&
-          result['支付系统']['高'] === 1 &&
-          result['认证授权']['高'] === 1 &&
-          result['数据安全']['中'] === 1) {
+
+      if (
+        result['支付系统']['严重'] === 1 &&
+        result['支付系统']['高'] === 1 &&
+        result['认证授权']['高'] === 1 &&
+        result['数据安全']['中'] === 1
+      ) {
         console.log('✓ 通过');
         passedTests++;
       } else {
@@ -441,22 +448,24 @@ if (isJest) {
     } catch (error) {
       console.log('✗ 失败 - 异常:', error.message);
     }
-    
+
     // 测试4: SVG生成
     console.log('\n测试4: SVG生成');
     totalTests++;
     try {
       const heatmapData = {
-        '支付系统': { '严重': 1, '高': 2, '中': 0, '低': 0 },
-        '认证授权': { '严重': 0, '高': 1, '中': 1, '低': 0 }
+        支付系统: { 严重: 1, 高: 2, 中: 0, 低: 0 },
+        认证授权: { 严重: 0, 高: 1, 中: 1, 低: 0 },
       };
-      
+
       const svg = generateSVGHeatmap(heatmapData, TEST_CONFIG);
-      
-      if (svg.includes('<svg') && 
-          svg.includes('</svg>') && 
-          svg.includes('支付系统') && 
-          svg.includes('认证授权')) {
+
+      if (
+        svg.includes('<svg') &&
+        svg.includes('</svg>') &&
+        svg.includes('支付系统') &&
+        svg.includes('认证授权')
+      ) {
         console.log('✓ 通过');
         passedTests++;
       } else {
@@ -465,7 +474,7 @@ if (isJest) {
     } catch (error) {
       console.log('✗ 失败 - 异常:', error.message);
     }
-    
+
     // 测试5: 更新热力图段落
     console.log('\n测试5: 更新热力图段落');
     totalTests++;
@@ -479,9 +488,9 @@ if (isJest) {
 **数据来源**: 漏洞追踪表中的CVSS评分和优先级
 
 ## 其他部分`;
-      
+
       const result = updateHeatmapSection(content, 'docs/new-heatmap.svg');
-      
+
       if (result.includes('docs/new-heatmap.svg')) {
         console.log('✓ 通过');
         passedTests++;
@@ -492,10 +501,10 @@ if (isJest) {
     } catch (error) {
       console.log('✗ 失败 - 异常:', error.message);
     }
-    
+
     // 输出测试结果
     console.log(`\n测试结果: ${passedTests}/${totalTests} 通过`);
-    
+
     if (passedTests === totalTests) {
       console.log('🎉 所有测试通过！');
       process.exit(0);
@@ -504,11 +513,11 @@ if (isJest) {
       process.exit(1);
     }
   }
-  
+
   // 运行测试
   if (require.main === module) {
     runTests();
   }
-  
+
   module.exports = { runTests };
 }

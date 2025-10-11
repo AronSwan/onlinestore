@@ -1,0 +1,45 @@
+name: Backend Lint
+
+on:
+  pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-lint.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'backend/**'
+
+jobs:
+  lint-app:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        working-directory: backend
+        run: npm ci
+      - name: Run ESLint (app only)
+        working-directory: backend
+        run: npm run lint:app
+
+  lint-scripts:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        working-directory: backend
+        run: npm ci
+      - name: Run ESLint (scripts)
+        working-directory: backend
+        run: npm run lint:scripts

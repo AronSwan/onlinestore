@@ -14,11 +14,11 @@ export {
 // HttpService 常用方法模板
 export const createMockHttpService = () => {
   return {
-    post: (jest.fn() as unknown) as jest.MockedFunction<HttpService['post']>,
-    get: (jest.fn() as unknown) as jest.MockedFunction<HttpService['get']>,
-    delete: (jest.fn() as unknown) as jest.MockedFunction<HttpService['delete']>,
-    put: (jest.fn() as unknown) as jest.MockedFunction<HttpService['put']>,
-    patch: (jest.fn() as unknown) as jest.MockedFunction<HttpService['patch']>,
+    post: jest.fn() as unknown as jest.MockedFunction<HttpService['post']>,
+    get: jest.fn() as unknown as jest.MockedFunction<HttpService['get']>,
+    delete: jest.fn() as unknown as jest.MockedFunction<HttpService['delete']>,
+    put: jest.fn() as unknown as jest.MockedFunction<HttpService['put']>,
+    patch: jest.fn() as unknown as jest.MockedFunction<HttpService['patch']>,
   } as any;
 };
 
@@ -29,36 +29,36 @@ export const asMocked = <T>(obj: T) => obj as unknown as jest.Mocked<T>;
 export const createMockQueryBuilder = <T = any>() => {
   const qb: any = {
     // 选择与连接
-    leftJoinAndSelect: (jest.fn().mockReturnThis() as unknown) as jest.MockedFunction<
+    leftJoinAndSelect: jest.fn().mockReturnThis() as unknown as jest.MockedFunction<
       (association: string, alias: string, condition?: string) => any
     >,
     // 过滤条件
-    where: (jest.fn().mockReturnThis() as unknown) as jest.MockedFunction<
+    where: jest.fn().mockReturnThis() as unknown as jest.MockedFunction<
       (condition: string, parameters?: Record<string, any>) => any
     >,
-    andWhere: (jest.fn().mockReturnThis() as unknown) as jest.MockedFunction<
+    andWhere: jest.fn().mockReturnThis() as unknown as jest.MockedFunction<
       (condition: string, parameters?: Record<string, any>) => any
     >,
     // 排序与分页
-    orderBy: (jest.fn().mockReturnThis() as unknown) as jest.MockedFunction<
+    orderBy: jest.fn().mockReturnThis() as unknown as jest.MockedFunction<
       (sort: string, order?: 'ASC' | 'DESC') => any
     >,
-    skip: (jest.fn().mockReturnThis() as unknown) as jest.MockedFunction<(count: number) => any>,
-    take: (jest.fn().mockReturnThis() as unknown) as jest.MockedFunction<(count: number) => any>,
+    skip: jest.fn().mockReturnThis() as unknown as jest.MockedFunction<(count: number) => any>,
+    take: jest.fn().mockReturnThis() as unknown as jest.MockedFunction<(count: number) => any>,
     // 更新链
-    update: (jest.fn().mockReturnThis() as unknown) as jest.MockedFunction<
+    update: jest.fn().mockReturnThis() as unknown as jest.MockedFunction<
       (entity?: any, values?: Record<string, any>) => any
     >,
-    set: (jest.fn().mockReturnThis() as unknown) as jest.MockedFunction<
+    set: jest.fn().mockReturnThis() as unknown as jest.MockedFunction<
       (values: Record<string, any>) => any
     >,
     // 选择字段
-    select: (jest.fn().mockReturnThis() as unknown) as jest.MockedFunction<(fields: any) => any>,
+    select: jest.fn().mockReturnThis() as unknown as jest.MockedFunction<(fields: any) => any>,
     // 终结方法
-    getManyAndCount: (jest.fn() as unknown) as jest.MockedFunction<() => Promise<[T[], number]>>,
-    getMany: (jest.fn() as unknown) as jest.MockedFunction<() => Promise<T[]>>,
-    getRawOne: (jest.fn() as unknown) as jest.MockedFunction<() => Promise<any>>,
-    execute: (jest.fn() as unknown) as jest.MockedFunction<() => Promise<any>>,
+    getManyAndCount: jest.fn() as unknown as jest.MockedFunction<() => Promise<[T[], number]>>,
+    getMany: jest.fn() as unknown as jest.MockedFunction<() => Promise<T[]>>,
+    getRawOne: jest.fn() as unknown as jest.MockedFunction<() => Promise<any>>,
+    execute: jest.fn() as unknown as jest.MockedFunction<() => Promise<any>>,
   };
   return qb as any;
 };

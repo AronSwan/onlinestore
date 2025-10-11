@@ -238,18 +238,24 @@ export const createMockMonitoringService = (): jest.Mocked<MonitoringService> =>
 export const createMockRepository = <T = any>(mockData?: T[]): any => {
   const data = mockData || [];
   return {
-    create: createMockedFunction<(dto: Partial<T>) => T>(dto => ({ id: 'mock-id', ...(dto as any) } as T)),
-    save: createMockedFunction<(entity: T) => Promise<T>>(async entity => ({ ...(entity as any), id: 'mock-id' } as T)),
+    create: createMockedFunction<(dto: Partial<T>) => T>(
+      dto => ({ id: 'mock-id', ...(dto as any) }) as T,
+    ),
+    save: createMockedFunction<(entity: T) => Promise<T>>(
+      async entity => ({ ...(entity as any), id: 'mock-id' }) as T,
+    ),
     findOne: createMockedFunction<(options?: any) => Promise<T | null>>(),
     find: createMockedFunction<(options?: any) => Promise<T[]>>(() => Promise.resolve(data as T[])),
     update: createMockedFunction<(id: any, partial: Partial<T>) => Promise<{ affected?: number }>>(
       () => Promise.resolve({ affected: 1 }),
     ),
-    delete: createMockedFunction<(id: any) => Promise<{ affected?: number }>>(
-      () => Promise.resolve({ affected: 1 }),
+    delete: createMockedFunction<(id: any) => Promise<{ affected?: number }>>(() =>
+      Promise.resolve({ affected: 1 }),
     ),
-    remove: createMockedFunction<(entity: T) => Promise<T>>(() => Promise.resolve((data[0] as T))),
-    count: createMockedFunction<(options?: any) => Promise<number>>(() => Promise.resolve(data.length)),
+    remove: createMockedFunction<(entity: T) => Promise<T>>(() => Promise.resolve(data[0] as T)),
+    count: createMockedFunction<(options?: any) => Promise<number>>(() =>
+      Promise.resolve(data.length),
+    ),
     createQueryBuilder: jest.fn().mockReturnValue({
       where: jest.fn().mockReturnThis(),
       skip: jest.fn().mockReturnThis(),
@@ -281,8 +287,10 @@ export const createMockRepository = <T = any>(mockData?: T[]): any => {
     findBy: createMockedFunction<(criteria: any) => Promise<T[]>>(),
     exists: createMockedFunction<(options?: any) => Promise<boolean>>(),
     existsBy: createMockedFunction<(criteria: any) => Promise<boolean>>(),
-    increment: createMockedFunction<(criteria: any, column: string, value: number) => Promise<any>>(),
-    decrement: createMockedFunction<(criteria: any, column: string, value: number) => Promise<any>>(),
+    increment:
+      createMockedFunction<(criteria: any, column: string, value: number) => Promise<any>>(),
+    decrement:
+      createMockedFunction<(criteria: any, column: string, value: number) => Promise<any>>(),
     clear: createMockedFunction<() => Promise<void>>(),
     hasId: createMockedFunction<(entity: any) => boolean>(),
     getId: createMockedFunction<(entity: any) => any>(),

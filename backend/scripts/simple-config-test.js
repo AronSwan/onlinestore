@@ -25,15 +25,15 @@ if (fs.existsSync(envPath)) {
     'DB_TYPE',
     'JWT_SECRET',
     'ENCRYPTION_KEY',
-    'CORS_ORIGINS'
+    'CORS_ORIGINS',
   ];
-  
+
   const missingVars = requiredVars.filter(varName => {
     const regex = new RegExp(`^${varName}=`);
     const lines = envContent.split('\n');
     return !lines.some(line => line.trim().match(regex));
   });
-  
+
   if (missingVars.length === 0) {
     console.log('✅ 所有必要的环境变量都已配置');
   } else {
@@ -47,20 +47,28 @@ if (fs.existsSync(envPath)) {
 console.log('\n📋 测试2: 检查关键配置值');
 if (fs.existsSync(envPath)) {
   const envContent = fs.readFileSync(envPath, 'utf8');
-  
+
   // 检查配置项
   const checks = [
-    { name: 'NODE_ENV', pattern: /^NODE_ENV=(development|production|test)$/, description: '环境变量必须为 development, production 或 test' },
+    {
+      name: 'NODE_ENV',
+      pattern: /^NODE_ENV=(development|production|test)$/,
+      description: '环境变量必须为 development, production 或 test',
+    },
     { name: 'PORT', pattern: /^PORT=\d+$/, description: '端口必须为数字' },
-    { name: 'DB_TYPE', pattern: /^DB_TYPE=(sqlite|postgres|mysql|tidb)$/, description: '数据库类型必须为 sqlite, postgres, mysql 或 tidb' },
+    {
+      name: 'DB_TYPE',
+      pattern: /^DB_TYPE=(sqlite|postgres|mysql|tidb)$/,
+      description: '数据库类型必须为 sqlite, postgres, mysql 或 tidb',
+    },
     { name: 'JWT_SECRET', pattern: /^JWT_SECRET=.+$/, description: 'JWT 密钥必须配置' },
     { name: 'ENCRYPTION_KEY', pattern: /^ENCRYPTION_KEY=.+$/, description: '加密密钥必须配置' },
-    { name: 'CORS_ORIGINS', pattern: /^CORS_ORIGINS=.+$/, description: 'CORS 源必须配置' }
+    { name: 'CORS_ORIGINS', pattern: /^CORS_ORIGINS=.+$/, description: 'CORS 源必须配置' },
   ];
-  
+
   console.log('\n🔍 配置验证结果:');
   let allValid = true;
-  
+
   checks.forEach(check => {
     const lines = envContent.split('\n');
     const match = lines.find(line => line.trim().match(check.pattern));
@@ -72,7 +80,7 @@ if (fs.existsSync(envPath)) {
       allValid = false;
     }
   });
-  
+
   if (allValid) {
     console.log('\n✅ 所有配置验证通过');
   } else {
@@ -84,18 +92,18 @@ if (fs.existsSync(envPath)) {
 console.log('\n📋 测试3: 检查数据库配置');
 if (fs.existsSync(envPath)) {
   const envContent = fs.readFileSync(envPath, 'utf8');
-  
+
   // 提取数据库配置
   const dbTypeMatch = envContent.match(/^DB_TYPE=(.+)$/m);
   const dbDatabaseMatch = envContent.match(/^DB_DATABASE=(.+)$/m);
-  
+
   if (dbTypeMatch && dbDatabaseMatch) {
     const dbType = dbTypeMatch[1];
     const dbDatabase = dbDatabaseMatch[1];
-    
+
     console.log(`✅ 数据库类型: ${dbType}`);
     console.log(`✅ 数据库路径: ${dbDatabase}`);
-    
+
     if (dbType === 'sqlite') {
       const dataDir = path.dirname(dbDatabase);
       if (fs.existsSync(dataDir)) {
@@ -104,7 +112,7 @@ if (fs.existsSync(envPath)) {
         console.log(`⚠️  数据目录不存在: ${dataDir}`);
       }
     }
-    
+
     // 检查同步配置
     const syncMatch = envContent.match(/^DB_SYNCHRONIZE=(.+)$/m);
     if (syncMatch) {
@@ -118,16 +126,16 @@ if (fs.existsSync(envPath)) {
 console.log('\n📋 测试4: 检查Redis配置');
 if (fs.existsSync(envPath)) {
   const envContent = fs.readFileSync(envPath, 'utf8');
-  
+
   const redisHostMatch = envContent.match(/^REDIS_HOST=(.+)$/m);
   const redisPortMatch = envContent.match(/^REDIS_PORT=(.+)$/m);
   const redisDbMatch = envContent.match(/^REDIS_DB=(.+)$/m);
-  
+
   if (redisHostMatch && redisPortMatch && redisDbMatch) {
     console.log(`✅ Redis 主机: ${redisHostMatch[1]}`);
     console.log(`✅ Redis 端口: ${redisPortMatch[1]}`);
     console.log(`✅ Redis 数据库: ${redisDbMatch[1]}`);
-    
+
     // 检查购物车配置
     const cartDbMatch = envContent.match(/^CART_REDIS_DB=(.+)$/m);
     if (cartDbMatch) {
@@ -140,15 +148,15 @@ if (fs.existsSync(envPath)) {
 console.log('\n📋 测试5: 检查文件上传配置');
 if (fs.existsSync(envPath)) {
   const envContent = fs.readFileSync(envPath, 'utf8');
-  
+
   const uploadDestMatch = envContent.match(/^UPLOAD_DEST=(.+)$/m);
   const maxFileSizeMatch = envContent.match(/^MAX_FILE_SIZE=(.+)$/m);
-  
+
   if (uploadDestMatch && maxFileSizeMatch) {
     console.log(`✅ 上传目录: ${uploadDestMatch[1]}`);
     const maxSize = parseInt(maxFileSizeMatch[1]);
     console.log(`✅ 最大文件大小: ${maxSize}字节 (${(maxSize / 1024 / 1024).toFixed(2)}MB)`);
-    
+
     // 检查目录是否存在
     if (fs.existsSync(uploadDestMatch[1])) {
       console.log(`✅ 上传目录存在`);
@@ -162,14 +170,14 @@ if (fs.existsSync(envPath)) {
 console.log('\n📋 测试6: 检查日志配置');
 if (fs.existsSync(envPath)) {
   const envContent = fs.readFileSync(envPath, 'utf8');
-  
+
   const logFileMatch = envContent.match(/^LOG_FILE=(.+)$/m);
   const logLevelMatch = envContent.match(/^LOG_LEVEL=(.+)$/m);
-  
+
   if (logFileMatch && logLevelMatch) {
     console.log(`✅ 日志文件: ${logFileMatch[1]}`);
     console.log(`✅ 日志级别: ${logLevelMatch[1]}`);
-    
+
     // 检查日志目录
     const logDir = path.dirname(logFileMatch[1]);
     if (fs.existsSync(logDir)) {
@@ -184,11 +192,11 @@ if (fs.existsSync(envPath)) {
 console.log('\n📋 测试7: 检查安全配置');
 if (fs.existsSync(envPath)) {
   const envContent = fs.readFileSync(envPath, 'utf8');
-  
+
   const jwtSecretMatch = envContent.match(/^JWT_SECRET=(.+)$/m);
   const encryptionKeyMatch = envContent.match(/^ENCRYPTION_KEY=(.+)$/m);
   const corsOriginsMatch = envContent.match(/^CORS_ORIGINS=(.+)$/m);
-  
+
   if (jwtSecretMatch) {
     const jwtSecret = jwtSecretMatch[1];
     if (jwtSecret.length >= 32) {
@@ -197,7 +205,7 @@ if (fs.existsSync(envPath)) {
       console.log(`❌ JWT 密钥: 不符合安全要求 (至少32字符)`);
     }
   }
-  
+
   if (encryptionKeyMatch) {
     const encryptionKey = encryptionKeyMatch[1];
     if (encryptionKey.length >= 32) {
@@ -206,7 +214,7 @@ if (fs.existsSync(envPath)) {
       console.log(`❌ 加密密钥: 不符合安全要求 (至少32字符)`);
     }
   }
-  
+
   if (corsOriginsMatch) {
     console.log(`✅ CORS 源: ${corsOriginsMatch[1]}`);
   }
@@ -217,7 +225,7 @@ console.log('\n📋 测试8: 检查必要目录');
 const requiredDirs = [
   { path: path.join(__dirname, '..', 'data'), description: '数据目录' },
   { path: path.join(__dirname, '..', 'logs'), description: '日志目录' },
-  { path: path.join(__dirname, '..', 'uploads'), description: '上传目录' }
+  { path: path.join(__dirname, '..', 'uploads'), description: '上传目录' },
 ];
 
 requiredDirs.forEach(dir => {

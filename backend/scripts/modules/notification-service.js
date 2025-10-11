@@ -21,7 +21,7 @@ const DEFAULT_CONFIG = {
     webhookUrl: '',
     channel: '#security-alerts',
     username: 'Security Bot',
-    iconEmoji: ':warning:'
+    iconEmoji: ':warning:',
   },
   email: {
     enabled: false,
@@ -30,43 +30,43 @@ const DEFAULT_CONFIG = {
     secure: false,
     auth: {
       user: '',
-      pass: ''
+      pass: '',
     },
     from: '',
-    to: []
+    to: [],
   },
   templates: {
     success: {
       slack: {
         text: '✅ 安全检查通过',
-        color: 'good'
+        color: 'good',
       },
       email: {
         subject: '✅ 安全检查通过',
-        template: 'success'
-      }
+        template: 'success',
+      },
     },
     warning: {
       slack: {
         text: '⚠️ 安全检查发现问题',
-        color: 'warning'
+        color: 'warning',
       },
       email: {
         subject: '⚠️ 安全检查发现问题',
-        template: 'warning'
-      }
+        template: 'warning',
+      },
     },
     error: {
       slack: {
         text: '❌ 安全检查失败',
-        color: 'danger'
+        color: 'danger',
       },
       email: {
         subject: '❌ 安全检查失败',
-        template: 'error'
-      }
-    }
-  }
+        template: 'error',
+      },
+    },
+  },
 };
 
 /**
@@ -80,23 +80,49 @@ class NotificationService {
       const slackSdk = getSlack();
       if (slackSdk && typeof slackSdk === 'object') {
         this.config.slack.webhookUrl = this.config.slack.webhookUrl || slackSdk.webhookUrl || '';
-        this.config.slack.channel = this.config.slack.channel || slackSdk.channel || '#security-alerts';
-        this.config.slack.username = this.config.slack.username || slackSdk.username || 'Security Bot';
-        this.config.slack.iconEmoji = this.config.slack.iconEmoji || slackSdk.iconEmoji || ':warning:';
+        this.config.slack.channel =
+          this.config.slack.channel || slackSdk.channel || '#security-alerts';
+        this.config.slack.username =
+          this.config.slack.username || slackSdk.username || 'Security Bot';
+        this.config.slack.iconEmoji =
+          this.config.slack.iconEmoji || slackSdk.iconEmoji || ':warning:';
       }
       const mail = getEmail();
       if (mail && typeof mail === 'object') {
-        this.config.email.smtpHost = this.config.email.smtpHost || mail.smtpHost || (process.env.SMTP_HOST || '');
-        this.config.email.smtpPort = this.config.email.smtpPort || Number(mail.smtpPort || (process.env.SMTP_PORT || 587));
+        this.config.email.smtpHost =
+          this.config.email.smtpHost || mail.smtpHost || process.env.SMTP_HOST || '';
+        this.config.email.smtpPort =
+          this.config.email.smtpPort || Number(mail.smtpPort || process.env.SMTP_PORT || 587);
         this.config.email.secure = this.config.email.secure || Boolean(mail.secure || false);
-        const user = (this.config.email.auth && this.config.email.auth.user) || mail.user || (process.env.SMTP_USER || '');
-        const pass = (this.config.email.auth && this.config.email.auth.pass) || mail.pass || (process.env.SMTP_PASS || '');
+        const user =
+          (this.config.email.auth && this.config.email.auth.user) ||
+          mail.user ||
+          process.env.SMTP_USER ||
+          '';
+        const pass =
+          (this.config.email.auth && this.config.email.auth.pass) ||
+          mail.pass ||
+          process.env.SMTP_PASS ||
+          '';
         this.config.email.auth = { user, pass };
-        this.config.email.from = this.config.email.from || mail.from || (process.env.SMTP_FROM || 'security@example.com');
+        this.config.email.from =
+          this.config.email.from || mail.from || process.env.SMTP_FROM || 'security@example.com';
         const toList = Array.isArray(this.config.email.to) ? this.config.email.to : [];
-        const mailTo = Array.isArray(mail.to) ? mail.to : (mail.to ? String(mail.to).split(',').map(s => s.trim()).filter(Boolean) : []);
-        const envTo = process.env.SMTP_TO ? String(process.env.SMTP_TO).split(',').map(s => s.trim()).filter(Boolean) : [];
-        this.config.email.to = toList.length ? toList : (mailTo.length ? mailTo : envTo);
+        const mailTo = Array.isArray(mail.to)
+          ? mail.to
+          : mail.to
+            ? String(mail.to)
+                .split(',')
+                .map(s => s.trim())
+                .filter(Boolean)
+            : [];
+        const envTo = process.env.SMTP_TO
+          ? String(process.env.SMTP_TO)
+              .split(',')
+              .map(s => s.trim())
+              .filter(Boolean)
+          : [];
+        this.config.email.to = toList.length ? toList : mailTo.length ? mailTo : envTo;
       }
     } catch (_) {
       // 适配器不可用时静默回退
@@ -109,11 +135,11 @@ class NotificationService {
    */
   initTemplates() {
     this.templatesDir = path.join(__dirname, '..', 'templates');
-    
+
     // 确保模板目录存在
     if (!fs.existsSync(this.templatesDir)) {
       fs.mkdirSync(this.templatesDir, { recursive: true });
-      
+
       // 创建默认模板
       this.createDefaultTemplates();
     }
@@ -184,7 +210,7 @@ class NotificationService {
 </body>
 </html>
     `;
-    
+
     // 创建警告邮件模板
     const warningEmailTemplate = `
 <!DOCTYPE html>
@@ -261,7 +287,7 @@ class NotificationService {
 </body>
 </html>
     `;
-    
+
     // 创建错误邮件模板
     const errorEmailTemplate = `
 <!DOCTYPE html>
@@ -328,7 +354,7 @@ class NotificationService {
 </body>
 </html>
     `;
-    
+
     // 写入模板文件
     fs.writeFileSync(path.join(this.templatesDir, 'success.html'), successEmailTemplate);
     fs.writeFileSync(path.join(this.templatesDir, 'warning.html'), warningEmailTemplate);
@@ -346,7 +372,7 @@ class NotificationService {
       console.log('Slack通知未启用或未配置Webhook URL');
       return false;
     }
-    
+
     try {
       const template = this.config.templates[type].slack;
       const payload = {
@@ -359,11 +385,11 @@ class NotificationService {
             title: template.text,
             fields: this.formatSlackFields(data),
             footer: 'Security Dashboard',
-            ts: Math.floor(Date.now() / 1000)
-          }
-        ]
+            ts: Math.floor(Date.now() / 1000),
+          },
+        ],
       };
-      
+
       const result = await this.sendHttpRequest(this.config.slack.webhookUrl, 'POST', payload);
       return result;
     } catch (error) {
@@ -379,79 +405,79 @@ class NotificationService {
    */
   formatSlackFields(data) {
     const fields = [];
-    
+
     if (data.projectName) {
       fields.push({
         title: '项目',
         value: data.projectName,
-        short: true
+        short: true,
       });
     }
-    
+
     if (data.branch) {
       fields.push({
         title: '分支',
         value: data.branch,
-        short: true
+        short: true,
       });
     }
-    
+
     if (data.commitHash) {
       fields.push({
         title: '提交',
         value: data.commitHash.substring(0, 7),
-        short: true
+        short: true,
       });
     }
-    
+
     if (data.timestamp) {
       fields.push({
         title: '时间',
         value: new Date(data.timestamp).toLocaleString(),
-        short: true
+        short: true,
       });
     }
-    
+
     if (data.passedChecks !== undefined) {
       fields.push({
         title: '通过检查',
         value: data.passedChecks.toString(),
-        short: true
+        short: true,
       });
     }
-    
+
     if (data.warningCount !== undefined) {
       fields.push({
         title: '警告数量',
         value: data.warningCount.toString(),
-        short: true
+        short: true,
       });
     }
-    
+
     if (data.errorCount !== undefined) {
       fields.push({
         title: '错误数量',
         value: data.errorCount.toString(),
-        short: true
+        short: true,
       });
     }
-    
+
     if (data.reportUrl) {
       fields.push({
         title: '报告链接',
         value: `<${data.reportUrl}|查看报告>`,
-        short: false
+        short: false,
       });
     }
-    
+
     if (data.errorMessage) {
       fields.push({
         title: '错误信息',
         value: data.errorMessage,
-        short: false
+        short: false,
       });
     }
-    
+
     return fields;
   }
 
@@ -466,18 +492,18 @@ class NotificationService {
       console.log('邮件通知未启用或未配置SMTP服务器');
       return false;
     }
-    
+
     try {
       const template = this.config.templates[type].email;
       const htmlContent = this.generateEmailHtml(template.template, data);
-      
+
       const emailData = {
         from: this.config.email.from,
         to: this.config.email.to.join(', '),
         subject: template.subject,
-        html: htmlContent
+        html: htmlContent,
       };
-      
+
       const result = await this.sendEmail(emailData);
       return result;
     } catch (error) {
@@ -494,33 +520,35 @@ class NotificationService {
    */
   generateEmailHtml(templateName, data) {
     const templatePath = path.join(this.templatesDir, `${templateName}.html`);
-    
+
     if (!fs.existsSync(templatePath)) {
       return `<p>模板文件不存在: ${templatePath}</p>`;
     }
-    
+
     let html = fs.readFileSync(templatePath, 'utf8');
-    
+
     // 简单的模板替换（实际项目中可以使用更强大的模板引擎）
     for (const [key, value] of Object.entries(data)) {
       const regex = new RegExp(`{{${key}}}`, 'g');
       html = html.replace(regex, value);
     }
-    
+
     // 处理条件块和循环（简化实现）
     if (data.issues && Array.isArray(data.issues)) {
-      const issuesHtml = data.issues.map(issue => {
-        let issueHtml = html.match(/{{#issues}}([\s\S]*?){{\/issues}}/)[1];
-        for (const [key, value] of Object.entries(issue)) {
-          const regex = new RegExp(`{{${key}}}`, 'g');
-          issueHtml = issueHtml.replace(regex, value);
-        }
-        return issueHtml;
-      }).join('');
-      
+      const issuesHtml = data.issues
+        .map(issue => {
+          let issueHtml = html.match(/{{#issues}}([\s\S]*?){{\/issues}}/)[1];
+          for (const [key, value] of Object.entries(issue)) {
+            const regex = new RegExp(`{{${key}}}`, 'g');
+            issueHtml = issueHtml.replace(regex, value);
+          }
+          return issueHtml;
+        })
+        .join('');
+
       html = html.replace(/{{#issues}}[\s\S]*?{{\/issues}}/, issuesHtml);
     }
-    
+
     return html;
   }
 
@@ -535,23 +563,23 @@ class NotificationService {
     return new Promise((resolve, reject) => {
       const isHttps = url.startsWith('https://');
       const httpModule = isHttps ? https : http;
-      
+
       const postData = JSON.stringify(data);
       const options = {
         method,
         headers: {
           'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(postData)
-        }
+          'Content-Length': Buffer.byteLength(postData),
+        },
       };
-      
-      const req = httpModule.request(url, options, (res) => {
+
+      const req = httpModule.request(url, options, res => {
         let responseData = '';
-        
-        res.on('data', (chunk) => {
+
+        res.on('data', chunk => {
           responseData += chunk;
         });
-        
+
         res.on('end', () => {
           if (res.statusCode >= 200 && res.statusCode < 300) {
             resolve(true);
@@ -560,11 +588,11 @@ class NotificationService {
           }
         });
       });
-      
-      req.on('error', (error) => {
+
+      req.on('error', error => {
         reject(error);
       });
-      
+
       req.write(postData);
       req.end();
     });
@@ -579,7 +607,7 @@ class NotificationService {
     return new Promise((resolve, reject) => {
       // 这里简化实现，实际项目中应该使用nodemailer等专业库
       console.log('发送邮件:', emailData);
-      
+
       // 模拟发送邮件
       setTimeout(() => {
         resolve(true);
@@ -596,28 +624,28 @@ class NotificationService {
   async sendNotification(type, data) {
     const results = {
       slack: { sent: false, error: null },
-      email: { sent: false, error: null }
+      email: { sent: false, error: null },
     };
-    
+
     // 发送Slack通知
     try {
       results.slack.sent = await this.sendSlackNotification(type, data);
     } catch (error) {
       results.slack.error = error.message;
     }
-    
+
     // 发送邮件通知
     try {
       results.email.sent = await this.sendEmailNotification(type, data);
     } catch (error) {
       results.email.error = error.message;
     }
-    
+
     return results;
   }
 }
 
 module.exports = {
   NotificationService,
-  DEFAULT_CONFIG
+  DEFAULT_CONFIG,
 };

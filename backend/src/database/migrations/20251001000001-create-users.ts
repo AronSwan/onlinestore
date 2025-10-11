@@ -51,9 +51,7 @@ export class CreateUsers20251001000001 implements MigrationInterface {
       `SELECT COUNT(1) AS cnt FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'users' AND index_name = 'idx_users_created_at'`,
     );
     if (!idxCreatedAtExists?.cnt) {
-      await queryRunner.query(
-        `ALTER TABLE users ADD INDEX idx_users_created_at (created_at)`,
-      );
+      await queryRunner.query(`ALTER TABLE users ADD INDEX idx_users_created_at (created_at)`);
     }
   }
 

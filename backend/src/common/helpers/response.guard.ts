@@ -11,7 +11,7 @@ export type ErrorResponseGeneric = { success: false; message?: string; code?: st
  * 判断响应是否为成功且携带数据的形态
  */
 export function isSuccessResponse(
-  res: { success: boolean } & { data?: any }
+  res: { success: boolean } & { data?: any },
 ): res is SuccessResponseGeneric {
   return res.success === true && res.data !== undefined && res.data !== null;
 }

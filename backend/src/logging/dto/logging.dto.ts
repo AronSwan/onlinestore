@@ -83,7 +83,11 @@ export class ProductViewDto {
     return EventType.PRODUCT_VIEW;
   }
 
-  static createFromInput(input: { sessionId: string; productId: string; userId?: string }): ProductViewDto {
+  static createFromInput(input: {
+    sessionId: string;
+    productId: string;
+    userId?: string;
+  }): ProductViewDto {
     const dto = new ProductViewDto();
     dto.sessionId = input.sessionId;
     dto.productId = input.productId;
@@ -111,7 +115,11 @@ export class SearchDto {
     return EventType.SEARCH;
   }
 
-  static createFromInput(input: { sessionId: string; searchQuery: string; userId?: string }): SearchDto {
+  static createFromInput(input: {
+    sessionId: string;
+    searchQuery: string;
+    userId?: string;
+  }): SearchDto {
     const dto = new SearchDto();
     dto.sessionId = input.sessionId;
     dto.searchQuery = input.searchQuery;

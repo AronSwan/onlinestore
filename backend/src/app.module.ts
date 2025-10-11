@@ -11,19 +11,23 @@ import { createMasterConfiguration } from './config/unified-master.config';
     // 配置模块
     ConfigModule.forRoot({
       isGlobal: true,
+      // 仅加载 .env.local，避免 .env 目录导致的读取错误
+      envFilePath: ['.env.local'],
+      // 不忽略环境文件，确保变量被加载
+      ignoreEnvFile: false,
       load: [createMasterConfiguration],
     }),
-    
+
     // 数据库模块
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
         const dbType = configService.get('database.type', 'sqlite') as any;
         const database = configService.get('database.database');
-        
+
         // 确保database字段是字符串类型
         const databaseValue = typeof database === 'string' ? database : String(database);
-        
+
         return {
           type: dbType,
           host: configService.get('database.host'),
@@ -38,10 +42,10 @@ import { createMasterConfiguration } from './config/unified-master.config';
       },
       inject: [ConfigService],
     }),
-    
+
     // 日志模块
     LoggingModule,
-    
+
     // 其他模块可以在这里添加
   ],
   controllers: [AppController],

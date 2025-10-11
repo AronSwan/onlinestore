@@ -30,20 +30,40 @@ import { EnvironmentAdapter } from '../config/environment-adapter';
           // 提供一个最小可用的Stub，避免开发环境无Redis时阻断启动
           const stub: any = {
             __stub: true,
-            async get() { return null; },
-            async set() { return 'OK'; },
-            async del() { return 0; },
-            async exists() { return 0; },
-            async expire() { return 1; },
-            async ttl() { return -1; },
-            async incrby() { return 0; },
-            async decrby() { return 0; },
-            async mget() { return []; },
-            async mset() { return 'OK'; },
+            async get() {
+              return null;
+            },
+            async set() {
+              return 'OK';
+            },
+            async del() {
+              return 0;
+            },
+            async exists() {
+              return 0;
+            },
+            async expire() {
+              return 1;
+            },
+            async ttl() {
+              return -1;
+            },
+            async incrby() {
+              return 0;
+            },
+            async decrby() {
+              return 0;
+            },
+            async mget() {
+              return [];
+            },
+            async mset() {
+              return 'OK';
+            },
             pipeline: () => ({
               set: () => ({ pipeline: () => ({ exec: async () => [] }) }),
               setex: () => ({ pipeline: () => ({ exec: async () => [] }) }),
-              exec: async () => []
+              exec: async () => [],
             }),
             keys: async () => [],
             info: async () => 'redis_version:6.0.0',
@@ -51,7 +71,9 @@ import { EnvironmentAdapter } from '../config/environment-adapter';
             on: () => {},
           };
           // 记录降级信息，便于观察
-          try { console.warn('[RedisModule] Redis disabled or non-prod stub in use'); } catch {}
+          try {
+            console.warn('[RedisModule] Redis disabled or non-prod stub in use');
+          } catch {}
           return stub;
         }
 

@@ -69,7 +69,10 @@ export class SWRService {
         // 缓存过期但数据仍然可用
         if (staleWhileRevalidate && !isStale) {
           // 后台刷新
-          this.metrics?.incrementCounter('cqrs_swr_background_refresh_total', 1, { stage: 'scheduled', ...normLabels });
+          this.metrics?.incrementCounter('cqrs_swr_background_refresh_total', 1, {
+            stage: 'scheduled',
+            ...normLabels,
+          });
           this.backgroundRefresh(key, fetcher, { ttl, staleTime, labels: normLabels });
           return { data: cached.data, fromCache: true, isStale: true };
         }
@@ -81,13 +84,13 @@ export class SWRService {
 
       try {
         const data = await pendingQuery.promise;
-        
+
         // 保存到缓存
         const expiresAt = new Date(now.getTime() + ttl * 1000);
         const staleAt = staleTime ? new Date(now.getTime() + staleTime * 1000) : expiresAt;
-        
+
         await this.queryCache.set(key, { data, expiresAt, staleAt });
-        
+
         return { data, fromCache: false, isStale: false };
       } finally {
         // 清理待处理查询
@@ -101,7 +104,7 @@ export class SWRService {
         this.metrics?.incrementCounter('cqrs_swr_stale_return_total', 1, { ...normLabels });
         return { data: cached.data, fromCache: true, isStale: true };
       }
-      
+
       throw error;
     }
   }
@@ -117,26 +120,35 @@ export class SWRService {
     try {
       this.logger.debug(`Background refresh for key: ${key}`);
       const labels = this.normalizeLabels(options.labels);
-      this.metrics?.incrementCounter('cqrs_swr_background_refresh_total', 1, { stage: 'start', ...labels });
+      this.metrics?.incrementCounter('cqrs_swr_background_refresh_total', 1, {
+        stage: 'start',
+        ...labels,
+      });
       const start = Date.now();
-      
+
       const data = await fetcher();
       const now = new Date();
       const { ttl, staleTime } = options;
-      
+
       const expiresAt = new Date(now.getTime() + ttl * 1000);
       const staleAt = staleTime ? new Date(now.getTime() + staleTime * 1000) : expiresAt;
-      
+
       await this.queryCache.set(key, { data, expiresAt, staleAt });
       const durationMs = Date.now() - start;
       // 以 Prometheus 风格上报直方图 buckets/_sum/_count（桶边界由配置提供）
       this.metrics?.recordHistogramBuckets('cqrs_swr_refresh_duration_ms', durationMs, labels);
-      
-      this.metrics?.incrementCounter('cqrs_swr_background_refresh_total', 1, { stage: 'complete', ...labels });
+
+      this.metrics?.incrementCounter('cqrs_swr_background_refresh_total', 1, {
+        stage: 'complete',
+        ...labels,
+      });
       this.logger.debug(`Background refresh completed for key: ${key}`);
     } catch (error) {
       const labels = this.normalizeLabels(options.labels);
-      this.metrics?.incrementCounter('cqrs_swr_background_refresh_total', 1, { stage: 'error', ...labels });
+      this.metrics?.incrementCounter('cqrs_swr_background_refresh_total', 1, {
+        stage: 'error',
+        ...labels,
+      });
       this.logger.error(`Background refresh failed for key: ${key}`, error);
     }
   }
@@ -173,7 +185,7 @@ export class SWRService {
    */
   cleanupPendingQueries(maxAge: number = 60000): void {
     const now = new Date();
-    
+
     for (const [key, pending] of this.pendingQueries.entries()) {
       if (now.getTime() - pending.createdAt.getTime() > maxAge) {
         this.pendingQueries.delete(key);
@@ -182,7 +194,9 @@ export class SWRService {
     }
   }
 
-  private normalizeLabels(labels?: { [k: string]: string | undefined }): { [k: string]: string } | undefined {
+  private normalizeLabels(labels?: {
+    [k: string]: string | undefined;
+  }): { [k: string]: string } | undefined {
     if (!labels) return undefined;
     const out: Record<string, string> = {};
     for (const [k, v] of Object.entries(labels)) {

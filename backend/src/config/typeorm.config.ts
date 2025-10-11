@@ -11,7 +11,11 @@ const baseConfig: any = {
   type: dbType,
   database: process.env.DB_DATABASE || process.env.DATABASE_NAME || './data/caddy_shopping.db',
   entities: ['src/**/*.entity{.ts,.js}'],
-  migrations: [process.env.NODE_ENV === 'development' ? 'src/database/migrations/*.ts' : 'dist/src/database/migrations/*.js'],
+  migrations: [
+    process.env.NODE_ENV === 'development'
+      ? 'src/database/migrations/*.ts'
+      : 'dist/src/database/migrations/*.js',
+  ],
   synchronize: false,
   logging: process.env.NODE_ENV === 'development',
 };

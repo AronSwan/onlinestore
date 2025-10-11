@@ -29,7 +29,14 @@ export interface UserBehaviorLog {
   timestamp: string;
   userId?: string;
   sessionId: string;
-  eventType: 'PAGE_VIEW' | 'PRODUCT_VIEW' | 'SEARCH' | 'CART_ADD' | 'CART_REMOVE' | 'CHECKOUT' | 'PURCHASE';
+  eventType:
+    | 'PAGE_VIEW'
+    | 'PRODUCT_VIEW'
+    | 'SEARCH'
+    | 'CART_ADD'
+    | 'CART_REMOVE'
+    | 'CHECKOUT'
+    | 'PURCHASE';
   eventData: {
     page?: string;
     productId?: string;

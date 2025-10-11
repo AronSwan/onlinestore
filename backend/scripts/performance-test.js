@@ -10,7 +10,7 @@ const { promisify } = require('util');
 const config = {
   // 基础URL
   url: 'http://localhost:3000',
-  
+
   // 测试场景配置
   scenarios: {
     // 健康检查测试
@@ -18,52 +18,52 @@ const config = {
       path: '/health',
       connections: 1000,
       duration: 60,
-      title: '健康检查接口性能测试'
+      title: '健康检查接口性能测试',
     },
-    
+
     // 产品列表测试
     products: {
       path: '/api/products',
       connections: 5000,
       duration: 120,
-      title: '产品列表接口性能测试'
+      title: '产品列表接口性能测试',
     },
-    
+
     // 用户认证测试
     auth: {
       path: '/api/auth/login',
       method: 'POST',
       body: JSON.stringify({
         email: 'test@example.com',
-        password: 'test123'
+        password: 'test123',
       }),
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
       connections: 1000,
       duration: 60,
-      title: '用户认证接口性能测试'
+      title: '用户认证接口性能测试',
     },
-    
+
     // 高并发测试
     highConcurrency: {
       path: '/api/products',
       connections: 10000,
       duration: 180,
-      title: '高并发产品列表测试'
-    }
-  }
+      title: '高并发产品列表测试',
+    },
+  },
 };
 
 // 运行性能测试
 async function runPerformanceTest() {
   console.log('🚀 开始性能测试...\n');
-  
+
   const results = {};
-  
+
   for (const [scenarioName, scenarioConfig] of Object.entries(config.scenarios)) {
     console.log(`📊 运行测试: ${scenarioConfig.title}`);
-    
+
     try {
       const result = await autocannon({
         url: config.url + scenarioConfig.path,
@@ -74,26 +74,25 @@ async function runPerformanceTest() {
         headers: scenarioConfig.headers,
         timeout: 30,
         pipelining: 10,
-        workers: require('os').cpus().length
+        workers: require('os').cpus().length,
       });
-      
+
       results[scenarioName] = result;
-      
+
       console.log(`✅ ${scenarioConfig.title} 完成`);
       console.log(`   请求数: ${result.requests.total}`);
       console.log(`   吞吐量: ${result.throughput.total} 请求/秒`);
       console.log(`   平均响应时间: ${result.latency.average}ms`);
       console.log(`   错误率: ${result.errors}%\n`);
-      
     } catch (error) {
       console.error(`❌ ${scenarioConfig.title} 失败:`, error.message);
       results[scenarioName] = { error: error.message };
     }
-    
+
     // 等待一段时间再进行下一个测试
     await new Promise(resolve => setTimeout(resolve, 5000));
   }
-  
+
   // 生成测试报告
   generateReport(results);
 }
@@ -102,23 +101,23 @@ async function runPerformanceTest() {
 function generateReport(results) {
   console.log('📈 性能测试报告');
   console.log('='.repeat(50));
-  
+
   let totalRequests = 0;
   let totalThroughput = 0;
   let totalLatency = 0;
   let testCount = 0;
-  
+
   for (const [scenarioName, result] of Object.entries(results)) {
     if (result.error) {
       console.log(`❌ ${config.scenarios[scenarioName].title}: ${result.error}`);
       continue;
     }
-    
+
     totalRequests += result.requests.total;
     totalThroughput += result.throughput.total;
     totalLatency += result.latency.average;
     testCount++;
-    
+
     console.log(`\n📊 ${config.scenarios[scenarioName].title}:`);
     console.log(`   总请求数: ${result.requests.total.toLocaleString()}`);
     console.log(`   吞吐量: ${result.throughput.total.toLocaleString()} 请求/秒`);
@@ -128,14 +127,14 @@ function generateReport(results) {
     console.log(`   错误率: ${result.errors}%`);
     console.log(`   状态码分布:`, result.statusCodeStats);
   }
-  
+
   if (testCount > 0) {
     console.log('\n📊 总体统计:');
     console.log(`   总测试场景: ${testCount}`);
     console.log(`   总请求数: ${totalRequests.toLocaleString()}`);
     console.log(`   平均吞吐量: ${(totalThroughput / testCount).toFixed(2)} 请求/秒`);
     console.log(`   平均响应时间: ${(totalLatency / testCount).toFixed(2)}ms`);
-    
+
     // 性能评估
     const avgThroughput = totalThroughput / testCount;
     if (avgThroughput > 50000) {
@@ -146,7 +145,7 @@ function generateReport(results) {
       console.log('❌ 性能不足：系统需要进一步优化');
     }
   }
-  
+
   console.log('='.repeat(50));
 }
 

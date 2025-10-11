@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, HttpStatus, HttpCode } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  HttpStatus,
+  HttpCode,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { AlertService, AlertRule, AlertEvent, AlertSeverity, AlertStatus } from './alert.service';
 
@@ -80,7 +91,7 @@ export class AlertController {
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: '请求参数无效' })
   createAlertRule(@Body() createAlertRuleDto: CreateAlertRuleDto): { id: string } {
     const id = `rule-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-    
+
     this.alertService.addAlertRule({
       id,
       name: createAlertRuleDto.name,

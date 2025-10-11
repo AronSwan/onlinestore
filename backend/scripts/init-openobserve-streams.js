@@ -12,8 +12,8 @@ const { getOpenObserve } = require('./modules/openobserve-adapter');
 
 // 从环境变量或默认值获取配置
 const { baseUrl: ADAPTER_URL, organization: ADAPTER_ORG, token: ADAPTER_TOKEN } = getOpenObserve();
-const OPENOBSERVE_URL = ADAPTER_URL || (process.env.OPENOBSERVE_URL || 'http://localhost:5080');
-const OPENOBSERVE_ORG = ADAPTER_ORG || (process.env.OPENOBSERVE_ORGANIZATION || 'default');
+const OPENOBSERVE_URL = ADAPTER_URL || process.env.OPENOBSERVE_URL || 'http://localhost:5080';
+const OPENOBSERVE_ORG = ADAPTER_ORG || process.env.OPENOBSERVE_ORGANIZATION || 'default';
 const OPENOBSERVE_TOKEN = ADAPTER_TOKEN || process.env.OPENOBSERVE_TOKEN;
 const OPENOBSERVE_USERNAME = process.env.OPENOBSERVE_USERNAME;
 const OPENOBSERVE_PASSWORD = process.env.OPENOBSERVE_PASSWORD;
@@ -30,7 +30,9 @@ function getAuthHeaders() {
   }
 
   if (OPENOBSERVE_USERNAME && OPENOBSERVE_PASSWORD) {
-    const credentials = Buffer.from(`${OPENOBSERVE_USERNAME}:${OPENOBSERVE_PASSWORD}`).toString('base64');
+    const credentials = Buffer.from(`${OPENOBSERVE_USERNAME}:${OPENOBSERVE_PASSWORD}`).toString(
+      'base64',
+    );
     headers['Authorization'] = `Basic ${credentials}`;
     return headers;
   }
@@ -50,9 +52,9 @@ async function createStream(streamName, streamConfig) {
       {
         headers: getAuthHeaders(),
         timeout: 10000,
-      }
+      },
     );
-    
+
     console.log(`✅ Stream '${streamName}' created successfully`);
     return response.data;
   } catch (error) {
@@ -60,7 +62,10 @@ async function createStream(streamName, streamConfig) {
       console.log(`ℹ️  Stream '${streamName}' already exists`);
       return;
     }
-    console.error(`❌ Failed to create stream '${streamName}':`, error.response?.data || error.message);
+    console.error(
+      `❌ Failed to create stream '${streamName}':`,
+      error.response?.data || error.message,
+    );
     throw error;
   }
 }
@@ -68,16 +73,13 @@ async function createStream(streamName, streamConfig) {
 // 创建组织（如果不存在）
 async function ensureOrganization() {
   try {
-    const response = await axios.get(
-      `${OPENOBSERVE_URL}/api/organizations`,
-      {
-        headers: getAuthHeaders(),
-        timeout: 10000,
-      }
-    );
+    const response = await axios.get(`${OPENOBSERVE_URL}/api/organizations`, {
+      headers: getAuthHeaders(),
+      timeout: 10000,
+    });
 
     const orgExists = response.data.some(org => org.identifier === OPENOBSERVE_ORG);
-    
+
     if (!orgExists) {
       console.log(`🔧 Creating organization '${OPENOBSERVE_ORG}'...`);
       await axios.post(
@@ -89,7 +91,7 @@ async function ensureOrganization() {
         {
           headers: getAuthHeaders(),
           timeout: 10000,
-        }
+        },
       );
       console.log(`✅ Organization '${OPENOBSERVE_ORG}' created successfully`);
     } else {
@@ -104,7 +106,7 @@ async function ensureOrganization() {
 // 主初始化函数
 async function initializeStreams() {
   console.log('🚀 Initializing OpenObserve streams...');
-  
+
   try {
     // 首先确保组织存在
     await ensureOrganization();
@@ -269,7 +271,6 @@ async function initializeStreams() {
     console.log(`  Web UI: ${OPENOBSERVE_URL}`);
     console.log(`  API: ${OPENOBSERVE_URL}/api`);
     console.log(`  Organization: ${OPENOBSERVE_ORG}`);
-
   } catch (error) {
     console.error('❌ Failed to initialize streams:', error.message);
     process.exit(1);
@@ -279,13 +280,10 @@ async function initializeStreams() {
 // 检查 OpenObserve 连接
 async function checkConnection() {
   try {
-    const response = await axios.get(
-      `${OPENOBSERVE_URL}/api/_health`,
-      {
-        timeout: 5000,
-      }
-    );
-    
+    const response = await axios.get(`${OPENOBSERVE_URL}/api/_health`, {
+      timeout: 5000,
+    });
+
     if (response.status === 200) {
       console.log('✅ OpenObserve is running and healthy');
       return true;
@@ -302,7 +300,7 @@ async function checkConnection() {
 // 主执行函数
 async function main() {
   console.log('🔍 Checking OpenObserve connection...');
-  
+
   const isConnected = await checkConnection();
   if (!isConnected) {
     process.exit(1);

@@ -28,7 +28,7 @@ const DEFAULT_CONFIG = {
   batchSize: 100,
   memoryThreshold: 512 * 1024 * 1024, // 512MB
   enableProgressReporting: true,
-  enableMetricsCollection: true
+  enableMetricsCollection: true,
 };
 
 /**
@@ -44,7 +44,7 @@ class PerformanceMetrics {
       cacheMisses: 0,
       workerUtilization: [],
       memoryUsage: [],
-      throughput: 0
+      throughput: 0,
     };
     this.startTime = null;
     this.endTime = null;
@@ -80,7 +80,7 @@ class PerformanceMetrics {
       rss: memUsage.rss,
       heapUsed: memUsage.heapUsed,
       heapTotal: memUsage.heapTotal,
-      external: memUsage.external
+      external: memUsage.external,
     });
   }
 
@@ -88,7 +88,7 @@ class PerformanceMetrics {
     if (!this.metrics.workerUtilization[workerId]) {
       this.metrics.workerUtilization[workerId] = { busy: 0, idle: 0 };
     }
-    
+
     if (busy) {
       this.metrics.workerUtilization[workerId].busy++;
     } else {
@@ -98,28 +98,38 @@ class PerformanceMetrics {
 
   getReport() {
     const totalWorkerTime = this.metrics.workerUtilization.reduce(
-      (sum, worker) => sum + worker.busy + worker.idle, 0
+      (sum, worker) => sum + worker.busy + worker.idle,
+      0,
     );
-    
+
     const workerEfficiency = this.metrics.workerUtilization.map(worker => ({
       workerId: this.metrics.workerUtilization.indexOf(worker),
-      efficiency: totalWorkerTime > 0 ? (worker.busy / totalWorkerTime * 100).toFixed(2) + '%' : '0%',
+      efficiency:
+        totalWorkerTime > 0 ? ((worker.busy / totalWorkerTime) * 100).toFixed(2) + '%' : '0%',
       busyTime: worker.busy,
-      idleTime: worker.idle
+      idleTime: worker.idle,
     }));
 
-    const cacheHitRate = (this.metrics.cacheHits + this.metrics.cacheMisses) > 0
-      ? (this.metrics.cacheHits / (this.metrics.cacheHits + this.metrics.cacheMisses) * 100).toFixed(2) + '%'
-      : '0%';
+    const cacheHitRate =
+      this.metrics.cacheHits + this.metrics.cacheMisses > 0
+        ? (
+            (this.metrics.cacheHits / (this.metrics.cacheHits + this.metrics.cacheMisses)) *
+            100
+          ).toFixed(2) + '%'
+        : '0%';
 
     return {
       ...this.metrics,
-      averageFileSize: this.metrics.filesScanned > 0 ? Math.round(this.metrics.totalFileSize / this.metrics.filesScanned) : 0,
+      averageFileSize:
+        this.metrics.filesScanned > 0
+          ? Math.round(this.metrics.totalFileSize / this.metrics.filesScanned)
+          : 0,
       cacheHitRate,
       workerEfficiency,
-      peakMemoryUsage: this.metrics.memoryUsage.length > 0
-        ? Math.max(...this.metrics.memoryUsage.map(m => m.heapUsed))
-        : 0
+      peakMemoryUsage:
+        this.metrics.memoryUsage.length > 0
+          ? Math.max(...this.metrics.memoryUsage.map(m => m.heapUsed))
+          : 0,
     };
   }
 }
@@ -137,7 +147,7 @@ class FileScanOptimizer {
     this.memoryMonitor = null;
     this.progressReporter = null;
     this.initCache();
-    
+
     if (this.config.enableMemoryOptimization) {
       this.initMemoryMonitor();
     }
@@ -148,13 +158,13 @@ class FileScanOptimizer {
    */
   initCache() {
     if (!this.config.enableCaching) return;
-    
+
     try {
       // 确保缓存目录存在
       if (!fs.existsSync(this.config.cacheDir)) {
         fs.mkdirSync(this.config.cacheDir, { recursive: true });
       }
-      
+
       // 加载现有缓存
       const cacheFiles = fs.readdirSync(this.config.cacheDir);
       for (const file of cacheFiles) {
@@ -177,11 +187,11 @@ class FileScanOptimizer {
    */
   saveCache(key, value) {
     if (!this.config.enableCaching) return;
-    
+
     try {
       const data = { key, value, timestamp: Date.now() };
       this.cache.set(key, data);
-      
+
       const fileName = `${key.replace(/[^a-zA-Z0-9]/g, '_')}.cache`;
       const filePath = path.join(this.config.cacheDir, fileName);
       fs.writeFileSync(filePath, JSON.stringify(data));
@@ -196,18 +206,19 @@ class FileScanOptimizer {
    * @param {number} maxAge - 最大缓存时间（毫秒）
    * @returns {any} 缓存值或null
    */
-  getCache(key, maxAge = 24 * 60 * 60 * 1000) { // 默认24小时
+  getCache(key, maxAge = 24 * 60 * 60 * 1000) {
+    // 默认24小时
     if (!this.config.enableCaching) return null;
-    
+
     const data = this.cache.get(key);
     if (!data) return null;
-    
+
     // 检查缓存是否过期
     if (Date.now() - data.timestamp > maxAge) {
       this.cache.delete(key);
       return null;
     }
-    
+
     return data.value;
   }
 
@@ -235,17 +246,17 @@ class FileScanOptimizer {
       const stats = fs.statSync(filePath);
       const fileSize = stats.size;
       const chunks = [];
-      
+
       const fd = fs.openSync(filePath, 'r');
       let position = 0;
-      
+
       while (position < fileSize) {
         const remainingBytes = fileSize - position;
         const chunkSize = Math.min(this.config.chunkSize, remainingBytes);
-        
+
         const buffer = Buffer.alloc(chunkSize);
         const bytesRead = fs.readSync(fd, buffer, 0, chunkSize, position);
-        
+
         if (bytesRead > 0) {
           chunks.push(buffer.toString('utf8', 0, bytesRead));
           position += bytesRead;
@@ -253,7 +264,7 @@ class FileScanOptimizer {
           break;
         }
       }
-      
+
       fs.closeSync(fd);
       return chunks;
     } catch (error) {
@@ -270,13 +281,13 @@ class FileScanOptimizer {
     if (!this.config.enableParallel || this.config.maxWorkers <= 1) {
       return [];
     }
-    
+
     const workerPool = [];
     for (let i = 0; i < this.config.maxWorkers; i++) {
       const worker = new Worker(path.join(__dirname, 'scan-worker.js'));
       workerPool.push(worker);
     }
-    
+
     return workerPool;
   }
 
@@ -309,31 +320,31 @@ class FileScanOptimizer {
       }
       return results;
     }
-    
+
     // 并行处理
     const workerPool = this.createWorkerPool();
     try {
       const promises = chunks.map((chunk, index) => {
         return new Promise((resolve, reject) => {
           const worker = workerPool[index % workerPool.length];
-          
-          worker.on('message', (result) => {
+
+          worker.on('message', result => {
             resolve(result);
           });
-          
-          worker.on('error', (error) => {
+
+          worker.on('error', error => {
             reject(error);
           });
-          
+
           // 发送任务给Worker
           worker.postMessage({
             chunk,
             index,
-            functionName: processFunction.toString()
+            functionName: processFunction.toString(),
           });
         });
       });
-      
+
       const results = await Promise.all(promises);
       return results;
     } finally {
@@ -351,7 +362,7 @@ class FileScanOptimizer {
   async optimizeFileScan(filePath, scanFunction, options = {}) {
     const fileStats = fs.statSync(filePath);
     this.metrics.recordFileScan(fileStats.size);
-    
+
     // 检查缓存
     const cacheKey = `${filePath}:${fileStats.mtime.getTime()}`;
     const cachedResult = this.getCache(cacheKey);
@@ -362,19 +373,21 @@ class FileScanOptimizer {
       }
       return cachedResult;
     }
-    
+
     this.metrics.recordCacheMiss();
-    
+
     // 检查内存使用情况
     const memUsage = process.memoryUsage();
     const memoryPressure = memUsage.heapUsed / this.config.memoryThreshold;
-    
+
     // 检查文件大小和处理策略
     if (this.isFileTooLarge(filePath) || memoryPressure > 0.8) {
       if (this.config.enableProgressReporting) {
-        console.log(`文件过大或内存压力大(${(memoryPressure * 100).toFixed(1)}%)，使用优化扫描: ${filePath}`);
+        console.log(
+          `文件过大或内存压力大(${(memoryPressure * 100).toFixed(1)}%)，使用优化扫描: ${filePath}`,
+        );
       }
-      
+
       if (this.config.enableStreamProcessing && this.isFileTooLarge(filePath)) {
         // 使用流式处理
         const result = await this.processFileStream(filePath, scanFunction);
@@ -383,7 +396,7 @@ class FileScanOptimizer {
       } else {
         // 使用分块处理
         const chunks = this.chunkFile(filePath);
-        
+
         if (this.config.enableBatchProcessing && chunks.length > this.config.batchSize) {
           // 使用批处理
           const results = await this.processChunksInBatches(chunks, scanFunction);
@@ -402,10 +415,10 @@ class FileScanOptimizer {
       // 直接读取文件
       const content = fs.readFileSync(filePath, 'utf8');
       const result = scanFunction(content);
-      
+
       // 保存缓存
       this.saveCache(cacheKey, result);
-      
+
       return result;
     }
   }
@@ -421,18 +434,18 @@ class FileScanOptimizer {
       const results = [];
       const stream = fs.createReadStream(filePath, {
         encoding: 'utf8',
-        highWaterMark: this.config.chunkSize
+        highWaterMark: this.config.chunkSize,
       });
-      
+
       let buffer = '';
-      
-      stream.on('data', (chunk) => {
+
+      stream.on('data', chunk => {
         buffer += chunk;
-        
+
         // 处理缓冲区中的完整行或块
         const lines = buffer.split('\n');
         buffer = lines.pop() || ''; // 保留最后一个不完整的行
-        
+
         // 批量处理行
         if (lines.length > 0) {
           const chunkResult = scanFunction(lines.join('\n'));
@@ -441,7 +454,7 @@ class FileScanOptimizer {
           }
         }
       });
-      
+
       stream.on('end', () => {
         // 处理剩余的缓冲区内容
         if (buffer) {
@@ -450,12 +463,12 @@ class FileScanOptimizer {
             results.push(chunkResult);
           }
         }
-        
+
         const mergedResult = this.mergeScanResults(results);
         resolve(mergedResult);
       });
-      
-      stream.on('error', (error) => {
+
+      stream.on('error', error => {
         reject(error);
       });
     });
@@ -470,28 +483,28 @@ class FileScanOptimizer {
   async processChunksInBatches(chunks, scanFunction) {
     const results = [];
     const batchSize = this.config.batchSize;
-    
+
     for (let i = 0; i < chunks.length; i += batchSize) {
       const batch = chunks.slice(i, i + batchSize);
-      
+
       // 串行处理每个批次，减少内存压力
       for (const chunk of batch) {
         const result = scanFunction(chunk);
         if (result) {
           results.push(result);
         }
-        
+
         // 定期报告进度
         if (this.config.enableProgressReporting && i % (batchSize * 5) === 0) {
           const progress = Math.round((i / chunks.length) * 100);
           console.log(`批处理进度: ${progress}% (${i}/${chunks.length})`);
         }
-        
+
         // 允许事件循环处理其他任务
         await new Promise(resolve => setImmediate(resolve));
       }
     }
-    
+
     return results;
   }
 
@@ -504,19 +517,19 @@ class FileScanOptimizer {
    */
   async optimizeBatchFileScan(filePaths, scanFunction, options = {}) {
     this.metrics.start();
-    
+
     if (this.config.enableMetricsCollection) {
       this.memoryMonitor = setInterval(() => {
         this.metrics.recordMemoryUsage();
       }, 1000);
     }
-    
+
     try {
       const results = [];
-      
+
       if (this.config.enableParallel && filePaths.length > 1) {
         // 并行处理多个文件
-        const promises = filePaths.map(async (filePath) => {
+        const promises = filePaths.map(async filePath => {
           try {
             const result = await this.optimizeFileScan(filePath, scanFunction, options);
             return { filePath, result, success: true };
@@ -525,7 +538,7 @@ class FileScanOptimizer {
             return { filePath, error: error.message, success: false };
           }
         });
-        
+
         const batchResults = await Promise.all(promises);
         results.push(...batchResults);
       } else {
@@ -540,13 +553,15 @@ class FileScanOptimizer {
           }
         }
       }
-      
+
       this.metrics.end();
-      
+
       if (this.config.enableProgressReporting) {
-        console.log(`批量扫描完成: ${filePaths.length} 个文件，耗时 ${this.metrics.metrics.scanTime.toFixed(2)}ms`);
+        console.log(
+          `批量扫描完成: ${filePaths.length} 个文件，耗时 ${this.metrics.metrics.scanTime.toFixed(2)}ms`,
+        );
       }
-      
+
       return results;
     } finally {
       if (this.memoryMonitor) {
@@ -563,16 +578,16 @@ class FileScanOptimizer {
     this.memoryMonitor = setInterval(() => {
       const memUsage = process.memoryUsage();
       const memoryPressure = memUsage.heapUsed / this.config.memoryThreshold;
-      
+
       if (memoryPressure > 0.9) {
         console.warn(`内存使用率过高: ${(memoryPressure * 100).toFixed(1)}%`);
-        
+
         // 触发垃圾回收
         if (global.gc) {
           global.gc();
         }
       }
-      
+
       this.metrics.recordMemoryUsage();
     }, 5000);
   }
@@ -597,15 +612,15 @@ class FileScanOptimizer {
       metrics: {
         totalLines: 0,
         scannedFiles: results.length,
-        scanTime: 0
-      }
+        scanTime: 0,
+      },
     };
-    
+
     for (const result of results) {
       if (result.issues && Array.isArray(result.issues)) {
         merged.issues.push(...result.issues);
       }
-      
+
       if (result.metrics) {
         if (result.metrics.totalLines) {
           merged.metrics.totalLines += result.metrics.totalLines;
@@ -615,7 +630,7 @@ class FileScanOptimizer {
         }
       }
     }
-    
+
     return merged;
   }
 
@@ -623,22 +638,23 @@ class FileScanOptimizer {
    * 清理过期缓存
    * @param {number} maxAge - 最大缓存时间（毫秒）
    */
-  cleanupCache(maxAge = 7 * 24 * 60 * 60 * 1000) { // 默认7天
+  cleanupCache(maxAge = 7 * 24 * 60 * 60 * 1000) {
+    // 默认7天
     if (!this.config.enableCaching) return;
-    
+
     try {
       const now = Date.now();
       const cacheFiles = fs.readdirSync(this.config.cacheDir);
-      
+
       for (const file of cacheFiles) {
         if (file.endsWith('.cache')) {
           const filePath = path.join(this.config.cacheDir, file);
           const stats = fs.statSync(filePath);
-          
+
           // 删除过期缓存
           if (now - stats.mtime.getTime() > maxAge) {
             fs.unlinkSync(filePath);
-            
+
             // 从内存缓存中删除
             for (const [key, data] of this.cache.entries()) {
               if (data.timestamp < now - maxAge) {
@@ -692,7 +708,7 @@ parentPort.on('message', (data) => {
  */
 function initScanWorker() {
   const workerFilePath = path.join(__dirname, 'scan-worker.js');
-  
+
   // 检查Worker文件是否存在
   if (!fs.existsSync(workerFilePath)) {
     // 创建Worker文件
@@ -703,5 +719,5 @@ function initScanWorker() {
 module.exports = {
   FileScanOptimizer,
   initScanWorker,
-  DEFAULT_CONFIG
+  DEFAULT_CONFIG,
 };

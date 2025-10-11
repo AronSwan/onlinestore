@@ -3,7 +3,7 @@
 // 作者：后端开发团队
 // 时间：2025-09-26 18:25:00
 
-import { Controller, Get, Head, Optional } from '@nestjs/common';
+import { Controller, Get, Head, Optional, HttpException, HttpStatus } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { ApiDocs, ApiGetResource } from '../common/decorators/api-docs.decorator';
 import {
@@ -14,6 +14,10 @@ import {
   HealthIndicatorResult,
   HealthCheckError,
 } from '@nestjs/terminus';
+import {
+  HealthCheckService as AppHealthCheckService,
+  HealthStatus,
+} from '../common/health/health-check.service';
 import { RedisHealthService } from '../redis/redis-health.service';
 import { RedpandaHealthIndicator } from './redpanda.health';
 import { ConfigService } from '@nestjs/config';
@@ -29,6 +33,7 @@ export class HealthController {
     @Optional() private redisHealth: RedisHealthService,
     @Optional() private redpanda: RedpandaHealthIndicator,
     @Optional() private readonly configService?: ConfigService,
+    @Optional() private readonly appHealth?: AppHealthCheckService,
   ) {}
 
   @Get()
@@ -44,9 +49,10 @@ export class HealthController {
         'api',
         `http://localhost:${process.env.PORT || 3000}/health/status`,
       );
-      const redisRes = this.redisHealth && redisEnabled
-        ? await this.redisIndicator()
-        : ({ redis: { status: 'down', error: 'redis skipped' } } as any);
+      const redisRes =
+        this.redisHealth && redisEnabled
+          ? await this.redisIndicator()
+          : ({ redis: { status: 'down', error: 'redis skipped' } } as any);
       return {
         status: 'ok',
         info: {
@@ -125,6 +131,40 @@ export class HealthController {
       cpu: process.cpuUsage(),
       uptime: process.uptime(),
       timestamp: new Date().toISOString(),
+    };
+  }
+
+  // 统一暴露：详细健康检查（来自通用健康检查服务）
+  @Get('detailed')
+  @ApiGetResource(Object, 'API接口')
+  async getDetailed() {
+    if (!this.appHealth) {
+      throw new HttpException(
+        { message: 'Detailed health unavailable: common health module not registered' },
+        HttpStatus.NOT_IMPLEMENTED,
+      );
+    }
+    const systemHealth = await this.appHealth.getSystemHealth();
+    if (systemHealth.status === HealthStatus.UNHEALTHY) {
+      throw new HttpException(systemHealth, HttpStatus.SERVICE_UNAVAILABLE);
+    }
+    return systemHealth;
+  }
+
+  // 统一暴露：健康统计（耗时、失败次数等）
+  @Get('stats')
+  @ApiGetResource(Object, 'API接口')
+  async getStats() {
+    if (!this.appHealth) {
+      throw new HttpException(
+        { message: 'Health stats unavailable: common health module not registered' },
+        HttpStatus.NOT_IMPLEMENTED,
+      );
+    }
+    const stats = this.appHealth.getHealthStats();
+    return {
+      timestamp: new Date().toISOString(),
+      stats,
     };
   }
 

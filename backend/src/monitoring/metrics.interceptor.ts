@@ -36,12 +36,15 @@ export class MetricsInterceptor implements NestInterceptor {
 
           this.logger.debug(`Request completed: ${method} ${url} - ${statusCode} (${duration}ms)`);
         },
-        error: (error) => {
+        error: error => {
           const duration = Date.now() - startTime;
           const statusCode = response.statusCode || 500;
           this.monitoringService.recordApiCall(method, url, statusCode, duration);
 
-          this.logger.error(`Request failed: ${method} ${url} - ${statusCode} (${duration}ms)`, (error as any)?.stack);
+          this.logger.error(
+            `Request failed: ${method} ${url} - ${statusCode} (${duration}ms)`,
+            (error as any)?.stack,
+          );
         },
       }),
       finalize(() => {

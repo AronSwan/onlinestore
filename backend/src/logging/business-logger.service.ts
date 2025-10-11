@@ -47,7 +47,13 @@ export class BusinessLoggerService {
   }
 
   // 记录支付交易日志
-  logPaymentEvent(paymentId: string, event: string, amount: number, status: string, metadata: any = {}): void {
+  logPaymentEvent(
+    paymentId: string,
+    event: string,
+    amount: number,
+    status: string,
+    metadata: any = {},
+  ): void {
     const logEntry: BusinessLogEntry = {
       timestamp: new Date().toISOString(),
       level: 'INFO',
@@ -178,6 +184,4 @@ export class BusinessLoggerService {
       this.logger.error('Failed to flush log buffer', errorInfo.stack);
     }
   }
-
-  
 }

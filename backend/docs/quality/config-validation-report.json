@@ -1,24 +1,24 @@
 {
-  "timestamp": "2025-10-05T06:29:22.607Z",
+  "timestamp": "2025-10-11T06:06:47.685Z",
   "environment": "development",
   "validation": {
-    "passed": true,
-    "errors": [],
+    "passed": false,
+    "errors": [
+      "缺少必需环境变量: NODE_ENV, PORT, DB_TYPE, DB_DATABASE, REDIS_HOST, REDIS_PORT, JWT_SECRET, ENCRYPTION_KEY",
+      "不支持的数据库类型: undefined",
+      "Redis主机未配置"
+    ],
     "warnings": []
   },
   "config": {
     "database": {
-      "type": "sqlite",
       "host": "N/A",
       "port": "N/A"
     },
-    "redis": {
-      "host": "localhost",
-      "port": "6379"
-    },
+    "redis": {},
     "security": {
-      "jwtConfigured": true,
-      "encryptionConfigured": true
+      "jwtConfigured": false,
+      "encryptionConfigured": false
     }
   }
 }

@@ -111,9 +111,7 @@ export class CreateCustomerManagementTables20251001000005 implements MigrationIn
       [addressesTable],
     );
     if (!idxAddressesTypeExists?.cnt) {
-      await queryRunner.query(
-        `CREATE INDEX IDX_user_addresses_type ON ${addressesTable} (type)`,
-      );
+      await queryRunner.query(`CREATE INDEX IDX_user_addresses_type ON ${addressesTable} (type)`);
     }
   }
 

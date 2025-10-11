@@ -109,7 +109,7 @@ describe('RedisHealthService', () => {
     it('should set up all required event listeners when valid Redis client is provided', () => {
       process.env.NODE_ENV = 'test';
       service = new RedisHealthService(mockRedis);
-      
+
       expect(mockRedis.on).toHaveBeenCalledWith('connect', expect.any(Function));
       expect(mockRedis.on).toHaveBeenCalledWith('error', expect.any(Function));
       expect(mockRedis.on).toHaveBeenCalledWith('close', expect.any(Function));
@@ -120,14 +120,14 @@ describe('RedisHealthService', () => {
     it('should have correct number of event listeners', () => {
       process.env.NODE_ENV = 'test';
       service = new RedisHealthService(mockRedis);
-      
+
       expect(mockRedis.on).toHaveBeenCalledTimes(5);
     });
 
     it('should not set up event listeners when Redis client is undefined', () => {
       process.env.NODE_ENV = 'test';
       service = new RedisHealthService(undefined);
-      
+
       expect(mockRedis.on).not.toHaveBeenCalled();
     });
 
@@ -135,7 +135,7 @@ describe('RedisHealthService', () => {
       process.env.NODE_ENV = 'test';
       const invalidRedisClient = { ping: jest.fn() } as any;
       service = new RedisHealthService(invalidRedisClient);
-      
+
       expect(mockRedis.on).not.toHaveBeenCalled();
     });
   });

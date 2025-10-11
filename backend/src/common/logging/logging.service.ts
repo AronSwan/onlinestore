@@ -382,7 +382,7 @@ export class LoggingService implements LoggerService {
           write(chunk: any, encoding: BufferEncoding, callback: (error?: Error | null) => void) {
             // 不做任何操作，只是为了满足Stream transport的要求
             callback();
-          }
+          },
         });
 
         super({

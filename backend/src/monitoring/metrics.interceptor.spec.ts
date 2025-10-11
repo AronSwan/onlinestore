@@ -78,7 +78,7 @@ describe('MetricsInterceptor', () => {
       expect(monitoringService.incrementActiveConnections).toHaveBeenCalled();
     });
 
-    it('should decrement active connections on request completion', (done) => {
+    it('should decrement active connections on request completion', done => {
       execIntercept();
 
       // Wait for the observable to complete
@@ -88,7 +88,7 @@ describe('MetricsInterceptor', () => {
       }, 0);
     });
 
-    it('should record API call metrics on successful response', (done) => {
+    it('should record API call metrics on successful response', done => {
       execIntercept();
 
       // Wait for the observable to complete
@@ -103,11 +103,12 @@ describe('MetricsInterceptor', () => {
       }, 0);
     });
 
-    it('should record API call metrics on error response', (done) => {
+    it('should record API call metrics on error response', done => {
       mockResponse.statusCode = 404;
-      mockCallHandler.handle = () => new Observable(subscriber => {
-        subscriber.error(new Error('Not found'));
-      });
+      mockCallHandler.handle = () =>
+        new Observable(subscriber => {
+          subscriber.error(new Error('Not found'));
+        });
 
       execIntercept();
 
@@ -123,7 +124,7 @@ describe('MetricsInterceptor', () => {
       }, 0);
     });
 
-    it('should calculate request duration correctly', (done) => {
+    it('should calculate request duration correctly', done => {
       // Mock Date.now to return different values
       const mockDateNow = jest
         .spyOn(Date, 'now')
@@ -145,7 +146,7 @@ describe('MetricsInterceptor', () => {
       }, 0);
     });
 
-    it('should handle different HTTP methods', (done) => {
+    it('should handle different HTTP methods', done => {
       const methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
       let completed = 0;
 
@@ -168,7 +169,7 @@ describe('MetricsInterceptor', () => {
       });
     });
 
-    it('should handle different status codes', (done) => {
+    it('should handle different status codes', done => {
       const statusCodes = [200, 201, 204, 400, 401, 403, 404, 500, 502, 503];
       let completed = 0;
 
@@ -191,7 +192,7 @@ describe('MetricsInterceptor', () => {
       });
     });
 
-    it('should handle different request paths', (done) => {
+    it('should handle different request paths', done => {
       const paths = ['/api/users', '/api/products', '/api/orders', '/health'];
       let completed = 0;
 
@@ -214,18 +215,22 @@ describe('MetricsInterceptor', () => {
       });
     });
 
-    it('should handle concurrent requests', (done) => {
+    it('should handle concurrent requests', done => {
       const concurrentRequests = 5;
 
       for (let i = 0; i < concurrentRequests; i++) {
         interceptor.intercept(mockContext, mockCallHandler);
       }
 
-      expect(monitoringService.incrementActiveConnections).toHaveBeenCalledTimes(concurrentRequests);
+      expect(monitoringService.incrementActiveConnections).toHaveBeenCalledTimes(
+        concurrentRequests,
+      );
 
       // Wait for all observables to complete
       setTimeout(() => {
-        expect(monitoringService.decrementActiveConnections).toHaveBeenCalledTimes(concurrentRequests);
+        expect(monitoringService.decrementActiveConnections).toHaveBeenCalledTimes(
+          concurrentRequests,
+        );
         expect(monitoringService.recordApiCall).toHaveBeenCalledTimes(concurrentRequests);
         done();
       }, 0);

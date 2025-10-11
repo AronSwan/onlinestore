@@ -77,9 +77,10 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleInit(): Promise<void> {
     const enabledRaw = this.configService.get<string>('REDIS_ENABLED', 'true');
-    const enabled = typeof enabledRaw === 'string'
-      ? ['true', '1', 'yes', 'on'].includes(enabledRaw.toLowerCase())
-      : !!enabledRaw;
+    const enabled =
+      typeof enabledRaw === 'string'
+        ? ['true', '1', 'yes', 'on'].includes(enabledRaw.toLowerCase())
+        : !!enabledRaw;
 
     if (!enabled) {
       this.logger.warn('Redis已禁用，使用No-Op Stub客户端以保障服务可用');
@@ -113,7 +114,9 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
     } catch (error) {
       const isDev = process.env.NODE_ENV === 'development';
       if (isDev) {
-        this.logger.warn('⚠️ Failed to initialize Redis cache service in development mode, continuing without it');
+        this.logger.warn(
+          '⚠️ Failed to initialize Redis cache service in development mode, continuing without it',
+        );
         // 创建一个空的 Redis 客户端，避免运行时错误
         this.redis = {
           get: async () => null,
@@ -129,7 +132,7 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
           pipeline: () => ({
             set: () => ({ pipeline: () => ({ exec: async () => [] }) }),
             setex: () => ({ pipeline: () => ({ exec: async () => [] }) }),
-            exec: async () => []
+            exec: async () => [],
           }),
           keys: async () => [],
           info: async () => 'redis_version:6.0.0',
@@ -172,30 +175,62 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
     const store = new Map<string, string>();
     const ttlMap = new Map<string, NodeJS.Timeout>();
     return {
-      async get(key: string) { return store.has(key) ? store.get(key)! : null; },
-      async set(key: string, value: string) {
-        if (ttlMap.has(key)) { clearTimeout(ttlMap.get(key)!); ttlMap.delete(key); }
-        store.set(key, value); return 'OK';
+      async get(key: string) {
+        return store.has(key) ? store.get(key)! : null;
       },
-      async del(key: string) { return store.delete(key) ? 1 : 0; },
-      async exists(key: string) { return store.has(key) ? 1 : 0; },
+      async set(key: string, value: string) {
+        if (ttlMap.has(key)) {
+          clearTimeout(ttlMap.get(key)!);
+          ttlMap.delete(key);
+        }
+        store.set(key, value);
+        return 'OK';
+      },
+      async del(key: string) {
+        return store.delete(key) ? 1 : 0;
+      },
+      async exists(key: string) {
+        return store.has(key) ? 1 : 0;
+      },
       async expire(key: string, ttl: number) {
         if (!store.has(key)) return 0;
-        if (ttlMap.has(key)) { clearTimeout(ttlMap.get(key)!); ttlMap.delete(key); }
-        const timer = setTimeout(() => { store.delete(key); ttlMap.delete(key); }, ttl * 1000);
+        if (ttlMap.has(key)) {
+          clearTimeout(ttlMap.get(key)!);
+          ttlMap.delete(key);
+        }
+        const timer = setTimeout(() => {
+          store.delete(key);
+          ttlMap.delete(key);
+        }, ttl * 1000);
         ttlMap.set(key, timer);
         return 1;
       },
-      async ttl(_key: string) { return -1; },
-      async mget(...keys: string[]) { return keys.map(k => (store.has(k) ? store.get(k)! : null)); },
-      async mset(..._args: any[]) { return 'OK'; },
-      async ping() { return 'PONG'; },
-      async quit() { /* noop */ },
-      on() { /* noop */ },
-      async connect() { /* noop */ },
+      async ttl(_key: string) {
+        return -1;
+      },
+      async mget(...keys: string[]) {
+        return keys.map(k => (store.has(k) ? store.get(k)! : null));
+      },
+      async mset(..._args: any[]) {
+        return 'OK';
+      },
+      async ping() {
+        return 'PONG';
+      },
+      async quit() {
+        /* noop */
+      },
+      on() {
+        /* noop */
+      },
+      async connect() {
+        /* noop */
+      },
       pipeline: () => ({
         set: (_key: string, _value: string) => ({ pipeline: () => ({ exec: async () => [] }) }),
-        setex: (_key: string, _ttl: number, _value: string) => ({ pipeline: () => ({ exec: async () => [] }) }),
+        setex: (_key: string, _ttl: number, _value: string) => ({
+          pipeline: () => ({ exec: async () => [] }),
+        }),
         exec: async () => [],
       }),
     };

@@ -32,7 +32,7 @@ export const nestWinstonMock = {
       global: true,
     }),
   },
-  
+
   utilities: {
     createLogger: jest.fn().mockReturnValue(winstonMock.createLogger()),
     Logger: jest.fn().mockImplementation(() => winstonMock.createLogger()),

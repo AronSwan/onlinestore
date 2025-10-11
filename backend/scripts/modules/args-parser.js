@@ -27,20 +27,20 @@ function validateEnum(value, validValues, optionName) {
 function parseArgs() {
   const args = process.argv.slice(2);
   const options = {};
-  
+
   // 在PowerShell中，-- 可能会被解释为参数，需要处理这种情况
   if (args.length > 0 && args[0] === '--') {
     // 如果第一个参数是--，则跳过它
     args.shift();
   }
-  
+
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    
+
     // 处理 --key=value 格式的参数
     if (arg.startsWith('--') && arg.includes('=')) {
       const [key, value] = arg.substring(2).split('=', 2);
-      
+
       if (key === 'category') {
         // 支持聚合参数: --category=auth,input-validation
         const categories = value.split(',').map(c => c.trim());
@@ -132,10 +132,10 @@ function parseArgs() {
       process.exit(0);
     }
   }
-  
+
   return options;
 }
 
 module.exports = {
-  parseArgs
+  parseArgs,
 };

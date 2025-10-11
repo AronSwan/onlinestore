@@ -9,18 +9,37 @@ declare const describe: any;
 declare const it: any;
 declare const expect: any;
 
-import { TanStackQueryIntegrationService, TanStackQueryOptions } from './tanstack-query.integration';
+import {
+  TanStackQueryIntegrationService,
+  TanStackQueryOptions,
+} from './tanstack-query.integration';
 import { IQueryBus } from './bus/query.bus';
 
 class StubQueryBus implements IQueryBus {
-  async execute(query: any): Promise<any> { return null; }
-  async executeWithCache(query: any, cacheKey?: string, cacheTime?: number): Promise<any> { return null; }
-  async prefetch(query: any): Promise<void> { return; }
-  async invalidateCache(queryType: string, cacheKey: string): Promise<void> { return; }
-  register(handler: any): void { /* noop */ }
-  addMiddleware(mw: any): void { /* noop */ }
-  setQueryCache(cache: any): void { /* noop */ }
-  async getCacheStats(): Promise<any> { return { hits: 0, misses: 0, hitRate: 0, totalKeys: 0, size: 0 }; }
+  async execute(query: any): Promise<any> {
+    return null;
+  }
+  async executeWithCache(query: any, cacheKey?: string, cacheTime?: number): Promise<any> {
+    return null;
+  }
+  async prefetch(query: any): Promise<void> {
+    return;
+  }
+  async invalidateCache(queryType: string, cacheKey: string): Promise<void> {
+    return;
+  }
+  register(handler: any): void {
+    /* noop */
+  }
+  addMiddleware(mw: any): void {
+    /* noop */
+  }
+  setQueryCache(cache: any): void {
+    /* noop */
+  }
+  async getCacheStats(): Promise<any> {
+    return { hits: 0, misses: 0, hitRate: 0, totalKeys: 0, size: 0 };
+  }
 }
 
 describe('TanStackQueryIntegrationService', () => {
@@ -86,13 +105,21 @@ describe('TanStackQueryIntegrationService', () => {
     expect(s1.isError && s2.isError).toBe(true);
     expect(String(s1.error?.message)).toBe('boom');
     // inFlight 应清理，后续再次查询应重新执行
-    const s3 = await svc.query({ ...options, queryFn: async () => { calls++; return { ok: true }; } });
+    const s3 = await svc.query({
+      ...options,
+      queryFn: async () => {
+        calls++;
+        return { ok: true };
+      },
+    });
     expect(s3.isSuccess).toBe(true);
     expect(calls).toBe(1 /* first boom */ + 1 /* second success */);
   });
 
   it('SWR 与 cacheTime=0：禁用缓存时不触发 SWR 返回旧值', async () => {
-    const svc = new TanStackQueryIntegrationService(new StubQueryBus(), { enableBackgroundRefresh: true });
+    const svc = new TanStackQueryIntegrationService(new StubQueryBus(), {
+      enableBackgroundRefresh: true,
+    });
     let v = 1;
     const key = ['swr', 'nocache'];
     const options: TanStackQueryOptions = {
@@ -151,7 +178,9 @@ describe('TanStackQueryIntegrationService', () => {
   });
 
   it('SWR 一致性：过期返回旧值并后台刷新更新缓存', async () => {
-    const svc = new TanStackQueryIntegrationService(new StubQueryBus(), { enableBackgroundRefresh: true });
+    const svc = new TanStackQueryIntegrationService(new StubQueryBus(), {
+      enableBackgroundRefresh: true,
+    });
     let v = 1;
     const key = ['swr', 'consistency'];
     const options: TanStackQueryOptions = {
@@ -213,7 +242,10 @@ describe('TanStackQueryIntegrationService', () => {
 
   it('重试路径：首次失败后按 retry/retryDelay 进行重试', async () => {
     let calls = 0;
-    const svc = new TanStackQueryIntegrationService(new StubQueryBus(), { retry: 1, retryDelay: 10 });
+    const svc = new TanStackQueryIntegrationService(new StubQueryBus(), {
+      retry: 1,
+      retryDelay: 10,
+    });
     const options: TanStackQueryOptions = {
       queryKey: ['retry', 'case'],
       queryFn: async () => {
@@ -239,7 +271,10 @@ describe('TanStackQueryIntegrationService', () => {
   });
 
   it('SWR 背景刷新：enableBackgroundRefresh 与 refreshInterval 生效且可清理', async () => {
-    const svc = new TanStackQueryIntegrationService(new StubQueryBus(), { enableBackgroundRefresh: true, refreshInterval: 1 });
+    const svc = new TanStackQueryIntegrationService(new StubQueryBus(), {
+      enableBackgroundRefresh: true,
+      refreshInterval: 1,
+    });
     const options: TanStackQueryOptions = {
       queryKey: ['swr', 'case'],
       queryFn: async () => ({ v: Date.now() }),

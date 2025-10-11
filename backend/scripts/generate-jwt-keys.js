@@ -3,10 +3,10 @@
 /**
  * JWT RSA密钥对生成工具
  * 用于生成RS256算法所需的RSA私钥和公钥
- * 
+ *
  * 使用方法：
  * node scripts/generate-jwt-keys.js
- * 
+ *
  * 输出：
  * - private.key: RSA私钥文件
  * - public.key: RSA公钥文件
@@ -30,12 +30,12 @@ const { privateKey, publicKey } = crypto.generateKeyPairSync('rsa', {
   modulusLength: 2048, // 密钥长度
   publicKeyEncoding: {
     type: 'spki',
-    format: 'pem'
+    format: 'pem',
   },
   privateKeyEncoding: {
     type: 'pkcs8',
-    format: 'pem'
-  }
+    format: 'pem',
+  },
 });
 
 // 保存私钥

@@ -4,9 +4,8 @@ export type GatewayResult<T> = {
   message?: string;
 };
 
-export const isSuccessResponse = <T>(
-  r: GatewayResult<T>,
-): r is { success: true; data: T } => r.success === true && r.data !== undefined;
+export const isSuccessResponse = <T>(r: GatewayResult<T>): r is { success: true; data: T } =>
+  r.success === true && r.data !== undefined;
 
 export interface CreatePaymentData {
   paymentId: string;

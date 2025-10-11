@@ -22,14 +22,14 @@ function loadVulnerabilitiesFromJson(filePath) {
     if (!fs.existsSync(filePath)) {
       throw new Error(`数据源文件不存在: ${filePath}`);
     }
-    
+
     const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-    
+
     // 验证数据结构
     if (!data.vulnerabilities || !Array.isArray(data.vulnerabilities)) {
       throw new Error('数据源格式不正确：缺少vulnerabilities数组');
     }
-    
+
     // 转换为统一格式
     return data.vulnerabilities.map(vuln => ({
       id: vuln.id || '',
@@ -42,7 +42,7 @@ function loadVulnerabilitiesFromJson(filePath) {
       priority: vuln.priority || '',
       businessImpact: vuln.businessImpact || '',
       firstFound: vuln.firstFound || '',
-      targetDate: vuln.targetDate || ''
+      targetDate: vuln.targetDate || '',
     }));
   } catch (error) {
     console.error(`从JSON加载数据失败: ${error.message}`);
@@ -58,12 +58,12 @@ function loadVulnerabilitiesFromJson(filePath) {
  */
 function mapToSystem(title, systemMapping) {
   if (!title) return '其他';
-  
+
   // 按优先级排序系统
   const sortedSystems = Object.entries(systemMapping)
     .filter(([_, config]) => config.keywords.length > 0)
     .sort((a, b) => a[1].priority - b[1].priority);
-  
+
   // 查找匹配的系统
   for (const [systemName, config] of sortedSystems) {
     for (const keyword of config.keywords) {
@@ -72,7 +72,7 @@ function mapToSystem(title, systemMapping) {
       }
     }
   }
-  
+
   return '其他';
 }
 
@@ -85,9 +85,9 @@ function mapToSystem(title, systemMapping) {
 function groupBySystemAndSeverity(vulnerabilities, config) {
   const severities = ['严重', '高', '中', '低'];
   const systems = Object.keys(config.systemMapping);
-  
+
   const heatmapData = {};
-  
+
   // 初始化所有系统和严重度的计数
   for (const system of systems) {
     heatmapData[system] = {};
@@ -95,14 +95,14 @@ function groupBySystemAndSeverity(vulnerabilities, config) {
       heatmapData[system][severity] = 0;
     }
   }
-  
+
   // 统计漏洞数量
   for (const vuln of vulnerabilities) {
     if (heatmapData[vuln.system] && heatmapData[vuln.system][vuln.severity] !== undefined) {
       heatmapData[vuln.system][vuln.severity]++;
     }
   }
-  
+
   return heatmapData;
 }
 
@@ -125,5 +125,5 @@ module.exports = {
   loadVulnerabilitiesFromJson,
   mapToSystem,
   groupBySystemAndSeverity,
-  getMaxCount
+  getMaxCount,
 };

@@ -74,7 +74,12 @@ describe('MonitoringService', () => {
 
       service.recordApiCall(method, path, statusCode, duration);
 
-      expect(metricsService.recordHttpRequest).toHaveBeenCalledWith(method, path, statusCode, duration);
+      expect(metricsService.recordHttpRequest).toHaveBeenCalledWith(
+        method,
+        path,
+        statusCode,
+        duration,
+      );
     });
 
     it('should log slow requests', () => {
@@ -107,9 +112,9 @@ describe('MonitoringService', () => {
     it('should calculate average response time correctly', () => {
       // Add some response times
       service['metrics'].responseTimes = [100, 200, 300];
-      
+
       const metrics = service.getMetrics();
-      
+
       expect(metrics.avgResponseTime).toBe(200);
     });
 
@@ -117,9 +122,9 @@ describe('MonitoringService', () => {
       // Add some API calls and errors
       service['metrics'].apiCalls = 100;
       service['metrics'].errors = 10;
-      
+
       const metrics = service.getMetrics();
-      
+
       expect(metrics.errorRate).toBe(10);
     });
   });
@@ -130,7 +135,7 @@ describe('MonitoringService', () => {
       service['metrics'].apiCalls = 100;
       service['metrics'].responseTimes = [100, 150, 200];
       service['metrics'].errors = 2;
-      
+
       // Mock good system info
       jest.spyOn(service as any, 'getSystemInfo').mockReturnValue({
         memoryUsage: 50,
@@ -148,7 +153,7 @@ describe('MonitoringService', () => {
       service['metrics'].apiCalls = 100;
       service['metrics'].responseTimes = [100, 150, 200];
       service['metrics'].errors = 10; // 10% error rate
-      
+
       // Mock good system info
       jest.spyOn(service as any, 'getSystemInfo').mockReturnValue({
         memoryUsage: 50,
@@ -166,7 +171,7 @@ describe('MonitoringService', () => {
       service['metrics'].apiCalls = 100;
       service['metrics'].responseTimes = [100, 150, 200];
       service['metrics'].errors = 2;
-      
+
       // Mock high memory usage
       jest.spyOn(service as any, 'getSystemInfo').mockReturnValue({
         memoryUsage: 95,
@@ -184,7 +189,7 @@ describe('MonitoringService', () => {
       service['metrics'].apiCalls = 100;
       service['metrics'].responseTimes = [100, 150, 200];
       service['metrics'].errors = 2;
-      
+
       // Mock high CPU load
       jest.spyOn(service as any, 'getSystemInfo').mockReturnValue({
         memoryUsage: 50,

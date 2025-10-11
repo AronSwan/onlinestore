@@ -1,4 +1,6 @@
-import 'dotenv/config';
+import { config as dotenvConfig } from 'dotenv';
+import { existsSync, statSync } from 'fs';
+import { resolve } from 'path';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -11,12 +13,46 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 
 export async function bootstrap() {
+  // 安全加载 .env 文件，避免读取目录导致的错误
+  try {
+    const dotenvCandidates = [
+      resolve(process.cwd(), '.env'),
+      resolve(process.cwd(), '.env.local'),
+      resolve(process.cwd(), '../.env'),
+    ];
+    let dotenvPath: string | undefined;
+    for (const p of dotenvCandidates) {
+      try {
+        if (existsSync(p)) {
+          const s = statSync(p);
+          if (s.isFile()) {
+            dotenvPath = p;
+            break;
+          }
+        }
+      } catch {
+        // 路径不可读或权限异常，尝试下一个候选
+        continue;
+      }
+    }
+    if (dotenvPath) {
+      dotenvConfig({ path: dotenvPath });
+    }
+  } catch (e) {
+    // 忽略 .env 加载错误，继续使用系统环境变量
+  }
   // 配置验证
   const configValidation = ConfigurationValidator.validateAll();
   if (!configValidation.isValid) {
     console.error('❌ 配置验证失败:');
     configValidation.errors.forEach(error => console.error(`  - ${error}`));
-    process.exit(1);
+    // 在开发环境不因配置错误退出，记录并继续；生产环境仍然退出
+    const isProd = process.env.NODE_ENV === 'production';
+    if (isProd) {
+      process.exit(1);
+    } else {
+      console.warn('开发环境检测到配置错误，暂不退出，继续启动以便调试');
+    }
   }
 
   if (configValidation.warnings.length > 0) {

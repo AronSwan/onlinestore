@@ -334,7 +334,8 @@ export const createMasterConfiguration = (): MasterConfig => {
     abortEarly: false,
   });
 
-  const skipValidation = process.env.SKIP_CONFIG_VALIDATION === 'true' || process.env.NODE_ENV === 'development';
+  const skipValidation =
+    process.env.SKIP_CONFIG_VALIDATION === 'true' || process.env.NODE_ENV === 'development';
   if (error) {
     if (!skipValidation) {
       throw new Error(`配置验证失败: ${error.message}`);
@@ -347,12 +348,45 @@ export const createMasterConfiguration = (): MasterConfig => {
   let env: any = validatedEnvConfig;
   if (skipValidation) {
     env.JWT_SECRET = env.JWT_SECRET || 'dev-jwt-secret-key-32-chars-xxxxxxxxxxxxxxxx';
-    env.ENCRYPTION_KEY = env.ENCRYPTION_KEY || '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+    env.ENCRYPTION_KEY =
+      env.ENCRYPTION_KEY || '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
     env.DB_DATABASE = env.DB_DATABASE || './data/dev_caddy_shopping.db';
     env.CORS_ORIGINS = env.CORS_ORIGINS || 'http://localhost:3000';
   }
   const isTest = env.NODE_ENV === 'test';
   const isProd = env.NODE_ENV === 'production';
+
+  // 生产环境严格校验：禁止不完整配置与SQLite回退
+  if (isProd) {
+    // 禁止在生产环境使用 sqlite，避免隐式回退
+    if (env.DB_TYPE === 'sqlite') {
+      throw new Error(
+        '生产环境禁止使用 sqlite 数据库，请设置 DB_TYPE 为 postgres/mysql/tidb 并提供连接信息'
+      );
+    }
+
+    // 强制要求数据库核心参数
+    const requiredDbKeys = ['DB_HOST', 'DB_PORT', 'DB_USERNAME', 'DB_DATABASE'];
+    const missingDb = requiredDbKeys.filter(k => !env[k] || `${env[k]}`.trim() === '');
+    if (missingDb.length > 0) {
+      throw new Error(`生产环境数据库配置缺失: ${missingDb.join(', ')}`);
+    }
+
+    // 强制要求 Redis 基本参数（不使用默认值）
+    const requiredRedisKeys = ['REDIS_HOST', 'REDIS_PORT'];
+    const missingRedis = requiredRedisKeys.filter(k => !env[k] || `${env[k]}`.trim() === '');
+    if (missingRedis.length > 0) {
+      throw new Error(`生产环境 Redis 配置缺失: ${missingRedis.join(', ')}`);
+    }
+
+    // Kafka/Redpanda：若未显式禁用，则必须提供 broker 列表
+    if (env.KAFKA_ENABLED !== 'false') {
+      const brokers = env.REDPANDA_BROKERS;
+      if (!brokers || `${brokers}`.trim() === '') {
+        throw new Error('生产环境需设置 REDPANDA_BROKERS 或将 KAFKA_ENABLED=false');
+      }
+    }
+  }
 
   return {
     app: {

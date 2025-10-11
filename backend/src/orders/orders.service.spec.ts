@@ -119,7 +119,8 @@ const mockMonitoringService = {
 
 const mockOrderEventsService = {
   publishOrderCreated: createMockedFunction<(order: Order) => Promise<void>>(),
-  publishOrderStatusUpdated: createMockedFunction<(orderId: number, status: OrderStatus) => Promise<void>>(),
+  publishOrderStatusUpdated:
+    createMockedFunction<(orderId: number, status: OrderStatus) => Promise<void>>(),
   getMessageHistory: createMockedFunction<(orderId: number) => Promise<any[]>>(),
 };
 

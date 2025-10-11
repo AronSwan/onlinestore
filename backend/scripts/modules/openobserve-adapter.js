@@ -75,7 +75,10 @@ function loadEmailFromEnv() {
       pass: process.env.SMTP_PASS || '',
     },
     from: process.env.EMAIL_FROM || '',
-    to: (process.env.EMAIL_TO || '').split(',').map(s => s.trim()).filter(Boolean),
+    to: (process.env.EMAIL_TO || '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean),
     enabled: (process.env.EMAIL_ENABLED || 'false').toLowerCase() === 'true',
   };
 }
