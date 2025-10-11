@@ -2,13 +2,13 @@
 
 /**
  * 📋 统一文档一致性管理器
- * 
+ *
  * 功能：
  * - 验证文档内容与代码仓库的一致性
  * - 自动修复发现的不一致问题
  * - 同步 package.json 信息到相关文档
  * - 生成详细的验证和修复报告
- * 
+ *
  * 这是一个统一的、功能强大的文档管理工具，整合了之前的多个脚本功能
  */
 
@@ -21,19 +21,19 @@ class UnifiedDocsConsistencyManager {
     this.docsPath = path.join(this.projectRoot, 'docs');
     this.packageJsonPath = path.join(this.projectRoot, 'package.json');
     this.srcPath = path.join(this.projectRoot, 'src');
-    
+
     this.packageJson = JSON.parse(fs.readFileSync(this.packageJsonPath, 'utf8'));
     this.validationResults = [];
     this.fixResults = [];
     this.syncResults = [];
-    
+
     this.options = {
       autoFix: options.autoFix || false,
       generateReport: options.generateReport !== false,
       verbose: options.verbose || false,
-      categories: options.categories || ['all']
+      categories: options.categories || ['all'],
     };
-    
+
     console.log('🚀 启动统一文档一致性管理器...');
     console.log(`项目: ${this.packageJson.name} v${this.packageJson.version}`);
   }
@@ -73,7 +73,6 @@ class UnifiedDocsConsistencyManager {
       }
 
       this.displayFinalResults();
-      
     } catch (error) {
       console.error('❌ 执行过程中发生错误:', error.message);
       if (this.options.verbose) {
@@ -88,29 +87,29 @@ class UnifiedDocsConsistencyManager {
    */
   async validateAll() {
     console.log('\n🔍 开始文档一致性验证...');
-    
+
     this.validationResults = [];
-    
+
     if (this.shouldValidateCategory('package')) {
       await this.validatePackageJsonSync();
     }
-    
+
     if (this.shouldValidateCategory('config')) {
       await this.validateConfigSync();
     }
-    
+
     if (this.shouldValidateCategory('api')) {
       await this.validateApiSync();
     }
-    
+
     if (this.shouldValidateCategory('structure')) {
       await this.validateDocumentStructure();
     }
-    
+
     if (this.shouldValidateCategory('content')) {
       await this.validateContentQuality();
     }
-    
+
     this.displayValidationResults();
   }
 
@@ -119,15 +118,15 @@ class UnifiedDocsConsistencyManager {
    */
   async fixAll() {
     console.log('\n🔧 开始自动修复文档不一致问题...');
-    
+
     this.fixResults = [];
-    
+
     await this.fixIndexMd();
     await this.fixDeploymentGuide();
     await this.fixDeveloperGuide();
     await this.fixConfigManagement();
     await this.fixApiDocumentation();
-    
+
     this.displayFixResults();
   }
 
@@ -136,14 +135,14 @@ class UnifiedDocsConsistencyManager {
    */
   async syncAll() {
     console.log('\n📦 开始同步 package.json 信息...');
-    
+
     this.syncResults = [];
-    
+
     await this.syncToIndexMd();
     await this.syncToDeploymentGuide();
     await this.syncToDeveloperGuide();
     await this.syncToConfigDocs();
-    
+
     this.displaySyncResults();
   }
 
@@ -152,11 +151,11 @@ class UnifiedDocsConsistencyManager {
    */
   async validatePackageJsonSync() {
     console.log('📦 验证 package.json 同步状态...');
-    
+
     const checks = [
       this.checkIndexMdSync(),
       this.checkDeploymentGuideSync(),
-      this.checkDeveloperGuideSync()
+      this.checkDeveloperGuideSync(),
     ];
 
     const results = await Promise.all(checks);
@@ -168,7 +167,7 @@ class UnifiedDocsConsistencyManager {
       totalChecks: results.length,
       passedChecks: results.length - inconsistencies.length,
       inconsistencies: inconsistencies.flatMap(r => r.inconsistencies || []),
-      details: results
+      details: results,
     });
   }
 
@@ -177,7 +176,7 @@ class UnifiedDocsConsistencyManager {
    */
   async validateConfigSync() {
     console.log('⚙️ 验证配置文件同步状态...');
-    
+
     const configPath = path.join(this.docsPath, 'CONFIG_MANAGEMENT.md');
     const envExamplePath = path.join(this.projectRoot, '.env.example');
     const inconsistencies = [];
@@ -186,14 +185,14 @@ class UnifiedDocsConsistencyManager {
       const configContent = fs.readFileSync(configPath, 'utf8');
       const envContent = fs.readFileSync(envExamplePath, 'utf8');
       const envVars = this.parseEnvFile(envContent);
-      
+
       Object.keys(envVars).forEach(envVar => {
         if (!configContent.includes(envVar)) {
           inconsistencies.push({
             file: 'CONFIG_MANAGEMENT.md',
             field: `环境变量 ${envVar}`,
             expected: '应包含在文档中',
-            actual: '未找到'
+            actual: '未找到',
           });
         }
       });
@@ -201,13 +200,13 @@ class UnifiedDocsConsistencyManager {
       if (!fs.existsSync(configPath)) {
         inconsistencies.push({
           file: 'CONFIG_MANAGEMENT.md',
-          issue: '文件不存在'
+          issue: '文件不存在',
         });
       }
       if (!fs.existsSync(envExamplePath)) {
         inconsistencies.push({
           file: '.env.example',
-          issue: '文件不存在'
+          issue: '文件不存在',
         });
       }
     }
@@ -217,7 +216,7 @@ class UnifiedDocsConsistencyManager {
       isValid: inconsistencies.length === 0,
       totalChecks: 1,
       passedChecks: inconsistencies.length === 0 ? 1 : 0,
-      inconsistencies
+      inconsistencies,
     });
   }
 
@@ -226,7 +225,7 @@ class UnifiedDocsConsistencyManager {
    */
   async validateApiSync() {
     console.log('🔌 验证 API 文档同步状态...');
-    
+
     const apiDocPath = path.join(this.docsPath, 'API_DOCUMENTATION.md');
     const openApiPath = path.join(this.docsPath, 'openapi.json');
     const inconsistencies = [];
@@ -235,25 +234,25 @@ class UnifiedDocsConsistencyManager {
     if (fs.existsSync(openApiPath)) {
       try {
         const openApiContent = JSON.parse(fs.readFileSync(openApiPath, 'utf8'));
-        
+
         if (openApiContent.info && openApiContent.info.version !== this.packageJson.version) {
           inconsistencies.push({
             file: 'openapi.json',
             field: 'API 版本',
             expected: this.packageJson.version,
-            actual: openApiContent.info.version
+            actual: openApiContent.info.version,
           });
         }
       } catch (error) {
         inconsistencies.push({
           file: 'openapi.json',
-          issue: 'JSON 格式错误: ' + error.message
+          issue: 'JSON 格式错误: ' + error.message,
         });
       }
     } else {
       inconsistencies.push({
         file: 'openapi.json',
-        issue: 'OpenAPI 规范文件不存在'
+        issue: 'OpenAPI 规范文件不存在',
       });
     }
 
@@ -265,7 +264,7 @@ class UnifiedDocsConsistencyManager {
       isValid: inconsistencies.length === 0,
       totalChecks: 1,
       passedChecks: inconsistencies.length === 0 ? 1 : 0,
-      inconsistencies
+      inconsistencies,
     });
   }
 
@@ -274,14 +273,14 @@ class UnifiedDocsConsistencyManager {
    */
   async validateDocumentStructure() {
     console.log('🏗️ 验证文档结构...');
-    
+
     const requiredDocs = [
       'index.md',
       'API_DOCUMENTATION.md',
       'ARCHITECTURE_DOCUMENTATION.md',
       'DEPLOYMENT_GUIDE.md',
       'DEVELOPER_GUIDE.md',
-      'CONFIG_MANAGEMENT.md'
+      'CONFIG_MANAGEMENT.md',
     ];
 
     const missingDocs = [];
@@ -297,7 +296,7 @@ class UnifiedDocsConsistencyManager {
         if (!content.includes('# ') && !content.includes('## ')) {
           structureIssues.push({
             file: doc,
-            issue: '缺少标题结构'
+            issue: '缺少标题结构',
           });
         }
       }
@@ -305,7 +304,7 @@ class UnifiedDocsConsistencyManager {
 
     const inconsistencies = [
       ...missingDocs.map(doc => ({ file: doc, issue: '文件不存在' })),
-      ...structureIssues
+      ...structureIssues,
     ];
 
     this.validationResults.push({
@@ -313,7 +312,7 @@ class UnifiedDocsConsistencyManager {
       isValid: inconsistencies.length === 0,
       totalChecks: requiredDocs.length,
       passedChecks: requiredDocs.length - missingDocs.length,
-      inconsistencies
+      inconsistencies,
     });
   }
 
@@ -322,7 +321,7 @@ class UnifiedDocsConsistencyManager {
    */
   async validateContentQuality() {
     console.log('📝 验证内容质量...');
-    
+
     const qualityIssues = [];
     const docsToCheck = ['index.md', 'API_DOCUMENTATION.md', 'DEVELOPER_GUIDE.md'];
 
@@ -330,37 +329,40 @@ class UnifiedDocsConsistencyManager {
       const docPath = path.join(this.docsPath, doc);
       if (fs.existsSync(docPath)) {
         const content = fs.readFileSync(docPath, 'utf8');
-        
+
         // 检查内容长度
         if (content.length < 500) {
           qualityIssues.push({
             file: doc,
-            issue: '内容过短，可能不够详细'
+            issue: '内容过短，可能不够详细',
           });
         }
-        
+
         // 检查是否有 TODO 或占位符
         if (content.includes('TODO') || content.includes('待完善') || content.includes('TBD')) {
           qualityIssues.push({
             file: doc,
-            issue: '包含未完成的内容'
+            issue: '包含未完成的内容',
           });
         }
-        
+
         // 检查链接有效性（简单检查，排除徽章链接和邮件链接）
-        const brokenLinks = content.match(/\[.*?\]\((?!http)(?!https)(?!mailto:)(?!\.\/)[^)]*\)/g) || [];
+        const brokenLinks =
+          content.match(/\[.*?\]\((?!http)(?!https)(?!mailto:)(?!\.\/)[^)]*\)/g) || [];
         brokenLinks.forEach(link => {
           const linkPath = link.match(/\((.*?)\)/)[1];
           // 跳过徽章链接、外部链接和邮件链接
-          if (!linkPath.startsWith('./') && 
-              !linkPath.startsWith('../') && 
-              !linkPath.startsWith('http') && 
-              !linkPath.startsWith('mailto:')) {
+          if (
+            !linkPath.startsWith('./') &&
+            !linkPath.startsWith('../') &&
+            !linkPath.startsWith('http') &&
+            !linkPath.startsWith('mailto:')
+          ) {
             const fullPath = path.resolve(this.docsPath, linkPath);
             if (!fs.existsSync(fullPath)) {
               qualityIssues.push({
                 file: doc,
-                issue: `可能的无效链接: ${link}`
+                issue: `可能的无效链接: ${link}`,
               });
             }
           }
@@ -373,7 +375,7 @@ class UnifiedDocsConsistencyManager {
       isValid: qualityIssues.length === 0,
       totalChecks: docsToCheck.length,
       passedChecks: docsToCheck.length - qualityIssues.length,
-      inconsistencies: qualityIssues
+      inconsistencies: qualityIssues,
     });
   }
 
@@ -382,11 +384,11 @@ class UnifiedDocsConsistencyManager {
    */
   async checkIndexMdSync() {
     const indexPath = path.join(this.docsPath, 'index.md');
-    
+
     if (!fs.existsSync(indexPath)) {
       return {
         isValid: false,
-        inconsistencies: [{ file: 'index.md', issue: '文件不存在' }]
+        inconsistencies: [{ file: 'index.md', issue: '文件不存在' }],
       };
     }
 
@@ -400,7 +402,7 @@ class UnifiedDocsConsistencyManager {
         file: 'index.md',
         field: '版本号',
         expected: this.packageJson.version,
-        actual: versionMatch ? versionMatch[1] : '未找到'
+        actual: versionMatch ? versionMatch[1] : '未找到',
       });
     }
 
@@ -410,13 +412,13 @@ class UnifiedDocsConsistencyManager {
         file: 'index.md',
         field: '项目描述',
         expected: this.packageJson.description,
-        actual: '未找到或不匹配'
+        actual: '未找到或不匹配',
       });
     }
 
     return {
       isValid: inconsistencies.length === 0,
-      inconsistencies
+      inconsistencies,
     };
   }
 
@@ -425,11 +427,11 @@ class UnifiedDocsConsistencyManager {
    */
   async checkDeploymentGuideSync() {
     const deployPath = path.join(this.docsPath, 'DEPLOYMENT_GUIDE.md');
-    
+
     if (!fs.existsSync(deployPath)) {
       return {
         isValid: false,
-        inconsistencies: [{ file: 'DEPLOYMENT_GUIDE.md', issue: '文件不存在' }]
+        inconsistencies: [{ file: 'DEPLOYMENT_GUIDE.md', issue: '文件不存在' }],
       };
     }
 
@@ -437,12 +439,7 @@ class UnifiedDocsConsistencyManager {
     const inconsistencies = [];
 
     // 检查核心依赖版本
-    const coreDependencies = [
-      '@nestjs/core',
-      'typeorm',
-      'ioredis',
-      '@nestjs/jwt'
-    ];
+    const coreDependencies = ['@nestjs/core', 'typeorm', 'ioredis', '@nestjs/jwt'];
 
     coreDependencies.forEach(dep => {
       if (this.packageJson.dependencies[dep]) {
@@ -452,7 +449,7 @@ class UnifiedDocsConsistencyManager {
             file: 'DEPLOYMENT_GUIDE.md',
             field: `依赖版本 ${dep}`,
             expected: expectedVersion,
-            actual: content.includes(dep) ? '版本不匹配' : '未找到依赖'
+            actual: content.includes(dep) ? '版本不匹配' : '未找到依赖',
           });
         }
       }
@@ -460,7 +457,7 @@ class UnifiedDocsConsistencyManager {
 
     return {
       isValid: inconsistencies.length === 0,
-      inconsistencies
+      inconsistencies,
     };
   }
 
@@ -469,11 +466,11 @@ class UnifiedDocsConsistencyManager {
    */
   async checkDeveloperGuideSync() {
     const devPath = path.join(this.docsPath, 'DEVELOPER_GUIDE.md');
-    
+
     if (!fs.existsSync(devPath)) {
       return {
         isValid: false,
-        inconsistencies: [{ file: 'DEVELOPER_GUIDE.md', issue: '文件不存在' }]
+        inconsistencies: [{ file: 'DEVELOPER_GUIDE.md', issue: '文件不存在' }],
       };
     }
 
@@ -481,12 +478,7 @@ class UnifiedDocsConsistencyManager {
     const inconsistencies = [];
 
     // 检查重要脚本命令
-    const importantScripts = [
-      'start:dev',
-      'build',
-      'test',
-      'security:check'
-    ];
+    const importantScripts = ['start:dev', 'build', 'test', 'security:check'];
 
     importantScripts.forEach(script => {
       if (this.packageJson.scripts[script]) {
@@ -496,7 +488,7 @@ class UnifiedDocsConsistencyManager {
             file: 'DEVELOPER_GUIDE.md',
             field: `脚本命令 ${script}`,
             expected: `npm run ${script}`,
-            actual: '未找到'
+            actual: '未找到',
           });
         }
       }
@@ -504,7 +496,7 @@ class UnifiedDocsConsistencyManager {
 
     return {
       isValid: inconsistencies.length === 0,
-      inconsistencies
+      inconsistencies,
     };
   }
 
@@ -515,24 +507,24 @@ class UnifiedDocsConsistencyManager {
     try {
       const controllerPattern = path.join(this.srcPath, '**/*.controller.{ts,js}');
       const glob = require('glob');
-      
+
       if (glob.sync) {
         const controllerFiles = glob.sync(controllerPattern);
         const apiDocPath = path.join(this.docsPath, 'API_DOCUMENTATION.md');
-        
+
         if (fs.existsSync(apiDocPath)) {
           const apiDocContent = fs.readFileSync(apiDocPath, 'utf8');
-          
+
           controllerFiles.forEach(controllerFile => {
             const controllerName = path.basename(controllerFile, path.extname(controllerFile));
             const moduleName = controllerName.replace('.controller', '');
-            
+
             if (!apiDocContent.includes(moduleName) && !apiDocContent.includes(controllerName)) {
               inconsistencies.push({
                 file: 'API_DOCUMENTATION.md',
                 field: `控制器 ${controllerName}`,
                 expected: '应包含在API文档中',
-                actual: '未找到'
+                actual: '未找到',
               });
             }
           });
@@ -549,9 +541,9 @@ class UnifiedDocsConsistencyManager {
    */
   async fixIndexMd() {
     console.log('📝 修复 index.md...');
-    
+
     const indexPath = path.join(this.docsPath, 'index.md');
-    
+
     if (!fs.existsSync(indexPath)) {
       console.log('⚠️  index.md 不存在，创建新文件');
       const template = this.createIndexMdTemplate();
@@ -566,7 +558,7 @@ class UnifiedDocsConsistencyManager {
     // 修复版本号
     const versionRegex = /(\*\*当前版本\*\*:\s*v?)([^\n\r]+)/;
     const versionMatch = content.match(versionRegex);
-    
+
     if (versionMatch && !versionMatch[2].includes(this.packageJson.version)) {
       const newVersionLine = `**当前版本**: v${this.packageJson.version}`;
       content = content.replace(versionRegex, newVersionLine);
@@ -592,7 +584,10 @@ class UnifiedDocsConsistencyManager {
       } else {
         // 在版本号后添加描述
         const versionLineRegex = /(\*\*当前版本\*\*:[^\n\r]+)/;
-        content = content.replace(versionLineRegex, `$1\n**项目描述**: ${this.packageJson.description}`);
+        content = content.replace(
+          versionLineRegex,
+          `$1\n**项目描述**: ${this.packageJson.description}`,
+        );
       }
       isModified = true;
       console.log('  ✅ 更新项目描述');
@@ -609,9 +604,9 @@ class UnifiedDocsConsistencyManager {
    */
   async fixDeploymentGuide() {
     console.log('🚀 修复 DEPLOYMENT_GUIDE.md...');
-    
+
     const deployPath = path.join(this.docsPath, 'DEPLOYMENT_GUIDE.md');
-    
+
     if (!fs.existsSync(deployPath)) {
       console.log('⚠️  DEPLOYMENT_GUIDE.md 不存在，跳过修复');
       return;
@@ -622,9 +617,9 @@ class UnifiedDocsConsistencyManager {
 
     const coreDependencies = {
       '@nestjs/core': this.packageJson.dependencies['@nestjs/core'],
-      'typeorm': this.packageJson.dependencies['typeorm'],
-      'ioredis': this.packageJson.dependencies['ioredis'],
-      '@nestjs/jwt': this.packageJson.dependencies['@nestjs/jwt']
+      typeorm: this.packageJson.dependencies['typeorm'],
+      ioredis: this.packageJson.dependencies['ioredis'],
+      '@nestjs/jwt': this.packageJson.dependencies['@nestjs/jwt'],
     };
 
     // 确保有依赖版本部分
@@ -632,7 +627,8 @@ class UnifiedDocsConsistencyManager {
       const installSection = content.indexOf('## 📥 安装依赖') || content.indexOf('## 安装');
       if (installSection !== -1) {
         const dependencySection = `\n## 📦 核心依赖\n\n本项目使用以下核心依赖：\n\n`;
-        content = content.slice(0, installSection) + dependencySection + content.slice(installSection);
+        content =
+          content.slice(0, installSection) + dependencySection + content.slice(installSection);
         isModified = true;
         console.log('  ✅ 创建依赖版本部分');
       }
@@ -666,9 +662,9 @@ class UnifiedDocsConsistencyManager {
    */
   async fixDeveloperGuide() {
     console.log('👨‍💻 修复 DEVELOPER_GUIDE.md...');
-    
+
     const devPath = path.join(this.docsPath, 'DEVELOPER_GUIDE.md');
-    
+
     if (!fs.existsSync(devPath)) {
       console.log('⚠️  DEVELOPER_GUIDE.md 不存在，跳过修复');
       return;
@@ -679,14 +675,14 @@ class UnifiedDocsConsistencyManager {
 
     const importantScripts = {
       'start:dev': '启动开发服务器',
-      'build': '构建生产版本',
-      'test': '运行测试',
+      build: '构建生产版本',
+      test: '运行测试',
       'test:unit': '运行单元测试',
       'test:integration': '运行集成测试',
       'test:e2e': '运行端到端测试',
       'security:check': '安全检查',
       'docs:validate': '验证文档一致性',
-      'docs:sync:all': '同步所有文档'
+      'docs:sync:all': '同步所有文档',
     };
 
     // 确保有脚本命令部分
@@ -706,7 +702,7 @@ class UnifiedDocsConsistencyManager {
     Object.entries(importantScripts).forEach(([script, description]) => {
       if (this.packageJson.scripts[script]) {
         const scriptRegex = new RegExp(`npm run ${script}`, 'g');
-        
+
         if (!content.match(scriptRegex)) {
           const commandSection = content.indexOf('## 🔧 常用命令');
           if (commandSection !== -1) {
@@ -732,10 +728,10 @@ class UnifiedDocsConsistencyManager {
    */
   async fixConfigManagement() {
     console.log('⚙️ 修复 CONFIG_MANAGEMENT.md...');
-    
+
     const configPath = path.join(this.docsPath, 'CONFIG_MANAGEMENT.md');
     const envExamplePath = path.join(this.projectRoot, '.env.example');
-    
+
     if (!fs.existsSync(envExamplePath)) {
       console.log('⚠️  .env.example 不存在，跳过环境变量修复');
       return;
@@ -765,22 +761,25 @@ class UnifiedDocsConsistencyManager {
    */
   async fixApiDocumentation() {
     console.log('🔌 修复 API 文档...');
-    
+
     const openApiPath = path.join(this.docsPath, 'openapi.json');
-    
+
     if (fs.existsSync(openApiPath)) {
       try {
         const openApiContent = JSON.parse(fs.readFileSync(openApiPath, 'utf8'));
-        
+
         if (openApiContent.info && openApiContent.info.version !== this.packageJson.version) {
           openApiContent.info.version = this.packageJson.version;
-          if (openApiContent.info.title && !openApiContent.info.title.includes(this.packageJson.name)) {
+          if (
+            openApiContent.info.title &&
+            !openApiContent.info.title.includes(this.packageJson.name)
+          ) {
             openApiContent.info.title = this.packageJson.name + ' API';
           }
           if (this.packageJson.description) {
             openApiContent.info.description = this.packageJson.description;
           }
-          
+
           fs.writeFileSync(openApiPath, JSON.stringify(openApiContent, null, 2));
           console.log(`  ✅ 更新 OpenAPI 版本: ${this.packageJson.version}`);
           this.addFixResult('openapi.json', '更新版本信息', 'success');
@@ -797,9 +796,9 @@ class UnifiedDocsConsistencyManager {
    */
   async syncToIndexMd() {
     console.log('📝 同步到 index.md...');
-    
+
     const indexPath = path.join(this.docsPath, 'index.md');
-    
+
     if (!fs.existsSync(indexPath)) {
       const template = this.createIndexMdTemplate();
       fs.writeFileSync(indexPath, template);
@@ -845,7 +844,7 @@ class UnifiedDocsConsistencyManager {
   parseEnvFile(content) {
     const envVars = {};
     const lines = content.split('\n');
-    
+
     lines.forEach(line => {
       line = line.trim();
       if (line && !line.startsWith('#') && line.includes('=')) {
@@ -854,7 +853,7 @@ class UnifiedDocsConsistencyManager {
         envVars[key.trim()] = value.trim();
       }
     });
-    
+
     return envVars;
   }
 
@@ -867,7 +866,7 @@ class UnifiedDocsConsistencyManager {
     }
 
     const envTable = this.generateEnvTable(envVars);
-    
+
     const tableStart = content.indexOf('| 变量名 |');
     if (tableStart !== -1) {
       const nextSection = content.indexOf('\n## ', tableStart);
@@ -895,7 +894,7 @@ class UnifiedDocsConsistencyManager {
       const description = this.getEnvDescription(key);
       const required = this.isEnvRequired(key) ? '✅' : '❌';
       const displayValue = value.length > 20 ? value.substring(0, 20) + '...' : value;
-      
+
       table += `| \`${key}\` | \`${displayValue}\` | ${description} | ${required} |\n`;
     });
 
@@ -907,22 +906,22 @@ class UnifiedDocsConsistencyManager {
    */
   getEnvDescription(key) {
     const descriptions = {
-      'DATABASE_HOST': '数据库主机地址',
-      'DATABASE_PORT': '数据库端口号',
-      'DATABASE_USERNAME': '数据库用户名',
-      'DATABASE_PASSWORD': '数据库密码',
-      'DATABASE_NAME': '数据库名称',
-      'DATABASE_SYNCHRONIZE': '是否自动同步数据库结构',
-      'DATABASE_LOGGING': '是否启用数据库日志',
-      'REDIS_HOST': 'Redis 主机地址',
-      'REDIS_PORT': 'Redis 端口号',
-      'REDIS_PASSWORD': 'Redis 密码',
-      'JWT_SECRET': 'JWT 密钥',
-      'JWT_EXPIRES_IN': 'JWT 过期时间',
-      'API_PREFIX': 'API 路径前缀',
-      'LOG_LEVEL': '日志级别',
-      'NODE_ENV': '运行环境',
-      'PORT': '应用端口号'
+      DATABASE_HOST: '数据库主机地址',
+      DATABASE_PORT: '数据库端口号',
+      DATABASE_USERNAME: '数据库用户名',
+      DATABASE_PASSWORD: '数据库密码',
+      DATABASE_NAME: '数据库名称',
+      DATABASE_SYNCHRONIZE: '是否自动同步数据库结构',
+      DATABASE_LOGGING: '是否启用数据库日志',
+      REDIS_HOST: 'Redis 主机地址',
+      REDIS_PORT: 'Redis 端口号',
+      REDIS_PASSWORD: 'Redis 密码',
+      JWT_SECRET: 'JWT 密钥',
+      JWT_EXPIRES_IN: 'JWT 过期时间',
+      API_PREFIX: 'API 路径前缀',
+      LOG_LEVEL: '日志级别',
+      NODE_ENV: '运行环境',
+      PORT: '应用端口号',
     };
 
     return descriptions[key] || '配置项说明';
@@ -939,7 +938,7 @@ class UnifiedDocsConsistencyManager {
       'DATABASE_PASSWORD',
       'DATABASE_NAME',
       'JWT_SECRET',
-      'NODE_ENV'
+      'NODE_ENV',
     ];
 
     return requiredVars.includes(key);
@@ -1045,22 +1044,25 @@ class UnifiedDocsConsistencyManager {
   displayValidationResults() {
     console.log('\n📊 验证结果汇总:');
     console.log('='.repeat(50));
-    
+
     this.validationResults.forEach(result => {
       const status = result.isValid ? '✅' : '❌';
       const percentage = Math.round((result.passedChecks / result.totalChecks) * 100);
-      
-      console.log(`${status} ${result.category}: ${result.passedChecks}/${result.totalChecks} (${percentage}%)`);
-      
+
+      console.log(
+        `${status} ${result.category}: ${result.passedChecks}/${result.totalChecks} (${percentage}%)`,
+      );
+
       if (!result.isValid && result.inconsistencies.length > 0) {
-        result.inconsistencies.slice(0, 5).forEach(issue => { // 只显示前5个问题
+        result.inconsistencies.slice(0, 5).forEach(issue => {
+          // 只显示前5个问题
           console.log(`   ⚠️  ${issue.file}: ${issue.field || issue.issue}`);
           if (issue.expected && issue.actual) {
             console.log(`      期望: ${issue.expected}`);
             console.log(`      实际: ${issue.actual}`);
           }
         });
-        
+
         if (result.inconsistencies.length > 5) {
           console.log(`   ... 还有 ${result.inconsistencies.length - 5} 个问题`);
         }
@@ -1074,7 +1076,7 @@ class UnifiedDocsConsistencyManager {
   displayFixResults() {
     console.log('\n📊 修复结果汇总:');
     console.log('='.repeat(50));
-    
+
     this.fixResults.forEach(result => {
       const status = result.status === 'success' ? '✅' : '❌';
       console.log(`${status} ${result.file}: ${result.action}`);
@@ -1082,8 +1084,10 @@ class UnifiedDocsConsistencyManager {
 
     const successCount = this.fixResults.filter(r => r.status === 'success').length;
     const totalCount = this.fixResults.length;
-    
-    console.log(`\n📈 修复成功率: ${successCount}/${totalCount} (${Math.round(successCount/totalCount*100)}%)`);
+
+    console.log(
+      `\n📈 修复成功率: ${successCount}/${totalCount} (${Math.round((successCount / totalCount) * 100)}%)`,
+    );
   }
 
   /**
@@ -1092,7 +1096,7 @@ class UnifiedDocsConsistencyManager {
   displaySyncResults() {
     console.log('\n📊 同步结果汇总:');
     console.log('='.repeat(50));
-    
+
     this.syncResults.forEach(result => {
       const status = result.status === 'success' ? '✅' : '❌';
       console.log(`${status} ${result.file}: ${result.action}`);
@@ -1100,8 +1104,10 @@ class UnifiedDocsConsistencyManager {
 
     const successCount = this.syncResults.filter(r => r.status === 'success').length;
     const totalCount = this.syncResults.length;
-    
-    console.log(`\n📈 同步成功率: ${successCount}/${totalCount} (${Math.round(successCount/totalCount*100)}%)`);
+
+    console.log(
+      `\n📈 同步成功率: ${successCount}/${totalCount} (${Math.round((successCount / totalCount) * 100)}%)`,
+    );
   }
 
   /**
@@ -1109,7 +1115,7 @@ class UnifiedDocsConsistencyManager {
    */
   displayFinalResults() {
     const hasErrors = this.hasValidationErrors();
-    
+
     if (hasErrors) {
       console.log('\n❌ 发现文档不一致问题，请查看详细报告');
       process.exit(1);
@@ -1127,37 +1133,37 @@ class UnifiedDocsConsistencyManager {
       projectInfo: {
         name: this.packageJson.name,
         version: this.packageJson.version,
-        description: this.packageJson.description
+        description: this.packageJson.description,
       },
       validation: {
         summary: {
           totalCategories: this.validationResults.length,
           passedCategories: this.validationResults.filter(r => r.isValid).length,
           totalChecks: this.validationResults.reduce((sum, r) => sum + r.totalChecks, 0),
-          passedChecks: this.validationResults.reduce((sum, r) => sum + r.passedChecks, 0)
+          passedChecks: this.validationResults.reduce((sum, r) => sum + r.passedChecks, 0),
         },
-        results: this.validationResults
+        results: this.validationResults,
       },
       fixes: {
         summary: {
           totalFixes: this.fixResults.length,
           successfulFixes: this.fixResults.filter(r => r.status === 'success').length,
-          failedFixes: this.fixResults.filter(r => r.status === 'failed').length
+          failedFixes: this.fixResults.filter(r => r.status === 'failed').length,
         },
-        results: this.fixResults
+        results: this.fixResults,
       },
       sync: {
         summary: {
           totalSyncs: this.syncResults.length,
           successfulSyncs: this.syncResults.filter(r => r.status === 'success').length,
-          failedSyncs: this.syncResults.filter(r => r.status === 'failed').length
+          failedSyncs: this.syncResults.filter(r => r.status === 'failed').length,
         },
-        results: this.syncResults
-      }
+        results: this.syncResults,
+      },
     };
 
     const reportPath = path.join(this.docsPath, 'quality/comprehensive-docs-report.json');
-    
+
     // 确保目录存在
     const reportDir = path.dirname(reportPath);
     if (!fs.existsSync(reportDir)) {
@@ -1205,7 +1211,7 @@ function parseArguments() {
   const options = {
     categories: ['all'],
     generateReport: true,
-    verbose: false
+    verbose: false,
   };
 
   args.forEach(arg => {
@@ -1225,7 +1231,7 @@ function parseArguments() {
 if (require.main === module) {
   const { command, options } = parseArguments();
   const manager = new UnifiedDocsConsistencyManager(options);
-  
+
   manager.execute(command).catch(error => {
     console.error('❌ 执行失败:', error.message);
     if (options.verbose) {

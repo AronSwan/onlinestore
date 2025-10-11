@@ -81,9 +81,19 @@ const mockProductRepository = {
   save: createMockedFunction<(entity: Product) => Promise<Product>>(),
   findOne: createMockedFunction<(options: any) => Promise<Product | null>>(),
   find: createMockedFunction<(options: any) => Promise<Product[]>>(),
-  update: createMockedFunction<(id: number | any, partial: Partial<Product>) => Promise<{ affected?: number }>>(),
+  update:
+    createMockedFunction<
+      (id: number | any, partial: Partial<Product>) => Promise<{ affected?: number }>
+    >(),
   delete: createMockedFunction<(id: number | any) => Promise<{ affected?: number }>>(),
-  increment: createMockedFunction<(criteria: any, property: keyof Product | string, value: number) => Promise<{ affected?: number }>>(),
+  increment:
+    createMockedFunction<
+      (
+        criteria: any,
+        property: keyof Product | string,
+        value: number,
+      ) => Promise<{ affected?: number }>
+    >(),
   count: createMockedFunction<(options?: any) => Promise<number>>(),
   createQueryBuilder: createMockedFunction<(alias?: string) => any>(),
 };
@@ -109,7 +119,8 @@ const mockConfigService = {
 };
 
 const mockMonitoringService = {
-  observeRedisDuration: createMockedFunction<(metric: string, durationMs: number) => Promise<void>>(),
+  observeRedisDuration:
+    createMockedFunction<(metric: string, durationMs: number) => Promise<void>>(),
   recordCacheHit: createMockedFunction<(key: string) => Promise<void>>(),
   recordCacheMiss: createMockedFunction<(key: string) => Promise<void>>(),
   observeDbQuery: createMockedFunction<(queryName: string, durationMs: number) => Promise<void>>(),
@@ -123,7 +134,10 @@ const mockProductEventsService = {
 };
 
 const mockSearchManagerService = {
-  search: createMockedFunction<(keyword: string, options: any) => Promise<{ hits: Array<{ id: string }>; total: number }>>(),
+  search:
+    createMockedFunction<
+      (keyword: string, options: any) => Promise<{ hits: Array<{ id: string }>; total: number }>
+    >(),
   indexProduct: createMockedFunction<(product: Product) => Promise<void>>(),
   deleteProduct: createMockedFunction<(productId: number) => Promise<void>>(),
   indexProducts: createMockedFunction<(products: Product[]) => Promise<void>>(),
@@ -693,7 +707,7 @@ describe('ProductsService', () => {
       const result = await service.findAll(findAllOptions);
 
       expect(result).toEqual({ products: [mockProduct], total: 1 });
-      expect(mockQueryBuilder.getManyAndCount).toHaveBeenCalled();
+      expect(qb.getManyAndCount).toHaveBeenCalled();
       expect(mockCacheManager.set).toHaveBeenCalledWith(
         'caddy_shopping:products:list:1:20:测试',
         { products: [mockProduct], total: 1 },
@@ -734,7 +748,7 @@ describe('ProductsService', () => {
       const result = await service.findByCategory('测试分类', 10);
 
       expect(result).toEqual([mockProduct]);
-      expect(mockQueryBuilder.getMany).toHaveBeenCalled();
+      expect(qb.getMany).toHaveBeenCalled();
       expect(mockCacheManager.set).toHaveBeenCalledWith(
         'caddy_shopping:products:category:测试分类:10',
         [mockProduct],

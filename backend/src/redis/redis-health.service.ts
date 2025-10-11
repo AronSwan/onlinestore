@@ -20,10 +20,12 @@ export class RedisHealthService {
     const isTest = process.env.NODE_ENV === 'test';
 
     // 读取Redis启用开关，允许生产环境也禁用以降级
-    const enabledRaw = (this.configService?.get?.('REDIS_ENABLED') as string) ?? process.env.REDIS_ENABLED ?? 'true';
-    const redisEnabled = typeof enabledRaw === 'string'
-      ? ['true', '1', 'yes', 'on'].includes(enabledRaw.toLowerCase())
-      : !!enabledRaw;
+    const enabledRaw =
+      (this.configService?.get?.('REDIS_ENABLED') as string) ?? process.env.REDIS_ENABLED ?? 'true';
+    const redisEnabled =
+      typeof enabledRaw === 'string'
+        ? ['true', '1', 'yes', 'on'].includes(enabledRaw.toLowerCase())
+        : !!enabledRaw;
 
     // 在测试环境中，如果传入了redisClient，则使用它
     if (isTest && redisClient !== undefined) {
@@ -49,7 +51,9 @@ export class RedisHealthService {
         this.stubMode = true;
         const reason = !redisEnabled
           ? 'Redis disabled via REDIS_ENABLED'
-          : (isTest ? 'Test environment' : 'Development environment');
+          : isTest
+            ? 'Test environment'
+            : 'Development environment';
         this.logger.warn(`${reason}: Redis client is using stub.`);
         this.setupEventListeners();
       } else {
@@ -69,10 +73,14 @@ export class RedisHealthService {
       const isTest = process.env.NODE_ENV === 'test';
 
       // 读取Redis启用开关
-      const enabledRaw = (this.configService?.get?.('REDIS_ENABLED') as string) ?? process.env.REDIS_ENABLED ?? 'true';
-      const redisEnabled = typeof enabledRaw === 'string'
-        ? ['true', '1', 'yes', 'on'].includes(enabledRaw.toLowerCase())
-        : !!enabledRaw;
+      const enabledRaw =
+        (this.configService?.get?.('REDIS_ENABLED') as string) ??
+        process.env.REDIS_ENABLED ??
+        'true';
+      const redisEnabled =
+        typeof enabledRaw === 'string'
+          ? ['true', '1', 'yes', 'on'].includes(enabledRaw.toLowerCase())
+          : !!enabledRaw;
 
       // 开发环境或测试环境：不实例化 Redis 客户端，避免无 Redis 服务时产生连接错误
       if (isDev || isTest || !redisEnabled) {
@@ -80,16 +88,20 @@ export class RedisHealthService {
         this.stubMode = true;
         const reason = !redisEnabled
           ? 'Redis disabled via REDIS_ENABLED'
-          : (isTest ? 'Test environment' : 'Development environment');
+          : isTest
+            ? 'Test environment'
+            : 'Development environment';
         this.logger.warn(`${reason}: Redis client is using stub.`);
         this.setupEventListeners();
         return;
       }
 
       const master = createMasterConfiguration?.();
-      const host = this.configService?.get<string>('REDIS_HOST') ?? master?.redis?.host ?? 'localhost';
+      const host =
+        this.configService?.get<string>('REDIS_HOST') ?? master?.redis?.host ?? 'localhost';
       const port = this.configService?.get<number>('REDIS_PORT') ?? master?.redis?.port ?? 6379;
-      const password = this.configService?.get<string>('REDIS_PASSWORD') ?? master?.redis?.password ?? undefined;
+      const password =
+        this.configService?.get<string>('REDIS_PASSWORD') ?? master?.redis?.password ?? undefined;
       const db = this.configService?.get<number>('REDIS_DB') ?? master?.redis?.db ?? 0;
 
       this.redisClient = new Redis({
@@ -123,15 +135,29 @@ export class RedisHealthService {
     const store = new Map<string, string>();
     const ttlMap = new Map<string, NodeJS.Timeout>();
     return {
-      async get(key: string) { return store.has(key) ? store.get(key)! : null; },
-      async set(key: string, value: string) {
-        if (ttlMap.has(key)) { clearTimeout(ttlMap.get(key)!); ttlMap.delete(key); }
-        store.set(key, value); return 'OK';
+      async get(key: string) {
+        return store.has(key) ? store.get(key)! : null;
       },
-      async del(key: string) { return store.delete(key) ? 1 : 0; },
-      async ping() { return 'PONG'; },
-      async info() { return 'redis_version:stub\r\nconnected_clients:1\r\nused_memory_human:1K\r\nuptime_in_seconds:1'; },
-      on() { /* noop */ },
+      async set(key: string, value: string) {
+        if (ttlMap.has(key)) {
+          clearTimeout(ttlMap.get(key)!);
+          ttlMap.delete(key);
+        }
+        store.set(key, value);
+        return 'OK';
+      },
+      async del(key: string) {
+        return store.delete(key) ? 1 : 0;
+      },
+      async ping() {
+        return 'PONG';
+      },
+      async info() {
+        return 'redis_version:stub\r\nconnected_clients:1\r\nused_memory_human:1K\r\nuptime_in_seconds:1';
+      },
+      on() {
+        /* noop */
+      },
       quit: async () => {},
     };
   }
@@ -209,7 +235,12 @@ export class RedisHealthService {
     if (this.stubMode) {
       return false;
     }
-    if (!this.redisClient || typeof this.redisClient.set !== 'function' || typeof this.redisClient.get !== 'function' || typeof this.redisClient.del !== 'function') {
+    if (
+      !this.redisClient ||
+      typeof this.redisClient.set !== 'function' ||
+      typeof this.redisClient.get !== 'function' ||
+      typeof this.redisClient.del !== 'function'
+    ) {
       return false;
     }
     try {

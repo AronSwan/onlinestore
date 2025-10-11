@@ -45,7 +45,9 @@ describe('EventBus', () => {
           provide: CqrsTracingService,
           useValue: {
             startEventSpan: jest.fn().mockReturnValue({}),
-            getCurrentContext: jest.fn().mockReturnValue({ traceId: 'test-trace', spanId: 'test-span' }),
+            getCurrentContext: jest
+              .fn()
+              .mockReturnValue({ traceId: 'test-trace', spanId: 'test-span' }),
             finishSpan: jest.fn(),
           },
         },
@@ -96,7 +98,7 @@ describe('EventBus', () => {
 
       // 验证结果 - 处理器被调用
       expect(mockHandler.handle).toHaveBeenCalledWith(event);
-      
+
       // 验证处理状态 - 事件应该被标记为失败
       const status = await eventBus.getProcessingStatus(event.id);
       expect(status).toBeDefined();
@@ -334,8 +336,14 @@ describe('EventBus', () => {
     });
 
     it('应该返回添加的中间件列表', () => {
-      const middleware1: IEventMiddleware = { name: 'ListEventMiddleware1', execute: jest.fn(async (_e, next) => next()) };
-      const middleware2: IEventMiddleware = { name: 'ListEventMiddleware2', execute: jest.fn(async (_e, next) => next()) };
+      const middleware1: IEventMiddleware = {
+        name: 'ListEventMiddleware1',
+        execute: jest.fn(async (_e, next) => next()),
+      };
+      const middleware2: IEventMiddleware = {
+        name: 'ListEventMiddleware2',
+        execute: jest.fn(async (_e, next) => next()),
+      };
 
       eventBus.addMiddleware(middleware1);
       eventBus.addMiddleware(middleware2);

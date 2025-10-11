@@ -20,7 +20,7 @@ export const winstonMock = {
     remove: jest.fn(),
     clear: jest.fn(),
   }),
-  
+
   format: {
     combine: jest.fn(),
     timestamp: jest.fn(),
@@ -37,7 +37,7 @@ export const winstonMock = {
     uncolorize: jest.fn(),
     cli: jest.fn(),
   },
-  
+
   transports: {
     Console: jest.fn().mockImplementation(() => ({
       name: 'console',
@@ -67,8 +67,7 @@ export const winstonMock = {
       close: jest.fn(),
     })),
   },
-  
-  
+
   addColors: jest.fn(),
   loggers: new Map(),
   exceptionHandlers: {

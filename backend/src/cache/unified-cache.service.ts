@@ -34,9 +34,10 @@ export class UnifiedCacheService implements OnModuleInit {
   async onModuleInit() {
     // 允许通过环境变量禁用Redis，生产环境也可降级
     const redisEnabledRaw = this.configService.get<string>('REDIS_ENABLED', 'true');
-    const redisEnabled = typeof redisEnabledRaw === 'string'
-      ? ['true', '1', 'yes', 'on'].includes(redisEnabledRaw.toLowerCase())
-      : !!redisEnabledRaw;
+    const redisEnabled =
+      typeof redisEnabledRaw === 'string'
+        ? ['true', '1', 'yes', 'on'].includes(redisEnabledRaw.toLowerCase())
+        : !!redisEnabledRaw;
 
     if (!redisEnabled) {
       this.logger.warn('Redis已禁用，使用内存Stub缓存以保证服务可用');
@@ -96,47 +97,100 @@ export class UnifiedCacheService implements OnModuleInit {
     const matchPattern = (key: string, pattern: string) => {
       if (pattern === '*') return true;
       // 简单通配符到正则转换
-      const regex = new RegExp('^' + pattern.replace(/[-/\\^$+?.()|[\]{}]/g, '\\$&').replace(/\*/g, '.*') + '$');
+      const regex = new RegExp(
+        '^' + pattern.replace(/[-/\\^$+?.()|[\]{}]/g, '\\$&').replace(/\*/g, '.*') + '$',
+      );
       return regex.test(key);
     };
 
     const stub: any = {
-      async get(key: string) { return store.has(key) ? store.get(key)! : null; },
+      async get(key: string) {
+        return store.has(key) ? store.get(key)! : null;
+      },
       async set(key: string, value: string) {
-        if (ttlMap.has(key)) { clearTimeout(ttlMap.get(key)!); ttlMap.delete(key); }
-        store.set(key, value); return 'OK';
+        if (ttlMap.has(key)) {
+          clearTimeout(ttlMap.get(key)!);
+          ttlMap.delete(key);
+        }
+        store.set(key, value);
+        return 'OK';
       },
       async setex(key: string, ttl: number, value: string) {
-        if (ttlMap.has(key)) { clearTimeout(ttlMap.get(key)!); ttlMap.delete(key); }
+        if (ttlMap.has(key)) {
+          clearTimeout(ttlMap.get(key)!);
+          ttlMap.delete(key);
+        }
         store.set(key, value);
-        const timer = setTimeout(() => { store.delete(key); ttlMap.delete(key); }, ttl * 1000);
+        const timer = setTimeout(() => {
+          store.delete(key);
+          ttlMap.delete(key);
+        }, ttl * 1000);
         ttlMap.set(key, timer);
         return 'OK';
       },
-      async del(key: string) { const existed = store.delete(key) ? 1 : 0; return existed; },
-      async exists(key: string) { return store.has(key) ? 1 : 0; },
-      async keys(pattern: string) { return Array.from(store.keys()).filter(k => matchPattern(k, pattern)); },
-      async mget(...keys: string[]) { return keys.map(k => (store.has(k) ? store.get(k)! : null)); },
-      async flushdb() { store.clear(); ttlMap.forEach(t => clearTimeout(t)); ttlMap.clear(); },
-      async ping() { return 'PONG'; },
-      async info() { return 'redis_version:stub\r\nconnected_clients:1\r\nused_memory:1024'; },
-      async eval(_script: string, _numKeys: number, _lockKey: string, _lockValue: string) { return 0; },
-      async smembers(tagKey: string) { return Array.from(tagSets.get(tagKey) || []); },
+      async del(key: string) {
+        const existed = store.delete(key) ? 1 : 0;
+        return existed;
+      },
+      async exists(key: string) {
+        return store.has(key) ? 1 : 0;
+      },
+      async keys(pattern: string) {
+        return Array.from(store.keys()).filter(k => matchPattern(k, pattern));
+      },
+      async mget(...keys: string[]) {
+        return keys.map(k => (store.has(k) ? store.get(k)! : null));
+      },
+      async flushdb() {
+        store.clear();
+        ttlMap.forEach(t => clearTimeout(t));
+        ttlMap.clear();
+      },
+      async ping() {
+        return 'PONG';
+      },
+      async info() {
+        return 'redis_version:stub\r\nconnected_clients:1\r\nused_memory:1024';
+      },
+      async eval(_script: string, _numKeys: number, _lockKey: string, _lockValue: string) {
+        return 0;
+      },
+      async smembers(tagKey: string) {
+        return Array.from(tagSets.get(tagKey) || []);
+      },
       async sadd(tagKey: string, member: string) {
         const set = tagSets.get(tagKey) || new Set<string>();
-        set.add(member); tagSets.set(tagKey, set); return 1;
+        set.add(member);
+        tagSets.set(tagKey, set);
+        return 1;
       },
       pipeline: () => {
         const ops: Array<() => Promise<any>> = [];
         return {
-          set(key: string, value: string) { ops.push(() => stub.set(key, value)); return this; },
-          setex(key: string, ttl: number, value: string) { ops.push(() => stub.setex(key, ttl, value)); return this; },
-          sadd(tagKey: string, member: string) { ops.push(() => stub.sadd(tagKey, member)); return this; },
-          del(key: string) { ops.push(() => stub.del(key)); return this; },
-          async exec() { return Promise.all(ops.map(op => op())); },
+          set(key: string, value: string) {
+            ops.push(() => stub.set(key, value));
+            return this;
+          },
+          setex(key: string, ttl: number, value: string) {
+            ops.push(() => stub.setex(key, ttl, value));
+            return this;
+          },
+          sadd(tagKey: string, member: string) {
+            ops.push(() => stub.sadd(tagKey, member));
+            return this;
+          },
+          del(key: string) {
+            ops.push(() => stub.del(key));
+            return this;
+          },
+          async exec() {
+            return Promise.all(ops.map(op => op()));
+          },
         };
       },
-      on() { /* noop */ },
+      on() {
+        /* noop */
+      },
       quit: async () => {},
       connect: async () => {},
     };

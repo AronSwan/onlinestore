@@ -56,14 +56,11 @@ describe('Logging Integration', () => {
     };
 
     mockHttpService = {
-      post: (jest.fn() as unknown) as jest.MockedFunction<HttpService['post']>,
+      post: jest.fn() as unknown as jest.MockedFunction<HttpService['post']>,
     } as any;
 
     module = await Test.createTestingModule({
-      imports: [
-        HttpModule,
-        LoggingModule,
-      ],
+      imports: [HttpModule, LoggingModule],
       providers: [
         {
           provide: 'OPENOBSERVE_CONFIG',
@@ -103,44 +100,44 @@ describe('Logging Integration', () => {
   describe('Business Logging Integration', () => {
     it('should log user action through controller', async () => {
       const body = { action: 'LOGIN', userId: 'user123', metadata: { ip: '192.168.1.1' } };
-      
+
       const result = await loggingController.logUserAction(body);
-      
+
       expect(result.success).toBe(true);
     });
 
     it('should log order event through controller', async () => {
       const body = { orderId: 'order123', event: 'ORDER_CREATED', metadata: { userId: 'user123' } };
-      
+
       const result = await loggingController.logOrderEvent(body);
-      
+
       expect(result.success).toBe(true);
     });
 
     it('should log payment event through controller', async () => {
-      const body = { 
-        paymentId: 'payment123', 
-        event: 'PAYMENT_INITIATED', 
-        amount: 100, 
+      const body = {
+        paymentId: 'payment123',
+        event: 'PAYMENT_INITIATED',
+        amount: 100,
         status: 'PENDING',
-        metadata: { userId: 'user123' }
+        metadata: { userId: 'user123' },
       };
-      
+
       const result = await loggingController.logPaymentEvent(body);
-      
+
       expect(result.success).toBe(true);
     });
 
     it('should log inventory event through controller', async () => {
-      const body = { 
-        productId: 'product123', 
-        event: 'STOCK_UPDATED', 
+      const body = {
+        productId: 'product123',
+        event: 'STOCK_UPDATED',
         quantity: 50,
-        metadata: { userId: 'admin123' }
+        metadata: { userId: 'admin123' },
       };
-      
+
       const result = await loggingController.logInventoryEvent(body);
-      
+
       expect(result.success).toBe(true);
     });
   });
@@ -157,14 +154,19 @@ describe('Logging Integration', () => {
         },
         ip: '192.168.1.1',
       };
-      
+
       const result = await loggingController.trackPageView(body as any, mockRequest as any);
-      
+
       expect(result.success).toBe(true);
     });
 
     it('should track product view through controller', async () => {
-      const body = { sessionId: 'session123', productId: 'product123', userId: 'user123', eventType: 'PRODUCT_VIEW' };
+      const body = {
+        sessionId: 'session123',
+        productId: 'product123',
+        userId: 'user123',
+        eventType: 'PRODUCT_VIEW',
+      };
       const mockRequest = {
         headers: {
           'user-agent': 'Mozilla/5.0',
@@ -173,14 +175,19 @@ describe('Logging Integration', () => {
         },
         ip: '192.168.1.1',
       };
-      
+
       const result = await loggingController.trackProductView(body, mockRequest as any);
-      
+
       expect(result.success).toBe(true);
     });
 
     it('should track search through controller', async () => {
-      const body = { sessionId: 'session123', searchQuery: 'laptop', userId: 'user123', eventType: 'SEARCH' };
+      const body = {
+        sessionId: 'session123',
+        searchQuery: 'laptop',
+        userId: 'user123',
+        eventType: 'SEARCH',
+      };
       const mockRequest = {
         headers: {
           'user-agent': 'Mozilla/5.0',
@@ -189,9 +196,9 @@ describe('Logging Integration', () => {
         },
         ip: '192.168.1.1',
       };
-      
+
       const result = await loggingController.trackSearch(body, mockRequest as any);
-      
+
       expect(result.success).toBe(true);
     });
 
@@ -204,7 +211,7 @@ describe('Logging Integration', () => {
         price: 99.99,
         userId: 'user123',
         cartId: 'cart123',
-        eventType: 'CART_ADD'
+        eventType: 'CART_ADD',
       };
       const mockRequest = {
         headers: {
@@ -214,14 +221,20 @@ describe('Logging Integration', () => {
         },
         ip: '192.168.1.1',
       };
-      
+
       const result = await loggingController.trackCartOperation(body, mockRequest as any);
-      
+
       expect(result.success).toBe(true);
     });
 
     it('should track checkout through controller', async () => {
-      const body = { sessionId: 'session123', orderId: 'order123', totalAmount: 199.99, userId: 'user123', eventType: 'CHECKOUT' };
+      const body = {
+        sessionId: 'session123',
+        orderId: 'order123',
+        totalAmount: 199.99,
+        userId: 'user123',
+        eventType: 'CHECKOUT',
+      };
       const mockRequest = {
         headers: {
           'user-agent': 'Mozilla/5.0',
@@ -230,14 +243,20 @@ describe('Logging Integration', () => {
         },
         ip: '192.168.1.1',
       };
-      
+
       const result = await loggingController.trackCheckout(body, mockRequest as any);
-      
+
       expect(result.success).toBe(true);
     });
 
     it('should track purchase through controller', async () => {
-      const body = { sessionId: 'session123', orderId: 'order123', totalAmount: 199.99, userId: 'user123', eventType: 'PURCHASE' };
+      const body = {
+        sessionId: 'session123',
+        orderId: 'order123',
+        totalAmount: 199.99,
+        userId: 'user123',
+        eventType: 'PURCHASE',
+      };
       const mockRequest = {
         headers: {
           'user-agent': 'Mozilla/5.0',
@@ -246,9 +265,9 @@ describe('Logging Integration', () => {
         },
         ip: '192.168.1.1',
       };
-      
+
       const result = await loggingController.trackPurchase(body, mockRequest as any);
-      
+
       expect(result.success).toBe(true);
     });
   });
@@ -268,13 +287,13 @@ describe('Logging Integration', () => {
       mockHttpService.post.mockReturnValue(of(mockResponse));
 
       const query = { start: '2023-01-01T00:00:00Z', end: '2023-01-02T00:00:00Z' };
-      
+
       const result = await loggingController.getLogStats({
         start: query.start,
         end: query.end,
         filters: { level: 'INFO' },
       } as any);
-      
+
       expect(result.success).toBe(true);
       // 联合类型安全访问：仅在存在 data 字段时断言
       expect('data' in result && result.data).toBeDefined();
@@ -293,14 +312,18 @@ describe('Logging Integration', () => {
 
       mockHttpService.post.mockReturnValue(of(mockResponse));
 
-      const query = { start: '2023-01-01T00:00:00Z', end: '2023-01-02T00:00:00Z', userId: 'user123' };
-      
+      const query = {
+        start: '2023-01-01T00:00:00Z',
+        end: '2023-01-02T00:00:00Z',
+        userId: 'user123',
+      };
+
       const result = await loggingController.getUserBehaviorAnalytics(
         query.start,
         query.end,
-        query.userId
+        query.userId,
       );
-      
+
       expect(result.success).toBe(true);
       // 联合类型安全访问：仅在存在 data 字段时断言
       expect('data' in result && result.data).toBeDefined();
@@ -319,12 +342,9 @@ describe('Logging Integration', () => {
       mockHttpService.post.mockReturnValue(of(mockResponse));
 
       const query = { start: '2023-01-01T00:00:00Z', end: '2023-01-02T00:00:00Z' };
-      
-      const result = await loggingController.detectAnomalousPatterns(
-        query.start,
-        query.end
-      );
-      
+
+      const result = await loggingController.detectAnomalousPatterns(query.start, query.end);
+
       expect(result.success).toBe(true);
       // 联合类型安全访问：仅在存在 data 字段时断言
       expect('data' in result && result.data).toBeDefined();
@@ -345,13 +365,9 @@ describe('Logging Integration', () => {
       mockHttpService.post.mockReturnValue(of(mockResponse));
 
       const query = { start: '2023-01-01T00:00:00Z', end: '2023-01-02T00:00:00Z', limit: '10' };
-      
-      const result = await loggingController.getPopularPages(
-        query.start,
-        query.end,
-        query.limit
-      );
-      
+
+      const result = await loggingController.getPopularPages(query.start, query.end, query.limit);
+
       expect(result.success).toBe(true);
       // 联合类型安全访问：仅在存在 data 字段时断言
       expect('data' in result && result.data).toBeDefined();
@@ -375,12 +391,9 @@ describe('Logging Integration', () => {
       mockHttpService.post.mockReturnValue(of(mockResponse));
 
       const query = { start: '2023-01-01T00:00:00Z', end: '2023-01-02T00:00:00Z' };
-      
-      const result = await loggingController.getConversionFunnel(
-        query.start,
-        query.end
-      );
-      
+
+      const result = await loggingController.getConversionFunnel(query.start, query.end);
+
       expect(result.success).toBe(true);
       // 联合类型安全访问：仅在存在 data 字段时断言
       expect('data' in result && result.data).toBeDefined();
@@ -391,7 +404,7 @@ describe('Logging Integration', () => {
   describe('Utility Functions Integration', () => {
     it('should flush logs through controller', async () => {
       const result = await loggingController.flushLogs();
-      
+
       expect(result.success).toBe(true);
     });
   });
@@ -413,14 +426,14 @@ describe('Logging Integration', () => {
       // 1. Track page view
       const pageViewResult = await loggingController.trackPageView(
         { sessionId, page: '/home', userId } as any,
-        mockRequest as any
+        mockRequest as any,
       );
       expect(pageViewResult.success).toBe(true);
 
       // 2. Track product view
       const productViewResult = await loggingController.trackProductView(
         { sessionId, productId: 'product123', userId },
-        mockRequest as any
+        mockRequest as any,
       );
       expect(productViewResult.success).toBe(true);
 
@@ -434,9 +447,8 @@ describe('Logging Integration', () => {
           price: 99.99,
           userId,
           cartId: 'cart123',
-          
         },
-        mockRequest as any
+        mockRequest as any,
       );
       expect(cartAddResult.success).toBe(true);
 
@@ -444,7 +456,7 @@ describe('Logging Integration', () => {
       const orderEventResult = await loggingController.logOrderEvent({
         orderId: 'order123',
         event: 'ORDER_CREATED',
-        metadata: { userId, totalAmount: 99.99 }
+        metadata: { userId, totalAmount: 99.99 },
       });
       expect(orderEventResult.success).toBe(true);
 
@@ -454,21 +466,21 @@ describe('Logging Integration', () => {
         event: 'PAYMENT_INITIATED',
         amount: 99.99,
         status: 'PENDING',
-        metadata: { userId }
+        metadata: { userId },
       });
       expect(paymentEventResult.success).toBe(true);
 
       // 6. Track checkout
       const checkoutResult = await loggingController.trackCheckout(
         { sessionId, orderId: 'order123', totalAmount: 99.99, userId },
-        mockRequest as any
+        mockRequest as any,
       );
       expect(checkoutResult.success).toBe(true);
 
       // 7. Track purchase
       const purchaseResult = await loggingController.trackPurchase(
         { sessionId, orderId: 'order123', totalAmount: 99.99, userId },
-        mockRequest as any
+        mockRequest as any,
       );
       expect(purchaseResult.success).toBe(true);
 

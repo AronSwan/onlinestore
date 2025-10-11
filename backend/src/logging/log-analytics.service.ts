@@ -6,7 +6,7 @@ import {
   LogStatsResult,
   UserBehaviorAnalyticsResult,
   AnomalyDetectionResult,
-  OpenObserveConfig
+  OpenObserveConfig,
 } from '../interfaces/logging.interface';
 
 @Injectable()
@@ -19,9 +19,12 @@ export class LogAnalyticsService {
   ) {}
 
   // 获取日志统计
-  async getLogStats(timeRange: { start: string; end: string }, filters?: any): Promise<LogStatsResult> {
+  async getLogStats(
+    timeRange: { start: string; end: string },
+    filters?: any,
+  ): Promise<LogStatsResult> {
     const query = this.buildStatsQuery(timeRange, filters);
-    
+
     // 测试环境短路，避免外部 HTTP 请求导致开放句柄
     if (process.env.NODE_ENV === 'test') {
       return { total: 0, stats: [], aggregations: {} };
@@ -34,12 +37,12 @@ export class LogAnalyticsService {
           { query },
           {
             headers: {
-              'Authorization': `Bearer ${this.config.auth.token}`,
+              Authorization: `Bearer ${this.config.auth.token}`,
               'Content-Type': 'application/json',
             },
             timeout: this.config.performance.timeout,
           },
-        )
+        ),
       );
 
       if (!response) {
@@ -56,11 +59,11 @@ export class LogAnalyticsService {
 
   // 获取用户行为分析
   async getUserBehaviorAnalytics(
-    timeRange: { start: string; end: string }, 
-    userId?: string
+    timeRange: { start: string; end: string },
+    userId?: string,
   ): Promise<UserBehaviorAnalyticsResult> {
     const query = this.buildBehaviorAnalyticsQuery(timeRange, userId);
-    
+
     try {
       const response = await firstValueFrom(
         this.httpService.post(
@@ -68,12 +71,12 @@ export class LogAnalyticsService {
           { query },
           {
             headers: {
-              'Authorization': `Bearer ${this.config.auth.token}`,
+              Authorization: `Bearer ${this.config.auth.token}`,
               'Content-Type': 'application/json',
             },
             timeout: this.config.performance.timeout,
           },
-        )
+        ),
       );
 
       if (!response) {
@@ -89,9 +92,12 @@ export class LogAnalyticsService {
   }
 
   // 检测异常日志模式
-  async detectAnomalousPatterns(timeRange: { start: string; end: string }): Promise<AnomalyDetectionResult> {
+  async detectAnomalousPatterns(timeRange: {
+    start: string;
+    end: string;
+  }): Promise<AnomalyDetectionResult> {
     const query = this.buildAnomalyDetectionQuery(timeRange);
-    
+
     try {
       const response = await firstValueFrom(
         this.httpService.post(
@@ -99,12 +105,12 @@ export class LogAnalyticsService {
           { query },
           {
             headers: {
-              'Authorization': `Bearer ${this.config.auth.token}`,
+              Authorization: `Bearer ${this.config.auth.token}`,
               'Content-Type': 'application/json',
             },
             timeout: this.config.performance.timeout,
           },
-        )
+        ),
       );
 
       if (!response) {
@@ -120,7 +126,10 @@ export class LogAnalyticsService {
   }
 
   // 获取热门页面
-  async getPopularPages(timeRange: { start: string; end: string }, limit: number = 10): Promise<any[]> {
+  async getPopularPages(
+    timeRange: { start: string; end: string },
+    limit: number = 10,
+  ): Promise<any[]> {
     const query = `
       SELECT eventData.page as page,
              COUNT(*) as view_count,
@@ -133,7 +142,7 @@ export class LogAnalyticsService {
       ORDER BY view_count DESC
       LIMIT ${limit}
     `;
-    
+
     try {
       const response = await firstValueFrom(
         this.httpService.post(
@@ -141,12 +150,12 @@ export class LogAnalyticsService {
           { query },
           {
             headers: {
-              'Authorization': `Bearer ${this.config.auth.token}`,
+              Authorization: `Bearer ${this.config.auth.token}`,
               'Content-Type': 'application/json',
             },
             timeout: this.config.performance.timeout,
           },
-        )
+        ),
       );
 
       if (!response) {
@@ -178,7 +187,7 @@ export class LogAnalyticsService {
           WHEN 'PURCHASE' THEN 4
         END
     `;
-    
+
     try {
       const response = await firstValueFrom(
         this.httpService.post(
@@ -186,12 +195,12 @@ export class LogAnalyticsService {
           { query },
           {
             headers: {
-              'Authorization': `Bearer ${this.config.auth.token}`,
+              Authorization: `Bearer ${this.config.auth.token}`,
               'Content-Type': 'application/json',
             },
             timeout: this.config.performance.timeout,
           },
-        )
+        ),
       );
 
       if (!response) {
@@ -209,7 +218,7 @@ export class LogAnalyticsService {
   // 构建统计查询
   private buildStatsQuery(timeRange: { start: string; end: string }, filters?: any): string {
     let whereClause = `timestamp >= '${timeRange.start}' AND timestamp <= '${timeRange.end}'`;
-    
+
     if (filters) {
       if (filters.level) {
         whereClause += ` AND level = '${filters.level}'`;
@@ -236,9 +245,12 @@ export class LogAnalyticsService {
   }
 
   // 构建行为分析查询
-  private buildBehaviorAnalyticsQuery(timeRange: { start: string; end: string }, userId?: string): string {
+  private buildBehaviorAnalyticsQuery(
+    timeRange: { start: string; end: string },
+    userId?: string,
+  ): string {
     let whereClause = `timestamp >= '${timeRange.start}' AND timestamp <= '${timeRange.end}'`;
-    
+
     if (userId) {
       whereClause += ` AND userId = '${userId}'`;
     }
@@ -295,10 +307,11 @@ export class LogAnalyticsService {
   private formatAnomalyDetectionResult(data: any): AnomalyDetectionResult {
     return {
       total: data.hits?.total?.value || 0,
-      anomalies: data.hits?.hits?.map((hit: any) => ({
-        ...hit._source,
-        severity: this.calculateSeverity(hit._source.percentage),
-      })) || [],
+      anomalies:
+        data.hits?.hits?.map((hit: any) => ({
+          ...hit._source,
+          severity: this.calculateSeverity(hit._source.percentage),
+        })) || [],
     };
   }
 

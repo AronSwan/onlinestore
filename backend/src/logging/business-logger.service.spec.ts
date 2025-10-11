@@ -76,9 +76,9 @@ describe('BusinessLoggerService', () => {
       const userId = 'user123';
       const action = 'LOGIN';
       const metadata = { ip: '192.168.1.1' };
-      
+
       service.logUserAction(action, userId, metadata);
-      
+
       expect(mockTransport.log).toHaveBeenCalledWith(
         expect.objectContaining({
           level: 'INFO',
@@ -86,12 +86,14 @@ describe('BusinessLoggerService', () => {
           action,
           userId,
         }),
-        expect.any(Function)
+        expect.any(Function),
       );
     });
 
     it('negative-path: does not throw when transport.log fails', () => {
-      mockTransport.log.mockImplementation(() => { throw new Error('network error'); });
+      mockTransport.log.mockImplementation(() => {
+        throw new Error('network error');
+      });
       expect(() => service.logUserAction('LOGIN', 'user123', {})).not.toThrow();
     });
   });
@@ -101,23 +103,25 @@ describe('BusinessLoggerService', () => {
       const orderId = 'order123';
       const event = 'ORDER_CREATED';
       const metadata = { userId: 'user123', totalAmount: 100 };
-      
+
       service.logOrderEvent(orderId, event, metadata);
-      
+
       expect(mockTransport.log).toHaveBeenCalledWith(
         expect.objectContaining({
           category: 'ORDER',
           action: event,
-          businessContext: expect.objectContaining({ orderId })
+          businessContext: expect.objectContaining({ orderId }),
         }),
-        expect.any(Function)
+        expect.any(Function),
       );
     });
 
     it('negative-path: does not throw when transport.log fails', () => {
-      mockTransport.log.mockImplementation(() => { throw new Error('network error'); });
+      mockTransport.log.mockImplementation(() => {
+        throw new Error('network error');
+      });
       expect(() =>
-        service.logOrderEvent('ORDER_CREATED', 'order-001', { amount: 199, currency: 'USD' })
+        service.logOrderEvent('ORDER_CREATED', 'order-001', { amount: 199, currency: 'USD' }),
       ).not.toThrow();
     });
   });
@@ -129,16 +133,16 @@ describe('BusinessLoggerService', () => {
       const amount = 100;
       const status = 'PENDING';
       const metadata = { userId: 'user123' };
-      
+
       service.logPaymentEvent(paymentId, event, amount, status, metadata);
-      
+
       expect(mockTransport.log).toHaveBeenCalledWith(
         expect.objectContaining({
           category: 'PAYMENT',
           action: event,
           businessContext: expect.objectContaining({ paymentId, amount, status }),
         }),
-        expect.any(Function)
+        expect.any(Function),
       );
     });
   });
@@ -149,16 +153,16 @@ describe('BusinessLoggerService', () => {
       const event = 'STOCK_UPDATED';
       const quantity = 50;
       const metadata = { userId: 'admin123' };
-      
+
       service.logInventoryEvent(productId, event, quantity, metadata);
-      
+
       expect(mockTransport.log).toHaveBeenCalledWith(
         expect.objectContaining({
           category: 'INVENTORY',
           action: event,
           businessContext: expect.objectContaining({ productId, quantity }),
         }),
-        expect.any(Function)
+        expect.any(Function),
       );
     });
   });
@@ -168,21 +172,23 @@ describe('BusinessLoggerService', () => {
       const event = 'SYSTEM_STARTUP';
       const level = 'INFO';
       const metadata = { version: '1.0.0' };
-      
+
       service.logSystemEvent(event, level, metadata);
-      
+
       expect(mockTransport.log).toHaveBeenCalledWith(
         expect.objectContaining({
           category: 'SYSTEM',
           action: event,
           level,
         }),
-        expect.any(Function)
+        expect.any(Function),
       );
     });
 
     it('negative-path: error log does not leak exception', () => {
-      mockTransport.log.mockImplementation(() => { throw new Error('network error'); });
+      mockTransport.log.mockImplementation(() => {
+        throw new Error('network error');
+      });
       expect(() => service.logError(new Error('boom'), {})).not.toThrow();
     });
   });
@@ -191,16 +197,16 @@ describe('BusinessLoggerService', () => {
     it('should log error correctly', () => {
       const error = new Error('Test error');
       const context = { userId: 'user123', action: 'TEST_ACTION' };
-      
+
       service.logError(error, context);
-      
+
       expect(mockTransport.log).toHaveBeenCalledWith(
         expect.objectContaining({
           category: 'SYSTEM',
           action: 'ERROR_OCCURRED',
           level: 'ERROR',
         }),
-        expect.any(Function)
+        expect.any(Function),
       );
     });
   });
@@ -209,14 +215,14 @@ describe('BusinessLoggerService', () => {
     it('should flush logs without errors', () => {
       // Mock the console.log to avoid actual logging during tests
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => undefined);
-      
+
       service.flush();
-      
+
       // Verify that no errors are thrown
       expect(consoleSpy).not.toHaveBeenCalledWith(
-        expect.stringContaining('Failed to flush log buffer')
+        expect.stringContaining('Failed to flush log buffer'),
       );
-      
+
       consoleSpy.mockRestore();
     });
   });

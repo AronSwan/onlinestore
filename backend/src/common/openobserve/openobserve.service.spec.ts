@@ -27,7 +27,7 @@ describe('OpenObserveService', () => {
     }).compile();
 
     service = module.get<OpenObserveService>(OpenObserveService);
-    
+
     // Clear all mocks before each test
     jest.clearAllMocks();
   });
@@ -128,10 +128,10 @@ describe('OpenObserveService', () => {
           headers: {
             'Content-Type': 'application/json',
             'Content-Encoding': 'gzip',
-            'Authorization': `Basic ${Buffer.from(`${mockConfig.username}:${mockConfig.password}`).toString('base64')}`,
+            Authorization: `Basic ${Buffer.from(`${mockConfig.username}:${mockConfig.password}`).toString('base64')}`,
           },
           timeout: 10000,
-        }
+        },
       );
     });
 
@@ -252,10 +252,10 @@ describe('OpenObserveService', () => {
         {
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Basic ${Buffer.from(`${mockConfig.username}:${mockConfig.password}`).toString('base64')}`,
+            Authorization: `Basic ${Buffer.from(`${mockConfig.username}:${mockConfig.password}`).toString('base64')}`,
           },
           timeout: 30000,
-        }
+        },
       );
 
       // Restore original method
@@ -307,10 +307,9 @@ describe('OpenObserveService', () => {
       expect(result.status).toBe('healthy');
       expect(result.details.version).toBe('1.0.0');
       expect(result.details.uptime).toBe(3600);
-      expect(mockedAxios.get).toHaveBeenCalledWith(
-        `${mockConfig.url}/api/_health`,
-        { timeout: 5000 }
-      );
+      expect(mockedAxios.get).toHaveBeenCalledWith(`${mockConfig.url}/api/_health`, {
+        timeout: 5000,
+      });
     });
 
     it('should handle unhealthy status', async () => {
@@ -504,7 +503,7 @@ describe('OpenObserveService', () => {
         expect.any(String),
         undefined,
         undefined,
-        10
+        10,
       );
     });
   });

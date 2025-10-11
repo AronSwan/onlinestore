@@ -53,7 +53,12 @@ export class Order {
   @Column({ type: 'simple-enum', enum: OrderStatus, default: OrderStatus.PENDING })
   status: OrderStatus;
 
-  @Column({ name: 'payment_status', type: 'simple-enum', enum: PaymentStatus, default: PaymentStatus.PENDING })
+  @Column({
+    name: 'payment_status',
+    type: 'simple-enum',
+    enum: PaymentStatus,
+    default: PaymentStatus.PENDING,
+  })
   paymentStatus: PaymentStatus;
 
   @OneToMany(() => OrderItem, item => item.order, { cascade: true })

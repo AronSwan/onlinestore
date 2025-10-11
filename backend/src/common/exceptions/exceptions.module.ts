@@ -8,15 +8,7 @@ import { FileUploadInterceptor } from '../interceptors/file-upload.interceptor';
  * 提供统一的异常处理、日志记录和文件上传安全验证
  */
 @Module({
-  providers: [
-    GlobalExceptionFilter,
-    LoggingInterceptor,
-    FileUploadInterceptor,
-  ],
-  exports: [
-    GlobalExceptionFilter,
-    LoggingInterceptor,
-    FileUploadInterceptor,
-  ],
+  providers: [GlobalExceptionFilter, LoggingInterceptor, FileUploadInterceptor],
+  exports: [GlobalExceptionFilter, LoggingInterceptor, FileUploadInterceptor],
 })
 export class ExceptionsModule {}

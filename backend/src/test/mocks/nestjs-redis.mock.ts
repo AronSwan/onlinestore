@@ -16,7 +16,7 @@ export const nestjsRedisMock = {
       global: true,
     }),
   },
-  
+
   RedisService: jest.fn().mockImplementation(() => ({
     getClient: jest.fn().mockReturnValue(redisMock.createClient()),
     ping: jest.fn().mockResolvedValue('PONG'),

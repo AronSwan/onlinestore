@@ -259,7 +259,10 @@ describe('MonitoringController', () => {
     it('should return metrics for http category', () => {
       const categoryData = {
         requests: { total: 100, byMethod: {}, byRoute: {}, byStatus: {} },
-        durations: { data: [100, 200], buckets: { '0-100': 0, '100-500': 0, '500-1000': 0, '1000-2000': 0, '2000+': 0 } },
+        durations: {
+          data: [100, 200],
+          buckets: { '0-100': 0, '100-500': 0, '500-1000': 0, '1000-2000': 0, '2000+': 0 },
+        },
         errors: { total: 5, byMethod: {}, byRoute: {}, byStatus: {} },
         derived: { avgResponseTime: 150, errorRate: 5 },
       };
@@ -317,8 +320,28 @@ describe('MonitoringController', () => {
   describe('getMetricsHistory', () => {
     it('should return metrics history for day period by default', async () => {
       const historyData = [
-        { id: 1, timestamp: new Date(), apiCalls: 100, avgResponseTime: 150, errorRate: 5, errors: 5, memoryUsage: 50, cpuLoad: 30, uptime: 3600 },
-        { id: 2, timestamp: new Date(), apiCalls: 120, avgResponseTime: 160, errorRate: 5, errors: 6, memoryUsage: 55, cpuLoad: 35, uptime: 3600 },
+        {
+          id: 1,
+          timestamp: new Date(),
+          apiCalls: 100,
+          avgResponseTime: 150,
+          errorRate: 5,
+          errors: 5,
+          memoryUsage: 50,
+          cpuLoad: 30,
+          uptime: 3600,
+        },
+        {
+          id: 2,
+          timestamp: new Date(),
+          apiCalls: 120,
+          avgResponseTime: 160,
+          errorRate: 5,
+          errors: 6,
+          memoryUsage: 55,
+          cpuLoad: 35,
+          uptime: 3600,
+        },
       ];
 
       jest.spyOn(monitoringService, 'getMetricsHistory').mockResolvedValue(historyData as any);
@@ -331,8 +354,28 @@ describe('MonitoringController', () => {
 
     it('should return metrics history for hour period', async () => {
       const historyData = [
-        { id: 1, timestamp: new Date(), apiCalls: 10, avgResponseTime: 120, errorRate: 5, errors: 0, memoryUsage: 50, cpuLoad: 30, uptime: 3600 },
-        { id: 2, timestamp: new Date(), apiCalls: 15, avgResponseTime: 130, errorRate: 5, errors: 0, memoryUsage: 55, cpuLoad: 35, uptime: 3600 },
+        {
+          id: 1,
+          timestamp: new Date(),
+          apiCalls: 10,
+          avgResponseTime: 120,
+          errorRate: 5,
+          errors: 0,
+          memoryUsage: 50,
+          cpuLoad: 30,
+          uptime: 3600,
+        },
+        {
+          id: 2,
+          timestamp: new Date(),
+          apiCalls: 15,
+          avgResponseTime: 130,
+          errorRate: 5,
+          errors: 0,
+          memoryUsage: 55,
+          cpuLoad: 35,
+          uptime: 3600,
+        },
       ];
 
       jest.spyOn(monitoringService, 'getMetricsHistory').mockResolvedValue(historyData as any);
@@ -345,8 +388,28 @@ describe('MonitoringController', () => {
 
     it('should return metrics history for week period', async () => {
       const historyData = [
-        { id: 1, timestamp: new Date(), apiCalls: 1000, avgResponseTime: 140, errorRate: 5, errors: 50, memoryUsage: 50, cpuLoad: 30, uptime: 3600 },
-        { id: 2, timestamp: new Date(), apiCalls: 1200, avgResponseTime: 150, errorRate: 5, errors: 60, memoryUsage: 55, cpuLoad: 35, uptime: 3600 },
+        {
+          id: 1,
+          timestamp: new Date(),
+          apiCalls: 1000,
+          avgResponseTime: 140,
+          errorRate: 5,
+          errors: 50,
+          memoryUsage: 50,
+          cpuLoad: 30,
+          uptime: 3600,
+        },
+        {
+          id: 2,
+          timestamp: new Date(),
+          apiCalls: 1200,
+          avgResponseTime: 150,
+          errorRate: 5,
+          errors: 60,
+          memoryUsage: 55,
+          cpuLoad: 35,
+          uptime: 3600,
+        },
       ];
 
       jest.spyOn(monitoringService, 'getMetricsHistory').mockResolvedValue(historyData as any);
@@ -370,7 +433,7 @@ describe('MonitoringController', () => {
           avgResponseTime: 150,
           avgMemoryUsage: 50,
           avgCpuLoad: 30,
-          dataPoints: 24
+          dataPoints: 24,
         },
         weekly: {
           apiCalls: 7000,
@@ -379,13 +442,15 @@ describe('MonitoringController', () => {
           avgResponseTime: 150,
           avgMemoryUsage: 50,
           avgCpuLoad: 30,
-          dataPoints: 168
+          dataPoints: 168,
         },
         detailed: {},
         recommendations: [],
       };
 
-      jest.spyOn(monitoringService, 'generatePerformanceReport').mockResolvedValue(reportData as any);
+      jest
+        .spyOn(monitoringService, 'generatePerformanceReport')
+        .mockResolvedValue(reportData as any);
 
       const result = await controller.generatePerformanceReport();
 
@@ -400,7 +465,13 @@ describe('MonitoringController', () => {
         status: 'running',
         timestamp: new Date(),
         uptime: 3600,
-        memory: { rss: 100000000, heapTotal: 50000000, heapUsed: 40000000, external: 10000000, arrayBuffers: 5000000 },
+        memory: {
+          rss: 100000000,
+          heapTotal: 50000000,
+          heapUsed: 40000000,
+          external: 10000000,
+          arrayBuffers: 5000000,
+        },
         version: '1.0.0',
         platform: 'linux',
       };
@@ -452,7 +523,7 @@ describe('MonitoringController', () => {
   describe('getAuditLogs', () => {
     it('should return audit logs', () => {
       const filter = { userId: 'user-123' };
-      
+
       jest.spyOn(monitoringService, 'getAuditLogs').mockReturnValue([] as any);
 
       const result = controller.getAuditLogs(filter);
@@ -465,7 +536,7 @@ describe('MonitoringController', () => {
   describe('getSecurityEvents', () => {
     it('should return security events', () => {
       const filter = { severity: 'high' };
-      
+
       jest.spyOn(monitoringService, 'getSecurityEvents').mockReturnValue([] as any);
 
       const result = controller.getSecurityEvents(filter);
@@ -480,7 +551,10 @@ describe('MonitoringController', () => {
       const metricsData = {
         httpRequests: { total: 100, byMethod: {}, byRoute: {}, byStatus: {} },
         httpRequestErrors: { total: 5, byMethod: {}, byRoute: {}, byStatus: {} },
-        httpRequestDurations: { data: [100, 200, 300], buckets: { '0-100': 0, '100-500': 0, '500-1000': 0, '1000-2000': 0, '2000+': 0 } },
+        httpRequestDurations: {
+          data: [100, 200, 300],
+          buckets: { '0-100': 0, '100-500': 0, '500-1000': 0, '1000-2000': 0, '2000+': 0 },
+        },
         databaseQueries: { total: 50, durations: [], byOperation: {}, byTable: {} },
         cache: { hits: 80, misses: 20 },
         activeConnections: 10,
@@ -499,7 +573,7 @@ describe('MonitoringController', () => {
 
       expect(mockResponse.set).toHaveBeenCalledWith('Content-Type', 'text/plain');
       expect(mockResponse.send).toHaveBeenCalled();
-      
+
       const sentData = mockResponse.send.mock.calls[0][0];
       expect(sentData).toContain('# HELP http_requests_total');
       expect(sentData).toContain('# TYPE http_requests_total counter');

@@ -45,12 +45,14 @@ import {
 
 @Controller('api/logging')
 @UseFilters(LoggingExceptionFilter)
-@UsePipes(new ValidationPipe({
-  whitelist: true,
-  forbidNonWhitelisted: true,
-  transform: true,
-  transformOptions: { enableImplicitConversion: true },
-}))
+@UsePipes(
+  new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+    transformOptions: { enableImplicitConversion: true },
+  }),
+)
 export class LoggingController {
   private readonly logger = new Logger(LoggingController.name);
 
@@ -63,15 +65,13 @@ export class LoggingController {
 
   // 记录用户操作日志
   @Post('user-action')
-  logUserAction(
-    @Body() businessLogDto: BusinessLogDto,
-  ): { success: boolean; message: string } {
+  logUserAction(@Body() businessLogDto: BusinessLogDto): { success: boolean; message: string } {
     this.businessLoggerService.logUserAction(
       businessLogDto.action,
       businessLogDto.userId,
       businessLogDto.metadata,
     );
-    
+
     return {
       success: true,
       message: 'User action logged successfully',
@@ -80,15 +80,13 @@ export class LoggingController {
 
   // 记录订单事件日志
   @Post('order-event')
-  logOrderEvent(
-    @Body() orderEventDto: OrderEventDto,
-  ): { success: boolean; message: string } {
+  logOrderEvent(@Body() orderEventDto: OrderEventDto): { success: boolean; message: string } {
     this.businessLoggerService.logOrderEvent(
       orderEventDto.orderId,
       orderEventDto.event,
       orderEventDto.metadata,
     );
-    
+
     return {
       success: true,
       message: 'Order event logged successfully',
@@ -97,9 +95,7 @@ export class LoggingController {
 
   // 记录支付事件日志
   @Post('payment-event')
-  logPaymentEvent(
-    @Body() paymentEventDto: PaymentEventDto,
-  ): { success: boolean; message: string } {
+  logPaymentEvent(@Body() paymentEventDto: PaymentEventDto): { success: boolean; message: string } {
     try {
       this.businessLoggerService.logPaymentEvent(
         paymentEventDto.paymentId,
@@ -108,7 +104,7 @@ export class LoggingController {
         paymentEventDto.status,
         paymentEventDto.metadata,
       );
-      
+
       return {
         success: true,
         message: 'Payment event logged successfully',
@@ -124,9 +120,10 @@ export class LoggingController {
 
   // 记录库存事件日志
   @Post('inventory-event')
-  logInventoryEvent(
-    @Body() inventoryEventDto: InventoryEventDto,
-  ): { success: boolean; message: string } {
+  logInventoryEvent(@Body() inventoryEventDto: InventoryEventDto): {
+    success: boolean;
+    message: string;
+  } {
     try {
       this.businessLoggerService.logInventoryEvent(
         inventoryEventDto.productId,
@@ -134,7 +131,7 @@ export class LoggingController {
         inventoryEventDto.quantity,
         inventoryEventDto.metadata,
       );
-      
+
       return {
         success: true,
         message: 'Inventory event logged successfully',
@@ -160,7 +157,7 @@ export class LoggingController {
       PageViewDto.createFromInput(input).userId,
       req,
     );
-    
+
     return {
       success: true,
       message: 'Page view tracked successfully',
@@ -176,7 +173,7 @@ export class LoggingController {
     try {
       const dto = ProductViewDto.createFromInput(input);
       this.userBehaviorTracker.trackProductView(dto.sessionId, dto.productId, dto.userId, req);
-      
+
       return {
         success: true,
         message: 'Product view tracked successfully',
@@ -202,7 +199,7 @@ export class LoggingController {
     try {
       const dto = SearchDto.createFromInput(input);
       this.userBehaviorTracker.trackSearch(dto.sessionId, dto.searchQuery, dto.userId, req);
-      
+
       return {
         success: true,
         message: 'Search tracked successfully',
@@ -222,7 +219,8 @@ export class LoggingController {
   // 记录购物车操作
   @Post('cart-operation')
   trackCartOperation(
-    @Body() input: {
+    @Body()
+    input: {
       sessionId: string;
       operation: any;
       productId: string;
@@ -245,7 +243,7 @@ export class LoggingController {
         dto.cartId,
         req,
       );
-      
+
       return {
         success: true,
         message: 'Cart operation tracked successfully',
@@ -265,7 +263,8 @@ export class LoggingController {
   // 记录结账行为
   @Post('checkout')
   trackCheckout(
-    @Body() input: { sessionId: string; orderId: string; totalAmount: number | string; userId?: string },
+    @Body()
+    input: { sessionId: string; orderId: string; totalAmount: number | string; userId?: string },
     @Req() req: Request,
   ): { success: boolean; message: string } {
     try {
@@ -277,7 +276,7 @@ export class LoggingController {
         dto.userId,
         req,
       );
-      
+
       return {
         success: true,
         message: 'Checkout tracked successfully',
@@ -297,7 +296,8 @@ export class LoggingController {
   // 记录购买行为
   @Post('purchase')
   trackPurchase(
-    @Body() input: { sessionId: string; orderId: string; totalAmount: number | string; userId?: string },
+    @Body()
+    input: { sessionId: string; orderId: string; totalAmount: number | string; userId?: string },
     @Req() req: Request,
   ): { success: boolean; message: string } {
     try {
@@ -309,7 +309,7 @@ export class LoggingController {
         dto.userId,
         req,
       );
-      
+
       return {
         success: true,
         message: 'Purchase tracked successfully',
@@ -328,12 +328,10 @@ export class LoggingController {
 
   // 获取日志统计
   @Get('stats')
-  async getLogStats(
-    @Query() analyticsQueryDto: AnalyticsQueryDto,
-  ) {
+  async getLogStats(@Query() analyticsQueryDto: AnalyticsQueryDto) {
     const timeRange = { start: analyticsQueryDto.start, end: analyticsQueryDto.end };
     const stats = await this.logAnalyticsService.getLogStats(timeRange, analyticsQueryDto.filters);
-    
+
     return {
       success: true,
       data: stats,
@@ -350,7 +348,7 @@ export class LoggingController {
     try {
       const timeRange = { start, end };
       const analytics = await this.logAnalyticsService.getUserBehaviorAnalytics(timeRange, userId);
-      
+
       return {
         success: true,
         data: analytics,
@@ -369,14 +367,11 @@ export class LoggingController {
 
   // 检测异常日志模式
   @Get('anomaly-detection')
-  async detectAnomalousPatterns(
-    @Query('start') start: string,
-    @Query('end') end: string,
-  ) {
+  async detectAnomalousPatterns(@Query('start') start: string, @Query('end') end: string) {
     try {
       const timeRange = { start, end };
       const anomalies = await this.logAnalyticsService.detectAnomalousPatterns(timeRange);
-      
+
       return {
         success: true,
         data: anomalies,
@@ -404,7 +399,7 @@ export class LoggingController {
       const timeRange = { start, end };
       const limitNum = limit ? parseInt(limit, 10) : 10;
       const pages = await this.logAnalyticsService.getPopularPages(timeRange, limitNum);
-      
+
       return {
         success: true,
         data: pages,
@@ -420,14 +415,11 @@ export class LoggingController {
 
   // 获取转化漏斗
   @Get('conversion-funnel')
-  async getConversionFunnel(
-    @Query('start') start: string,
-    @Query('end') end: string,
-  ) {
+  async getConversionFunnel(@Query('start') start: string, @Query('end') end: string) {
     try {
       const timeRange = { start, end };
       const funnel = await this.logAnalyticsService.getConversionFunnel(timeRange);
-      
+
       return {
         success: true,
         data: funnel,
@@ -459,7 +451,10 @@ export class LoggingController {
       return { success: true, status: resp.data };
     } catch (error) {
       const msg = (error as Error).message;
-      this.logger.error('Failed to call OpenObserve health from Controller:', (error as Error).stack);
+      this.logger.error(
+        'Failed to call OpenObserve health from Controller:',
+        (error as Error).stack,
+      );
       return { success: false, message: msg };
     }
   }
@@ -470,7 +465,7 @@ export class LoggingController {
     try {
       this.businessLoggerService.flush();
       this.userBehaviorTracker.flush();
-      
+
       return {
         success: true,
         message: 'Log buffers flushed successfully',

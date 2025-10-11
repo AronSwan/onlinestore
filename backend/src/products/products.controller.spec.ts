@@ -27,20 +27,30 @@ describe('ProductsController', () => {
             findOne: createMockedFunction<(id: number | string) => Promise<any>>(),
             update: createMockedFunction<(id: number | string, dto: any) => Promise<any>>(),
             remove: createMockedFunction<(id: number | string) => Promise<{ affected?: number }>>(),
-            search: createMockedFunction<(keyword: string, options?: any) => Promise<{ items: any[]; total: number }>>(),
+            search:
+              createMockedFunction<
+                (keyword: string, options?: any) => Promise<{ items: any[]; total: number }>
+              >(),
             findPopular: createMockedFunction<() => Promise<any[]>>(),
           },
         },
         {
           provide: SearchManagerService,
           useValue: {
-            search: createMockedFunction<(keyword: string, options?: any) => Promise<{ hits: Array<{ id: string }>; total: number }>>(),
+            search:
+              createMockedFunction<
+                (
+                  keyword: string,
+                  options?: any,
+                ) => Promise<{ hits: Array<{ id: string }>; total: number }>
+              >(),
           },
         },
         {
           provide: SearchSuggestionService,
           useValue: {
-            getSuggestions: createMockedFunction<(keyword: string, limit?: number) => Promise<string[]>>(),
+            getSuggestions:
+              createMockedFunction<(keyword: string, limit?: number) => Promise<string[]>>(),
           },
         },
         {

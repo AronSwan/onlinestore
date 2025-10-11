@@ -15,19 +15,23 @@ describe('LoggingModule providers (adapter priority)', () => {
   });
 
   it('OPENOBSERVE_CONFIG uses EnvironmentAdapter values when available', async () => {
-    jest.mock('../config/environment-adapter', () => ({
-      EnvironmentAdapter: {
-        getOpenObserve: () => ({
-          baseUrl: 'https://adapter.example.com',
-          organization: 'adapter-org',
-          token: 'adapter-token',
-          streams: { events: 'business-events', metrics: 'metrics', traces: 'traces' },
-          performance: { batchSize: 100, flushInterval: 5000, timeout: 30000 },
-          tracing: { enabled: true, samplingRate: 0.2 },
-          alerts: { enabled: true, evaluationInterval: 60 },
-        }),
-      },
-    }), { virtual: true });
+    jest.mock(
+      '../config/environment-adapter',
+      () => ({
+        EnvironmentAdapter: {
+          getOpenObserve: () => ({
+            baseUrl: 'https://adapter.example.com',
+            organization: 'adapter-org',
+            token: 'adapter-token',
+            streams: { events: 'business-events', metrics: 'metrics', traces: 'traces' },
+            performance: { batchSize: 100, flushInterval: 5000, timeout: 30000 },
+            tracing: { enabled: true, samplingRate: 0.2 },
+            alerts: { enabled: true, evaluationInterval: 60 },
+          }),
+        },
+      }),
+      { virtual: true },
+    );
 
     const { LoggingModule } = require('./logging.module');
     jest.doMock('../config/environment-adapter', () => ({
@@ -56,16 +60,20 @@ describe('LoggingModule providers (adapter priority)', () => {
   });
 
   it('USER_BEHAVIOR_TRANSPORT endpoint uses adapter baseUrl/organization', async () => {
-    jest.mock('../config/environment-adapter', () => ({
-      EnvironmentAdapter: {
-        getOpenObserve: () => ({
-          baseUrl: 'https://adapter.example.com',
-          organization: 'adapter-org',
-          token: 'tkn',
-          performance: { batchSize: 50, flushInterval: 2000, timeout: 10000 },
-        }),
-      },
-    }), { virtual: true });
+    jest.mock(
+      '../config/environment-adapter',
+      () => ({
+        EnvironmentAdapter: {
+          getOpenObserve: () => ({
+            baseUrl: 'https://adapter.example.com',
+            organization: 'adapter-org',
+            token: 'tkn',
+            performance: { batchSize: 50, flushInterval: 2000, timeout: 10000 },
+          }),
+        },
+      }),
+      { virtual: true },
+    );
 
     // 拦截构造函数以捕获参数用于断言
     (global as any).__oo_ctor = undefined;
@@ -80,7 +88,7 @@ describe('LoggingModule providers (adapter priority)', () => {
             this.token = opts.token;
             (global as any).__oo_ctor = opts;
           }
-        }
+        },
       };
     });
 
@@ -93,7 +101,9 @@ describe('LoggingModule providers (adapter priority)', () => {
     expect(transport).toBeTruthy();
 
     const ctorOpts = (global as any).__oo_ctor;
-    expect(String(ctorOpts.endpoint)).toContain('https://adapter.example.com/api/adapter-org/user-behavior/_json');
+    expect(String(ctorOpts.endpoint)).toContain(
+      'https://adapter.example.com/api/adapter-org/user-behavior/_json',
+    );
     expect(String(ctorOpts.token)).toBe('tkn');
 
     (global as any).__oo_ctor = undefined;

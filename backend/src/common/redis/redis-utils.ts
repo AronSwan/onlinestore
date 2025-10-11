@@ -17,7 +17,8 @@ export interface RedisLike {
 }
 
 export function isRedisEnabled(configService?: ConfigService): boolean {
-  const enabledRaw = (configService?.get?.('REDIS_ENABLED') as string) ?? process.env.REDIS_ENABLED ?? 'true';
+  const enabledRaw =
+    (configService?.get?.('REDIS_ENABLED') as string) ?? process.env.REDIS_ENABLED ?? 'true';
   if (typeof enabledRaw === 'string') {
     const v = enabledRaw.toLowerCase();
     return v === 'true' || v === '1' || v === 'yes' || v === 'on';
@@ -156,10 +157,7 @@ class NoopRedis implements RedisLike {
   }
 }
 
-export function createRedisClient(
-  configService: ConfigService,
-  options?: RedisOptions,
-): RedisLike {
+export function createRedisClient(configService: ConfigService, options?: RedisOptions): RedisLike {
   const isDev = (configService?.get<string>('NODE_ENV') ?? process.env.NODE_ENV) === 'development';
   const isTest = (configService?.get<string>('NODE_ENV') ?? process.env.NODE_ENV) === 'test';
   const enabled = isRedisEnabled(configService);

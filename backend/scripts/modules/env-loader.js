@@ -46,5 +46,5 @@ module.exports = {
   loadEnvFile,
   loadEnvChain,
   loadedEnvFile: () => loadedEnvFile,
-  PROJECT_ROOT
+  PROJECT_ROOT,
 };

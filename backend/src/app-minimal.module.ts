@@ -23,7 +23,7 @@ import { RbacModule } from './auth/rbac/rbac.module';
     // 配置模块
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ['.env.local', '.env'],
+      envFilePath: ['.env.local'],
     }),
 
     // 限流模块

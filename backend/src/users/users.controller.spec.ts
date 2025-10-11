@@ -143,7 +143,9 @@ describe('UsersController', () => {
         password: 'Password123!',
       };
 
-      const mockCommandBus = { execute: jest.fn().mockRejectedValue(new ConflictException('邮箱已被注册')) };
+      const mockCommandBus = {
+        execute: jest.fn().mockRejectedValue(new ConflictException('邮箱已被注册')),
+      };
       (controller as any).commandBus = mockCommandBus;
 
       await expect(controller.createUser(createUserDto)).rejects.toThrow(ConflictException);
@@ -157,10 +159,14 @@ describe('UsersController', () => {
         password: 'Password123!',
       };
 
-      const mockCommandBus = { execute: jest.fn().mockRejectedValue(new Error('Database connection failed')) };
+      const mockCommandBus = {
+        execute: jest.fn().mockRejectedValue(new Error('Database connection failed')),
+      };
       (controller as any).commandBus = mockCommandBus;
 
-      await expect(controller.createUser(createUserDto)).rejects.toThrow('Database connection failed');
+      await expect(controller.createUser(createUserDto)).rejects.toThrow(
+        'Database connection failed',
+      );
     });
 
     it('should handle concurrent user creation', async () => {
@@ -228,7 +234,7 @@ describe('UsersController', () => {
           page: 1,
           limit: 10,
           totalPages: 1,
-        })
+        }),
       };
       (controller as any).queryBus = mockQueryBus;
 
@@ -250,7 +256,7 @@ describe('UsersController', () => {
           emailVerified: true,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-        }
+        },
       ];
 
       const mockQueryBus = {
@@ -260,7 +266,7 @@ describe('UsersController', () => {
           page: 1,
           limit: 10,
           totalPages: 1,
-        })
+        }),
       };
       (controller as any).queryBus = mockQueryBus;
 
@@ -282,7 +288,7 @@ describe('UsersController', () => {
           emailVerified: true,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-        }
+        },
       ];
 
       const mockQueryBus = {
@@ -292,7 +298,7 @@ describe('UsersController', () => {
           page: 1,
           limit: 10,
           totalPages: 1,
-        })
+        }),
       };
       (controller as any).queryBus = mockQueryBus;
 
@@ -311,7 +317,7 @@ describe('UsersController', () => {
           page: 1,
           limit: 10,
           totalPages: 0,
-        })
+        }),
       };
       (controller as any).queryBus = mockQueryBus;
 
@@ -322,7 +328,9 @@ describe('UsersController', () => {
     });
 
     it('should handle database connection errors', async () => {
-      const mockQueryBus = { execute: jest.fn().mockRejectedValue(new Error('Database connection failed')) };
+      const mockQueryBus = {
+        execute: jest.fn().mockRejectedValue(new Error('Database connection failed')),
+      };
       (controller as any).queryBus = mockQueryBus;
 
       await expect(controller.searchUsers()).rejects.toThrow('Database connection failed');
@@ -352,14 +360,18 @@ describe('UsersController', () => {
     });
 
     it('should throw error for non-existent user', async () => {
-      const mockQueryBus = { execute: jest.fn().mockRejectedValue(new NotFoundException('用户不存在')) };
+      const mockQueryBus = {
+        execute: jest.fn().mockRejectedValue(new NotFoundException('用户不存在')),
+      };
       (controller as any).queryBus = mockQueryBus;
 
       await expect(controller.getUserById('999')).rejects.toThrow(NotFoundException);
     });
 
     it('should handle database connection errors', async () => {
-      const mockQueryBus = { execute: jest.fn().mockRejectedValue(new Error('Database connection failed')) };
+      const mockQueryBus = {
+        execute: jest.fn().mockRejectedValue(new Error('Database connection failed')),
+      };
       (controller as any).queryBus = mockQueryBus;
 
       await expect(controller.getUserById('1')).rejects.toThrow('Database connection failed');
@@ -415,7 +427,9 @@ describe('UsersController', () => {
     it('should throw error for non-existent user', async () => {
       const updateDto: UpdateUserDto = { email: 'updated@example.com' };
 
-      const mockCommandBus = { execute: jest.fn().mockRejectedValue(new NotFoundException('用户不存在')) };
+      const mockCommandBus = {
+        execute: jest.fn().mockRejectedValue(new NotFoundException('用户不存在')),
+      };
       (controller as any).commandBus = mockCommandBus;
 
       try {
@@ -429,10 +443,14 @@ describe('UsersController', () => {
     it('should handle database connection errors during update', async () => {
       const updateDto: UpdateUserDto = { email: 'updated@example.com' };
 
-      const mockCommandBus = { execute: jest.fn().mockRejectedValue(new Error('Database connection failed')) };
+      const mockCommandBus = {
+        execute: jest.fn().mockRejectedValue(new Error('Database connection failed')),
+      };
       (controller as any).commandBus = mockCommandBus;
 
-      await expect(controller.updateUser('1', updateDto)).rejects.toThrow('Database connection failed');
+      await expect(controller.updateUser('1', updateDto)).rejects.toThrow(
+        'Database connection failed',
+      );
     });
   });
 
@@ -482,7 +500,10 @@ describe('UsersController', () => {
       (controller as any).commandBus = mockCommandBus;
 
       // 模拟并发调用
-      const promises = [controller.updateUser('1', updateDto), controller.updateUser('1', updateDto)];
+      const promises = [
+        controller.updateUser('1', updateDto),
+        controller.updateUser('1', updateDto),
+      ];
 
       const results = await Promise.all(promises);
 
@@ -499,7 +520,9 @@ describe('UsersController', () => {
         password: 'Password123!',
       };
 
-      const mockCommandBus = { execute: jest.fn().mockRejectedValue(new Error('Rate limit exceeded')) };
+      const mockCommandBus = {
+        execute: jest.fn().mockRejectedValue(new Error('Rate limit exceeded')),
+      };
       (controller as any).commandBus = mockCommandBus;
 
       await expect(controller.createUser(createUserDto)).rejects.toThrow('Rate limit exceeded');
@@ -527,10 +550,14 @@ describe('UsersController', () => {
         password: 'Password123!',
       };
 
-      const mockCommandBus = { execute: jest.fn().mockRejectedValue(new Error('User service unavailable')) };
+      const mockCommandBus = {
+        execute: jest.fn().mockRejectedValue(new Error('User service unavailable')),
+      };
       (controller as any).commandBus = mockCommandBus;
 
-      await expect(controller.createUser(createUserDto)).rejects.toThrow('User service unavailable');
+      await expect(controller.createUser(createUserDto)).rejects.toThrow(
+        'User service unavailable',
+      );
     });
   });
 });

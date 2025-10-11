@@ -15,7 +15,9 @@ export class CqrsTracingService {
   private readonly config: CqrsOpenObserveConfig;
 
   constructor(private readonly configService: ConfigService) {
-    const config = this.configService.get<CqrsOpenObserveConfig>('cqrsOpenObserve') ?? ((EnvironmentAdapter as any)?.getOpenObserve?.() as unknown as CqrsOpenObserveConfig);
+    const config =
+      this.configService.get<CqrsOpenObserveConfig>('cqrsOpenObserve') ??
+      ((EnvironmentAdapter as any)?.getOpenObserve?.() as unknown as CqrsOpenObserveConfig);
     if (!config) {
       throw new Error('CQRS OpenObserve configuration not found');
     }
@@ -91,7 +93,12 @@ export class CqrsTracingService {
   /**
    * 完成 Span
    */
-  finishSpan(span: any, success: boolean, error?: Error, additionalAttributes?: Record<string, any>): void {
+  finishSpan(
+    span: any,
+    success: boolean,
+    error?: Error,
+    additionalAttributes?: Record<string, any>,
+  ): void {
     if (!span) {
       return;
     }
@@ -108,9 +115,9 @@ export class CqrsTracingService {
       if (error) {
         span.recordException(error);
       }
-      span.setStatus({ 
-        code: SpanStatusCode.ERROR, 
-        message: error?.message || 'Unknown error' 
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: error?.message || 'Unknown error',
       });
     }
 
@@ -144,7 +151,7 @@ export class CqrsTracingService {
     if (!this.config.tracing.enabled) {
       return null;
     }
-    
+
     // 简化实现，不设置父级上下文
     const span = this.tracer.startSpan(name, {
       kind: SpanKind.INTERNAL,

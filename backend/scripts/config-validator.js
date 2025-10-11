@@ -2,12 +2,12 @@
 
 /**
  * 📋 配置验证脚本
- * 
+ *
  * 功能：
  * - 验证环境变量配置
  * - 检查配置文件一致性
  * - 生成配置报告
- * 
+ *
  * 使用方法：
  * npm run config:validate
  * npm run config:test
@@ -34,13 +34,13 @@ class ConfigValidator {
       'REDIS_HOST',
       'REDIS_PORT',
       'JWT_SECRET',
-      'ENCRYPTION_KEY'
+      'ENCRYPTION_KEY',
     ];
 
     const conditional = {
       mysql: ['DB_HOST', 'DB_PORT', 'DB_USERNAME', 'DB_PASSWORD'],
       tidb: ['DB_HOST', 'DB_PORT', 'DB_USERNAME', 'DB_PASSWORD'],
-      postgres: ['DB_HOST', 'DB_PORT', 'DB_USERNAME', 'DB_PASSWORD']
+      postgres: ['DB_HOST', 'DB_PORT', 'DB_USERNAME', 'DB_PASSWORD'],
     };
 
     const dbType = process.env.DB_TYPE;
@@ -54,7 +54,7 @@ class ConfigValidator {
   // 验证环境变量
   validateEnvVars() {
     console.log('🔍 验证环境变量...');
-    
+
     const required = this.getRequiredEnvVars();
     const missing = [];
     const invalid = [];
@@ -91,12 +91,8 @@ class ConfigValidator {
   // 验证配置文件存在性
   validateConfigFiles() {
     console.log('📁 验证配置文件...');
-    
-    const configFiles = [
-      '.env',
-      '.env.master',
-      'src/config/unified-master.config.ts'
-    ];
+
+    const configFiles = ['.env', '.env.master', 'src/config/unified-master.config.ts'];
 
     const missing = [];
 
@@ -117,10 +113,10 @@ class ConfigValidator {
   // 验证数据库配置
   validateDatabaseConfig() {
     console.log('🗄️ 验证数据库配置...');
-    
+
     const dbType = process.env.DB_TYPE;
     const validTypes = ['sqlite', 'mysql', 'postgres', 'tidb'];
-    
+
     if (!validTypes.includes(dbType)) {
       this.errors.push(`不支持的数据库类型: ${dbType}`);
       return false;
@@ -132,7 +128,7 @@ class ConfigValidator {
         this.errors.push('SQLite 数据库路径未配置');
         return false;
       }
-      
+
       // 检查目录是否存在
       const dbDir = path.dirname(dbPath);
       if (!fs.existsSync(dbDir)) {
@@ -146,10 +142,10 @@ class ConfigValidator {
   // 验证Redis配置
   validateRedisConfig() {
     console.log('🔴 验证Redis配置...');
-    
+
     const host = process.env.REDIS_HOST;
     const port = process.env.REDIS_PORT;
-    
+
     if (!host) {
       this.errors.push('Redis主机未配置');
       return false;
@@ -166,10 +162,10 @@ class ConfigValidator {
   // 验证安全配置
   validateSecurityConfig() {
     console.log('🛡️ 验证安全配置...');
-    
+
     const jwtSecret = process.env.JWT_SECRET;
     const encryptionKey = process.env.ENCRYPTION_KEY;
-    
+
     if (jwtSecret && jwtSecret.length < 32) {
       this.errors.push('JWT密钥长度不足32字符');
     }
@@ -183,7 +179,7 @@ class ConfigValidator {
       if (jwtSecret === 'your-secret-key' || jwtSecret.includes('test')) {
         this.errors.push('生产环境不能使用默认或测试JWT密钥');
       }
-      
+
       if (process.env.DB_PASSWORD === 'password' || !process.env.DB_PASSWORD) {
         this.warnings.push('生产环境应使用强数据库密码');
       }
@@ -200,27 +196,27 @@ class ConfigValidator {
       validation: {
         passed: this.errors.length === 0,
         errors: this.errors,
-        warnings: this.warnings
+        warnings: this.warnings,
       },
       config: {
         database: {
           type: process.env.DB_TYPE,
           host: process.env.DB_HOST || 'N/A',
-          port: process.env.DB_PORT || 'N/A'
+          port: process.env.DB_PORT || 'N/A',
         },
         redis: {
           host: process.env.REDIS_HOST,
-          port: process.env.REDIS_PORT
+          port: process.env.REDIS_PORT,
         },
         security: {
           jwtConfigured: !!process.env.JWT_SECRET,
-          encryptionConfigured: !!process.env.ENCRYPTION_KEY
-        }
-      }
+          encryptionConfigured: !!process.env.ENCRYPTION_KEY,
+        },
+      },
     };
 
     const reportPath = path.join(process.cwd(), 'docs', 'quality', 'config-validation-report.json');
-    
+
     // 确保目录存在
     const reportDir = path.dirname(reportPath);
     if (!fs.existsSync(reportDir)) {
@@ -244,13 +240,13 @@ class ConfigValidator {
       configFiles: this.validateConfigFiles(),
       database: this.validateDatabaseConfig(),
       redis: this.validateRedisConfig(),
-      security: this.validateSecurityConfig()
+      security: this.validateSecurityConfig(),
     };
 
     console.log('');
     console.log('📊 验证结果汇总:');
     console.log('==================================================');
-    
+
     Object.entries(results).forEach(([category, passed]) => {
       const status = passed ? '✅' : '❌';
       const categoryName = {
@@ -258,9 +254,9 @@ class ConfigValidator {
         configFiles: '配置文件',
         database: '数据库配置',
         redis: 'Redis配置',
-        security: '安全配置'
+        security: '安全配置',
       }[category];
-      
+
       console.log(`${status} ${categoryName}: ${passed ? '通过' : '失败'}`);
     });
 
@@ -281,9 +277,9 @@ class ConfigValidator {
     }
 
     const report = this.generateReport();
-    
+
     const allPassed = Object.values(results).every(result => result);
-    
+
     if (allPassed && this.errors.length === 0) {
       console.log('');
       console.log('✅ 所有配置验证通过');
@@ -300,15 +296,15 @@ class ConfigValidator {
 async function main() {
   // 加载环境变量
   require('dotenv').config();
-  
+
   const validator = new ConfigValidator();
   const success = await validator.validate();
-  
+
   // 如果是CI环境且验证失败，退出并返回错误码
   if (process.env.CI && !success) {
     process.exit(1);
   }
-  
+
   return success;
 }
 

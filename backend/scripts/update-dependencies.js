@@ -27,7 +27,7 @@ const dependenciesToUpdate = {
   '@nestjs/axios': '^4.0.1',
   '@nestjs/cache-manager': '^3.0.1',
   '@nestjs/config': '^4.0.2',
-  
+
   // OpenTelemetry 包
   '@opentelemetry/auto-instrumentations-node': '^0.64.6',
   '@opentelemetry/exporter-jaeger': '^2.1.0',
@@ -35,14 +35,14 @@ const dependenciesToUpdate = {
   '@opentelemetry/resources': '^2.1.0',
   '@opentelemetry/sdk-node': '^0.205.0',
   '@opentelemetry/sdk-trace-base': '^2.1.0',
-  
+
   // 其他重要依赖
-  'uuid': '^13.0.0',
-  'dotenv': '^17.2.3',
-  'helmet': '^8.1.0',
-  'joi': '^18.0.1',
+  uuid: '^13.0.0',
+  dotenv: '^17.2.3',
+  helmet: '^8.1.0',
+  joi: '^18.0.1',
   'winston-daily-rotate-file': '^5.0.0',
-  
+
   // TypeScript 和类型定义
   '@types/node': '^24.6.2',
   '@types/jest': '^30.0.0',
@@ -51,22 +51,22 @@ const dependenciesToUpdate = {
   '@types/nodemailer': '^7.0.2',
   '@types/passport-jwt': '^4.0.1',
   '@types/uuid': '^10.0.0',
-  
+
   // 开发工具
   '@typescript-eslint/eslint-plugin': '^8.45.0',
   '@typescript-eslint/parser': '^8.45.0',
-  'eslint': '^9.37.0',
+  eslint: '^9.37.0',
   'eslint-config-prettier': '^10.1.8',
-  'jest': '^30.2.0',
+  jest: '^30.2.0',
   'postcss-preset-env': '^10.4.0',
-  'supertest': '^7.1.4'
+  supertest: '^7.1.4',
 };
 
 // 需要谨慎更新的包（主要版本变更）
 const majorVersionUpdates = {
-  'express': '^5.1.0',
-  'bcrypt': '^6.0.0',
-  'nodemailer': '^7.0.6'
+  express: '^5.1.0',
+  bcrypt: '^6.0.0',
+  nodemailer: '^7.0.6',
 };
 
 console.log('📦 更新常规依赖包...');
@@ -78,41 +78,31 @@ const updateBatches = [
     '@nestjs/common@^11.1.6',
     '@nestjs/core@^11.1.6',
     '@nestjs/platform-express@^11.1.6',
-    '@nestjs/testing@^11.1.6'
+    '@nestjs/testing@^11.1.6',
   ],
-  
+
   // 批次2: NestJS 其他包
   [
     '@nestjs/cli@^11.0.10',
     '@nestjs/schematics@^11.0.8',
     '@nestjs/swagger@^11.2.0',
     '@nestjs/terminus@^11.0.0',
-    '@nestjs/typeorm@^11.0.0'
+    '@nestjs/typeorm@^11.0.0',
   ],
-  
+
   // 批次3: OpenTelemetry 包
   [
     '@opentelemetry/auto-instrumentations-node@^0.64.6',
     '@opentelemetry/exporter-jaeger@^2.1.0',
     '@opentelemetry/resources@^2.1.0',
-    '@opentelemetry/sdk-trace-base@^2.1.0'
+    '@opentelemetry/sdk-trace-base@^2.1.0',
   ],
-  
+
   // 批次4: 其他依赖
-  [
-    'uuid@^13.0.0',
-    'dotenv@^17.2.3',
-    'helmet@^8.1.0',
-    'joi@^18.0.1'
-  ],
-  
+  ['uuid@^13.0.0', 'dotenv@^17.2.3', 'helmet@^8.1.0', 'joi@^18.0.1'],
+
   // 批次5: TypeScript 类型定义
-  [
-    '@types/node@^24.6.2',
-    '@types/jest@^30.0.0',
-    '@types/bcrypt@^6.0.0',
-    '@types/express@^5.0.3'
-  ]
+  ['@types/node@^24.6.2', '@types/jest@^30.0.0', '@types/bcrypt@^6.0.0', '@types/express@^5.0.3'],
 ];
 
 function updateBatch(packages, batchName) {

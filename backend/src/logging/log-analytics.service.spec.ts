@@ -48,7 +48,7 @@ describe('LogAnalyticsService', () => {
     };
 
     mockHttpService = {
-      post: (jest.fn() as unknown) as jest.MockedFunction<HttpService['post']>,
+      post: jest.fn() as unknown as jest.MockedFunction<HttpService['post']>,
     } as any;
 
     const module: TestingModule = await Test.createTestingModule({
@@ -77,7 +77,7 @@ describe('LogAnalyticsService', () => {
     it('should return log stats successfully', async () => {
       const timeRange = { start: '2023-01-01T00:00:00Z', end: '2023-01-02T00:00:00Z' };
       const filters = { level: 'INFO' };
-      
+
       const mockResponse = {
         data: {
           hits: {
@@ -145,7 +145,7 @@ describe('LogAnalyticsService', () => {
         },
         {
           headers: {
-            'Authorization': `Bearer ${mockConfig.auth.token}`,
+            Authorization: `Bearer ${mockConfig.auth.token}`,
             'Content-Type': 'application/json',
           },
         },
@@ -154,10 +154,12 @@ describe('LogAnalyticsService', () => {
 
     it('should throw error when request fails', async () => {
       const timeRange = { start: '2023-01-01T00:00:00Z', end: '2023-01-02T00:00:00Z' };
-      
+
       mockHttpService.post.mockReturnValue(of({ data: null }));
 
-      await expect(service.getLogStats(timeRange)).rejects.toThrow('No response received from OpenObserve');
+      await expect(service.getLogStats(timeRange)).rejects.toThrow(
+        'No response received from OpenObserve',
+      );
     });
   });
 
@@ -165,7 +167,7 @@ describe('LogAnalyticsService', () => {
     it('should return user behavior analytics successfully', async () => {
       const timeRange = { start: '2023-01-01T00:00:00Z', end: '2023-01-02T00:00:00Z' };
       const userId = 'user123';
-      
+
       const mockResponse = {
         data: {
           hits: {
@@ -233,7 +235,7 @@ describe('LogAnalyticsService', () => {
         },
         {
           headers: {
-            'Authorization': `Bearer ${mockConfig.auth.token}`,
+            Authorization: `Bearer ${mockConfig.auth.token}`,
             'Content-Type': 'application/json',
           },
         },
@@ -244,7 +246,7 @@ describe('LogAnalyticsService', () => {
   describe('detectAnomalousPatterns', () => {
     it('should return anomaly detection results successfully', async () => {
       const timeRange = { start: '2023-01-01T00:00:00Z', end: '2023-01-02T00:00:00Z' };
-      
+
       const mockResponse = {
         data: {
           hits: {
@@ -318,7 +320,7 @@ describe('LogAnalyticsService', () => {
         },
         {
           headers: {
-            'Authorization': `Bearer ${mockConfig.auth.token}`,
+            Authorization: `Bearer ${mockConfig.auth.token}`,
             'Content-Type': 'application/json',
           },
         },
@@ -330,7 +332,7 @@ describe('LogAnalyticsService', () => {
     it('should return popular pages successfully', async () => {
       const timeRange = { start: '2023-01-01T00:00:00Z', end: '2023-01-02T00:00:00Z' };
       const limit = 5;
-      
+
       const mockResponse = {
         data: {
           hits: {
@@ -389,7 +391,7 @@ describe('LogAnalyticsService', () => {
         },
         {
           headers: {
-            'Authorization': `Bearer ${mockConfig.auth.token}`,
+            Authorization: `Bearer ${mockConfig.auth.token}`,
             'Content-Type': 'application/json',
           },
         },
@@ -400,7 +402,7 @@ describe('LogAnalyticsService', () => {
   describe('getConversionFunnel', () => {
     it('should return conversion funnel successfully', async () => {
       const timeRange = { start: '2023-01-01T00:00:00Z', end: '2023-01-02T00:00:00Z' };
-      
+
       const mockResponse = {
         data: {
           hits: {
@@ -479,7 +481,7 @@ describe('LogAnalyticsService', () => {
         },
         {
           headers: {
-            'Authorization': `Bearer ${mockConfig.auth.token}`,
+            Authorization: `Bearer ${mockConfig.auth.token}`,
             'Content-Type': 'application/json',
           },
         },

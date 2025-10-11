@@ -8,7 +8,13 @@ export interface PaymentRequest {
   notifyUrl?: string;
   expireMinutes?: number;
 }
-import { GatewayResult, CreatePaymentData, QueryPaymentData, CallbackData, RefundData } from '../common/gateway-result';
+import {
+  GatewayResult,
+  CreatePaymentData,
+  QueryPaymentData,
+  CallbackData,
+  RefundData,
+} from '../common/gateway-result';
 
 export interface RefundRequest {
   paymentId: string;

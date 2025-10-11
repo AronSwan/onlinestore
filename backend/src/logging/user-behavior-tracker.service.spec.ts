@@ -87,9 +87,9 @@ describe('UserBehaviorTracker', () => {
       const sessionId = 'session123';
       const page = '/home';
       const userId = 'user123';
-      
+
       service.trackPageView(sessionId, page, userId, mockRequest as Request);
-      
+
       expect(mockTransport.log).toHaveBeenCalledWith(
         expect.objectContaining({
           eventType: 'PAGE_VIEW',
@@ -97,28 +97,30 @@ describe('UserBehaviorTracker', () => {
           userId,
           eventData: expect.objectContaining({ page }),
         }),
-        expect.any(Function)
+        expect.any(Function),
       );
     });
 
     it('should track page view without userId', () => {
       const sessionId = 'session123';
       const page = '/home';
-      
+
       service.trackPageView(sessionId, page, undefined, mockRequest as Request);
-      
+
       expect(mockTransport.log).toHaveBeenCalledWith(
         expect.objectContaining({
           eventType: 'PAGE_VIEW',
           sessionId,
           eventData: expect.objectContaining({ page }),
         }),
-        expect.any(Function)
+        expect.any(Function),
       );
     });
 
     it('negative-path: does not throw when transport.log fails', () => {
-      mockTransport.log.mockImplementation(() => { throw new Error('network error'); });
+      mockTransport.log.mockImplementation(() => {
+        throw new Error('network error');
+      });
       expect(() => service.trackPageView('s', '/home', 'u', mockRequest as Request)).not.toThrow();
     });
   });
@@ -128,9 +130,9 @@ describe('UserBehaviorTracker', () => {
       const sessionId = 'session123';
       const productId = 'product123';
       const userId = 'user123';
-      
+
       service.trackProductView(sessionId, productId, userId, mockRequest as Request);
-      
+
       expect(mockTransport.log).toHaveBeenCalledWith(
         expect.objectContaining({
           eventType: 'PRODUCT_VIEW',
@@ -138,13 +140,17 @@ describe('UserBehaviorTracker', () => {
           userId,
           eventData: expect.objectContaining({ productId }),
         }),
-        expect.any(Function)
+        expect.any(Function),
       );
     });
 
     it('negative-path: does not throw when transport.log fails', () => {
-      mockTransport.log.mockImplementation(() => { throw new Error('network error'); });
-      expect(() => service.trackProductView('s', 'p-001', 'u', mockRequest as Request)).not.toThrow();
+      mockTransport.log.mockImplementation(() => {
+        throw new Error('network error');
+      });
+      expect(() =>
+        service.trackProductView('s', 'p-001', 'u', mockRequest as Request),
+      ).not.toThrow();
     });
   });
 
@@ -153,9 +159,9 @@ describe('UserBehaviorTracker', () => {
       const sessionId = 'session123';
       const searchQuery = 'laptop';
       const userId = 'user123';
-      
+
       service.trackSearch(sessionId, searchQuery, userId, mockRequest as Request);
-      
+
       expect(mockTransport.log).toHaveBeenCalledWith(
         expect.objectContaining({
           eventType: 'SEARCH',
@@ -163,7 +169,7 @@ describe('UserBehaviorTracker', () => {
           userId,
           eventData: expect.objectContaining({ searchQuery }),
         }),
-        expect.any(Function)
+        expect.any(Function),
       );
     });
   });
@@ -177,16 +183,16 @@ describe('UserBehaviorTracker', () => {
       const price = 99.99;
       const userId = 'user123';
       const cartId = 'cart123';
-      
+
       service.trackCartOperation(
-        sessionId, 
-        operation, 
-        productId, 
-        quantity, 
-        price, 
-        userId, 
+        sessionId,
+        operation,
+        productId,
+        quantity,
+        price,
+        userId,
         cartId,
-        mockRequest as Request
+        mockRequest as Request,
       );
       expect(mockTransport.log).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -195,7 +201,7 @@ describe('UserBehaviorTracker', () => {
           userId,
           eventData: expect.objectContaining({ productId, quantity, price, cartId }),
         }),
-        expect.any(Function)
+        expect.any(Function),
       );
     });
 
@@ -207,16 +213,16 @@ describe('UserBehaviorTracker', () => {
       const price = 99.99;
       const userId = 'user123';
       const cartId = 'cart123';
-      
+
       service.trackCartOperation(
-        sessionId, 
-        operation, 
-        productId, 
-        quantity, 
-        price, 
-        userId, 
+        sessionId,
+        operation,
+        productId,
+        quantity,
+        price,
+        userId,
         cartId,
-        mockRequest as Request
+        mockRequest as Request,
       );
       expect(mockTransport.log).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -225,7 +231,7 @@ describe('UserBehaviorTracker', () => {
           userId,
           eventData: expect.objectContaining({ productId, quantity, price, cartId }),
         }),
-        expect.any(Function)
+        expect.any(Function),
       );
     });
   });
@@ -239,14 +245,14 @@ describe('UserBehaviorTracker', () => {
 
       // Mock the console.log to avoid actual logging during tests
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-      
+
       service.trackCheckout(sessionId, orderId, totalAmount, userId, mockRequest as Request);
-      
+
       // Verify that no errors are thrown
       expect(consoleSpy).not.toHaveBeenCalledWith(
-        expect.stringContaining('Failed to send user behavior log to OpenObserve')
+        expect.stringContaining('Failed to send user behavior log to OpenObserve'),
       );
-      
+
       consoleSpy.mockRestore();
     });
   });
@@ -260,14 +266,14 @@ describe('UserBehaviorTracker', () => {
 
       // Mock the console.log to avoid actual logging during tests
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-      
+
       service.trackPurchase(sessionId, orderId, totalAmount, userId, mockRequest as Request);
-      
+
       // Verify that no errors are thrown
       expect(consoleSpy).not.toHaveBeenCalledWith(
-        expect.stringContaining('Failed to send user behavior log to OpenObserve')
+        expect.stringContaining('Failed to send user behavior log to OpenObserve'),
       );
-      
+
       consoleSpy.mockRestore();
     });
   });
@@ -281,14 +287,14 @@ describe('UserBehaviorTracker', () => {
 
       // Mock the console.log to avoid actual logging during tests
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-      
+
       service.trackCustomEvent(sessionId, eventType, eventData, userId, mockRequest as Request);
-      
+
       // Verify that no errors are thrown
       expect(consoleSpy).not.toHaveBeenCalledWith(
-        expect.stringContaining('Failed to send user behavior log to OpenObserve')
+        expect.stringContaining('Failed to send user behavior log to OpenObserve'),
       );
-      
+
       consoleSpy.mockRestore();
     });
   });
@@ -297,14 +303,14 @@ describe('UserBehaviorTracker', () => {
     it('should flush logs without errors', () => {
       // Mock the console.log to avoid actual logging during tests
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-      
+
       service.flush();
-      
+
       // Verify that no errors are thrown
       expect(consoleSpy).not.toHaveBeenCalledWith(
-        expect.stringContaining('Failed to flush behavior log buffer')
+        expect.stringContaining('Failed to flush behavior log buffer'),
       );
-      
+
       consoleSpy.mockRestore();
     });
   });

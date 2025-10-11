@@ -132,7 +132,10 @@ describe('GlobalExceptionFilter', () => {
         { status: HttpStatus.NOT_FOUND, expectedCode: ERROR_CODES.USER_NOT_FOUND },
         { status: HttpStatus.CONFLICT, expectedCode: ERROR_CODES.USER_ALREADY_EXISTS },
         { status: HttpStatus.TOO_MANY_REQUESTS, expectedCode: ERROR_CODES.RATE_LIMIT_EXCEEDED },
-        { status: HttpStatus.INTERNAL_SERVER_ERROR, expectedCode: ERROR_CODES.INTERNAL_SERVER_ERROR },
+        {
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          expectedCode: ERROR_CODES.INTERNAL_SERVER_ERROR,
+        },
         { status: HttpStatus.BAD_GATEWAY, expectedCode: ERROR_CODES.EXTERNAL_SERVICE_ERROR },
         { status: HttpStatus.SERVICE_UNAVAILABLE, expectedCode: ERROR_CODES.SERVICE_UNAVAILABLE },
         { status: HttpStatus.GATEWAY_TIMEOUT, expectedCode: ERROR_CODES.TIMEOUT_ERROR },

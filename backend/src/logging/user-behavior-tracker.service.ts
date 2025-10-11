@@ -58,25 +58,25 @@ export class UserBehaviorTracker {
 
   // 记录购物车操作
   trackCartOperation(
-    sessionId: string, 
-    operation: 'CART_ADD' | 'CART_REMOVE', 
-    productId: string, 
-    quantity: number, 
-    price: number, 
-    userId?: string, 
+    sessionId: string,
+    operation: 'CART_ADD' | 'CART_REMOVE',
+    productId: string,
+    quantity: number,
+    price: number,
+    userId?: string,
     cartId?: string,
-    req?: Request
+    req?: Request,
   ): void {
     const behaviorLog: UserBehaviorLog = {
       timestamp: new Date().toISOString(),
       sessionId,
       userId,
       eventType: operation,
-      eventData: { 
-        productId, 
-        quantity, 
+      eventData: {
+        productId,
+        quantity,
         price,
-        cartId 
+        cartId,
       },
       deviceInfo: this.extractDeviceInfo(req),
     };
@@ -85,15 +85,21 @@ export class UserBehaviorTracker {
   }
 
   // 记录结账行为
-  trackCheckout(sessionId: string, orderId: string, totalAmount: number, userId?: string, req?: Request): void {
+  trackCheckout(
+    sessionId: string,
+    orderId: string,
+    totalAmount: number,
+    userId?: string,
+    req?: Request,
+  ): void {
     const behaviorLog: UserBehaviorLog = {
       timestamp: new Date().toISOString(),
       sessionId,
       userId,
       eventType: 'CHECKOUT',
-      eventData: { 
-        orderId, 
-        totalAmount 
+      eventData: {
+        orderId,
+        totalAmount,
       },
       deviceInfo: this.extractDeviceInfo(req),
     };
@@ -102,15 +108,21 @@ export class UserBehaviorTracker {
   }
 
   // 记录购买行为
-  trackPurchase(sessionId: string, orderId: string, totalAmount: number, userId?: string, req?: Request): void {
+  trackPurchase(
+    sessionId: string,
+    orderId: string,
+    totalAmount: number,
+    userId?: string,
+    req?: Request,
+  ): void {
     const behaviorLog: UserBehaviorLog = {
       timestamp: new Date().toISOString(),
       sessionId,
       userId,
       eventType: 'PURCHASE',
-      eventData: { 
-        orderId, 
-        totalAmount 
+      eventData: {
+        orderId,
+        totalAmount,
       },
       deviceInfo: this.extractDeviceInfo(req),
     };
@@ -120,11 +132,11 @@ export class UserBehaviorTracker {
 
   // 记录自定义事件
   trackCustomEvent(
-    sessionId: string, 
-    eventType: string, 
-    eventData: any, 
-    userId?: string, 
-    req?: Request
+    sessionId: string,
+    eventType: string,
+    eventData: any,
+    userId?: string,
+    req?: Request,
   ): void {
     const behaviorLog: UserBehaviorLog = {
       timestamp: new Date().toISOString(),
@@ -152,8 +164,8 @@ export class UserBehaviorTracker {
   // 获取客户端IP
   private getClientIp(req: Request): string {
     return (
-      req.headers['x-forwarded-for'] as string ||
-      req.headers['x-real-ip'] as string ||
+      (req.headers['x-forwarded-for'] as string) ||
+      (req.headers['x-real-ip'] as string) ||
       req.socket?.remoteAddress ||
       req.ip ||
       'unknown'

@@ -23,7 +23,7 @@ const SEVERITY_WEIGHT = Object.freeze({
   low: 1,
   medium: 2,
   high: 3,
-  critical: 4
+  critical: 4,
 });
 
 /**
@@ -40,10 +40,10 @@ const SEVERITY_WEIGHT = Object.freeze({
  * const sarifLevel = SEVERITY_TO_SARIF_LEVEL.medium; // 返回 'warning'
  */
 const SEVERITY_TO_SARIF_LEVEL = Object.freeze({
-  'critical': 'error',
-  'high': 'error',
-  'medium': 'warning',
-  'low': 'note'
+  critical: 'error',
+  high: 'error',
+  medium: 'warning',
+  low: 'note',
 });
 
 /**
@@ -67,14 +67,14 @@ const SEVERITY_TO_SARIF_LEVEL = Object.freeze({
  * const chineseLevel = SEVERITY_I18N.critical; // 返回 '严重'
  */
 const SEVERITY_I18N = Object.freeze({
-  'critical': '严重',
-  'high': '高',
-  'medium': '中',
-  'low': '低',
-  '严重': 'critical',
-  '高': 'high',
-  '中': 'medium',
-  '低': 'low'
+  critical: '严重',
+  high: '高',
+  medium: '中',
+  low: '低',
+  严重: 'critical',
+  高: 'high',
+  中: 'medium',
+  低: 'low',
 });
 
 /**
@@ -88,5 +88,5 @@ const SEVERITY_I18N = Object.freeze({
 module.exports = {
   SEVERITY_WEIGHT,
   SEVERITY_TO_SARIF_LEVEL,
-  SEVERITY_I18N
+  SEVERITY_I18N,
 };

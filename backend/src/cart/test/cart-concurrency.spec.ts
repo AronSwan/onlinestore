@@ -129,7 +129,7 @@ describe('CartConcurrencyTest', () => {
       await expect(cartApplicationService.addCartItem(mockUserId, addItemDto)).rejects.toThrow(
         '商品库存不足',
       );
-      
+
       // 验证领域服务被正确调用
       expect(domainService.addItemToCart).toHaveBeenCalledWith(
         mockUserId,

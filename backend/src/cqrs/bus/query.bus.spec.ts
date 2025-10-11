@@ -67,7 +67,7 @@ describe('QueryBus', () => {
     } as any;
 
     const mockTracingService: Partial<CqrsTracingService> = {
-      startQuerySpan: jest.fn(() => ({ id: 'span-id' } as any)),
+      startQuerySpan: jest.fn(() => ({ id: 'span-id' }) as any),
       getCurrentContext: jest.fn(() => ({ traceId: 'trace-id', spanId: 'span-id' })),
       finishSpan: jest.fn(),
     } as any;
@@ -206,8 +206,14 @@ describe('QueryBus', () => {
     });
 
     it('应该返回添加的中间件列表', () => {
-      const middleware1: IQueryMiddleware = { name: 'ListQueryMiddleware1', execute: jest.fn(async (_q, next) => next()) };
-      const middleware2: IQueryMiddleware = { name: 'ListQueryMiddleware2', execute: jest.fn(async (_q, next) => next()) };
+      const middleware1: IQueryMiddleware = {
+        name: 'ListQueryMiddleware1',
+        execute: jest.fn(async (_q, next) => next()),
+      };
+      const middleware2: IQueryMiddleware = {
+        name: 'ListQueryMiddleware2',
+        execute: jest.fn(async (_q, next) => next()),
+      };
 
       queryBus.addMiddleware(middleware1);
       queryBus.addMiddleware(middleware2);

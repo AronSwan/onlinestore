@@ -1,6 +1,6 @@
 /**
  * NestJS Adapter for Email Verification Service
- * 
+ *
  * 功能特性：
  * - NestJS装饰器集成
  * - 依赖注入支持
@@ -8,33 +8,33 @@
  * - 中间件和拦截器
  */
 
-import { 
-  Injectable, 
-  Module, 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  Query, 
-  Param, 
-  HttpCode, 
-  HttpStatus, 
-  CallHandler, 
-  ExecutionContext, 
-  NestInterceptor, 
-  Catch, 
-  ExceptionFilter, 
-  HttpException, 
-  ArgumentsHost, 
-  Logger, 
-  PipeTransform, 
-  ArgumentMetadata, 
-  BadRequestException, 
+import {
+  Injectable,
+  Module,
+  Controller,
+  Get,
+  Post,
+  Body,
+  Query,
+  Param,
+  HttpCode,
+  HttpStatus,
+  CallHandler,
+  ExecutionContext,
+  NestInterceptor,
+  Catch,
+  ExceptionFilter,
+  HttpException,
+  ArgumentsHost,
+  Logger,
+  PipeTransform,
+  ArgumentMetadata,
+  BadRequestException,
   Inject,
   UseFilters,
   UseInterceptors,
   UsePipes,
-  SetMetadata
+  SetMetadata,
 } from '@nestjs/common';
 import { Observable, from } from 'rxjs';
 import { tap } from 'rxjs/operators';
@@ -127,8 +127,10 @@ export class EmailVerificationService {
   private enhancedService: any;
   private openObserveService: any;
 
-  constructor(@Inject(ENHANCED_EMAIL_VERIFIER_SERVICE_TOKEN) enhancedService: any,
-              @Inject(OPEN_OBSERVE_SERVICE_TOKEN) openObserveService: any) {
+  constructor(
+    @Inject(ENHANCED_EMAIL_VERIFIER_SERVICE_TOKEN) enhancedService: any,
+    @Inject(OPEN_OBSERVE_SERVICE_TOKEN) openObserveService: any,
+  ) {
     this.enhancedService = enhancedService;
     this.openObserveService = openObserveService;
   }
@@ -138,28 +140,25 @@ export class EmailVerificationService {
    */
   async verifyEmail(email: string, options: any = {}): Promise<VerificationResult> {
     const startTime = Date.now();
-    
+
     try {
       const result = await this.enhancedService.verifyEmail(email, options);
-      
+
       // 发送到OpenObserve
       await this.openObserveService.recordVerificationResult(
-        email, 
-        result, 
+        email,
+        result,
         Date.now() - startTime,
-        { framework: 'nestjs' }
+        { framework: 'nestjs' },
       );
-      
+
       return result;
     } catch (error) {
       // 发送错误到OpenObserve
-      await this.openObserveService.recordVerificationError(
-        email, 
-        error, 
-        Date.now() - startTime,
-        { framework: 'nestjs' }
-      );
-      
+      await this.openObserveService.recordVerificationError(email, error, Date.now() - startTime, {
+        framework: 'nestjs',
+      });
+
       throw error;
     }
   }
@@ -169,19 +168,19 @@ export class EmailVerificationService {
    */
   async verifyEmailBatch(emails: string[], options: any = {}): Promise<BatchVerificationResult> {
     const startTime = Date.now();
-    
+
     try {
       const result = await this.enhancedService.verifyEmailBatch(emails, options);
-      
+
       // 发送批量结果到OpenObserve
       await this.openObserveService.recordBatchResult(
         `nestjs_${Date.now()}`,
         emails,
         result.results,
         Date.now() - startTime,
-        { framework: 'nestjs' }
+        { framework: 'nestjs' },
       );
-      
+
       return result;
     } catch (error) {
       // 发送错误到OpenObserve
@@ -189,9 +188,9 @@ export class EmailVerificationService {
         'batch',
         error,
         Date.now() - startTime,
-        { framework: 'nestjs' }
+        { framework: 'nestjs' },
       );
-      
+
       throw error;
     }
   }
@@ -201,13 +200,10 @@ export class EmailVerificationService {
    */
   async getHealthStatus(): Promise<HealthCheckResult> {
     const health = await this.enhancedService.getHealthStatus();
-    
+
     // 发送健康检查结果到OpenObserve
-    await this.openObserveService.recordHealthCheck(
-      health,
-      { framework: 'nestjs' }
-    );
-    
+    await this.openObserveService.recordHealthCheck(health, { framework: 'nestjs' });
+
     return health;
   }
 
@@ -216,13 +212,10 @@ export class EmailVerificationService {
    */
   async clearCache(): Promise<{ message: string }> {
     await this.enhancedService.clearCache();
-    
+
     // 发送缓存清理事件到OpenObserve
-    await this.openObserveService.recordCacheEvent(
-      'cleared',
-      { type: 'nestjs', size: 0 }
-    );
-    
+    await this.openObserveService.recordCacheEvent('cleared', { type: 'nestjs', size: 0 });
+
     return { message: 'Cache cleared successfully' };
   }
 
@@ -245,13 +238,10 @@ export class EmailVerificationService {
    */
   getMetrics() {
     const metrics = this.enhancedService.getMetrics();
-    
+
     // 发送性能指标到OpenObserve
-    this.openObserveService.recordPerformanceMetrics(
-      metrics,
-      { framework: 'nestjs' }
-    );
-    
+    this.openObserveService.recordPerformanceMetrics(metrics, { framework: 'nestjs' });
+
     return metrics;
   }
 }
@@ -270,28 +260,34 @@ export class EmailVerificationInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();
     const startTime = Date.now();
-    
+
     // 记录请求开始
-    this.openObserveService.recordPerformanceMetrics({
-      endpoint: `${request.method} ${request.path}`,
-      statusCode: 0,
-      duration: 0,
-      ip: request.ip,
-      userAgent: request.headers['user-agent'],
-    }, { framework: 'nestjs', interceptor: 'pre' });
+    this.openObserveService.recordPerformanceMetrics(
+      {
+        endpoint: `${request.method} ${request.path}`,
+        statusCode: 0,
+        duration: 0,
+        ip: request.ip,
+        userAgent: request.headers['user-agent'],
+      },
+      { framework: 'nestjs', interceptor: 'pre' },
+    );
 
     return next.handle().pipe(
       tap(() => {
         const duration = Date.now() - startTime;
-        
+
         // 记录请求完成
-        this.openObserveService.recordPerformanceMetrics({
-          endpoint: `${request.method} ${request.path}`,
-          statusCode: context.switchToHttp().getResponse().statusCode,
-          duration,
-          ip: request.ip,
-          userAgent: request.headers['user-agent'],
-        }, { framework: 'nestjs', interceptor: 'post' });
+        this.openObserveService.recordPerformanceMetrics(
+          {
+            endpoint: `${request.method} ${request.path}`,
+            statusCode: context.switchToHttp().getResponse().statusCode,
+            duration,
+            ip: request.ip,
+            userAgent: request.headers['user-agent'],
+          },
+          { framework: 'nestjs', interceptor: 'post' },
+        );
       }),
     );
   }
@@ -313,33 +309,34 @@ export class EmailVerificationExceptionFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse();
     const request = ctx.getRequest();
-    
+
     const status = exception.getStatus();
     const exceptionResponse = exception.getResponse();
-    
+
     // 记录错误
     this.logger.error(
       `${request.method} ${request.path} - ${status} - ${JSON.stringify(exceptionResponse)}`,
     );
-    
+
     // 发送错误到OpenObserve
     this.openObserveService.recordVerificationError(
       request.body?.email || 'unknown',
       exception,
       0,
-      { 
-        framework: 'nestjs', 
+      {
+        framework: 'nestjs',
         endpoint: `${request.method} ${request.path}`,
         statusCode: status,
-      }
+      },
     );
-    
+
     // 返回错误响应
     const errorResponse: ErrorResponse = {
       success: false,
-      error: typeof exceptionResponse === 'string' 
-        ? exceptionResponse 
-        : (exceptionResponse as any).message || 'Internal server error',
+      error:
+        typeof exceptionResponse === 'string'
+          ? exceptionResponse
+          : (exceptionResponse as any).message || 'Internal server error',
       code: (exceptionResponse as any).code || 'INTERNAL_ERROR',
       timestamp: new Date().toISOString(),
       path: request.url,
@@ -360,70 +357,70 @@ export class EmailValidationPipe implements PipeTransform {
       if (metadata.metatype?.name === 'VerifyEmailDto') {
         return this.validateVerifyEmailDto(value);
       }
-      
+
       // 验证批量邮箱验证请求
       if (metadata.metatype?.name === 'VerifyBatchEmailDto') {
         return this.validateVerifyBatchEmailDto(value);
       }
     }
-    
+
     return value;
   }
-  
+
   private validateVerifyEmailDto(value: any): VerifyEmailDto {
     if (!value.email || typeof value.email !== 'string') {
       throw new BadRequestException('Email address is required and must be a string');
     }
-    
+
     if (value.email.length > 254) {
       throw new BadRequestException('Email address too long');
     }
-    
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(value.email)) {
       throw new BadRequestException('Invalid email format');
     }
-    
+
     return value;
   }
-  
+
   private validateVerifyBatchEmailDto(value: any): VerifyBatchEmailDto {
     if (!Array.isArray(value.emails)) {
       throw new BadRequestException('Emails must be an array');
     }
-    
+
     if (value.emails.length === 0) {
       throw new BadRequestException('Emails array cannot be empty');
     }
-    
+
     if (value.emails.length > 1000) {
       throw new BadRequestException('Maximum 1000 emails per batch');
     }
-    
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     for (let i = 0; i < value.emails.length; i++) {
       const email = value.emails[i];
-      
+
       if (typeof email !== 'string') {
         throw new BadRequestException(`Email at index ${i} must be a string`);
       }
-      
+
       if (email.length > 254) {
         throw new BadRequestException(`Email at index ${i} too long`);
       }
-      
+
       if (!emailRegex.test(email)) {
         throw new BadRequestException(`Email at index ${i} has invalid format`);
       }
     }
-    
+
     return value;
   }
 }
 
 // 自定义装饰器函数
 export function EmailVerificationControllerDecorator() {
-  return function(target: any) {
+  return function (target: any) {
     SetMetadata(EMAIL_VERIFICATION_FILTER, EmailVerificationExceptionFilter)(target);
     SetMetadata(EMAIL_VERIFICATION_INTERCEPTOR, EmailVerificationInterceptor)(target);
     SetMetadata(EMAIL_VERIFICATION_PIPE, EmailValidationPipe)(target);
@@ -465,7 +462,9 @@ export class EmailVerificationController {
    */
   @Post('verify-batch')
   @HttpCode(HttpStatus.OK)
-  async verifyEmailBatch(verifyBatchEmailDto: VerifyBatchEmailDto): Promise<ApiResponse<BatchVerificationResult & { batchId: string }>> {
+  async verifyEmailBatch(
+    verifyBatchEmailDto: VerifyBatchEmailDto,
+  ): Promise<ApiResponse<BatchVerificationResult & { batchId: string }>> {
     const result = await this.emailVerificationService.verifyEmailBatch(
       verifyBatchEmailDto.emails,
       verifyBatchEmailDto.options,

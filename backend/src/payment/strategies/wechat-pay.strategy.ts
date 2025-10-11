@@ -1,8 +1,4 @@
-import {
-  PaymentStrategy,
-  PaymentRequest,
-  RefundRequest,
-} from './payment-strategy.interface';
+import { PaymentStrategy, PaymentRequest, RefundRequest } from './payment-strategy.interface';
 import {
   GatewayResult,
   CreatePaymentData,

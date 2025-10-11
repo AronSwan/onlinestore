@@ -41,13 +41,13 @@ export const AppDataSource = new DataSource({
     CustomerProfileEntity,
   ],
   migrations: [
-    ((process.env.MIGRATION_SCOPE === 'schema')
-      ? (isDev
+    process.env.MIGRATION_SCOPE === 'schema'
+      ? isDev
         ? 'src/database/migrations/2025100100000*.ts'
-        : 'dist/src/database/migrations/2025100100000*.js')
-      : (isDev
+        : 'dist/src/database/migrations/2025100100000*.js'
+      : isDev
         ? 'src/database/migrations/*.ts'
-        : 'dist/src/database/migrations/*.js')),
+        : 'dist/src/database/migrations/*.js',
   ],
   migrationsTableName: 'typeorm_migrations',
   synchronize: false, // 迁移模式下禁用自动同步

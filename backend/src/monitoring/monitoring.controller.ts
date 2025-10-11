@@ -21,7 +21,7 @@ export class MonitoringController {
   @ApiResponse({ status: 200, description: '健康状态' })
   async healthCheck(@Res() res: Response) {
     const health = await this.monitoringService.healthCheck();
-    
+
     // 根据健康状态设置HTTP状态码
     let statusCode = HttpStatus.OK;
     if (health.status === 'degraded') {
@@ -29,7 +29,7 @@ export class MonitoringController {
     } else if (health.status === 'critical') {
       statusCode = HttpStatus.SERVICE_UNAVAILABLE; // 503
     }
-    
+
     res.status(statusCode).json(health);
   }
 
@@ -49,7 +49,11 @@ export class MonitoringController {
 
   @Get('metrics/category')
   @ApiOperation({ summary: '按类别获取指标' })
-  @ApiQuery({ name: 'category', enum: ['http', 'database', 'cache', 'connections'], required: true })
+  @ApiQuery({
+    name: 'category',
+    enum: ['http', 'database', 'cache', 'connections'],
+    required: true,
+  })
   @ApiResponse({ status: 200, description: '指定类别的指标数据' })
   getMetricsByCategory(@Query('category') category: 'http' | 'database' | 'cache' | 'connections') {
     return this.metricsService.getMetricsByCategory(category);
@@ -112,50 +116,50 @@ export class MonitoringController {
   @ApiResponse({ status: 200, description: 'Prometheus格式的指标数据' })
   getPrometheusMetrics(@Res() res?: Response) {
     const metrics = this.metricsService.getMetrics();
-    
+
     // 转换为Prometheus格式
     let prometheusMetrics = '';
-    
+
     // HTTP请求总数
     prometheusMetrics += `# HELP http_requests_total Total number of HTTP requests\n`;
     prometheusMetrics += `# TYPE http_requests_total counter\n`;
     prometheusMetrics += `http_requests_total ${metrics.httpRequests.total}\n\n`;
-    
+
     // HTTP请求错误数
     prometheusMetrics += `# HELP http_requests_errors_total Total number of HTTP errors\n`;
     prometheusMetrics += `# TYPE http_requests_errors_total counter\n`;
     prometheusMetrics += `http_requests_errors_total ${metrics.httpRequestErrors.total}\n\n`;
-    
+
     // 平均响应时间
     prometheusMetrics += `# HELP http_request_duration_avg Average HTTP request duration in milliseconds\n`;
     prometheusMetrics += `# TYPE http_request_duration_avg gauge\n`;
     prometheusMetrics += `http_request_duration_avg ${metrics.derived.httpRequestDurationAvg}\n\n`;
-    
+
     // 错误率
     prometheusMetrics += `# HELP http_request_error_rate HTTP request error rate in percentage\n`;
     prometheusMetrics += `# TYPE http_request_error_rate gauge\n`;
     prometheusMetrics += `http_request_error_rate ${metrics.derived.errorRate}\n\n`;
-    
+
     // 数据库查询总数
     prometheusMetrics += `# HELP database_queries_total Total number of database queries\n`;
     prometheusMetrics += `# TYPE database_queries_total counter\n`;
     prometheusMetrics += `database_queries_total ${metrics.databaseQueries.total}\n\n`;
-    
+
     // 平均数据库查询时间
     prometheusMetrics += `# HELP database_query_duration_avg Average database query duration in milliseconds\n`;
     prometheusMetrics += `# TYPE database_query_duration_avg gauge\n`;
     prometheusMetrics += `database_query_duration_avg ${metrics.derived.databaseQueryDurationAvg}\n\n`;
-    
+
     // 缓存命中率
     prometheusMetrics += `# HELP cache_hit_rate Cache hit rate in percentage\n`;
     prometheusMetrics += `# TYPE cache_hit_rate gauge\n`;
     prometheusMetrics += `cache_hit_rate ${metrics.derived.cacheHitRate}\n\n`;
-    
+
     // 活跃连接数
     prometheusMetrics += `# HELP active_connections Number of active connections\n`;
     prometheusMetrics += `# TYPE active_connections gauge\n`;
     prometheusMetrics += `active_connections ${metrics.activeConnections}\n\n`;
-    
+
     if (res && typeof (res as any).send === 'function') {
       res.set?.('Content-Type', 'text/plain');
       (res as any).send(prometheusMetrics);

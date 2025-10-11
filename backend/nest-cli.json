@@ -5,7 +5,11 @@
   "compilerOptions": {
     "deleteOutDir": true,
     "watchAssets": true,
-    "assets": ["**/*.json", "**/*.md"],
+    "assets": [
+      "**/*.json",
+      "**/*.md",
+      { "include": "logging/openobserve-transport.js", "outDir": "dist/src" }
+    ],
     "plugins": [
       {
         "name": "@nestjs/swagger",

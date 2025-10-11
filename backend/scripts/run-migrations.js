@@ -16,7 +16,10 @@ async function run() {
     await appDataSource.initialize();
     console.log('✅ 数据库连接成功，开始运行迁移...');
     const results = await appDataSource.runMigrations();
-    console.log('✅ 迁移完成：', results.map(r => r.name));
+    console.log(
+      '✅ 迁移完成：',
+      results.map(r => r.name),
+    );
     await appDataSource.destroy();
     console.log('🔚 已关闭数据库连接');
   } catch (err) {

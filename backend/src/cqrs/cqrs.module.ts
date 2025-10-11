@@ -2,7 +2,15 @@
 // 作者：后端开发团队
 // 时间：2025-10-05
 
-import { DynamicModule, Module, OnModuleInit, OnModuleDestroy, Provider, Inject, Logger } from '@nestjs/common';
+import {
+  DynamicModule,
+  Module,
+  OnModuleInit,
+  OnModuleDestroy,
+  Provider,
+  Inject,
+  Logger,
+} from '@nestjs/common';
 import { DiscoveryModule, DiscoveryService } from '@nestjs/core';
 import { Reflector } from '@nestjs/core';
 import { COMMAND_HANDLER_METADATA } from './decorators/command-handler.decorator';
@@ -323,7 +331,7 @@ export class CqrsModule implements OnModuleInit, OnModuleDestroy {
     if (this.options.autoDiscoverHandlers !== false) {
       await this.discoverHandlers();
     }
-    
+
     if (this.options.enableDefaultMiddleware !== false) {
       this.setupDefaultMiddleware();
     }
@@ -393,13 +401,13 @@ export class CqrsModule implements OnModuleInit, OnModuleDestroy {
       // TODO: 将在阶段二实现中间件
       // this.queryBus.addMiddleware(new QueryLoggingMiddleware());
       // this.queryBus.addMiddleware(new PerformanceMonitoringMiddleware());
-      
+
       // 设置查询缓存（如果提供了）
       if (this.queryCache) {
         this.queryBus.setQueryCache(this.queryCache);
         this.logger.debug('Query cache configured for query bus');
       }
-      
+
       this.logger.debug('Query bus initialized with default middleware');
     }
 

@@ -11,11 +11,11 @@ const fs = require('fs');
 const path = require('path');
 
 // 导入要测试的函数
-const { 
+const {
   runSecurityCheck,
   parseExemptions,
   generateSARIFReport,
-  checkBlockingThresholds
+  checkBlockingThresholds,
 } = require('./security-check.js');
 
 // 测试用例
@@ -26,15 +26,15 @@ const testCases = [
     input: {
       rules: ['jwt-format-validation', 'password-field-exclusion'],
       format: 'json',
-      failOn: 'high'
+      failOn: 'high',
     },
     expected: {
       passed: true,
       results: {
         'jwt-format-validation': { passed: true },
-        'password-field-exclusion': { passed: true }
-      }
-    }
+        'password-field-exclusion': { passed: true },
+      },
+    },
   },
   {
     name: '豁免标记解析',
@@ -52,7 +52,7 @@ export class JwtAuthGuard {
 export class AuthGuard {
   // 代码实现
 }
-      `
+      `,
     },
     expected: {
       exemptions: [
@@ -62,7 +62,7 @@ export class AuthGuard {
           reason: '兼容性问题',
           approver: '安全团队',
           expiryDate: '2025-12-31',
-          isExpired: false
+          isExpired: false,
         },
         {
           type: 'VULN',
@@ -70,10 +70,10 @@ export class AuthGuard {
           reason: '临时方案',
           approver: '技术负责人',
           expiryDate: '2025-11-30',
-          isExpired: false
-        }
-      ]
-    }
+          isExpired: false,
+        },
+      ],
+    },
   },
   {
     name: 'SARIF报告生成',
@@ -88,10 +88,10 @@ export class AuthGuard {
             {
               physicalLocation: {
                 artifactLocation: { uri: 'src/auth/jwt-auth.guard.ts' },
-                region: { startLine: 10, endLine: 15 }
-              }
-            }
-          ]
+                region: { startLine: 10, endLine: 15 },
+              },
+            },
+          ],
         },
         {
           ruleId: 'password-field-exclusion',
@@ -101,12 +101,12 @@ export class AuthGuard {
             {
               physicalLocation: {
                 artifactLocation: { uri: 'src/user/user.entity.ts' },
-                region: { startLine: 5, endLine: 8 }
-              }
-            }
-          ]
-        }
-      ]
+                region: { startLine: 5, endLine: 8 },
+              },
+            },
+          ],
+        },
+      ],
     },
     expected: {
       version: '2.1.0',
@@ -117,8 +117,8 @@ export class AuthGuard {
             driver: {
               name: 'security-check',
               version: '1.0.0',
-              informationUri: 'https://github.com/example/security-check'
-            }
+              informationUri: 'https://github.com/example/security-check',
+            },
           },
           results: [
             {
@@ -129,10 +129,10 @@ export class AuthGuard {
                 {
                   physicalLocation: {
                     artifactLocation: { uri: 'src/auth/jwt-auth.guard.ts' },
-                    region: { startLine: 10, endLine: 15 }
-                  }
-                }
-              ]
+                    region: { startLine: 10, endLine: 15 },
+                  },
+                },
+              ],
             },
             {
               ruleId: 'password-field-exclusion',
@@ -142,15 +142,15 @@ export class AuthGuard {
                 {
                   physicalLocation: {
                     artifactLocation: { uri: 'src/user/user.entity.ts' },
-                    region: { startLine: 5, endLine: 8 }
-                  }
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    }
+                    region: { startLine: 5, endLine: 8 },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
   },
   {
     name: '阻断阈值检查',
@@ -160,18 +160,18 @@ export class AuthGuard {
         critical: 1,
         high: 2,
         medium: 5,
-        low: 10
+        low: 10,
       },
       thresholds: {
         critical: 1,
         high: 3,
-        medium: 10
-      }
+        medium: 10,
+      },
     },
     expected: {
       blocked: true,
-      reasons: ['严重漏洞数量达到阈值 (1)']
-    }
+      reasons: ['严重漏洞数量达到阈值 (1)'],
+    },
   },
   {
     name: '警告阈值检查',
@@ -181,35 +181,35 @@ export class AuthGuard {
         critical: 0,
         high: 2,
         medium: 5,
-        low: 10
+        low: 10,
       },
       thresholds: {
         critical: 1,
         high: 3,
-        medium: 10
-      }
+        medium: 10,
+      },
     },
     expected: {
       blocked: false,
-      warnings: ['高危漏洞数量达到警告阈值 (2)']
-    }
-  }
+      warnings: ['高危漏洞数量达到警告阈值 (2)'],
+    },
+  },
 ];
 
 // 测试函数
 function runTests() {
   console.log('开始运行安全检查脚本测试...\n');
-  
+
   let passedTests = 0;
-  let totalTests = testCases.length;
-  
+  const totalTests = testCases.length;
+
   for (const testCase of testCases) {
     console.log(`测试: ${testCase.name}`);
     console.log(`描述: ${testCase.description}`);
-    
+
     try {
       let result;
-      
+
       switch (testCase.name) {
         case '基本安全检查':
           result = runSecurityCheck(testCase.input);
@@ -222,14 +222,16 @@ function runTests() {
             console.log(`  实际: ${result.passed}`);
           }
           break;
-          
+
         case '豁免标记解析':
           result = parseExemptions(testCase.input.fileContent);
           if (result.length === testCase.expected.exemptions.length) {
             let allMatch = true;
             for (let i = 0; i < result.length; i++) {
-              if (result[i].type !== testCase.expected.exemptions[i].type ||
-                  result[i].id !== testCase.expected.exemptions[i].id) {
+              if (
+                result[i].type !== testCase.expected.exemptions[i].type ||
+                result[i].id !== testCase.expected.exemptions[i].id
+              ) {
                 allMatch = false;
                 break;
               }
@@ -247,11 +249,13 @@ function runTests() {
             console.log(`  实际: ${result.length} 个豁免标记`);
           }
           break;
-          
+
         case 'SARIF报告生成':
           result = generateSARIFReport(testCase.input.results);
-          if (result.version === testCase.expected.version &&
-              result.runs.length === testCase.expected.runs.length) {
+          if (
+            result.version === testCase.expected.version &&
+            result.runs.length === testCase.expected.runs.length
+          ) {
             console.log('✓ 通过');
             passedTests++;
           } else {
@@ -259,7 +263,7 @@ function runTests() {
             console.log('  SARIF报告格式不正确');
           }
           break;
-          
+
         case '阻断阈值检查':
         case '警告阈值检查':
           result = checkBlockingThresholds(testCase.input.results, testCase.input.thresholds);
@@ -272,20 +276,20 @@ function runTests() {
             console.log(`  实际阻断: ${result.blocked}`);
           }
           break;
-          
+
         default:
           console.log('✗ 失败 - 未知测试用例');
       }
     } catch (error) {
       console.log('✗ 失败 - 异常:', error.message);
     }
-    
+
     console.log('');
   }
-  
+
   // 输出测试结果
   console.log(`测试结果: ${passedTests}/${totalTests} 通过`);
-  
+
   if (passedTests === totalTests) {
     console.log('🎉 所有测试通过！');
     process.exit(0);

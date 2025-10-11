@@ -19,18 +19,18 @@ function updateHeatmapSection(content, svgPath, language = 'zh') {
   const config = DEFAULT_CONFIG.localization;
   const labels = config.labels[language] || config.labels.zh;
   const anchors = config.anchors;
-  
+
   // 创建多种可能的锚点匹配模式
   const anchorPatterns = anchors.heatmapSection.map(anchor => {
     // 转义特殊字符并创建正则表达式
     const escaped = anchor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     return new RegExp(`${escaped}\\n([\\s\\S]*?)(?=\\n## |\\n$)`);
   });
-  
+
   // 尝试匹配任何一种锚点模式
   let match = null;
   let matchedPattern = null;
-  
+
   for (const pattern of anchorPatterns) {
     match = content.match(pattern);
     if (match) {
@@ -38,23 +38,23 @@ function updateHeatmapSection(content, svgPath, language = 'zh') {
       break;
     }
   }
-  
+
   // 生成默认热力图段落
   const defaultSection = generateDefaultHeatmapSection(svgPath, labels, anchors);
-  
+
   if (match) {
     // 如果找到现有部分，保留用户自定义备注
     const existingSection = match[0];
-    
+
     // 检查是否有任何一种自动生成内容标记
     const autoGenPatterns = [
       new RegExp(`${anchors.autoGenStart}[\\s\\S]*?${anchors.autoGenEnd}`),
-      new RegExp(`${anchors.autoGenStartEn}[\\s\\S]*?${anchors.autoGenEndEn}`)
+      new RegExp(`${anchors.autoGenStartEn}[\\s\\S]*?${anchors.autoGenEndEn}`),
     ];
-    
+
     let autoGenMatch = null;
     let usedAnchor = null;
-    
+
     for (const pattern of autoGenPatterns) {
       autoGenMatch = existingSection.match(pattern);
       if (autoGenMatch) {
@@ -62,10 +62,17 @@ function updateHeatmapSection(content, svgPath, language = 'zh') {
         break;
       }
     }
-    
+
     if (autoGenMatch) {
       // 如果有标记，只替换标记之间的内容
-      return updateSectionWithMarkers(existingSection, matchedPattern, svgPath, labels, anchors, usedAnchor);
+      return updateSectionWithMarkers(
+        existingSection,
+        matchedPattern,
+        svgPath,
+        labels,
+        anchors,
+        usedAnchor,
+      );
     } else {
       // 如果没有标记，添加标记并替换图片链接
       return updateSectionWithoutMarkers(existingSection, matchedPattern, svgPath, labels, anchors);
@@ -113,18 +120,27 @@ ${anchors.autoGenEnd}`;
  * @param {string} usedAnchor - 使用的锚点
  * @returns {string} 更新后的内容
  */
-function updateSectionWithMarkers(existingSection, matchedPattern, svgPath, labels, anchors, usedAnchor) {
+function updateSectionWithMarkers(
+  existingSection,
+  matchedPattern,
+  svgPath,
+  labels,
+  anchors,
+  usedAnchor,
+) {
   const userContent = existingSection.replace(
-    new RegExp(`${usedAnchor === 'en' ? anchors.autoGenStartEn : anchors.autoGenStart}[\\s\\S]*?${usedAnchor === 'en' ? anchors.autoGenEndEn : anchors.autoGenEnd}`),
-    ''
+    new RegExp(
+      `${usedAnchor === 'en' ? anchors.autoGenStartEn : anchors.autoGenStart}[\\s\\S]*?${usedAnchor === 'en' ? anchors.autoGenEndEn : anchors.autoGenEnd}`,
+    ),
+    '',
   );
-  
+
   const startMarker = usedAnchor === 'en' ? anchors.autoGenStartEn : anchors.autoGenStart;
   const endMarker = usedAnchor === 'en' ? anchors.autoGenEndEn : anchors.autoGenEnd;
   const newAutoGenContent = `${startMarker}
 ![${labels.heatmapTitle}](${svgPath})
 ${endMarker}`;
-  
+
   return existingSection.replace(matchedPattern, userContent + newAutoGenContent);
 }
 
@@ -142,21 +158,21 @@ function updateSectionWithoutMarkers(existingSection, matchedPattern, svgPath, l
   const imagePatterns = [
     new RegExp(`!\\[${labels.heatmapTitle}\\]\\(docs\\/security-risk-heatmap\\.svg\\)`),
     new RegExp(`!\\[风险热力图\\]\\(docs\\/security-risk-heatmap\\.svg\\)`),
-    new RegExp(`!\\[Risk Heatmap\\]\\(docs\\/security-risk-heatmap\\.svg\\)`)
+    new RegExp(`!\\[Risk Heatmap\\]\\(docs\\/security-risk-heatmap\\.svg\\)`),
   ];
-  
+
   let updatedSection = existingSection;
   for (const pattern of imagePatterns) {
     updatedSection = updatedSection.replace(pattern, `![${labels.heatmapTitle}](${svgPath})`);
   }
-  
+
   // 添加自动生成标记
   const ciPattern = new RegExp(`(\\*\\*${labels.ciIntegration}\\*\\*:.*)`);
   const markedSection = updatedSection.replace(
     ciPattern,
-    `$1\n\n${anchors.autoGenStart}\n${anchors.autoGenEnd}`
+    `$1\n\n${anchors.autoGenStart}\n${anchors.autoGenEnd}`,
   );
-  
+
   return markedSection;
 }
 
@@ -167,33 +183,34 @@ function updateSectionWithoutMarkers(existingSection, matchedPattern, svgPath, l
  * @returns {Object} 验证结果
  */
 function validateHeatmapSection(content, language = 'zh') {
-  const labels = DEFAULT_CONFIG.localization.labels[language] || DEFAULT_CONFIG.localization.labels.zh;
+  const labels =
+    DEFAULT_CONFIG.localization.labels[language] || DEFAULT_CONFIG.localization.labels.zh;
   const anchors = DEFAULT_CONFIG.localization.anchors;
-  
+
   // 检查是否有热力图部分
   const hasHeatmapSection = anchors.heatmapSection.some(anchor => {
     const escaped = anchor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const pattern = new RegExp(`${escaped}`);
     return pattern.test(content);
   });
-  
+
   // 检查是否有自动生成标记
-  const hasAutoGenMarkers = 
-    content.includes(anchors.autoGenStart) && content.includes(anchors.autoGenEnd) ||
-    content.includes(anchors.autoGenStartEn) && content.includes(anchors.autoGenEndEn);
-  
+  const hasAutoGenMarkers =
+    (content.includes(anchors.autoGenStart) && content.includes(anchors.autoGenEnd)) ||
+    (content.includes(anchors.autoGenStartEn) && content.includes(anchors.autoGenEndEn));
+
   // 检查是否有图片链接
   const hasImageLink = content.includes(`![${labels.heatmapTitle}](`);
-  
+
   return {
     hasHeatmapSection,
     hasAutoGenMarkers,
     hasImageLink,
-    isValid: hasHeatmapSection && hasAutoGenMarkers && hasImageLink
+    isValid: hasHeatmapSection && hasAutoGenMarkers && hasImageLink,
   };
 }
 
 module.exports = {
   updateHeatmapSection,
-  validateHeatmapSection
+  validateHeatmapSection,
 };

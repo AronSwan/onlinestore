@@ -69,7 +69,7 @@ export class CqrsMetricsService implements OnModuleDestroy {
     buckets?: number[],
   ): void {
     const baseLabels: Record<string, string> = { ...(labels || {}) };
-    const usedBuckets = (buckets && buckets.length ? buckets : this.getHistogramBuckets(name));
+    const usedBuckets = buckets && buckets.length ? buckets : this.getHistogramBuckets(name);
 
     // 累计桶：对所有上界 >= value 的桶递增 1
     for (const upperBound of usedBuckets) {
@@ -91,7 +91,9 @@ export class CqrsMetricsService implements OnModuleDestroy {
   getHistogramBuckets(name: string): number[] {
     // 针对 SWR 刷新耗时配置
     if (name === 'cqrs_swr_refresh_duration_ms') {
-      return this.config.metrics?.histogramBuckets?.swrRefreshMs || CqrsMetricsService.DEFAULT_BUCKETS;
+      return (
+        this.config.metrics?.histogramBuckets?.swrRefreshMs || CqrsMetricsService.DEFAULT_BUCKETS
+      );
     }
     return CqrsMetricsService.DEFAULT_BUCKETS;
   }
@@ -99,10 +101,16 @@ export class CqrsMetricsService implements OnModuleDestroy {
   /**
    * 记录命令指标
    */
-  recordCommand(type: string, status: 'success' | 'error', durationMs: number, handler: string, retryCount: number = 0): void {
+  recordCommand(
+    type: string,
+    status: 'success' | 'error',
+    durationMs: number,
+    handler: string,
+    retryCount: number = 0,
+  ): void {
     this.incrementCounter('cqrs_command_total', 1, { type, status });
     this.recordHistogram('cqrs_command_duration_ms', durationMs, { type, handler });
-    
+
     if (retryCount > 0) {
       this.incrementCounter('cqrs_command_retry_total', 1, { type });
       this.recordHistogram('cqrs_command_retry_count', retryCount, { type });
@@ -120,12 +128,24 @@ export class CqrsMetricsService implements OnModuleDestroy {
   /**
    * 记录事件指标
    */
-  recordEvent(type: string, status: 'published' | 'handled' | 'error', durationMs: number, subscriber?: string): void {
+  recordEvent(
+    type: string,
+    status: 'published' | 'handled' | 'error',
+    durationMs: number,
+    subscriber?: string,
+  ): void {
     this.incrementCounter('cqrs_event_published_total', 1, { type });
-    
+
     if (status === 'handled') {
-      this.incrementCounter('cqrs_event_handle_total', 1, { type, status, subscriber: subscriber || 'unknown' });
-      this.recordHistogram('cqrs_event_handle_duration_ms', durationMs, { type, subscriber: subscriber || 'unknown' });
+      this.incrementCounter('cqrs_event_handle_total', 1, {
+        type,
+        status,
+        subscriber: subscriber || 'unknown',
+      });
+      this.recordHistogram('cqrs_event_handle_duration_ms', durationMs, {
+        type,
+        subscriber: subscriber || 'unknown',
+      });
     } else if (status === 'error') {
       this.incrementCounter('cqrs_event_dlq_total', 1, { type });
     }
@@ -134,7 +154,12 @@ export class CqrsMetricsService implements OnModuleDestroy {
   /**
    * 记录运行时指标
    */
-  recordRuntimeMetric(kind: string, name: string, value: number, labels?: Record<string, string>): void {
+  recordRuntimeMetric(
+    kind: string,
+    name: string,
+    value: number,
+    labels?: Record<string, string>,
+  ): void {
     this.recordHistogram(`cqrs_${kind}_${name}`, value, labels || {});
   }
 
@@ -143,7 +168,7 @@ export class CqrsMetricsService implements OnModuleDestroy {
    */
   private addMetric(metric: MetricData): void {
     this.metricsBuffer.push(metric);
-    
+
     // 如果缓冲区满了，立即刷新
     if (this.metricsBuffer.length >= this.config.performance.batchSize) {
       this.flushMetrics();
@@ -188,11 +213,11 @@ export class CqrsMetricsService implements OnModuleDestroy {
       for (const logEntry of logData) {
         this.openObserveTransport.log(logEntry);
       }
-      
+
       this.logger.debug(`Flushed ${metrics.length} metrics to OpenObserve`);
     } catch (error) {
       this.logger.error('Failed to flush metrics to OpenObserve', error);
-      
+
       // 将指标放回缓冲区，以便下次重试
       this.metricsBuffer.unshift(...metrics);
     }
@@ -205,7 +230,7 @@ export class CqrsMetricsService implements OnModuleDestroy {
     if (this.flushTimer) {
       clearInterval(this.flushTimer);
     }
-    
+
     // 刷新剩余指标
     this.flushMetrics();
   }

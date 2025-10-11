@@ -57,7 +57,7 @@ describe('CqrsMetricsService', () => {
 
     // Manually trigger flush to simplify timing in tests
     // @ts-ignore access private for test
-    await service["flushMetrics"]();
+    await service['flushMetrics']();
 
     expect(mockTransport.log).toHaveBeenCalled();
     // At least some entries should contain metric_name
@@ -71,19 +71,21 @@ describe('CqrsMetricsService', () => {
 
   it('negative-path: when transport.log throws, metrics are re-buffered', async () => {
     // Make log throw
-    mockTransport.log.mockImplementation(() => { throw new Error('network error'); });
+    mockTransport.log.mockImplementation(() => {
+      throw new Error('network error');
+    });
 
     service.recordQuery('GetProduct', false, 120, 'GetProductHandler');
 
     // snapshot buffer length before flush
     // @ts-ignore access private for test
-    const beforeLen = service["metricsBuffer"].length;
+    const beforeLen = service['metricsBuffer'].length;
     // @ts-ignore access private for test
-    await service["flushMetrics"]();
+    await service['flushMetrics']();
 
     // After failure, metrics should be put back to buffer
     // @ts-ignore access private for test
-    const afterLen = service["metricsBuffer"].length;
+    const afterLen = service['metricsBuffer'].length;
     expect(afterLen).toBeGreaterThanOrEqual(beforeLen);
   });
 });

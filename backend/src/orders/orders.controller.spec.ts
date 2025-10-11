@@ -18,7 +18,8 @@ describe('OrdersController', () => {
     findOne: createMockedFunction<(id: number | string) => Promise<any>>(),
     update: createMockedFunction<(id: number | string, dto: any) => Promise<any>>(),
     remove: createMockedFunction<(id: number | string) => Promise<{ affected?: number }>>(),
-    findByUserId: createMockedFunction<(userId: number | string, pagination?: any) => Promise<any>>(),
+    findByUserId:
+      createMockedFunction<(userId: number | string, pagination?: any) => Promise<any>>(),
     updateStatus: createMockedFunction<(id: number | string, status: any) => Promise<any>>(),
     getStatistics: createMockedFunction<(range?: any) => Promise<{ total: number }>>(),
     findById: createMockedFunction<(id: number | string) => Promise<any>>(),
@@ -155,7 +156,9 @@ describe('OrdersController', () => {
 
       jest.spyOn(ordersService, 'create').mockRejectedValue(new NotFoundException('用户不存在'));
 
-      await expect(controller.create(createOrderDto)).rejects.toThrow(new NotFoundException('用户不存在'));
+      await expect(controller.create(createOrderDto)).rejects.toThrow(
+        new NotFoundException('用户不存在'),
+      );
     });
 
     it('should throw error for invalid product', async () => {
@@ -179,7 +182,9 @@ describe('OrdersController', () => {
 
       jest.spyOn(ordersService, 'create').mockRejectedValue(new NotFoundException('产品不存在'));
 
-      await expect(controller.create(createOrderDto)).rejects.toThrow(new NotFoundException('产品不存在'));
+      await expect(controller.create(createOrderDto)).rejects.toThrow(
+        new NotFoundException('产品不存在'),
+      );
     });
 
     it('should throw error for insufficient stock', async () => {
@@ -203,7 +208,9 @@ describe('OrdersController', () => {
 
       jest.spyOn(ordersService, 'create').mockRejectedValue(new BadRequestException('库存不足'));
 
-      await expect(controller.create(createOrderDto)).rejects.toThrow(new BadRequestException('库存不足'));
+      await expect(controller.create(createOrderDto)).rejects.toThrow(
+        new BadRequestException('库存不足'),
+      );
     });
 
     it('should validate required fields', async () => {
@@ -462,7 +469,9 @@ describe('OrdersController', () => {
         .spyOn(ordersService, 'findByUserId')
         .mockRejectedValue(new NotFoundException('用户不存在'));
 
-      await expect(controller.findByUserId(userId, 1, 10)).rejects.toThrow(new NotFoundException('用户不存在'));
+      await expect(controller.findByUserId(userId, 1, 10)).rejects.toThrow(
+        new NotFoundException('用户不存在'),
+      );
     });
 
     it('should handle pagination parameters', async () => {
@@ -705,7 +714,9 @@ describe('OrdersController', () => {
 
       jest.spyOn(ordersService, 'update').mockRejectedValue(new Error('无效的订单状态'));
 
-      await expect(controller.update(1, invalidUpdateDto)).rejects.toThrow(new Error('无效的订单状态'));
+      await expect(controller.update(1, invalidUpdateDto)).rejects.toThrow(
+        new Error('无效的订单状态'),
+      );
     });
 
     it('should not allow update of immutable fields', async () => {
