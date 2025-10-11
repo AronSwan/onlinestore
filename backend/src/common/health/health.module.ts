@@ -4,6 +4,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { HealthCheckService } from './health-check.service';
 import { DependencyCheckersService } from './dependency-checkers.service';
+import { NoopDependencyCheckersService } from './dependency-checkers.noop.service';
 import { HealthController } from './health.controller';
 
 // 健康检查模块配置选项
@@ -103,9 +104,12 @@ export class HealthModule {
     const controllers: any[] = [];
     const exports: any[] = [HealthCheckService];
 
-    // 添加依赖检查器服务
+    // 添加依赖检查器服务或提供 Noop 后备
     if (enableDependencyCheckers) {
       providers.push(DependencyCheckersService);
+      exports.push(DependencyCheckersService);
+    } else {
+      providers.push({ provide: DependencyCheckersService, useClass: NoopDependencyCheckersService });
       exports.push(DependencyCheckersService);
     }
 
@@ -160,9 +164,12 @@ export class HealthModule {
     const controllers: any[] = [];
     const exports: any[] = [HealthCheckService];
 
-    // 添加依赖检查器服务
+    // 添加依赖检查器服务或提供 Noop 后备
     if (enableDependencyCheckers) {
       providers.push(DependencyCheckersService);
+      exports.push(DependencyCheckersService);
+    } else {
+      providers.push({ provide: DependencyCheckersService, useClass: NoopDependencyCheckersService });
       exports.push(DependencyCheckersService);
     }
 
