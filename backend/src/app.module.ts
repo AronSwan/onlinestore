@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from 'src/app.controller';
 import { AppService } from 'src/app.service';
 import { LoggingModule } from './logging/logging.module';
+import { MonitoringModule } from './monitoring/monitoring.module';
 import { createMasterConfiguration } from './config/unified-master.config';
 
 @Module({
@@ -11,8 +12,8 @@ import { createMasterConfiguration } from './config/unified-master.config';
     // 配置模块
     ConfigModule.forRoot({
       isGlobal: true,
-      // 仅加载 .env.local，避免 .env 目录导致的读取错误
-      envFilePath: ['.env.local'],
+      // 加载环境变量文件，优先级从高到低
+      envFilePath: ['.env.local', '.env', '../.env'],
       // 不忽略环境文件，确保变量被加载
       ignoreEnvFile: false,
       load: [createMasterConfiguration],
@@ -22,29 +23,56 @@ import { createMasterConfiguration } from './config/unified-master.config';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
-        const dbType = configService.get('database.type', 'sqlite') as any;
-        const database = configService.get('database.database');
+        // 使用统一主配置
+        const masterConfig = configService.get('master');
+        const dbConfig = masterConfig?.database;
+        
+        if (!dbConfig) {
+          throw new Error('数据库配置未找到');
+        }
 
-        // 确保database字段是字符串类型
-        const databaseValue = typeof database === 'string' ? database : String(database);
-
-        return {
-          type: dbType,
-          host: configService.get('database.host'),
-          port: configService.get('database.port'),
-          username: configService.get('database.username'),
-          password: configService.get('database.password'),
-          database: databaseValue,
-          entities: [__dirname + '/**/*.entity{.ts,.js}'],
-          synchronize: configService.get('database.synchronize', false),
-          logging: configService.get('database.logging', false),
+        const config = {
+          type: dbConfig.type,
+          database: dbConfig.database,
+          entities: [
+            // 使用基础设施层的 TypeORM 实体
+            __dirname + '/users/infrastructure/persistence/typeorm/*.entity{.ts,.js}',
+            __dirname + '/users/infrastructure/entities/*.entity{.ts,.js}',
+            __dirname + '/address/infrastructure/entities/*.entity{.ts,.js}',
+            __dirname + '/basic-data/infrastructure/entities/*.entity{.ts,.js}',
+            __dirname + '/cart/infrastructure/entities/*.entity{.ts,.js}',
+            __dirname + '/auth/**/*.entity{.ts,.js}',
+            __dirname + '/orders/entities/*.entity{.ts,.js}',
+            __dirname + '/products/entities/*.entity{.ts,.js}',
+            __dirname + '/payment/entities/*.entity{.ts,.js}',
+            __dirname + '/notification/entities/*.entity{.ts,.js}',
+            __dirname + '/common/audit/entities/*.entity{.ts,.js}',
+            __dirname + '/monitoring/*.service{.ts,.js}',
+          ],
+          synchronize: dbConfig.synchronize,
+          logging: dbConfig.logging,
         };
+
+        // 非 SQLite 数据库需要连接参数
+        if (dbConfig.type !== 'sqlite') {
+          Object.assign(config, {
+            host: dbConfig.host,
+            port: dbConfig.port,
+            username: dbConfig.username,
+            password: dbConfig.password,
+          });
+        }
+
+        return config;
       },
       inject: [ConfigService],
     }),
 
     // 日志模块
     LoggingModule,
+
+    // 监控模块
+    MonitoringModule,
 
     // 其他模块可以在这里添加
   ],

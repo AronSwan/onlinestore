@@ -14,10 +14,10 @@ export class RolePermissionEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column('varchar', { length: 36 })
+  @Column('uuid')
   roleId: string;
 
-  @Column('varchar', { length: 36 })
+  @Column('uuid')
   permissionId: string;
 
   @ManyToOne(() => RoleEntity)

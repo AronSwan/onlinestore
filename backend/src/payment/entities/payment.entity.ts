@@ -100,13 +100,13 @@ export class Payment {
   @Column({ type: 'varchar', nullable: true, length: 512 })
   failureReason: string | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   paidAt: Date | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   expiredAt: Date | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   refundedAt: Date | null;
 
   @Column('decimal', { precision: 18, scale: 8, nullable: true })
