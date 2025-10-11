@@ -325,40 +325,7 @@ tags: ["documentation", "backend", "microservice", "nestjs"]
 - [🏆 **最佳实践集**](./learning/README.md) - 开发最佳实践
 - [🔧 **运维技能培训**](./OPERATIONS_GUIDE.md) - 运维技能提升
 
-## 🗂️ Paperless-NGX 文档管理系统
 
-### 📋 部署与配置
-<table>
-<tr>
-<td width="50%">
-
-**🚀 快速部署**
-- [📖 部署指南](./PAPERLESS_NGX_DEPLOYMENT_GUIDE.md) - 完整的部署和配置指南
-- [✅ 设置检查清单](./PAPERLESS_SETUP_CHECKLIST.md) - 部署和配置验证清单
-- [🔧 集成指南](./PAPERLESS_INTEGRATION_GUIDE.md) - 与后端系统的集成方案
-- [🛠️ 故障排除](./TROUBLESHOOTING_GUIDE.md) - 常见问题解决方案
-
-</td>
-<td width="50%">
-
-**⚡ 快速操作**
-- 🚀 **一键部署**: `npm run paperless:deploy`
-- 🔍 **健康检查**: `npm run paperless:health`
-- 📊 **查看日志**: `npm run paperless:logs`
-- 💾 **数据备份**: `npm run paperless:backup`
-
-</td>
-</tr>
-</table>
-
-### 🎯 核心功能
-| 功能模块 | 状态 | 描述 | 集成度 | 文档链接 |
-|----------|------|------|--------|----------|
-| 📄 **文档上传** | ✅ 可用 | 支持PDF、图片等多种格式 | 100% | [📖 使用指南](./PAPERLESS_INTEGRATION_GUIDE.md#文档上传) |
-| 🔍 **智能搜索** | ✅ 可用 | OCR文字识别和全文搜索 | 95% | [📖 搜索功能](./PAPERLESS_INTEGRATION_GUIDE.md#搜索集成) |
-| 🏷️ **自动分类** | ✅ 可用 | 基于规则的自动标签和分类 | 90% | [📖 分类规则](./PAPERLESS_INTEGRATION_GUIDE.md#自动分类) |
-| 🔐 **权限控制** | ✅ 可用 | 基于用户角色的访问控制 | 85% | [📖 权限管理](./PAPERLESS_INTEGRATION_GUIDE.md#权限管理) |
-| 📊 **API集成** | ✅ 可用 | RESTful API完整集成 | 100% | [📖 API文档](./PAPERLESS_INTEGRATION_GUIDE.md#api-集成) |
 
 ---
 

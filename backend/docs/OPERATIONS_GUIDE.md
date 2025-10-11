@@ -3,7 +3,7 @@
 ## 📋 概述
 本文档为运维人员提供文档系统相关脚本的详细使用说明，帮助快速定位和运行各种自动化工具。
 
-## 🔗 Paperless-NGX 文档管理系统集成
+
 
 ### 快速开始
 
@@ -23,8 +23,7 @@ npm run docs:system:init
 npm run docs:system:start
 ```
 
-#### 4. 访问 Paperless-NGX
-- URL: http://localhost:8000
+
 - 用户名: admin
 - 密码: admin123
 
@@ -41,8 +40,7 @@ npm run docs:integration:import
 # 实时监控文档变化
 npm run docs:integration:watch
 
-# 检查 Paperless-NGX 状态
-npm run docs:integration:status
+
 ```
 
 #### 同步守护进程
@@ -75,25 +73,7 @@ npm run docs:system:restart
 npm run docs:system:stop
 ```
 
-### Paperless-NGX 服务管理
 
-#### 本地服务控制
-```bash
-# 启动服务
-npm run paperless:start
-
-# 停止服务
-npm run paperless:stop-local
-
-# 重启服务
-npm run paperless:restart-local
-
-# 查看状态
-npm run paperless:status-local
-
-# 查看日志
-npm run paperless:logs-local
-```
 
 ## 🔧 可用脚本清单
 
@@ -354,7 +334,7 @@ npm run docs:coordination-check -- --max-memory=4096
 ## 📝 更新日志
 - 2024-10-05: 创建运维指南，集成所有脚本使用说明
 - 2024-10-05: 优化脚本路径配置，修复协调性问题
-- 2024-10-05: 添加故障排除和FAQ章节，基于paperless-ngx最佳实践
+- 2024-10-05: 添加故障排除和FAQ章节
 
 ---
 *最后更新: 2024-10-05*
