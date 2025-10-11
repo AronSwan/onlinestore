@@ -377,6 +377,37 @@ curl http://localhost:5080/health
 
 本项目基于NextChat开源协议，遵循相应的开源许可条款。
 
+## 安全指南
+
+本项目配置了多层安全防护机制，防止敏感文件被意外提交。
+
+📚 **详细文档**: [安全和敏感文件保护指南](.github/SECURITY_GUIDE.md)
+
+### 快速设置
+
+**安装 Git 安全钩子**（防止本地提交敏感文件）:
+
+Linux/MacOS/Git Bash:
+```bash
+cd .github/hooks
+chmod +x install-hooks.sh
+./install-hooks.sh
+```
+
+Windows:
+```cmd
+cd .github\hooks
+install-hooks.bat
+```
+
+### 保护的内容
+- ✅ SSH 私钥和证书
+- ✅ .env 环境变量文件
+- ✅ API 令牌和密钥
+- ✅ 项目特定敏感文件
+
+更多信息请参阅 [完整安全指南](.github/SECURITY_GUIDE.md)。
+
 ## 联系方式
 
 如有技术问题或功能建议，请联系开发团队。
