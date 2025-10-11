@@ -23,7 +23,7 @@ export class UserSessionEntity {
   @Column({ type: 'int', default: 0 })
   version!: number;
 
-  @Column({ type: 'datetime' })
+  @Column({ type: 'timestamp' })
   expiresAt!: Date;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
@@ -32,9 +32,9 @@ export class UserSessionEntity {
   @Column({ type: 'varchar', length: 45, nullable: true })
   ip!: string | null;
 
-  @CreateDateColumn({ type: 'datetime' })
+  @CreateDateColumn({ type: 'timestamp' })
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'datetime' })
+  @UpdateDateColumn({ type: 'timestamp' })
   updatedAt!: Date;
 }

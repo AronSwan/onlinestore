@@ -13,7 +13,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-import { User } from './user.entity';
+import { User } from '../../entities/user.entity';
 
 export enum CustomerLevel {
   BRONZE = 'bronze',
@@ -29,7 +29,7 @@ export class CustomerProfile {
   @ApiProperty({ description: '档案ID' })
   id: number;
 
-  @OneToOne(() => User)
+  @OneToOne(() => User, user => user.customerProfile)
   @JoinColumn({ name: 'user_id' })
   @ApiProperty({ description: '关联用户' })
   user: User;

@@ -82,13 +82,13 @@ export class Order {
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @Column({ name: 'shipped_at', type: 'datetime', nullable: true })
+  @Column({ name: 'shipped_at', type: 'timestamp', nullable: true })
   shippedAt?: Date;
 
-  @Column({ name: 'paid_at', type: 'datetime', nullable: true })
+  @Column({ name: 'paid_at', type: 'timestamp', nullable: true })
   paidAt?: Date;
 
-  @Column({ name: 'completed_at', type: 'datetime', nullable: true })
+  @Column({ name: 'completed_at', type: 'timestamp', nullable: true })
   completedAt?: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
