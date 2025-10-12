@@ -1,0 +1,28 @@
+# OpenObserve Pipeline 示例：邮箱脱敏与域名抽取（示例语法，请根据实际版本校对）
+# 目标：
+# - 掩码邮箱本地部分，保留域名
+# - 衍生 domain 字段（若缺失）
+# - 失败计数化（将 verify_error 转化为计数型指标字段，便于 PromQL/聚合）
+name: email_verification_sanitization
+enabled: true
+nodes:
+  - type: transform
+    config:
+      script: |
+        # 如果存在 email，则掩码邮箱并抽取域名
+        if exists(.email) {
+          .email_masked = replace!(.email, /(.).+(@.+)/, "$1***$2")
+          if !exists(.domain) {
+            m = match!(.email, /@(?<d>[^@]+)$/)
+            if m != null { .domain = m.d }
+          }
+        }
+        # 将失败转化为指标计数
+        if exists(.kind) && .kind == "verify_result" && exists(.reachable) && .reachable == "no" {
+          .metric_name = "verify_no_count"
+          .metric_value = 1
+        }
+        # 统一时间戳为 ISO8601（若需要）
+        if exists(.timestamp) {
+          .timestamp = to_string!(.timestamp)
+        }

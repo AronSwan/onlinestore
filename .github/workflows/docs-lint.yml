@@ -1,0 +1,52 @@
+name: Docs Lint (OpenObserve Saved Queries)
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Backend OpenObserve Tests"]
+    types: [completed]
+  push:
+    paths:
+      - 'docs/**'
+      - 'scripts/openobserve/lint-saved-queries.mjs'
+      - '.github/workflows/docs-lint.yml'
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'scripts/openobserve/lint-saved-queries.mjs'
+      - '.github/workflows/docs-lint.yml'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect changed docs paths
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            json:
+              - 'docs/research/openobserve/saved-queries/**/*.json'
+            md:
+              - 'docs/research/openobserve/**/*.md'
+
+      - name: Use Node.js 20.x
+        if: steps.changes.outputs.json == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Lint Saved Queries
+        if: steps.changes.outputs.json == 'true'
+        run: node scripts/openobserve/lint-saved-queries.mjs
+
+      - name: Check Markdown links (OpenObserve docs)
+        if: steps.changes.outputs.md == 'true'
+        uses: lycheeverse/lychee-action@v1
+        with:
+          args: --no-progress --accept 200,206,429 --include-fragments docs/research/openobserve/**/*.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

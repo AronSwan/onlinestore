@@ -1,49 +1,169 @@
-import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import axios from 'axios';
+import { Injectable, Logger } from '@nestjs/common';
+import { OpenObserveConfigService } from './config/openobserve-config.service';
+import { SecureQueryBuilder } from './utils/query-builder';
+import { OpenObserveError, RetryHandler, ErrorMetrics } from './utils/error-handler';
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import * as zlib from 'zlib';
+import { promisify } from 'util';
 
-export interface OpenObserveConfig {
-  url: string;
-  organization: string;
-  token?: string;
-  username?: string;
-  password?: string;
-}
+const gzip = promisify(zlib.gzip);
 
+/**
+ * 查询结果接口
+ */
 export interface QueryResult {
   data: any[];
   total: number;
   took: number;
   error?: string;
+  requestId?: string;
 }
 
+/**
+ * 数据写入结果接口
+ */
 export interface DataIngestionResult {
   success: boolean;
   message: string;
   count?: number;
   error?: string;
+  requestId?: string;
 }
 
+/**
+ * 系统健康状态接口
+ */
+export interface SystemHealth {
+  status: 'healthy' | 'unhealthy';
+  details: Record<string, any>;
+  responseTime?: number;
+  requestId?: string;
+}
+
+/**
+ * 数据统计接口
+ */
+export interface DataStatistics {
+  totalRecords: number;
+  streams: Record<string, number>;
+  storageSize: number;
+  ingestionRate: number;
+  requestId?: string;
+}
+
+/**
+ * 数据完整性验证结果接口
+ */
+export interface DataIntegrityResult {
+  valid: boolean;
+  issues: string[];
+  suggestions: string[];
+  requestId?: string;
+}
+
+/**
+ * 改进的OpenObserve服务
+ * 修复了安全、性能和可靠性问题
+ */
 @Injectable()
 export class OpenObserveService {
-  private config: OpenObserveConfig;
+  private readonly logger = new Logger(OpenObserveService.name);
+  private axiosInstance: AxiosInstance;
 
-  constructor(private configService: ConfigService) {
-    this.initializeConfig();
+  constructor(private readonly configService: OpenObserveConfigService) {
+    this.initializeAxiosInstance();
   }
 
-  private initializeConfig(): void {
-    this.config = {
-      url: this.configService.get<string>('OPENOBSERVE_URL', 'http://localhost:5080'),
-      organization: this.configService.get<string>('OPENOBSERVE_ORGANIZATION', 'default'),
-      token: this.configService.get<string>('OPENOBSERVE_TOKEN'),
-      username: this.configService.get<string>('OPENOBSERVE_USERNAME'),
-      password: this.configService.get<string>('OPENOBSERVE_PASSWORD'),
-    };
+  /**
+   * 初始化Axios实例
+   */
+  private initializeAxiosInstance(): void {
+    const config = this.configService.getConfig();
+
+    this.axiosInstance = axios.create({
+      baseURL: config.url,
+      timeout: config.timeout,
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'caddy-shopping-site/1.0.0',
+      },
+    });
+
+    // 请求拦截器
+    this.axiosInstance.interceptors.request.use(
+      (requestConfig) => {
+        const requestId = this.generateRequestId();
+        requestConfig.headers['X-Request-ID'] = requestId;
+        
+        this.logger.debug(`[Request] ${requestConfig.method?.toUpperCase()} ${requestConfig.url}`, {
+          requestId,
+          headers: requestConfig.headers,
+        });
+
+        return requestConfig;
+      },
+      (error) => {
+        this.logger.error('[Request] Error', error);
+        return Promise.reject(error);
+      }
+    );
+
+    // 响应拦截器
+    this.axiosInstance.interceptors.response.use(
+      (response) => {
+        const requestId = response.headers['x-request-id'] || response.config.headers['X-Request-ID'];
+        
+        this.logger.debug(`[Response] ${response.status} ${response.config.url}`, {
+          requestId,
+          status: response.status,
+          duration: response.config.metadata?.duration,
+        });
+
+        return response;
+      },
+      (error) => {
+        const requestId = error.config?.headers?.['X-Request-ID'];
+        
+        this.logger.error(`[Response] Error ${error.config?.url}`, {
+          requestId,
+          status: error.response?.status,
+          message: error.message,
+        });
+
+        // 转换为OpenObserveError
+        const openObserveError = OpenObserveError.fromAxiosError(error, { requestId });
+        ErrorMetrics.recordError(openObserveError);
+        
+        return Promise.reject(openObserveError);
+      }
+    );
+
+    // 添加请求持续时间记录
+    this.axiosInstance.interceptors.request.use((config) => {
+      config.metadata = { startTime: Date.now() };
+      return config;
+    });
+
+    this.axiosInstance.interceptors.response.use((response) => {
+      const startTime = response.config.metadata?.startTime;
+      if (startTime) {
+        const duration = Date.now() - startTime;
+        response.config.metadata = { ...response.config.metadata, duration };
+      }
+      return response;
+    });
+  }
+
+  /**
+   * 生成请求ID
+   */
+  private generateRequestId(): string {
+    return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
   /**
    * 统一数据查询 - 实现单一真相原则的核心
+   * 使用安全的查询构建器防止SQL注入
    */
   async querySingleSourceOfTruth(
     streams: string[],
@@ -52,85 +172,154 @@ export class OpenObserveService {
     endTime?: string,
     limit: number = 1000,
   ): Promise<QueryResult> {
+    const requestId = this.generateRequestId();
+    
     try {
-      const url = `${this.config.url}/api/${this.config.organization}/_search`;
+      if (!this.configService.isEnabled()) {
+        throw OpenObserveError.validationError('OpenObserve is not enabled', { requestId });
+      }
+
+      // 验证输入参数
+      if (!streams || streams.length === 0) {
+        throw OpenObserveError.validationError('Streams array is required', { requestId });
+      }
+
+      if (!query || query.trim().length === 0) {
+        throw OpenObserveError.validationError('Query string is required', { requestId });
+      }
+
+      // 构建时间范围过滤
+      const timeFilter = SecureQueryBuilder.buildTimeRangeFilter(startTime, endTime);
+      const finalQuery = timeFilter ? `${query} AND ${timeFilter}` : query;
 
       const requestBody = {
-        query,
+        query: finalQuery,
         streams,
         start_time: startTime || 'now-1h',
         end_time: endTime || 'now',
-        limit,
+        limit: Math.min(Math.max(1, limit), 10000), // 限制范围
         sql_mode: true,
       };
 
-      const headers = this.getAuthHeaders();
-      headers['Content-Type'] = 'application/json';
-
-      const response = await axios.post(url, requestBody, { headers, timeout: 30000 });
+      const response = await RetryHandler.executeWithRetry(
+        () => this.axiosInstance.post(
+          this.configService.getSearchEndpoint(),
+          requestBody,
+          {
+            headers: this.configService.getAuthHeaders(),
+          }
+        ),
+        undefined,
+        { requestId, operation: 'querySingleSourceOfTruth' }
+      );
 
       return {
         data: response.data.hits || [],
         total: response.data.total || 0,
         took: response.data.took || 0,
+        requestId: response.headers['x-request-id'] || requestId,
       };
     } catch (error) {
-      return {
-        data: [],
-        total: 0,
-        took: 0,
-        error: error.message,
-      };
+      this.logger.error(`Query failed: ${error.message}`, { requestId, streams, query });
+      
+      if (error instanceof OpenObserveError) {
+        throw error;
+      }
+
+      throw OpenObserveError.fromAxiosError(error, { requestId, operation: 'querySingleSourceOfTruth' });
     }
   }
 
   /**
    * 统一数据写入 - 确保数据一致性
+   * 修复压缩功能，实现真正的gzip压缩
    */
   async ingestData(
     stream: string,
     data: any[],
     compression: boolean = true,
   ): Promise<DataIngestionResult> {
+    const requestId = this.generateRequestId();
+    
     try {
-      const url = `${this.config.url}/api/${this.config.organization}/${stream}/_json`;
-
-      let payload = data;
-      const headers = this.getAuthHeaders();
-
-      if (compression) {
-        // 这里可以实现压缩逻辑
-        headers['Content-Encoding'] = 'gzip';
+      if (!this.configService.isEnabled()) {
+        throw OpenObserveError.validationError('OpenObserve is not enabled', { requestId });
       }
 
-      headers['Content-Type'] = 'application/json';
+      if (!stream || stream.trim().length === 0) {
+        throw OpenObserveError.validationError('Stream name is required', { requestId });
+      }
 
-      const response = await axios.post(url, payload, { headers, timeout: 10000 });
+      if (!data || data.length === 0) {
+        throw OpenObserveError.validationError('Data array is required', { requestId });
+      }
+
+      const config = this.configService.getConfig();
+      const url = this.configService.getApiEndpoint(stream);
+      
+      let payload: any = data;
+      const headers = { ...this.configService.getAuthHeaders() };
+
+      // 真正实现gzip压缩
+      if (compression && config.compression) {
+        try {
+          const jsonString = JSON.stringify(data);
+          payload = await gzip(jsonString);
+          headers['Content-Encoding'] = 'gzip';
+          headers['Content-Type'] = 'application/json';
+        } catch (compressionError) {
+          this.logger.warn('Compression failed, sending uncompressed data', {
+            requestId,
+            error: compressionError.message,
+          });
+          // 压缩失败时使用原始数据
+          payload = data;
+        }
+      }
+
+      const response = await RetryHandler.executeWithRetry(
+        () => this.axiosInstance.post(url, payload, { headers }),
+        undefined,
+        { requestId, operation: 'ingestData', stream, dataSize: data.length }
+      );
 
       return {
         success: response.status === 200,
         message: 'Data ingested successfully',
         count: data.length,
+        requestId: response.headers['x-request-id'] || requestId,
       };
     } catch (error) {
-      return {
-        success: false,
-        message: 'Failed to ingest data',
-        error: error.message,
-      };
+      this.logger.error(`Data ingestion failed: ${error.message}`, { requestId, stream, dataSize: data?.length });
+      
+      if (error instanceof OpenObserveError) {
+        throw error;
+      }
+
+      throw OpenObserveError.fromAxiosError(error, { requestId, operation: 'ingestData' });
     }
   }
 
   /**
-   * 获取系统健康状态 - 单一真相源的健康检查
+   * 获取系统健康状态
    */
-  async getSystemHealth(): Promise<{
-    status: 'healthy' | 'unhealthy';
-    details: Record<string, any>;
-  }> {
+  async getSystemHealth(): Promise<SystemHealth> {
+    const requestId = this.generateRequestId();
+    
     try {
-      const url = `${this.config.url}/api/_health`;
-      const response = await axios.get(url, { timeout: 5000 });
+      if (!this.configService.isEnabled()) {
+        throw OpenObserveError.validationError('OpenObserve is not enabled', { requestId });
+      }
+
+      const startTime = Date.now();
+      const response = await this.axiosInstance.get(
+        this.configService.getHealthEndpoint(),
+        {
+          headers: this.configService.getAuthHeaders(),
+          timeout: 5000,
+        }
+      );
+      const responseTime = Date.now() - startTime;
 
       return {
         status: response.status === 200 ? 'healthy' : 'unhealthy',
@@ -139,78 +328,123 @@ export class OpenObserveService {
           uptime: response.data?.uptime,
           status: response.status,
         },
+        responseTime,
+        requestId: response.headers['x-request-id'] || requestId,
       };
     } catch (error) {
-      return {
-        status: 'unhealthy',
-        details: { error: error.message },
-      };
+      this.logger.error(`Health check failed: ${error.message}`, { requestId });
+      
+      if (error instanceof OpenObserveError) {
+        throw error;
+      }
+
+      throw OpenObserveError.fromAxiosError(error, { requestId, operation: 'getSystemHealth' });
     }
   }
 
   /**
-   * 获取数据统计 - 单一真相源的数据概览
+   * 获取数据统计
+   * 核对API路径准确性
    */
-  async getDataStatistics(streams?: string[]): Promise<{
-    totalRecords: number;
-    streams: Record<string, number>;
-    storageSize: number;
-    ingestionRate: number;
-  }> {
+  async getDataStatistics(streams?: string[] | string): Promise<DataStatistics> {
+    const requestId = this.generateRequestId();
+    
     try {
-      const statsUrl = `${this.config.url}/api/${this.config.organization}/_stats`;
-      const headers = this.getAuthHeaders();
+      if (!this.configService.isEnabled()) {
+        throw OpenObserveError.validationError('OpenObserve is not enabled', { requestId });
+      }
 
-      const response = await axios.get(statsUrl, { headers, timeout: 10000 });
-      const stats = response.data;
+      const url = this.configService.getStatsEndpoint();
+      const headers = this.configService.getAuthHeaders();
 
+      // 构建查询参数 - 处理字符串和数组两种格式
+      const params: any = {};
+      if (streams) {
+        if (Array.isArray(streams) && streams.length > 0) {
+          params.streams = streams.join(',');
+        } else if (typeof streams === 'string' && streams.trim().length > 0) {
+          params.streams = streams;
+        }
+      }
+
+      const response = await RetryHandler.executeWithRetry(
+        () => this.axiosInstance.get(url, { headers, params }),
+        undefined,
+        { requestId, operation: 'getDataStatistics', streams }
+      );
+
+      // 安全地处理响应数据，提供默认值
+      const data = response.data || {};
+      
       return {
-        totalRecords: stats.total_records || 0,
-        streams: stats.stream_stats || {},
-        storageSize: stats.storage_size || 0,
-        ingestionRate: stats.ingestion_rate || 0,
+        totalRecords: data.total_records || data.totalRecords || 0,
+        streams: data.stream_stats || data.streamStats || {},
+        storageSize: data.storage_size || data.storageSize || 0,
+        ingestionRate: data.ingestion_rate || data.ingestionRate || 0,
+        requestId: response.headers['x-request-id'] || requestId,
       };
     } catch (error) {
-      return {
-        totalRecords: 0,
-        streams: {},
-        storageSize: 0,
-        ingestionRate: 0,
-      };
+      this.logger.error(`Get statistics failed: ${error.message}`, { requestId, streams });
+      
+      if (error instanceof OpenObserveError) {
+        throw error;
+      }
+
+      throw OpenObserveError.fromAxiosError(error, { requestId, operation: 'getDataStatistics' });
     }
   }
 
   /**
-   * 数据清理和归档 - 维护单一真相源的数据质量
+   * 数据清理和归档
    */
   async cleanupData(
     stream: string,
     retentionDays: number = 30,
-  ): Promise<{ success: boolean; message: string }> {
+  ): Promise<{ success: boolean; message: string; requestId?: string }> {
+    const requestId = this.generateRequestId();
+    
     try {
-      const cleanupUrl = `${this.config.url}/api/${this.config.organization}/${stream}/_cleanup`;
-      const headers = this.getAuthHeaders();
+      if (!this.configService.isEnabled()) {
+        throw OpenObserveError.validationError('OpenObserve is not enabled', { requestId });
+      }
 
+      if (!stream || stream.trim().length === 0) {
+        throw OpenObserveError.validationError('Stream name is required', { requestId });
+      }
+
+      const retentionDaysSanitized = Math.min(Math.max(1, retentionDays), 365);
+      const url = `${this.configService.getApiEndpoint(stream).replace('/_json', '/_cleanup')}`;
+      
       const requestBody = {
-        retention_days: retentionDays,
+        retention_days: retentionDaysSanitized,
       };
 
-      const response = await axios.post(cleanupUrl, requestBody, { headers, timeout: 30000 });
+      const response = await RetryHandler.executeWithRetry(
+        () => this.axiosInstance.post(url, requestBody, {
+          headers: this.configService.getAuthHeaders(),
+        }),
+        undefined,
+        { requestId, operation: 'cleanupData', stream, retentionDays: retentionDaysSanitized }
+      );
 
       return {
         success: response.status === 200,
         message: response.data?.message || 'Cleanup completed',
+        requestId: response.headers['x-request-id'] || requestId,
       };
     } catch (error) {
-      return {
-        success: false,
-        message: error.message,
-      };
+      this.logger.error(`Cleanup failed: ${error.message}`, { requestId, stream, retentionDays });
+      
+      if (error instanceof OpenObserveError) {
+        throw error;
+      }
+
+      throw OpenObserveError.fromAxiosError(error, { requestId, operation: 'cleanupData' });
     }
   }
 
   /**
-   * 跨流关联查询 - 实现真正的单一真相视图
+   * 跨流关联查询 - 修复SQL生成错误
    */
   async crossStreamCorrelation(
     primaryStream: string,
@@ -218,72 +452,74 @@ export class OpenObserveService {
     correlationField: string,
     timeRange: string = '1h',
   ): Promise<QueryResult> {
-    const query = `
-      SELECT 
-        p.*,
-        s.*
-      FROM ${primaryStream} p
-      LEFT JOIN ${secondaryStreams.join(', ')} s
-      ON p.${correlationField} = s.${correlationField}
-      WHERE p.timestamp >= NOW() - INTERVAL '${timeRange}'
-      ORDER BY p.timestamp DESC
-    `;
-
-    return this.querySingleSourceOfTruth(
-      [primaryStream, ...secondaryStreams],
-      query,
-      `now-${timeRange}`,
-      'now',
-    );
-  }
-
-  /**
-   * 实时数据流监控 - 单一真相源的实时视图
-   */
-  async createRealTimeSubscription(
-    stream: string,
-    callback: (data: any) => void,
-    filter?: string,
-  ): Promise<{ success: boolean; subscriptionId?: string }> {
+    const requestId = this.generateRequestId();
+    
     try {
-      // 这里可以实现WebSocket或Server-Sent Events订阅
-      // 目前先返回成功状态
-      return {
-        success: true,
-        subscriptionId: `sub_${Date.now()}`,
-      };
-    } catch (error) {
-      return {
-        success: false,
-      };
-    }
-  }
+      if (!this.configService.isEnabled()) {
+        throw OpenObserveError.validationError('OpenObserve is not enabled', { requestId });
+      }
 
-  private getAuthHeaders(): Record<string, string> {
-    const headers: Record<string, string> = {};
+      // 验证输入参数
+      if (!primaryStream || primaryStream.trim().length === 0) {
+        throw OpenObserveError.validationError('Primary stream is required', { requestId });
+      }
 
-    if (this.config.token) {
-      headers['Authorization'] = `Bearer ${this.config.token}`;
-    } else if (this.config.username && this.config.password) {
-      const credentials = Buffer.from(`${this.config.username}:${this.config.password}`).toString(
-        'base64',
+      if (!secondaryStreams || secondaryStreams.length === 0) {
+        throw OpenObserveError.validationError('Secondary streams array is required', { requestId });
+      }
+
+      if (!correlationField || correlationField.trim().length === 0) {
+        throw OpenObserveError.validationError('Correlation field is required', { requestId });
+      }
+
+      // 使用安全的查询构建器
+      const query = SecureQueryBuilder.buildCorrelationQuery(
+        primaryStream,
+        secondaryStreams,
+        correlationField,
+        timeRange
       );
-      headers['Authorization'] = `Basic ${credentials}`;
-    }
 
-    return headers;
+      return this.querySingleSourceOfTruth(
+        [primaryStream, ...secondaryStreams],
+        query,
+        `now-${timeRange}`,
+        'now',
+        1000,
+      );
+    } catch (error) {
+      this.logger.error(`Cross stream correlation failed: ${error.message}`, {
+        requestId,
+        primaryStream,
+        secondaryStreams,
+        correlationField,
+        timeRange,
+      });
+      
+      if (error instanceof OpenObserveError) {
+        throw error;
+      }
+
+      throw OpenObserveError.fromAxiosError(error, { requestId, operation: 'crossStreamCorrelation' });
+    }
   }
 
   /**
-   * 数据验证和完整性检查 - 确保单一真相源的数据质量
+   * 数据验证和完整性检查
    */
-  async validateDataIntegrity(stream: string): Promise<{
-    valid: boolean;
-    issues: string[];
-    suggestions: string[];
-  }> {
+  async validateDataIntegrity(stream: string): Promise<DataIntegrityResult> {
+    const requestId = this.generateRequestId();
+    
     try {
-      // 检查数据完整性
+      if (!this.configService.isEnabled()) {
+        throw OpenObserveError.validationError('OpenObserve is not enabled', { requestId });
+      }
+
+      if (!stream || stream.trim().length === 0) {
+        throw OpenObserveError.validationError('Stream name is required', { requestId });
+      }
+
+      // 构建完整性检查查询
       const integrityQuery = `
         SELECT 
           COUNT(*) as total_count,
@@ -294,7 +530,12 @@ export class OpenObserveService {
         WHERE timestamp >= NOW() - INTERVAL '1d'
       `;
 
-      const result = await this.querySingleSourceOfTruth([stream], integrityQuery);
+      const result = await this.querySingleSourceOfTruth(
+        [stream],
+        integrityQuery,
+        'now-1d',
+        'now',
+      );
 
       const issues: string[] = [];
       const suggestions: string[] = [];
@@ -311,33 +552,79 @@ export class OpenObserveService {
           issues.push('时间戳数据不完整');
           suggestions.push('确保所有记录都有有效的时间戳');
         }
+      } else {
+        issues.push('未找到任何数据记录');
+        suggestions.push('检查数据源和流配置');
       }
 
       return {
         valid: issues.length === 0,
         issues,
         suggestions,
+        requestId,
       };
     } catch (error) {
-      return {
-        valid: false,
-        issues: [error.message],
-        suggestions: ['检查OpenObserve连接配置'],
-      };
+      this.logger.error(`Data integrity validation failed: ${error.message}`, { requestId, stream });
+      
+      // 平衡方案：提供准确的错误上下文，同时保持调试信息
+      if (error instanceof OpenObserveError) {
+        // 对于嵌套调用，提供完整的调用链信息，确保operation反映用户调用的操作
+        const enhancedContext = {
+          ...error.context,
+          operation: 'validateDataIntegrity', // 反映用户调用的操作
+          originalOperation: error.context?.operation, // 保留原始操作用于调试
+          operationChain: [
+            error.context?.operation || 'unknown',
+            'validateDataIntegrity'
+          ]
+        };
+        
+        const enhancedError = new OpenObserveError(
+          error.message,
+          error.code,
+          error.statusCode,
+          enhancedContext,
+          error.retryable
+        );
+        throw enhancedError;
+      }
+
+      // 对于非OpenObserveError，创建新的错误
+      throw OpenObserveError.fromAxiosError(error, {
+        requestId,
+        operation: 'validateDataIntegrity', // 反映用户调用的操作
+        originalOperation: 'querySingleSourceOfTruth' // 记录实际发生错误的操作
+      });
     }
   }
 
   /**
    * 测试OpenObserve连接
    */
-  async testConnection(): Promise<void> {
+  async testConnection(): Promise<{ success: boolean; message: string; responseTime?: number }> {
     try {
+      const startTime = Date.now();
       const health = await this.getSystemHealth();
+      const responseTime = Date.now() - startTime;
+
       if (health.status !== 'healthy') {
-        throw new Error('OpenObserve服务不健康');
+        return {
+          success: false,
+          message: 'OpenObserve服务不健康',
+          responseTime,
+        };
       }
+
+      return {
+        success: true,
+        message: '连接测试成功',
+        responseTime,
+      };
     } catch (error) {
-      throw new Error(`OpenObserve连接测试失败: ${error.message}`);
+      return {
+        success: false,
+        message: `连接测试失败: ${error.message}`,
+      };
     }
   }
 
@@ -358,15 +645,22 @@ export class OpenObserveService {
   }
 
   /**
-   * 查询日志
+   * 查询日志 - 使用安全的查询构建器
    */
   async queryLogs(query: any): Promise<any> {
+    const requestId = this.generateRequestId();
+    
     try {
-      // 转换查询格式为OpenObserve格式
-      const openobserveQuery = this.convertToOpenObserveQuery(query);
+      if (!this.configService.isEnabled()) {
+        throw OpenObserveError.validationError('OpenObserve is not enabled', { requestId });
+      }
+
+      // 使用安全的查询构建器
+      const safeQuery = SecureQueryBuilder.buildLogQuery(query);
+      
       const result = await this.querySingleSourceOfTruth(
         ['logs'],
-        openobserveQuery,
+        safeQuery,
         query.timeRange?.from,
         query.timeRange?.to,
         query.size || 100,
@@ -378,9 +672,56 @@ export class OpenObserveService {
         aggregations: {}, // OpenObserve的聚合结果需要特殊处理
         took: result.took,
         timedOut: false,
+        requestId: result.requestId,
       };
     } catch (error) {
-      throw new Error(`查询日志失败: ${error.message}`);
+      this.logger.error(`Query logs failed: ${error.message}`, { requestId, query });
+      
+      if (error instanceof OpenObserveError) {
+        throw error;
+      }
+
+      throw OpenObserveError.fromAxiosError(error, { requestId, operation: 'queryLogs' });
+    }
+  }
+
+  /**
+   * 查询指标 - 使用安全的查询构建器
+   */
+  async queryMetrics(query: any): Promise<any> {
+    const requestId = this.generateRequestId();
+
+    try {
+      if (!this.configService.isEnabled()) {
+        throw OpenObserveError.validationError('OpenObserve is not enabled', { requestId });
+      }
+
+      // 使用安全的查询构建器
+      const safeQuery = SecureQueryBuilder.buildMetricsQuery(query);
+
+      const result = await this.querySingleSourceOfTruth(
+        ['metrics'],
+        safeQuery,
+        query.timeRange?.from,
+        query.timeRange?.to,
+        query.size || 100,
+      );
+
+      return {
+        total: result.total,
+        series: result.data, // 指标通常用于可视化序列
+        took: result.took,
+        timedOut: false,
+        requestId: result.requestId,
+      };
+    } catch (error) {
+      this.logger.error(`Query metrics failed: ${error.message}`, { requestId, query });
+
+      if (error instanceof OpenObserveError) {
+        throw error;
+      }
+
+      throw OpenObserveError.fromAxiosError(error, { requestId, operation: 'queryMetrics' });
     }
   }
 
@@ -388,7 +729,13 @@ export class OpenObserveService {
    * 获取日志分析数据
    */
   async getLogAnalytics(timeRange?: { from: string; to: string }): Promise<any> {
+    const requestId = this.generateRequestId();
+    
     try {
+      if (!this.configService.isEnabled()) {
+        throw OpenObserveError.validationError('OpenObserve is not enabled', { requestId });
+      }
+
       const startTime = timeRange?.from || 'now-1h';
       const endTime = timeRange?.to || 'now';
 
@@ -415,8 +762,8 @@ export class OpenObserveService {
 
       return {
         totalLogs: levelStats.total + serviceStats.total,
-        logsByLevel: this.transformBuckets(levelStats.data),
-        logsByService: this.transformBuckets(serviceStats.data),
+        logsByLevel: this.transformBuckets(levelStats.data, 'level'),
+        logsByService: this.transformBuckets(serviceStats.data, 'service'),
         errorTrends: [], // 需要更复杂的查询
         topErrors: [], // 需要更复杂的查询
         performanceMetrics: {
@@ -430,53 +777,48 @@ export class OpenObserveService {
           resolved: 0,
           critical: 0,
         },
+        requestId,
       };
     } catch (error) {
-      throw new Error(`获取日志分析失败: ${error.message}`);
+      this.logger.error(`Get log analytics failed: ${error.message}`, { requestId, timeRange });
+      
+      if (error instanceof OpenObserveError) {
+        throw error;
+      }
+
+      throw OpenObserveError.fromAxiosError(error, { requestId, operation: 'getLogAnalytics' });
     }
   }
 
   /**
-   * 转换查询格式为OpenObserve格式
+   * 改进的桶数据转换方法
+   * 支持自定义键选择器
    */
-  private convertToOpenObserveQuery(query: any): string {
-    let sql = 'SELECT * FROM logs WHERE 1=1';
-
-    if (query.query) {
-      sql += ` AND (message LIKE '%${query.query}%' OR level LIKE '%${query.query}%')`;
+  private transformBuckets(buckets: any[], keySelector: string = 'key'): Record<string, number> {
+    if (!buckets || !Array.isArray(buckets)) {
+      return {};
     }
 
-    if (query.filters) {
-      Object.entries(query.filters).forEach(([field, value]) => {
-        sql += ` AND ${field} = '${value}'`;
-      });
-    }
-
-    if (query.timeRange) {
-      sql += ` AND timestamp >= '${query.timeRange.from}' AND timestamp <= '${query.timeRange.to}'`;
-    }
-
-    if (query.sort) {
-      const sortClause = query.sort.map((s: any) => `${s.field} ${s.order}`).join(', ');
-      sql += ` ORDER BY ${sortClause}`;
-    } else {
-      sql += ' ORDER BY timestamp DESC';
-    }
-
-    if (query.size) {
-      sql += ` LIMIT ${query.size}`;
-    }
-
-    return sql;
-  }
-
-  /**
-   * 转换桶数据格式
-   */
-  private transformBuckets(buckets: any[]): Record<string, number> {
     return buckets.reduce((acc, bucket) => {
-      acc[bucket.level || bucket.service] = bucket.count;
+      // 支持多种键名
+      const key = bucket[keySelector] || bucket.level || bucket.service || bucket.name || 'unknown';
+      const value = bucket.count || bucket.value || bucket.doc_count || 0;
+      acc[key] = value;
       return acc;
     }, {});
+  }
+
+  /**
+   * 获取错误统计
+   */
+  getErrorStats(): Record<string, any> {
+    return ErrorMetrics.getErrorStats();
+  }
+
+  /**
+   * 重置错误统计
+   */
+  resetErrorStats(): void {
+    ErrorMetrics.resetStats();
   }
 }

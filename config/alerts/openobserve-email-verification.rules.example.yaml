@@ -1,0 +1,27 @@
+# OpenObserve 告警规则示例（请根据部署的告警引擎/平台适配）
+# 1) unknown_ratio 超阈值
+- name: "Email Verification Unknown Ratio High"
+  condition: "unknown_ratio > 0.3"
+  window: "5m"
+  severity: "warning"
+  annotations:
+    summary: "Unknown ratio > 30% in last 5m"
+    description: "邮箱验证未知比例升高，可能出现外部网络或目标域问题"
+
+# 2) timeout_rate 超阈值
+- name: "Email Verification Timeout Rate High"
+  condition: "timeout_rate > 0.1"
+  window: "10m"
+  severity: "critical"
+  annotations:
+    summary: "Timeout rate > 10% in last 10m"
+    description: "邮箱验证超时比例过高，检查依赖服务或网络"
+
+# 3) domain error 激增
+- name: "Domain Error Spike"
+  condition: "increase(domain_error_count[15m]) > 100"
+  window: "15m"
+  severity: "high"
+  annotations:
+    summary: "Domain error count spikes in 15m"
+    description: "某些域名错误次数激增，可能被封禁或 DNS 异常"

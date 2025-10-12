@@ -1,0 +1,8 @@
+{
+  "name": "email-verification/default/email_verification/overview-unknown_ratio-5m-v1",
+  "type": "promql",
+  "query": "sum(rate(verify_unknown_count{stream=\\\"email_verification\\\"}[5m])) / sum(rate(verify_total_count{stream=\\\"email_verification\\\"}[5m]))",
+  "labels": ["env:prod", "service:apiserver", "owner:team-email"],
+  "description": "过去5分钟 unknown_ratio 观测查询（仪表速览卡片）",
+  "timeRange": "now-1h"
+}
