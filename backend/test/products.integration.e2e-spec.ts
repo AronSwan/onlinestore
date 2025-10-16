@@ -13,6 +13,7 @@ import { Product } from '../src/products/entities/product.entity';
 import { Category } from '../src/products/entities/category.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
+import 'jest'; // 显式导入jest类型定义
 
 describe('Products Integration (e2e)', () => {
   let app: INestApplication;
@@ -683,14 +684,14 @@ describe('Products Integration (e2e)', () => {
   describe('错误处理和边界情况测试', () => {
     it('should handle database connection errors gracefully', async () => {
       // 模拟数据库连接错误（这需要根据实际实现调整）
-      jest
+      const mockFind = jest
         .spyOn(productRepository, 'find')
         .mockRejectedValue(new Error('Database connection failed'));
 
       await request(app.getHttpServer()).get('/products').expect(500);
 
       // 恢复原始实现
-      jest.restoreAllMocks();
+      mockFind.mockRestore();
     });
 
     it('should validate input data types', async () => {

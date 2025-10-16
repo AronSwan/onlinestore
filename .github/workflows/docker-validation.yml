@@ -1,0 +1,86 @@
+name: Docker Configuration Validation
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  docker-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker
+        uses: docker-practice/actions-setup-docker@master
+
+      - name: Install jq and yq (robust)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq curl wget || true
+          sudo apt-get install -y python3-pip || true
+          # yq via apt/snap/pip/binary fallback
+          sudo snap install yq || sudo apt-get install -y yq || pip3 install yq || {
+            YQ_BIN=/usr/local/bin/yq
+            wget -qO $YQ_BIN https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 && sudo chmod +x $YQ_BIN
+          }
+          yq --version || true
+
+      - name: Run validation scripts
+        env:
+          VALIDATION_ENV_PRECEDENCE: env_base,env_file,environment
+        run: |
+          chmod +x ./docker-validation-scripts/*.sh || true
+          bash ./docker-validation-scripts/comprehensive-docker-validation.sh
+
+      - name: Upload validation report (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-validation-report
+          path: |
+            docker-validation-report.md
+            docker-validation-report.json
+
+      - name: Gate on port conflicts
+        run: |
+          echo "检查端口冲突..."
+          PORT_CONFLICTS=$(jq -r '.summary.portConflicts' docker-validation-report.json)
+          echo "发现端口冲突数量: $PORT_CONFLICTS"
+          test "$PORT_CONFLICTS" -eq 0
+
+      - name: Gate on syntax errors
+        run: |
+          echo "检查语法错误..."
+          SYNTAX_ERRORS=$(jq '.categories.syntax.details | length' docker-validation-report.json)
+          echo "发现语法错误数量: $SYNTAX_ERRORS"
+          test "$SYNTAX_ERRORS" -eq 0
+
+      - name: Gate on health requires curl --fail
+        run: |
+          echo "检查健康检查配置..."
+          HEALTH_ISSUES=$(jq '[.categories.health.details[] | select(.type=="curl" and .issue=="missing_fail")] | length' docker-validation-report.json)
+          echo "发现健康检查问题数量: $HEALTH_ISSUES"
+          test "$HEALTH_ISSUES" -eq 0
+
+      - name: Gate on env undefined refs
+        run: |
+          echo "检查未定义环境变量引用..."
+          ENV_UNDEFINED=$(jq '[.categories.env.details[] | select(.issue=="env_undefined_ref")] | length' docker-validation-report.json)
+          echo "发现未定义环境变量引用数量: $ENV_UNDEFINED"
+          test "$ENV_UNDEFINED" -eq 0
+
+      - name: Gate on subnet conflicts
+        run: |
+          echo "检查子网冲突..."
+          SUBNET_CONFLICTS=$(jq '[.categories.network.details[] | select(.issue=="subnet_conflict")] | length' docker-validation-report.json)
+          echo "发现子网冲突数量: $SUBNET_CONFLICTS"
+          test "$SUBNET_CONFLICTS" -eq 0
+
+      - name: Gate on volume host path conflicts
+        run: |
+          echo "检查卷主机路径冲突..."
+          VOLUME_CONFLICTS=$(jq '[.categories.volume.details[] | select(.issue=="volume_host_conflict")] | length' docker-validation-report.json)
+          echo "发现卷主机路径冲突数量: $VOLUME_CONFLICTS"
+          test "$VOLUME_CONFLICTS" -eq 0

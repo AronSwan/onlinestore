@@ -190,3 +190,31 @@ OO_TOKEN=YOUR_OPENOBSERVE_TOKEN
 参考
 - 官方 README 与文档（features、quickstart、HA 部署、Pipelines）
 - 项目内 nest-integration-examples.md 的客户端示例与字段规范
+
+---
+
+实操落地步骤（项目内示例文件）
+1) Pipeline（VRL）
+- 路径：docker/openobserve/pipelines/email-verification.pipeline.example.yaml
+- 步骤：控制台创建/更新 Pipeline → 粘贴示例 → 用样本 dry-run → 验证 email_masked/domain/metric_value → 预发灰度 30 分钟
+
+2) OpenObserve 仪表（默认）
+- 推荐：参考 docs/research/openobserve/dashboards-openobserve.md（包含可直接复制的查询与布局）
+- 步骤：登录 OpenObserve → Dashboards → New Dashboard → Add Panel → 选择 Logs/Metrics → 填入查询（unknown_ratio、timeout_rate、top domain errors、latency p95、OO 健康）→ 保存为面板或保存查询 → 组装成 “Email Verification Overview”
+- 可选：若仍需 Grafana，参见 docker/grafana/dashboards/openobserve-email-verification.json（附录方案，非默认）
+
+3) 告警规则
+- 路径：config/alerts/openobserve-email-verification.rules.example.yaml
+- 步骤：转换为所在平台的告警语法 → 配置通知渠道 → 演练触发与抑制 → 与 SRE 确认阈值（unknown_ratio/timeout_rate）
+
+4) 服务端接入（Nest）
+- Ingest 路由（强校验）：POST /openobserve/ingest/email-verification
+  - DTO：backend/src/common/openobserve/dto/ingest.dto.ts
+- 查询与聚合：
+  - 安全构建器：backend/src/common/openobserve/utils/query-builder.ts
+  - 专用查询：backend/src/common/openobserve/openobserve.service.v2.ts（queryLogs/queryMetrics）
+
+5) 验证
+- 测试：npm run test:openobserve
+- 合同/契约测试（如有）：npm run test:contract:openobserve
+- 观察指标：Unknown Ratio、Timeout Rate、Top Domain Errors、Latency p95、OpenObserve 健康

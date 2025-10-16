@@ -1,0 +1,8 @@
+{
+  "name": "email-verification/default/email_verification/perf-latency_p95-5m-v1",
+  "type": "promql",
+  "query": "histogram_quantile(0.95, sum by (le) (rate(verify_latency_bucket{stream=\\\"email_verification\\\"}[5m])))",
+  "labels": ["env:prod", "service:apiserver", "owner:team-email"],
+  "description": "过去5分钟 p95 延迟（性能观测）",
+  "timeRange": "now-1h"
+}

@@ -41,12 +41,14 @@
   "devDependencies": {
     "@eslint/js": "^9.35.0",
     "@playwright/test": "^1.55.1",
+    "@types/jest": "^30.0.0",
     "cross-env": "^7.0.3",
     "cssnano": "^7.1.1",
     "eslint": "^9.36.0",
     "globals": "^13.24.0",
     "playwright": "^1.55.0",
     "postcss-preset-env": "^10.4.0",
+    "typescript": "^5.9.3",
     "vite": "^7.1.7",
     "webpack": "^5.102.0"
   }

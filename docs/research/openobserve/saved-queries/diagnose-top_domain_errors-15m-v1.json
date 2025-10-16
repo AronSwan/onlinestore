@@ -1,0 +1,8 @@
+{
+  "name": "email-verification/default/email_verification/diagnose-top_domain_errors-15m-v1",
+  "type": "promql",
+  "query": "topk(10, sum by (domain) (increase(domain_error_count{stream=\\\"email_verification\\\"}[15m])))",
+  "labels": ["env:prod", "service:apiserver", "owner:team-email"],
+  "description": "过去15分钟按域名聚合的错误Top10（问题诊断用）",
+  "timeRange": "now-1h"
+}

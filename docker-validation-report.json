@@ -1,0 +1,84 @@
+{
+  "summary": {
+    "total": 7,
+    "passed": 7,
+    "failed": 0,
+    "successRate": 100,
+    "portConflicts": 0
+0
+  },
+  "results": [
+    {"status":"PASS","script":"docker-syntax-validation.sh","title":"Docker Syntax Validation.sh"},
+    {"status":"PASS","script":"port-conflict-detection.sh","title":"Port Conflict Detection.sh"},
+    {"status":"PASS","script":"env-consistency-check.sh","title":"Env Consistency Check.sh"},
+    {"status":"PASS","script":"network-consistency-check.sh","title":"Network Consistency Check.sh"},
+    {"status":"PASS","script":"volume-conflict-detection.sh","title":"Volume Conflict Detection.sh"},
+    {"status":"PASS","script":"health-check-validation.sh","title":"Health Check Validation.sh"},
+    {"status":"PASS","script":"resource-limit-check.sh","title":"Resource Limit Check.sh"}
+  ],
+  "categories": {
+    "syntax": {
+      "errors": [
+],
+      "warnings": [
+],
+      "details": []
+    },
+    "ports": {
+      "errors": [
+],
+      "warnings": [
+  "[33m⚠️  未找到任何端口配置信息[0m"
+],
+      "details": []
+    },
+    "env": {
+      "errors": [
+],
+      "warnings": [
+  "[33m⚠️  未找到环境变量 POSTGRES_DB 的定义[0m",
+  "[33m⚠️  未找到环境变量 POSTGRES_USER 的定义[0m",
+  "[33m⚠️  未找到环境变量 POSTGRES_PASSWORD 的定义[0m",
+  "[33m⚠️  未找到环境变量 REDIS_PASSWORD 的定义[0m",
+  "[33m⚠️  未找到环境变量 JWT_SECRET 的定义[0m",
+  "[33m⚠️  未找到环境变量 ZO_ROOT_USER_EMAIL 的定义[0m",
+  "[33m⚠️  未找到环境变量 ZO_ROOT_USER_PASSWORD 的定义[0m",
+  "[33m⚠️  未找到环境变量 NODE_ENV 的定义[0m",
+  "[33m⚠️  未找到环境变量 PORT 的定义[0m",
+  "[33m⚠️  未找到环境变量 MEILI_MASTER_KEY 的定义[0m",
+  "[33m⚠️  未找到环境变量 ZINC_FIRST_ADMIN_USER 的定义[0m",
+  "[33m⚠️  未找到环境变量 ZINC_FIRST_ADMIN_PASSWORD 的定义[0m"
+],
+      "details": []
+    },
+    "network": {
+      "errors": [
+],
+      "warnings": [
+],
+      "details": []
+    },
+    "volume": {
+      "errors": [
+],
+      "warnings": [
+],
+      "details": []
+    },
+    "health": {
+      "errors": [
+],
+      "warnings": [
+],
+      "details": []
+    },
+    "resource": {
+      "errors": [
+],
+      "warnings": [
+  "⚠️ 未发现 deploy.resources 配置"
+],
+      "details": []
+    }
+  }
+}
