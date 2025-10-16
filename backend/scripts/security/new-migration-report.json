@@ -1,0 +1,31 @@
+{
+  "timestamp": "2025-10-13T19:46:03.587Z",
+  "oldVersion": "1.0.0",
+  "newVersion": "2.0.0",
+  "changes": [
+    {
+      "type": "new_feature",
+      "path": "security.testValidation",
+      "description": "新增测试验证配置",
+      "impact": "medium"
+    },
+    {
+      "type": "breaking_change",
+      "path": "security.userValidation.privilegedUsers",
+      "description": "新增特权用户列表，与禁止用户列表分离",
+      "impact": "low"
+    },
+    {
+      "type": "new_feature",
+      "path": "security.userValidation.forbidPrivilegedUsers",
+      "description": "新增特权用户限制选项",
+      "impact": "low"
+    }
+  ],
+  "summary": {
+    "totalChanges": 3,
+    "breakingChanges": 1,
+    "newFeatures": 2,
+    "deprecatedFeatures": 0
+  }
+}

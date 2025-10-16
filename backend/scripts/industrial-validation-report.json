@@ -1,0 +1,54 @@
+{
+  "timestamp": "2025-10-14T17:51:49.496Z",
+  "summary": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0,
+    "warned": 0
+  },
+  "results": [
+    {
+      "feature": "性能监控",
+      "status": "PASS",
+      "metrics": {
+        "testExecutionRecords": 0,
+        "cacheHits": 0,
+        "cacheTotalRequests": 0,
+        "peakMemory": 128,
+        "version": "3.3.0"
+      }
+    },
+    {
+      "feature": "智能测试排序",
+      "status": "PASS",
+      "details": "功能代码存在"
+    },
+    {
+      "feature": "缓存持久化",
+      "status": "PASS",
+      "details": {
+        "cacheItems": 4,
+        "fileSize": 679
+      }
+    },
+    {
+      "feature": "高并发执行",
+      "status": "PASS",
+      "details": "2个并发进程全部完成"
+    },
+    {
+      "feature": "错误恢复",
+      "status": "PASS",
+      "details": "测试在遇到错误时能够正常处理"
+    },
+    {
+      "feature": "资源监控",
+      "status": "PASS",
+      "details": {
+        "executionTime": 38246,
+        "memoryIncrease": "0.40",
+        "heapUsed": "6.24"
+      }
+    }
+  ]
+}

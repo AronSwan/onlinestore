@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # 测试运行器容器
+  test-runner:
+    build:
+      context: ../../
+      dockerfile: docker/test-runner/Dockerfile
+    container_name: test-runner-container
+    privileged: true  # 需要特权模式来运行Docker-in-Docker
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  # 共享Docker socket
+      - ../../:/app  # 挂载源代码
+    networks:
+      - test-network
+    depends_on:
+      - redis
+    environment:
+      - NODE_ENV=test
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    command: tail -f /dev/null  # 保持容器运行
+
+  # Redis服务
+  redis:
+    image: redis:7-alpine
+    container_name: test-runner-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - test-network
+
+  # 测试结果收集器
+  test-collector:
+    image: alpine:latest
+    container_name: test-runner-collector
+    volumes:
+      - ./test-results:/test-results
+    command: tail -f /dev/null
+    networks:
+      - test-network
+
+volumes:
+  redis_data:
+    driver: local
+
+networks:
+  test-network:
+    driver: bridge

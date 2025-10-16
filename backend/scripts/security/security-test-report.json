@@ -1,0 +1,59 @@
+{
+  "timestamp": "2025-10-14T16:01:30.465Z",
+  "summary": {
+    "total": 8,
+    "passed": 8,
+    "failed": 0,
+    "passRate": "100.00%"
+  },
+  "details": [
+    {
+      "name": "空用户列表验证",
+      "passed": true,
+      "message": "空用户列表验证拒绝（安全）",
+      "timestamp": "2025-10-14T16:01:29.031Z"
+    },
+    {
+      "name": "注入攻击用户名验证",
+      "passed": true,
+      "message": "所有包含注入攻击的用户名被拒绝（安全）",
+      "timestamp": "2025-10-14T16:01:30.356Z"
+    },
+    {
+      "name": "弱密码加密",
+      "passed": true,
+      "message": "弱密码可以加密（建议加强密码策略）",
+      "timestamp": "2025-10-14T16:01:30.365Z"
+    },
+    {
+      "name": "加密数据完整性",
+      "passed": true,
+      "message": "篡改数据被检测到（安全）",
+      "timestamp": "2025-10-14T16:01:30.367Z"
+    },
+    {
+      "name": "正常签名验证",
+      "passed": true,
+      "message": "正常签名验证通过（安全）",
+      "timestamp": "2025-10-14T16:01:30.443Z"
+    },
+    {
+      "name": "修改后签名验证",
+      "passed": true,
+      "message": "修改后签名验证失败（安全）",
+      "timestamp": "2025-10-14T16:01:30.447Z"
+    },
+    {
+      "name": "恶意命令过滤",
+      "passed": true,
+      "message": "所有恶意命令被拒绝（安全）",
+      "timestamp": "2025-10-14T16:01:30.453Z"
+    },
+    {
+      "name": "路径遍历防护",
+      "passed": true,
+      "message": "所有路径遍历被拒绝（安全）",
+      "timestamp": "2025-10-14T16:01:30.464Z"
+    }
+  ]
+}

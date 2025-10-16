@@ -1,0 +1,54 @@
+{
+  "testCommand": "npm test",
+  "coverageFile": "coverage/coverage-summary.json",
+  "targetCoverage": 80,
+  "logLevel": "INFO",
+  "retryAttempts": 3,
+  "retryDelay": 1000,
+  "notifications": {
+    "enabled": false,
+    "webhook": "",
+    "email": ""
+  },
+  "security": {
+    "commandWhitelist": [
+      "npm",
+      "node",
+      "jest",
+      "mocha",
+      "yarn",
+      "pnpm"
+    ],
+    "allowedPaths": [
+      ".",
+      "./coverage",
+      "./reports",
+      "./test",
+      "./scripts"
+    ],
+    "enableSignatureVerification": false,
+    "publicKeyPath": "./keys/public.pem",
+    "logSanitization": true,
+    "filePermissions": {
+      "log": 384,
+      "report": 420,
+      "lock": 384
+    },
+    "maxFileSize": {
+      "log": 10485760,
+      "report": 52428800
+    }
+  },
+  "performance": {
+    "timeout": 30000,
+    "maxMemory": "512MB",
+    "enableCaching": true,
+    "cacheExpiry": 3600000
+  },
+  "featureFlags": {
+    "TM_SECURITY_CMD_WHITELIST_ENABLED": true,
+    "TM_SECURITY_PATH_VALIDATION_ENABLED": true,
+    "TM_SECURITY_LOG_SANITIZATION_ENABLED": true,
+    "TM_PERFORMANCE_CACHING_ENABLED": true
+  }
+}

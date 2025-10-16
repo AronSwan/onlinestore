@@ -1,0 +1,39 @@
+{
+  "testCommand": "node -e \"console.log('Test passed')\"",
+  "coverageFile": "test-coverage.json",
+  "targetCoverage": 50,
+  "logLevel": "INFO",
+  "retryAttempts": 3,
+  "retryDelay": 1000,
+  "notifications": {
+    "enabled": false,
+    "webhook": "",
+    "email": ""
+  },
+  "security": {
+    "commandWhitelist": [
+      "npm",
+      "node",
+      "jest",
+      "mocha",
+      "yarn",
+      "pnpm",
+      "echo"
+    ],
+    "allowedPaths": [
+      ".",
+      "./coverage",
+      "./reports",
+      "./test",
+      "./scripts"
+    ],
+    "enableSignatureVerification": false,
+    "publicKeyPath": "",
+    "logSanitization": true,
+    "filePermissions": {
+      "log": 384,
+      "report": 420,
+      "lock": 384
+    }
+  }
+}

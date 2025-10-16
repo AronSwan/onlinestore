@@ -1,0 +1,157 @@
+{
+  "testCommand": "npm test",
+  "coverageFile": "./coverage/coverage-summary.json",
+  "targetCoverage": 85,
+  "logLevel": "INFO",
+  "retryAttempts": 3,
+  "retryDelay": 1000,
+  "notifications": {
+    "enabled": true,
+    "levels": {
+      "success": true,
+      "warning": true,
+      "error": true
+    },
+    "webhook": {
+      "enabled": false,
+      "url": "",
+      "format": "default",
+      "retryAttempts": 3,
+      "retryDelay": 2000,
+      "timeout": 10000
+    },
+    "email": {
+      "enabled": false,
+      "smtp": {
+        "host": "",
+        "port": 587,
+        "secure": false,
+        "auth": {
+          "user": "",
+          "pass": ""
+        }
+      },
+      "from": "",
+      "to": [],
+      "subject": "Test Monitor Report"
+    },
+    "slack": {
+      "enabled": false,
+      "webhookUrl": "",
+      "channel": "#general",
+      "username": "TestMonitor"
+    },
+    "discord": {
+      "enabled": false,
+      "webhookUrl": "",
+      "username": "TestMonitor"
+    }
+  },
+  "monitoring": {
+    "enabled": true,
+    "interval": 5000,
+    "metrics": {
+      "executionTime": true,
+      "memoryUsage": true,
+      "cpuUsage": true
+    },
+    "thresholds": {
+      "executionTime": 30000,
+      "memoryUsage": 536870912,
+      "cpuUsage": 80
+    }
+  },
+  "reports": {
+    "enabled": true,
+    "formats": [
+      "html",
+      "json"
+    ],
+    "history": {
+      "enabled": true,
+      "maxEntries": 100
+    },
+    "export": {
+      "enabled": true,
+      "formats": [
+        "csv",
+        "json"
+      ]
+    },
+    "comparison": {
+      "enabled": true,
+      "baseline": "last"
+    }
+  },
+  "config": {
+    "hotReload": true,
+    "environments": {
+      "development": "test-monitor-dev.config.json",
+      "staging": "test-monitor-staging.config.json",
+      "production": "test-monitor-prod.config.json"
+    },
+    "current": "development"
+  },
+  "security": {
+    "commandWhitelist": [
+      "npm",
+      "node",
+      "jest",
+      "mocha",
+      "yarn",
+      "pnpm",
+      "echo"
+    ],
+    "allowedPaths": [
+      ".",
+      "./coverage",
+      "./reports",
+      "./test"
+    ],
+    "enableSignatureVerification": false,
+    "publicKeyPath": "",
+    "logSanitization": true,
+    "filePermissions": {
+      "log": 384,
+      "report": 420,
+      "lock": 384
+    }
+  },
+  "features": {
+    "security": {
+      "enabled": true,
+      "pathValidation": true,
+      "signatureVerification": false
+    },
+    "performance": {
+      "enabled": true,
+      "monitoring": true,
+      "thresholds": true
+    },
+    "notifications": {
+      "enabled": true,
+      "all": true,
+      "webhook": true,
+      "email": false,
+      "slack": false,
+      "discord": false
+    },
+    "reports": {
+      "enabled": true,
+      "html": true,
+      "json": true,
+      "history": true,
+      "export": true
+    },
+    "config": {
+      "hotReload": true
+    }
+  },
+  "featureFlags": {
+    "TM_NOTIFICATIONS_WEBHOOK_ENABLED": true,
+    "TM_NOTIFICATIONS_EMAIL_ENABLED": false,
+    "TM_MONITORING_PERFORMANCE_ENABLED": true,
+    "TM_REPORTS_HISTORY_ENABLED": true,
+    "TM_CONFIG_HOTRELOAD_ENABLED": true
+  }
+}

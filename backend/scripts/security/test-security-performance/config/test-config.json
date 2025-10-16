@@ -1,0 +1,6 @@
+{
+  "testCommand": "cmd /c echo \"test\"",
+  "coverageFile": "D:\\onlinestore\\backend\\scripts\\security\\test-security-performance\\coverage.json",
+  "targetCoverage": 80,
+  "logLevel": "INFO"
+}

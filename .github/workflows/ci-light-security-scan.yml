@@ -1,0 +1,62 @@
+name: CI Light Security Scan
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**'
+    paths-ignore:
+      - 'backend/**/node_modules/**'
+      - 'backend/**/dist/**'
+      - 'backend/**/build/**'
+      - 'backend/**/coverage/**'
+      - 'backend/**/reports/**'
+      - 'backend/**/.test-output/**'
+      - 'backend/**/.test-cache/**'
+      - 'backend/**/test-results/**'
+      - 'backend/**/test-output/**'
+      - 'playwright-report/**'
+      - 'test-results/**'
+      - 'test-output/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  light-security-scan:
+    name: 🔒 Light Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm i; fi
+
+      - name: Run light security scan
+        working-directory: backend
+        run: node scripts/ci-light-security-scan.cjs
+
+      - name: Upload security reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-light-security-reports
+          path: |
+            backend/reports/security/ci-light/

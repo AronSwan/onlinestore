@@ -1,0 +1,157 @@
+{
+  "timestamp": "2025-10-13T20:15:31.356Z",
+  "summary": {
+    "total": 24,
+    "passed": 24,
+    "failed": 0,
+    "passRate": "100.00%"
+  },
+  "details": [
+    {
+      "name": "生成加密密钥",
+      "passed": true,
+      "message": "密钥长度: 32",
+      "timestamp": "2025-10-13T20:15:30.617Z"
+    },
+    {
+      "name": "数据加密",
+      "passed": "IxkByRd3jBCY3DbCxpsOUlC3VbaRr/0hLPPY",
+      "message": "加密成功",
+      "timestamp": "2025-10-13T20:15:30.618Z"
+    },
+    {
+      "name": "数据解密",
+      "passed": true,
+      "message": "解密成功",
+      "timestamp": "2025-10-13T20:15:30.619Z"
+    },
+    {
+      "name": "配置文件加密",
+      "passed": true,
+      "message": "配置文件加密成功",
+      "timestamp": "2025-10-13T20:15:30.681Z"
+    },
+    {
+      "name": "配置文件解密",
+      "passed": true,
+      "message": "配置文件解密成功",
+      "timestamp": "2025-10-13T20:15:30.757Z"
+    },
+    {
+      "name": "加密配置文件检测",
+      "passed": "xfXze+K8xKtLMSjIOc8+mqpCFon28NewocDeKFi62+wiVWOEg5TnlXJH5m7D+grnao6+gh7fhfpeiycQTp3a7dYVxOc2U1Swjz10+wiDf+QrfBT/6iRzq7/3a0N9Nl8/3VkYLz0DeDkHj5PtGrcIxE6kOTiZqvkd4dKVx9N5395tNIdHNoj0HtPnI+XOmi/BpWsMS/nIXyj3G5KxlIKN43VPOdnLYA+7uVj5SNg2drC13wgKxYIVtG7Li3nAndLCb7glF65kO5bbHDYjNL+GCOs4AkWBTgmvjsKPKxKQUnMiM5PvE8c+RbHWNKbmAyGN8oVJqDt1HJs0s+Pb9LJ/awDlMK7KXRteJ/RUFfD24OhOX0KLnrcV/GWYJT91qe3SqklHbXvpH4DeqE4onM9gCy23l30VWZCYyqBePejRUZY7LQF/UmcD8RFJ3DERe4xJhgTvp8y0BcyhjJ0tcvSK4v4trVqtbqIusl2KWxu21BVU3YMIH8IOJQR5GoDhKcZDQs+1ZzHQkReYbUNAj0GhS7+/x2W/FS1UuRmKuAImlOWd0CZ3LF6O3aorA3iuKCk5rOifULwc4oCDDeRz1dNNya3cOkLNaaEhgGFEZWNTQ07S8mtFEvMe9iechVZcZtFH7187/PO+/CXuB4R4osc8eLI9WQQ2eFW4A5AkNhOps8TE495klvbKMzXE7XzGcjo7rkbm/wKpDCtnJ/xwqOd5GjhgltM2xGk+wje9g/4KHtrrKJFkfn597bJtk3RORMsMh6Sddu7TBq+Tpd68Rx7MZFQeGLHtUjidwQXy8/rMvr+ssMq3CIq+MH+gTX3ocYUMqyNqvHcIB/TOSvNJAmonpxTMz6Tl/u/WfUYZo5SUDYs0F1wTcsBRTnAmnDsXdBTaYf4MkV4wsbOexULy/hqi1wFzDrwI2dDOmGXMysUvgUhjo/6x/W7VLgxtj8hE/rpGH/4qci5n2mDOp/cD6+bkRxSkdDze242jblsf6aDa15ZnEh1eLTiyNud8rLLw5dn0ZPVSbxj83LD+cjFKC5KKPuylQ2EK5MK09x7i9wy/Ijc6jMxMwYOsIclcHBDanbEf1g+QLEluO2OVUS4YUok9rXQ2RGpiLL8NjP9Ikw==",
+      "message": "正确检测加密配置文件",
+      "timestamp": "2025-10-13T20:15:30.758Z"
+    },
+    {
+      "name": "非加密配置文件检测",
+      "passed": true,
+      "message": "正确检测非加密配置文件",
+      "timestamp": "2025-10-13T20:15:30.758Z"
+    },
+    {
+      "name": "获取当前用户",
+      "passed": "Administrator",
+      "message": "当前用户: Administrator",
+      "timestamp": "2025-10-13T20:15:30.759Z"
+    },
+    {
+      "name": "用户禁止检查",
+      "passed": true,
+      "message": "当前用户在禁止列表中",
+      "timestamp": "2025-10-13T20:15:30.760Z"
+    },
+    {
+      "name": "特权用户检查",
+      "passed": true,
+      "message": "当前用户是特权用户",
+      "timestamp": "2025-10-13T20:15:30.760Z"
+    },
+    {
+      "name": "获取用户组",
+      "passed": true,
+      "message": "用户组: Users",
+      "timestamp": "2025-10-13T20:15:30.798Z"
+    },
+    {
+      "name": "用户组允许检查",
+      "passed": true,
+      "message": "当前用户组在允许列表中",
+      "timestamp": "2025-10-13T20:15:30.798Z"
+    },
+    {
+      "name": "加载用户验证配置",
+      "passed": [
+        "Administrator"
+      ],
+      "message": "配置加载成功",
+      "timestamp": "2025-10-13T20:15:30.799Z"
+    },
+    {
+      "name": "用户验证",
+      "passed": true,
+      "message": "User 'Administrator' is allowed to run test monitor",
+      "timestamp": "2025-10-13T20:15:30.987Z"
+    },
+    {
+      "name": "配置文件签名",
+      "passed": true,
+      "message": "配置文件签名成功",
+      "timestamp": "2025-10-13T20:15:31.054Z"
+    },
+    {
+      "name": "配置文件签名验证",
+      "passed": true,
+      "message": "配置文件签名验证成功",
+      "timestamp": "2025-10-13T20:15:31.056Z"
+    },
+    {
+      "name": "修改后签名验证",
+      "passed": true,
+      "message": "修改后配置文件签名验证失败（符合预期）",
+      "timestamp": "2025-10-13T20:15:31.058Z"
+    },
+    {
+      "name": "Test Monitor实例创建",
+      "passed": true,
+      "message": "Test Monitor实例创建成功",
+      "timestamp": "2025-10-13T20:15:31.311Z"
+    },
+    {
+      "name": "Test Monitor安全功能运行",
+      "passed": true,
+      "message": "Test Monitor运行完成",
+      "timestamp": "2025-10-13T20:15:31.348Z"
+    },
+    {
+      "name": "密码脱敏",
+      "passed": true,
+      "message": "密码脱敏成功",
+      "timestamp": "2025-10-13T20:15:31.353Z"
+    },
+    {
+      "name": "API密钥脱敏",
+      "passed": true,
+      "message": "API密钥脱敏成功",
+      "timestamp": "2025-10-13T20:15:31.354Z"
+    },
+    {
+      "name": "令牌脱敏",
+      "passed": true,
+      "message": "令牌脱敏成功",
+      "timestamp": "2025-10-13T20:15:31.354Z"
+    },
+    {
+      "name": "路径脱敏",
+      "passed": true,
+      "message": "路径脱敏成功",
+      "timestamp": "2025-10-13T20:15:31.354Z"
+    },
+    {
+      "name": "Windows路径脱敏",
+      "passed": true,
+      "message": "Windows路径脱敏成功",
+      "timestamp": "2025-10-13T20:15:31.355Z"
+    }
+  ]
+}

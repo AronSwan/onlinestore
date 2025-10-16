@@ -1,0 +1,244 @@
+{
+  "name": "test-monitor-improvements",
+  "version": "2.1.0",
+  "description": "Enhanced test monitor with security, performance and feature improvements",
+  "scripts": {
+    "=== 测试相关脚本 ===": "",
+    "test": "npm run test:unit && npm run test:integration && npm run test:e2e",
+    "test:unit": "jest --config=jest.unit.config.js --coverage",
+    "test:integration": "jest --config=jest.integration.config.js",
+    "test:e2e": "jest --config=jest.e2e.config.js",
+    "test:watch": "jest --config=jest.unit.config.js --watch",
+    "test:coverage": "jest --config=jest.unit.config.js --coverage --coverageReporters=html,text-lcov",
+    "test:smoke": "jest --config=jest.smoke.config.js --testPathPattern=smoke --outputFile=reports/test/smoke-results.json",
+    
+    "=== 安全测试脚本 ===": "",
+    "test:security": "jest --config=jest.security.config.js --testPathPattern=security",
+    "test:security:injection": "jest --config=jest.security.config.js --testNamePattern=\"command-injection|path-traversal|param-injection\"",
+    "test:security:config": "jest --config=jest.security.config.js --testNamePattern=\"config-signature|config-encryption\"",
+    "test:security:files": "jest --config=jest.security.config.js --testNamePattern=\"file-permissions|temp-files|lock-file\"",
+    "test:security:access": "jest --config=jest.security.config.js --testNamePattern=\"user-validation|resource-access\"",
+    "test:security:all": "npm run test:security:injection && npm run test:security:config && npm run test:security:files && npm run test:security:access",
+    
+    "=== 性能测试脚本 ===": "",
+    "test:performance": "jest --config=jest.performance.config.js --testPathPattern=performance",
+    "test:performance:execution": "jest --config=jest.performance.config.js --testNamePattern=\"execution-time|memory-usage|cpu-usage\"",
+    "test:performance:concurrent": "jest --config=jest.performance.config.js --testNamePattern=\"concurrent-processing|worker-threads\"",
+    "test:performance:io": "jest --config=jest.performance.config.js --testNamePattern=\"file-io|cache-performance\"",
+    "test:benchmark": "node scripts/benchmark-runner.js",
+    "benchmark": "npm run test:benchmark",
+    "test:benchmark:compare": "node scripts/benchmark-comparer.js --baseline=baseline.json --current=current.json --output=reports/perf/compare.json",
+    
+    "=== 功能测试脚本 ===": "",
+    "test:functions": "jest --config=jest.functions.config.js",
+    "test:notifications": "jest --config=jest.functions.config.js --testNamePattern=\"webhook|email|slack\"",
+    "test:reports": "jest --config=jest.functions.config.js --testNamePattern=\"html-report|json-report|export\"",
+    "test:config": "jest --config=jest.functions.config.js --testNamePattern=\"config-hotreload|config-validation|multi-env\"",
+    "test:retry": "jest --config=jest.functions.config.js --testNamePattern=\"retry-mechanism|exponential-backoff\"",
+    
+    "=== 代码质量检查 ===": "",
+    "lint": "eslint scripts/**/*.js --ext .js --format=codeframe",
+    "lint:fix": "eslint scripts/**/*.js --ext .js --fix",
+    "lint:security": "eslint scripts/**/*.js --ext .js --config .eslintrc.security.js",
+    "format": "prettier --write scripts/**/*.js",
+    "format:check": "prettier --check scripts/**/*.js",
+    "type-check": "tsc --noEmit --skipLibCheck || echo 'TypeScript not configured'",
+    
+    "=== 安全扫描 ===": "",
+    "audit": "npm audit --audit-level high",
+    "audit:fix": "npm audit fix",
+    "audit:all": "npm audit --audit-level moderate",
+    "sast": "semgrep --config=auto scripts/",
+    "sast:security": "semgrep --config=security scripts/",
+    "sast:sarif": "semgrep --config=auto --sarif --output=reports/security/semgrep.sarif scripts/",
+    "deps:health": "depcheck --json > reports/deps/depcheck.json || true",
+    
+    "=== 报告生成 ===": "",
+    "report:html": "node scripts/generate-html-report.js",
+    "report:json": "node scripts/generate-json-report.js",
+    "report:security": "node scripts/generate-security-report.js",
+    "report:performance": "node scripts/generate-performance-report.js",
+    "report:metrics": "node scripts/generate-metrics-report.js",
+    "report:coverage": "npm run test:coverage && npx open-cli ./coverage/lcov-report/index.html",
+    "report:all": "npm run report:html && npm run report:json && npm run report:security && npm run report:performance",
+    
+    "=== 监控脚本 ===": "",
+    "monitor": "node scripts/test-monitor-improved.js",
+    "monitor:once": "node scripts/test-monitor-improved.js --once",
+    "monitor:dev": "node scripts/test-monitor-improved.js --interval=5 --logLevel=DEBUG",
+    "monitor:prod": "node scripts/test-monitor-improved.js --interval=60 --logLevel=INFO",
+    "monitor:secure": "node scripts/test-monitor-improved.js --interval=30 --logLevel=WARN --targetCoverage=90",
+    
+    "=== 构建和部署 ===": "",
+    "build": "npm run lint && npm run test:unit && npm run test:security",
+    "build:full": "npm run build && npm run test:integration && npm run test:e2e",
+    "build:production": "npm run build:full && npm run audit && npm run sast",
+    "prepack": "npm run build",
+    "prepublishOnly": "npm run build:production",
+    
+    "=== 开发辅助脚本 ===": "",
+    "dev": "npm run monitor:dev",
+    "dev:test": "npm run test:watch",
+    "dev:lint": "npm run lint:fix && npm run format",
+    "dev:security": "npm run test:security && npm run audit",
+    "dev:performance": "npm run test:performance && npm run test:benchmark",
+    
+    "=== CI/CD 相关脚本 ===": "",
+    "ci:test": "jest --ci --coverage --reporters=default --reporters=jest-junit --outputFile=reports/test/junit.xml --coverageReporters=text-lcov --coverageDirectory=coverage",
+    "ci:lint": "eslint scripts/**/*.js -f json -o reports/lint/lint-results.json",
+    "ci:security": "powershell -NoProfile -Command \"New-Item -ItemType Directory -Force -Path reports, reports/security | Out-Null; npm audit --json | Out-File -FilePath reports/security/audit-results.json -Encoding utf8\"; exit 0",
+    "ci:sast": "semgrep --config=auto --json --output=reports/security/semgrep.json scripts/ || true",
+    "ci:sast:sarif": "semgrep --config=auto --sarif --output=reports/security/semgrep.sarif scripts/ || true",
+    "ci:build": "npm run build",
+    "ci:all": "npm run ci:lint && npm run ci:test && npm run ci:security && npm run ci:sast && npm run ci:build",
+    
+    "=== 发布相关 ===": "",
+    "release:version": "standard-version",
+    "release:changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
+    "release:prepare": "npm run build:production && npm run release:version && npm run release:changelog",
+    "release:publish": "npm publish",
+    
+    "=== 清理脚本 ===": "",
+    "clean": "rimraf coverage/ reports/ dist/ logs/ .test-monitor.lock",
+    "clean:coverage": "rimraf coverage/",
+    "clean:reports": "rimraf reports/",
+    "clean:logs": "rimraf logs/ test-monitor*.log",
+    "clean:all": "npm run clean && rimraf node_modules/ package-lock.json",
+    
+    "=== 实验性功能 ===": "",
+    "exp:concurrent": "node scripts/experimental/concurrent-monitor.js",
+    "exp:worker-threads": "node scripts/experimental/worker-monitor.js",
+    "exp:plugin-system": "node scripts/experimental/plugin-loader.js",
+    "exp:web-interface": "node scripts/experimental/web-server.js",
+    
+    "=== 调试脚本 ===": "",
+    "debug:monitor": "node --inspect-brk scripts/test-monitor-improved.js --once",
+    "debug:tests": "node --inspect-brk node_modules/.bin/jest --config=jest.unit.config.js",
+    "debug:security": "node --inspect-brk scripts/test-monitor-improved.js --logLevel=DEBUG --targetCoverage=100",
+    
+    "=== 验证脚本 ===": "",
+    "validate:config": "node scripts/validate-config.js",
+    "validate:security": "node scripts/validate-security.js",
+    "validate:performance": "node scripts/validate-performance.js",
+    "validate:all": "npm run validate:config && npm run validate:security && npm run validate:performance",
+    
+    "=== 工件合并 ===": "",
+    "artifacts:merge": "node scripts/merge-artifacts.js",
+    
+    "=== 文档生成 ===": "",
+    "docs:generate": "jsdoc -c jsdoc.conf.json",
+    "docs:serve": "http-server docs/ -p 8080",
+    "docs:api": "node scripts/generate-api-docs.js",
+    "docs:readme": "node scripts/generate-readme.js",
+    
+    "=== 复杂度分析 ===": "",
+    "complexity": "plato -r -d reports/complexity scripts/test-monitor-improved.js"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "eslint": "^8.0.0",
+    "eslint-plugin-security": "^1.7.1",
+    "prettier": "^2.8.0",
+    "typescript": "^5.0.0",
+    "@types/jest": "^29.0.0",
+    "@types/node": "^18.0.0",
+    "semgrep": "^1.0.0",
+    "depcheck": "^1.4.7",
+    "standard-version": "^9.0.0",
+    "conventional-changelog-cli": "^2.2.0",
+    "jsdoc": "^4.0.0",
+    "http-server": "^14.0.0",
+    "rimraf": "^4.0.0",
+    "benchmark": "^2.1.4",
+    "clinic": "^12.0.0",
+    "0x": "^5.0.0",
+    "jest-junit": "^15.0.0",
+    "open-cli": "^7.0.0",
+    "plato": "^1.7.0"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.0",
+    "nodemailer": "^6.9.0",
+    "winston": "^3.8.0",
+    "commander": "^9.4.0",
+    "chalk": "^4.1.2",
+    "ora": "^5.4.1",
+    "inquirer": "^8.2.5",
+    "dotenv": "^16.0.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/test-monitor.git"
+  },
+  "keywords": [
+    "testing",
+    "monitoring",
+    "coverage",
+    "security",
+    "performance",
+    "automation"
+  ],
+  "author": "Backend Development Team",
+  "license": "MIT",
+  "jest": {
+    "testEnvironment": "node",
+    "collectCoverageFrom": [
+      "scripts/**/*.js",
+      "!scripts/**/index.js",
+      "!scripts/**/test-*.js"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 90,
+        "functions": 90,
+        "lines": 90,
+        "statements": 90
+      }
+    },
+    "reporters": [
+      "default",
+      "jest-junit"
+    ],
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "html"
+    ],
+    "outputDirectory": "reports/test"
+  },
+  "eslintConfig": {
+    "env": {
+      "node": true,
+      "es2021": true,
+      "jest": true
+    },
+    "extends": [
+      "eslint:recommended",
+      "plugin:security/recommended"
+    ],
+    "parserOptions": {
+      "ecmaVersion": 12,
+      "sourceType": "module"
+    },
+    "rules": {
+      "no-console": "warn",
+      "no-unused-vars": "error",
+      "security/detect-object-injection": "warn",
+      "security/detect-non-literal-fs-filename": "warn"
+    },
+    "plugins": [
+      "security"
+    ]
+  },
+  "prettier": {
+    "semi": true,
+    "trailingComma": "es5",
+    "singleQuote": true,
+    "printWidth": 80,
+    "tabWidth": 2
+  }
+}

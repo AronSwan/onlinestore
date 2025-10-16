@@ -1,0 +1,50 @@
+{
+  "security": {
+    "userValidation": {
+      "enabled": true,
+      "strictMode": false,
+      "allowedUsers": [
+        "test-monitor",
+        "ci",
+        "jenkins"
+      ],
+      "allowedGroups": [
+        "test-monitor",
+        "ci",
+        "jenkins"
+      ],
+      "forbiddenUsers": [
+        "root"
+      ],
+      "checkGroups": true
+    },
+    "encryption": {
+      "enabled": true,
+      "password": "test-password-123"
+    },
+    "enableSignatureVerification": true,
+    "publicKeyPath": "./keys/public.pem",
+    "logSanitization": true
+  },
+  "features": {
+    "security": {
+      "enabled": true,
+      "pathValidation": true,
+      "signatureVerification": true,
+      "encryption": true,
+      "userValidation": true
+    },
+    "performance": {
+      "enabled": false
+    },
+    "notifications": {
+      "enabled": false
+    },
+    "reports": {
+      "enabled": true,
+      "html": false,
+      "json": true
+    }
+  },
+  "logLevel": "INFO"
+}
