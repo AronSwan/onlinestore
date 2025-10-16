@@ -1,0 +1,57 @@
+# 简化版 Docker Compose 配置文件（仅包含核心服务）
+
+version: '3.8'
+
+services:
+  # 后端主服务
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: shopping-backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_URL=sqlite:///app/data/caddy_shopping.db
+      - JWT_SECRET=super_secret_jwt_key_make_it_long_and_random_32_chars_min
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000/api/health', r => process.exit(r.statusCode===200?0:1)).on('error', ()=>process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    container_name: backend-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - backend-network
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  backend-network:
+    driver: bridge
+
+volumes:
+  redis_data:
+    driver: local

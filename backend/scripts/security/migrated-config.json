@@ -1,0 +1,138 @@
+{
+  "security": {
+    "version": "2.0.0",
+    "userValidation": {
+      "enabled": true,
+      "strictMode": false,
+      "allowedUsers": [
+        "test-monitor",
+        "ci",
+        "jenkins",
+        "gitlab-runner",
+        "github-runner",
+        "node"
+      ],
+      "allowedGroups": [
+        "test-monitor",
+        "ci",
+        "jenkins",
+        "gitlab-runner",
+        "github-runner",
+        "node",
+        "docker",
+        "Users"
+      ],
+      "forbiddenUsers": [
+        "root",
+        "Administrator"
+      ],
+      "privilegedUsers": [
+        "root",
+        "Administrator"
+      ],
+      "forbidPrivilegedUsers": false,
+      "checkGroups": true
+    },
+    "testValidation": {
+      "enabled": true,
+      "defaultImpactLevel": "medium",
+      "requireIsolation": {
+        "low": false,
+        "medium": true,
+        "high": true
+      },
+      "logActivities": true,
+      "maxLogEntries": 1000,
+      "auditLogPath": "./reports/test-audit-log.json"
+    },
+    "encryption": {
+      "enabled": true,
+      "algorithm": "aes-256-gcm",
+      "keyDerivation": "pbkdf2",
+      "iterations": 100000
+    },
+    "signatureVerification": {
+      "enabled": true,
+      "algorithm": "rsa-sha256",
+      "keySize": 2048
+    },
+    "logSanitization": {
+      "enabled": {
+        "enabled": true,
+        "patterns": [
+          {
+            "name": "password",
+            "pattern": "password\\s*=\\s*[\"'][^\"']+[\"']",
+            "replacement": "password=\"***\""
+          },
+          {
+            "name": "api_key",
+            "pattern": "api_key\\s*=\\s*[\"'][^\"']+[\"']",
+            "replacement": "api_key=\"***\""
+          },
+          {
+            "name": "token",
+            "pattern": "token\\s*=\\s*[\"'][^\"']+[\"']",
+            "replacement": "token=\"***\""
+          },
+          {
+            "name": "path",
+            "pattern": "(/Users/[^/]+|/home/[^/]+|C:\\\\\\\\Users\\\\\\\\[^\\\\\\\\]+)",
+            "replacement": "$1***"
+          }
+        ]
+      },
+      "patterns": [
+        {
+          "name": "password",
+          "pattern": "password\\s*=\\s*[\"'][^\"']+[\"']",
+          "replacement": "password=\"***\""
+        },
+        {
+          "name": "api_key",
+          "pattern": "api_key\\s*=\\s*[\"'][^\"']+[\"']",
+          "replacement": "api_key=\"***\""
+        },
+        {
+          "name": "token",
+          "pattern": "token\\s*=\\s*[\"'][^\"']+[\"']",
+          "replacement": "token=\"***\""
+        },
+        {
+          "name": "path",
+          "pattern": "(/Users/[^/]+|/home/[^/]+|C:\\\\\\\\Users\\\\\\\\[^\\\\\\\\]+)",
+          "replacement": "$1***"
+        }
+      ]
+    }
+  },
+  "features": {
+    "security": {
+      "enabled": true,
+      "pathValidation": true,
+      "signatureVerification": true,
+      "encryption": true,
+      "userValidation": true,
+      "testValidation": true,
+      "logSanitization": true
+    },
+    "performance": {
+      "enabled": false
+    },
+    "notifications": {
+      "enabled": false
+    },
+    "reports": {
+      "enabled": true,
+      "html": false,
+      "json": true
+    }
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "json",
+    "file": "./logs/test-monitor.log",
+    "maxFileSize": "10MB",
+    "maxFiles": 5
+  }
+}

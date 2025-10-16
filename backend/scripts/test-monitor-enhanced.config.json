@@ -1,0 +1,139 @@
+{
+  "testCommand": "npm test",
+  "coverageFile": "coverage/coverage-summary.json",
+  "targetCoverage": 80,
+  "logLevel": "INFO",
+  "retryAttempts": 3,
+  "retryDelay": 1000,
+  "notifications": {
+    "enabled": true,
+    "levels": {
+      "success": true,
+      "warning": true,
+      "error": true
+    },
+    "webhook": {
+      "enabled": true,
+      "url": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
+      "format": "slack",
+      "retryAttempts": 3,
+      "retryDelay": 2000,
+      "timeout": 10000
+    },
+    "email": {
+      "enabled": false,
+      "smtp": {
+        "host": "smtp.example.com",
+        "port": 587,
+        "secure": false,
+        "auth": {
+          "user": "test@example.com",
+          "pass": "password"
+        }
+      },
+      "from": "test@example.com",
+      "to": [
+        "dev-team@example.com"
+      ],
+      "subject": "Test Monitor Report"
+    },
+    "slack": {
+      "enabled": false,
+      "webhookUrl": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
+      "channel": "#general",
+      "username": "TestMonitor"
+    },
+    "discord": {
+      "enabled": false,
+      "webhookUrl": "https://discord.com/api/webhooks/YOUR/DISCORD/WEBHOOK",
+      "username": "TestMonitor"
+    }
+  },
+  "monitoring": {
+    "enabled": true,
+    "interval": 5000,
+    "metrics": {
+      "executionTime": true,
+      "memoryUsage": true,
+      "cpuUsage": true
+    },
+    "thresholds": {
+      "executionTime": 30000,
+      "memoryUsage": 536870912,
+      "cpuUsage": 80
+    }
+  },
+  "reports": {
+    "enabled": true,
+    "formats": [
+      "html",
+      "json"
+    ],
+    "history": {
+      "enabled": true,
+      "maxEntries": 100
+    },
+    "export": {
+      "enabled": true,
+      "formats": [
+        "csv",
+        "json"
+      ]
+    },
+    "comparison": {
+      "enabled": true,
+      "baseline": "last"
+    }
+  },
+  "config": {
+    "hotReload": true,
+    "environments": {
+      "development": "test-monitor-dev.config.json",
+      "staging": "test-monitor-staging.config.json",
+      "production": "test-monitor-prod.config.json"
+    },
+    "current": "development"
+  },
+  "security": {
+    "commandWhitelist": [
+      "npm",
+      "node",
+      "jest",
+      "mocha",
+      "yarn",
+      "pnpm"
+    ],
+    "allowedPaths": [
+      ".",
+      "./coverage",
+      "./reports",
+      "./test",
+      "./scripts"
+    ],
+    "enableSignatureVerification": false,
+    "publicKeyPath": "./keys/public.pem",
+    "logSanitization": true,
+    "filePermissions": {
+      "log": 384,
+      "report": 420,
+      "lock": 384
+    },
+    "maxFileSize": {
+      "log": 10485760,
+      "report": 52428800
+    }
+  },
+  "performance": {
+    "timeout": 30000,
+    "maxMemory": "512MB",
+    "enableCaching": true,
+    "cacheExpiry": 3600000
+  },
+  "featureFlags": {
+    "TM_NOTIFICATIONS_WEBHOOK_ENABLED": true,
+    "TM_NOTIFICATIONS_EMAIL_ENABLED": false,
+    "TM_MONITORING_PERFORMANCE_ENABLED": true,
+    "TM_REPORTS_HISTORY_ENABLED": true,
+    "TM_CONFIG_HOTRELOAD_ENABLED": true
+  }
+}

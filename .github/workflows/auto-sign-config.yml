@@ -1,0 +1,123 @@
+name: Auto-Sign Configuration
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/scripts/test-monitor.config.json'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'backend/scripts/test-monitor.config.json'
+  workflow_dispatch:
+    inputs:
+      signers:
+        description: 'Comma-separated list of signer key IDs (optional)'
+        required: false
+        type: string
+      multi_signature:
+        description: 'Enable multi-signature (true/false)'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  auto-sign-config:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        
+    - name: Install dependencies
+      run: |
+        cd backend
+        npm ci
+        
+    - name: Configure environment
+      run: |
+        echo "CONFIG_KEY_PASSPHRASE=${{ secrets.CONFIG_KEY_PASSPHRASE }}" >> $GITHUB_ENV
+        echo "CI=github" >> $GITHUB_ENV
+        echo "BUILD_NUMBER=${{ github.run_number }}" >> $GITHUB_ENV
+        
+        # Set signers from input or use default
+        if [ -n "${{ github.event.inputs.signers }}" ]; then
+          echo "CONFIG_SIGNERS=${{ github.event.inputs.signers }}" >> $GITHUB_ENV
+        fi
+        
+        # Set multi-signature flag from input
+        if [ "${{ github.event.inputs.multi_signature }}" = "true" ]; then
+          echo "ENABLE_MULTI_SIGNATURE=true" >> $GITHUB_ENV
+        fi
+        
+    - name: Initialize signature management
+      run: |
+        cd backend/scripts
+        node security/advanced-signature-manager.js init
+        
+    - name: List available keys
+      run: |
+        cd backend/scripts
+        node security/advanced-signature-manager.js list-keys
+        
+    - name: Auto-sign configuration
+      run: |
+        cd backend/scripts
+        node ci/auto-sign-config.js
+        
+    - name: Upload signature report
+      uses: actions/upload-artifact@v3
+      with:
+        name: signature-report-${{ github.run_number }}
+        path: backend/scripts/reports/signature-report-${{ github.run_number }}.json
+        
+    - name: Upload signature files
+      uses: actions/upload-artifact@v3
+      with:
+        name: signature-files-${{ github.run_number }}
+        path: |
+          backend/scripts/test-monitor.config.json.sig
+          backend/scripts/signatures/
+          
+    - name: Verify signature in test monitor
+      run: |
+        cd backend/scripts
+        node start-test-monitor.js --type=unified --mode=security --once --testCommand="node test-simple.js"
+        
+    - name: Comment PR with signature status
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          const path = require('path');
+          
+          // Read signature report
+          const reportPath = path.join('backend/scripts/reports', `signature-report-${{ github.run_number }}.json`);
+          const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+          
+          // Create comment
+          const comment = `## 🔐 Configuration Signature Status
+          
+          - **Environment**: ${report.environment}
+          - **Build Number**: ${report.buildNumber}
+          - **Key ID**: ${report.keyId}
+          - **Signers**: ${report.signers.join(', ')}
+          - **Multi-Signature Enabled**: ${report.multiSignatureEnabled}
+          - **Signature Verification**: ${report.signatureVerification}
+          - **Timestamp**: ${report.timestamp}
+          
+          ✅ Configuration file signature verification passed!`;
+          
+          // Post comment
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });

@@ -1,0 +1,91 @@
+{
+  "timestamp": "2025-10-14T20:30:04.895Z",
+  "summary": {
+    "total": 4,
+    "passed": 4,
+    "failed": 0,
+    "passRate": "100.00%"
+  },
+  "details": [
+    {
+      "name": "用户验证性能",
+      "passed": true,
+      "message": "平均时间: 156.862ms, 最大时间: 312.965ms",
+      "timestamp": "2025-10-14T20:30:03.112Z",
+      "metrics": {
+        "avgTime": 156.862403,
+        "maxTime": 312.964762,
+        "iterations": 100,
+        "results": [
+          {
+            "operation": "getCurrentUser",
+            "time": 0.760044
+          },
+          {
+            "operation": "validateTestRun",
+            "time": 312.964762
+          }
+        ]
+      }
+    },
+    {
+      "name": "加密性能",
+      "passed": true,
+      "message": "平均时间: 0.062ms, 最大时间: 0.084ms",
+      "timestamp": "2025-10-14T20:30:03.120Z",
+      "metrics": {
+        "avgTime": 0.06232899999999063,
+        "maxTime": 0.08425799999997252,
+        "iterations": 50,
+        "results": [
+          {
+            "operation": "encryptData",
+            "time": 0.08425799999997252
+          },
+          {
+            "operation": "decryptData",
+            "time": 0.040400000000008734
+          }
+        ]
+      }
+    },
+    {
+      "name": "签名验证性能",
+      "passed": true,
+      "message": "平均时间: 0.935ms, 最大时间: 0.935ms",
+      "timestamp": "2025-10-14T20:30:03.201Z",
+      "metrics": {
+        "avgTime": 0.9353280000000086,
+        "maxTime": 0.9353280000000086,
+        "iterations": 50,
+        "results": [
+          {
+            "operation": "verifyConfigFileSignature",
+            "time": 0.9353280000000086
+          }
+        ]
+      }
+    },
+    {
+      "name": "Test Monitor性能",
+      "passed": true,
+      "message": "平均时间: 136.331ms, 最大时间: 244.254ms",
+      "timestamp": "2025-10-14T20:30:04.894Z",
+      "metrics": {
+        "avgTime": 136.3308799999999,
+        "maxTime": 244.2543000000005,
+        "iterations": 5,
+        "results": [
+          {
+            "operation": "init",
+            "time": 244.2543000000005
+          },
+          {
+            "operation": "run",
+            "time": 28.407459999999265
+          }
+        ]
+      }
+    }
+  ]
+}

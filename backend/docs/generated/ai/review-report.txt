@@ -1,0 +1,3 @@
+[docs:ai:review] 时间: 2025-10-15T06:31:21.608Z
+结果: 占位审查已完成（请用真实审查逻辑替换）。
+指引: 查看 backend/docs/automation/ai-doc-integration.md 以集成审查流程。

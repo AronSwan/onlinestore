@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  test-runner-secure-sandbox:
+    build:
+      context: ..
+      dockerfile: scripts/Dockerfile.test-runner-secure
+    container_name: test-runner-secure-sandbox-test
+    volumes:
+      - ../.test-output:/app/.test-output:rw
+      - ../scripts:/app/scripts:ro
+      - ../.test-output/sandbox-test:/app/scripts/sandbox-test:rw
+    environment:
+      - NODE_ENV=test
+      - TEST_RUNNER_ENV=docker
+      - DOCKER_SANDBOX_TEST=true
+    working_dir: /app
+    user: "1001:1001"  # 使用非root用户
+    read_only: true    # 只读文件系统
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    networks:
+      - test-runner-network
+    restart: "no"
+
+  test-runner-secure-privileged:
+    build:
+      context: ..
+      dockerfile: scripts/Dockerfile.test-runner-secure
+    container_name: test-runner-secure-privileged-test
+    volumes:
+      - ../.test-output:/app/.test-output:rw
+      - ../scripts:/app/scripts:ro
+      - ../.test-output/sandbox-test:/app/scripts/sandbox-test:rw
+    environment:
+      - NODE_ENV=test
+      - TEST_RUNNER_ENV=docker
+      - DOCKER_SANDBOX_TEST=true
+      - PRIVILEGED_MODE=true
+    working_dir: /app
+    user: "0:0"  # 使用root用户进行特权测试
+    security_opt:
+      - no-new-privileges:false
+    networks:
+      - test-runner-network
+    restart: "no"
+
+  test-runner-secure-network:
+    build:
+      context: ..
+      dockerfile: scripts/Dockerfile.test-runner-secure
+    container_name: test-runner-secure-network-test
+    volumes:
+      - ../.test-output:/app/.test-output:rw
+      - ../scripts:/app/scripts:ro
+      - ../.test-output/sandbox-test:/app/scripts/sandbox-test:rw
+    environment:
+      - NODE_ENV=test
+      - TEST_RUNNER_ENV=docker
+      - DOCKER_SANDBOX_TEST=true
+      - NETWORK_TEST=true
+    working_dir: /app
+    user: "1001:1001"
+    network_mode: "none"  # 无网络访问
+    restart: "no"
+
+networks:
+  test-runner-network:
+    driver: bridge
+    internal: true  # 内部网络，无外部访问

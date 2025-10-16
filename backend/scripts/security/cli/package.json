@@ -1,0 +1,39 @@
+{
+  "name": "enhanced-signature-manager-cli",
+  "version": "2.0.0",
+  "description": "高级签名管理系统 - 命令行工具",
+  "main": "index.js",
+  "bin": {
+    "signature-manager": "./bin/signature-manager.js",
+    "key-manager": "./bin/key-manager.js",
+    "signature-service": "./bin/signature-service.js"
+  },
+  "scripts": {
+    "start": "node bin/signature-manager.js",
+    "key-manager": "node bin/key-manager.js",
+    "signature-service": "node bin/signature-service.js",
+    "test": "node ../../test-security-validation.cjs",
+    "health-check": "node bin/signature-manager.js health-check"
+  },
+  "keywords": [
+    "signature",
+    "security",
+    "cryptography",
+    "cli",
+    "key-management",
+    "digital-signature"
+  ],
+  "author": "OnlineStore Security Team",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^9.4.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/onlinestore/security-tools"
+  },
+  "homepage": "https://github.com/onlinestore/security-tools#readme"
+}

@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  test-monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile.test-monitor
+    container_name: test-monitor-security-test
+    environment:
+      - NODE_ENV=test
+      - TEST_MONITOR_USER=testuser
+      - TEST_MONITOR_GROUP=testmonitor
+      - CONFIG_ENCRYPTION_PASSWORD=test-password-123
+    volumes:
+      - ./reports:/app/reports
+      - ./scripts/test-security-features:/app/scripts/test-security-features
+    command: ["node", "scripts/test-security-features.cjs"]
+    networks:
+      - test-network
+    restart: "no"
+
+  test-monitor-root:
+    build:
+      context: .
+      dockerfile: Dockerfile.test-monitor
+    container_name: test-monitor-root-test
+    environment:
+      - NODE_ENV=test
+      - TEST_MONITOR_USER=root
+      - TEST_MONITOR_GROUP=root
+      - CONFIG_ENCRYPTION_PASSWORD=test-password-123
+    volumes:
+      - ./reports:/app/reports
+      - ./scripts/test-security-features:/app/scripts/test-security-features
+    command: ["node", "scripts/test-security-features.cjs"]
+    networks:
+      - test-network
+    restart: "no"
+
+  test-monitor-privileged:
+    build:
+      context: .
+      dockerfile: Dockerfile.test-monitor
+    container_name: test-monitor-privileged-test
+    environment:
+      - NODE_ENV=test
+      - TEST_MONITOR_USER=privileged
+      - TEST_MONITOR_GROUP=wheel
+      - CONFIG_ENCRYPTION_PASSWORD=test-password-123
+    volumes:
+      - ./reports:/app/reports
+      - ./scripts/test-security-features:/app/scripts/test-security-features
+    command: ["node", "scripts/test-security-features.cjs"]
+    networks:
+      - test-network
+    restart: "no"
+
+networks:
+  test-network:
+    driver: bridge
