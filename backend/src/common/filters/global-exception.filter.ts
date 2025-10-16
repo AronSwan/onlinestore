@@ -190,6 +190,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       if (httpStatus === 401) return 'authentication';
       if (httpStatus === 403) return 'authorization';
       if (httpStatus === 429) return 'rate_limit';
+      // 404和409状态码属于业务逻辑错误
+      if (httpStatus === 404 || httpStatus === 409) return 'business';
       return 'validation';
     } else if (httpStatus >= 500) {
       if (httpStatus === 502 || httpStatus === 503) return 'external';

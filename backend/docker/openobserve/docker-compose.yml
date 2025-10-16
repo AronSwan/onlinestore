@@ -1,172 +1,25 @@
-# OpenObserve 独立服务配置文件
-# 可以单独启动，也可以通过主配置文件启动
 version: '3.8'
 
 services:
   openobserve:
     image: public.ecr.aws/zinclabs/openobserve:latest
-    container_name: openobserve-standalone
+    container_name: openobserve-test
     restart: unless-stopped
-    # 资源限制和优化
-    deploy:
-      resources:
-        limits:
-          cpus: '2.0'
-          memory: 4G
-        reservations:
-          cpus: '1.0'
-          memory: 2G
-    environment:
-      - ZO_ROOT_USER_EMAIL=admin@example.com
-      - ZO_ROOT_USER_PASSWORD=ComplexPass#123
-      - ZO_DATA_DIR=/data
-      - ZO_META_DIR=/meta
-      - ZO_FILE_DATA_DIR=/files
-      - ZO_COMPRESSION=gzip
-      - ZO_MEMORY_CACHE_ENABLED=true
-      - ZO_MEMORY_CACHE_MAX_SIZE=2048
-      - ZO_METRICS_ENABLED=true
-      - ZO_TRACING_ENABLED=true
-      - ZO_DEFAULT_ORG=default
-      - ZO_DISABLE_LOGIN=false
-      - ZO_AUTH_DISABLED=false
-      # 性能优化环境变量
-      - ZO_COMPRESSION_LEVEL=6
-      - ZO_QUERY_CACHE_ENABLED=true
-      - ZO_QUERY_CACHE_TTL=600
-      - ZO_MAX_FILE_SIZE=268435456
-      - ZO_MEMORY_MERGE_INTERVAL=300
-      - ZO_DATA_RETENTION_DAYS=90
-      - ZO_WAL_MEMORY_MODE=true
-      - ZO_WAL_MEMORY_MAX_SIZE=1073741824
-    volumes:
-      - openobserve_data:/data
-      - openobserve_meta:/meta
-      - openobserve_files:/files
-      - ./config.yaml:/etc/openobserve/config.yaml:ro
-      - ./logs:/var/log/openobserve
     ports:
       - "5080:5080"
-    networks:
-      - openobserve-network
-    # 优化的健康检查
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5080/health"]
-      interval: 15s
-      timeout: 10s
-      retries: 5
-      start_period: 120s
-    # 日志配置
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "100m"
-        max-file: "3"
-
-  # Prometheus 指标收集 (可选)
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus-openobserve
-    restart: unless-stopped
-    # 资源限制
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 2G
-        reservations:
-          cpus: '0.5'
-          memory: 1G
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--storage.tsdb.retention.time=90d'
-      - '--web.enable-lifecycle'
-      - '--web.enable-admin-api'
-      - '--storage.tsdb.wal-compression'
-      - '--query.max-samples=50000000'
-      - '--query.timeout=2m'
+    environment:
+      - ZO_ROOT_USER_EMAIL=admin@example.com
+      - ZO_ROOT_USER_PASSWORD=Complexpass#123
+      - ZO_DATA_DIR=/data
     volumes:
-      - ./prometheus-openobserve.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
-      - ./logs:/var/log/prometheus
+      - openobserve_data:/data
     networks:
-      - openobserve-network
-    ports:
-      - "9090:9090"
-    # 健康检查
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-    # 日志配置
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "3"
-
-  # Node Exporter 系统监控 (可选)
-  node-exporter:
-    image: prom/node-exporter:latest
-    container_name: node-exporter-openobserve
-    restart: unless-stopped
-    # 资源限制
-    deploy:
-      resources:
-        limits:
-          cpus: '0.2'
-          memory: 256M
-        reservations:
-          cpus: '0.1'
-          memory: 128M
-    command:
-      - '--path.procfs=/host/proc'
-      - '--path.rootfs=/rootfs'
-      - '--path.sysfs=/host/sys'
-      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
-      - '--collector.cpu.info'
-      - '--collector.meminfo'
-      - '--collector.diskstats'
-      - '--collector.netdev'
-      - '--collector.filesystem'
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
-    networks:
-      - openobserve-network
-    ports:
-      - "9100:9100"
-    # 健康检查
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9100/metrics"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    profiles:
-      - monitoring
+      - openobserve_network
 
 volumes:
   openobserve_data:
     driver: local
-    name: openobserve_standalone_data
-  openobserve_meta:
-    driver: local
-    name: openobserve_standalone_meta
-  openobserve_files:
-    driver: local
-    name: openobserve_standalone_files
-  prometheus_data:
-    driver: local
-    name: prometheus_openobserve_data
 
 networks:
-  openobserve-network:
+  openobserve_network:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.22.0.0/16

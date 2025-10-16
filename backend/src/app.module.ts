@@ -26,7 +26,7 @@ import { createMasterConfiguration } from './config/unified-master.config';
         // 使用统一主配置
         const masterConfig = configService.get('master');
         const dbConfig = masterConfig?.database;
-        
+
         if (!dbConfig) {
           throw new Error('数据库配置未找到');
         }

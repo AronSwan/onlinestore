@@ -89,7 +89,7 @@ export default class OpenObserveTransport {
     } catch (error: any) {
       // Drop on failure to avoid blocking; log basic error
       const msg = error?.message || 'OpenObserveTransport flush failed';
-      // eslint-disable-next-line no-console
+
       console.warn('[OpenObserveTransport] flush error:', msg);
     }
   }

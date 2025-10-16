@@ -16,22 +16,24 @@ describe('MetricsInterceptor', () => {
   let execIntercept: () => void;
 
   beforeEach(async () => {
+    const mockMonitoringService = {
+      incrementActiveConnections: jest.fn(),
+      decrementActiveConnections: jest.fn(),
+      recordApiCall: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         MetricsInterceptor,
         {
           provide: MonitoringService,
-          useValue: {
-            incrementActiveConnections: jest.fn(),
-            decrementActiveConnections: jest.fn(),
-            recordApiCall: jest.fn(),
-          },
+          useValue: mockMonitoringService,
         },
       ],
     }).compile();
 
     interceptor = module.get<MetricsInterceptor>(MetricsInterceptor);
-    monitoringService = module.get<MonitoringService>(MonitoringService);
+    monitoringService = mockMonitoringService as any;
 
     mockRequest = {
       url: '/api/test',
@@ -218,22 +220,56 @@ describe('MetricsInterceptor', () => {
     it('should handle concurrent requests', done => {
       const concurrentRequests = 5;
 
+      // 为每个请求创建独立的mockCallHandler，避免共享状态
+      const promises: Promise<void>[] = [];
+      
       for (let i = 0; i < concurrentRequests; i++) {
-        interceptor.intercept(mockContext, mockCallHandler);
+        const independentMockCallHandler = {
+          handle: () => of({}),
+        } as CallHandler;
+        
+        const observable = interceptor.intercept(mockContext, independentMockCallHandler);
+        
+        // 将Observable转换为Promise
+        const promise = new Promise<void>((resolve, reject) => {
+          observable.subscribe({
+            next: () => resolve(),
+            error: (err) => reject(err),
+            complete: () => resolve()
+          });
+        });
+        
+        promises.push(promise);
       }
 
+      // 检查increment调用（应该在拦截时立即调用）
       expect(monitoringService.incrementActiveConnections).toHaveBeenCalledTimes(
         concurrentRequests,
       );
 
-      // Wait for all observables to complete
-      setTimeout(() => {
-        expect(monitoringService.decrementActiveConnections).toHaveBeenCalledTimes(
-          concurrentRequests,
-        );
-        expect(monitoringService.recordApiCall).toHaveBeenCalledTimes(concurrentRequests);
-        done();
-      }, 0);
+      // 添加超时保护
+      const timeout = setTimeout(() => {
+        done(new Error(`测试超时，已完成 ${promises.length}/${concurrentRequests} 个请求`));
+      }, 5000);
+
+      // 等待所有Observable完成
+      Promise.all(promises)
+        .then(() => {
+          // 清理超时定时器
+          clearTimeout(timeout);
+          
+          // 所有请求完成后进行断言
+          expect(monitoringService.decrementActiveConnections).toHaveBeenCalledTimes(
+            concurrentRequests,
+          );
+          expect(monitoringService.recordApiCall).toHaveBeenCalledTimes(concurrentRequests);
+          done();
+        })
+        .catch((error) => {
+          // 清理超时定时器
+          clearTimeout(timeout);
+          done(error);
+        });
     });
   });
 });

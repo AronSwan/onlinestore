@@ -8,8 +8,28 @@ import fetch from 'node-fetch';
 import { performance } from 'perf_hooks';
 import { EnvironmentAdapter } from '../../src/config/environment-adapter';
 import { setTimeout as sleep } from 'timers/promises';
+import { setTimeout as setTimer } from 'timers';
 
 type TestResult = { name: string; success: boolean; detail?: any };
+
+let exitWatchdog: NodeJS.Timeout | null = null;
+
+function setupSignalHandlers() {
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+}
+
+function gracefulShutdown(signal: string) {
+  try {
+    // 清理退出看门狗
+  } finally {
+    if (exitWatchdog) {
+      clearTimeout(exitWatchdog);
+      exitWatchdog = null;
+    }
+    process.exit(0);
+  }
+}
 
 async function headers(token: string) {
   return {
@@ -113,6 +133,12 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
+  setupSignalHandlers();
+  exitWatchdog = setTimer(() => {
+    console.error('[EXIT WATCHDOG] E2E 未在预期时间内退出，执行保护性退出');
+    process.exit(2);
+  }, 15000);
+
   const results: TestResult[] = [];
   results.push(await initStreams(baseUrl, organization, token));
   results.push(await sendSample(baseUrl, organization, token));
@@ -123,7 +149,18 @@ async function main(): Promise<void> {
   console.log('E2E Summary:', results);
   console.log(ok ? \`✓ E2E passed in \${duration}ms\` : \`✗ E2E failed in \${duration}ms\`);
 
-  if (!ok) process.exit(1);
+  if (!ok) {
+    if (exitWatchdog) {
+      clearTimeout(exitWatchdog);
+      exitWatchdog = null;
+    }
+    process.exit(1);
+  }
+  if (exitWatchdog) {
+    clearTimeout(exitWatchdog);
+    exitWatchdog = null;
+  }
+  process.exit(0);
 }
 
 if (require.main === module) {

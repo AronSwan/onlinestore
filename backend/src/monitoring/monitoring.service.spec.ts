@@ -253,6 +253,59 @@ describe('MonitoringService', () => {
 
   describe('generatePerformanceReport', () => {
     it('should generate performance report', async () => {
+      // 准备日/周历史指标数据，避免返回 no_data
+      const dailyMetrics: Partial<Metric>[] = [
+        {
+          apiCalls: 100,
+          errors: 5,
+          avgResponseTime: 120,
+          memoryUsage: 60,
+          cpuLoad: 30,
+          timestamp: new Date(),
+          errorRate: 5,
+          uptime: 3600,
+        },
+        {
+          apiCalls: 80,
+          errors: 4,
+          avgResponseTime: 150,
+          memoryUsage: 55,
+          cpuLoad: 35,
+          timestamp: new Date(),
+          errorRate: 5,
+          uptime: 3600,
+        },
+      ];
+
+      const weeklyMetrics: Partial<Metric>[] = [
+        {
+          apiCalls: 700,
+          errors: 30,
+          avgResponseTime: 140,
+          memoryUsage: 58,
+          cpuLoad: 32,
+          timestamp: new Date(),
+          errorRate: 4.29,
+          uptime: 3600,
+        },
+        {
+          apiCalls: 650,
+          errors: 25,
+          avgResponseTime: 160,
+          memoryUsage: 62,
+          cpuLoad: 36,
+          timestamp: new Date(),
+          errorRate: 3.85,
+          uptime: 3600,
+        },
+      ];
+
+      jest
+        .spyOn(service as any, 'getMetricsHistory')
+        .mockImplementation(async (period: 'day' | 'week' = 'day') =>
+          period === 'day' ? (dailyMetrics as Metric[]) : (weeklyMetrics as Metric[]),
+        );
+
       const report = await service.generatePerformanceReport();
 
       expect(report).toBeDefined();

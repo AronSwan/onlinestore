@@ -26,7 +26,8 @@
     "deps:check": "npm outdated && cd backend && npm outdated",
     "deps:update": "npm run update:patch && cd backend && npm update",
     "test:backend": "cd backend && npm run test:cov",
-    "test:backend:soft": "cd backend && npm run test:cov:soft"
+    "test:backend:soft": "cd backend && npm run test:cov:soft",
+    "jwt:check": "cd backend && node jwt-secret-check.js"
   },
   "dependencies": {
     "axios": "^1.12.2",

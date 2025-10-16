@@ -10,6 +10,7 @@ permissions:
   contents: read
   packages: write
   security-events: write
+  issues: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -51,6 +52,281 @@ jobs:
       - name: Security audit
         working-directory: ${{ env.WORKING_DIR }}
         run: npm run security:check:optimized
+
+  docs-ai-check:
+    name: Docs AI Placeholder Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Detect docs-related changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            docs:
+              - 'backend/docs/**'
+              - 'backend/docs/api/**'
+              - 'backend/scripts/ai/**'
+              - 'backend/scripts/ci/check-ai-placeholders.js'
+              - 'backend/typedoc.json'
+              - 'backend/package.json'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+        if: steps.changes.outputs.docs == 'true'
+
+      - name: Install dependencies
+        working-directory: backend
+        run: npm ci
+        if: steps.changes.outputs.docs == 'true'
+
+      - name: Check AI docs artifacts presence
+        id: artifacts
+        working-directory: backend
+        shell: bash
+        run: |
+          DIR="docs/generated/ai"
+          NEEDS_GENERATE=true
+          if [[ -d "$DIR/typedoc" || -d "$DIR/openapi" || -f "$DIR/api.md" ]]; then
+            NEEDS_GENERATE=false
+          fi
+          echo "needs_generate=$NEEDS_GENERATE" >> $GITHUB_OUTPUT
+          if [[ "$NEEDS_GENERATE" == "true" ]]; then
+            echo "No AI docs artifacts found. Will generate."
+          else
+            echo "AI docs artifacts present. Skip generation."
+          fi
+        if: steps.changes.outputs.docs == 'true'
+
+      - name: Generate AI docs artifacts (real)
+        working-directory: backend
+        run: |
+          npm run docs:ai:generate
+          npm run docs:ai:review
+          npm run docs:ai:optimize
+        if: steps.changes.outputs.docs == 'true' && steps.artifacts.outputs.needs_generate == 'true'
+
+      - name: Run docs:ai:check (detect placeholders)
+        id: ai_check
+        working-directory: backend
+        shell: bash
+        run: |
+          set +e
+          npm run docs:ai:check
+          echo "exit_code=$?" >> $GITHUB_OUTPUT
+        if: steps.changes.outputs.docs == 'true'
+
+      - name: Ensure 'placeholder' label exists
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const LABEL_NAME = 'placeholder';
+            async function ensureLabel() {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: LABEL_NAME });
+              } catch (e) {
+                await github.rest.issues.createLabel({ owner, repo, name: LABEL_NAME, color: 'B60205', description: 'AI 占位产物提醒' });
+              }
+            }
+            await ensureLabel();
+        if: steps.changes.outputs.docs == 'true' && steps.ai_check.outputs.exit_code != '0' && (github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.draft == false && github.event.pull_request.head.repo.fork == false))
+
+      - name: Create issue for AI placeholders (due in 7 days)
+        if: steps.changes.outputs.docs == 'true' && steps.ai_check.outputs.exit_code != '0' && github.event_name == 'pull_request' && github.event.pull_request.draft == false && github.event.pull_request.head.repo.fork == false
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const now = new Date();
+            const due = new Date(now.getTime() + 7*24*60*60*1000);
+            const title = `AI 文档占位产物存在（PR） - 运行 ${context.runId}`;
+            const body = [
+              `检测到 AI 文档占位产物，需在 7 天内替换为真实逻辑。`,
+              ``,
+              `触发: ${context.eventName} @ ${context.sha}`,
+              `检查命令: \`cd backend && npm run docs:ai:check\``,
+              `建议处理:`,
+              `- 替换 \`backend/scripts/ai/*\` 为真实文档生成/审查/优化逻辑`,
+              `- 更新 \`AI_DEV_PROMPT_GUIDE_SIMPLE.md\` 去掉“占位”字样`,
+              `- 在 PR 勾选文档步骤并附上产物路径`,
+              ``,
+              `到期: ${due.toISOString()}`
+            ].join('\n');
+            const existing = await github.rest.issues.listForRepo({ owner, repo, state: 'open', labels: 'placeholder' });
+            const hasOpen = existing.data.some(i => i.title.includes('AI 文档占位产物存在'));
+            if (!hasOpen) {
+              await github.rest.issues.create({ owner, repo, title, body, labels: ['placeholder','docs','ai'] });
+            }
+
+      - name: Create issue for AI placeholders (due in 7 days)
+        if: steps.changes.outputs.docs == 'true' && steps.ai_check.outputs.exit_code != '0' && github.event_name == 'push'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const now = new Date();
+            const due = new Date(now.getTime() + 7*24*60*60*1000);
+            const title = `AI 文档占位产物存在（main 分支） - 运行 ${context.runId}`;
+            const body = [
+              `检测到 AI 文档占位产物，需在 7 天内替换为真实逻辑。`,
+              ``,
+              `触发: ${context.eventName} @ ${context.sha}`,
+              `检查命令: \`cd backend && npm run docs:ai:check\``,
+              `建议处理:`,
+              `- 替换 \`backend/scripts/ai/*\` 为真实文档生成/审查/优化逻辑`,
+              `- 更新 \`AI_DEV_PROMPT_GUIDE_SIMPLE.md\` 去掉“占位”字样`,
+              `- 在 PR 勾选文档步骤并附上产物路径`,
+              ``,
+              `到期: ${due.toISOString()}`
+            ].join('\n');
+            const existing = await github.rest.issues.listForRepo({ owner, repo, state: 'open', labels: 'placeholder' });
+            const hasOpen = existing.data.some(i => i.title.includes('AI 文档占位产物存在'));
+            if (!hasOpen) {
+              await github.rest.issues.create({ owner, repo, title, body, labels: ['placeholder','docs','ai'] });
+            }
+
+      - name: Collect placeholder artifact list
+        id: collect
+        shell: bash
+        run: |
+          set +e
+          grep -R -n -E '(占位|placeholder|占位生成脚本|占位审查|优化建议（占位）|暂存|temporary placeholder)' backend/docs/generated/ai/ > /tmp/placeholder_hits.txt 2>/dev/null || true
+          echo "list<<EOF" >> $GITHUB_OUTPUT
+          if [ -s /tmp/placeholder_hits.txt ]; then
+            awk -F: '{print "- " $1 ":" $2}' /tmp/placeholder_hits.txt >> $GITHUB_OUTPUT
+          else
+            echo "- 无具体文件列表（请参见控制台输出）" >> $GITHUB_OUTPUT
+          fi
+          echo "EOF" >> $GITHUB_OUTPUT
+        if: steps.changes.outputs.docs == 'true' && steps.ai_check.outputs.exit_code != '0'
+
+      - name: Write Step Summary (placeholders detected)
+        shell: bash
+        run: |
+          {
+            echo "### Docs AI 检测结果：发现占位产物";
+            echo "";
+            echo "以下文件可能包含占位标识：";
+            echo "${{ steps.collect.outputs.list }}";
+            echo "";
+            echo "- 事件：${{ github.event_name }}";
+            echo "- 提交：${{ github.sha }}";
+            echo "- 本地重现：\`cd backend && npm run docs:ai:check\`";
+            echo "";
+            echo "#### 修复建议（分项）";
+            echo "- 生成 OpenAPI：\`npm run docs:ai:generate\` 后确保 \`backend/docs/openapi.json\` 存在";
+            echo "- 生成 TypeDoc：确保使用 typedoc + markdown 插件输出到 \`backend/docs/generated/ai/typedoc\`";
+            echo "- Markdown 优化：运行 \`npm run docs:ai:optimize\` 应用 Prettier 与 Remark";
+            echo "- 审查与拼写：查看 \`backend/docs/generated/ai/review-report.txt\` 并修复提示项";
+            echo "- 移除占位文本：确保优化建议与 README 不含‘占位/placeholder’字样";
+          } >> $GITHUB_STEP_SUMMARY
+        if: steps.changes.outputs.docs == 'true' && steps.ai_check.outputs.exit_code != '0'
+
+      - name: Comment on PR with placeholder summary (detailed)
+        uses: peter-evans/create-or-update-comment@v4
+        if: steps.changes.outputs.docs == 'true' && steps.ai_check.outputs.exit_code != '0' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ### Docs AI 检测结果：发现占位产物
+            以下文件可能包含占位标识：
+            ${{ steps.collect.outputs.list }}
+
+            #### 修复建议（分项）
+            - OpenAPI 生成：运行 `npm run docs:ai:generate`，确认 `backend/docs/openapi.json` 与 `backend/docs/generated/ai/openapi/openapi.json`
+            - TypeDoc 输出：确保使用 `typedoc + typedoc-plugin-markdown` 将 API/服务注释生成至 `backend/docs/generated/ai/typedoc`
+            - Markdown 优化：执行 `npm run docs:ai:optimize`（Remark + Prettier），统一标题、列表与格式
+            - 审查与拼写：查看 `backend/docs/generated/ai/review-report.txt`，按提示修复格式与拼写问题
+            - 移除占位文本：确保 `optimization-suggestions.md` 与 `README.md` 不含 “占位/placeholder” 字样
+
+            #### 本地重现
+            - `cd backend && npm run docs:ai:check`
+            - 若仍存在占位标识，请逐项对照以上建议调整脚本与文档产物
+
+      - name: Close placeholder Issues when check passes
+        if: steps.changes.outputs.docs == 'true' && steps.ai_check.outputs.exit_code == '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const existing = await github.rest.issues.listForRepo({ owner, repo, state: 'open', labels: 'placeholder' });
+            for (const issue of existing.data) {
+              await github.rest.issues.createComment({ owner, repo, issue_number: issue.number, body: `Docs AI 检查通过（运行 ${context.runId}）。自动关闭提醒。` });
+              await github.rest.issues.update({ owner, repo, issue_number: issue.number, state: 'closed' });
+            }
+
+      - name: Write Step Summary (passed)
+        shell: bash
+        run: |
+          {
+            echo "### Docs AI 检测结果：通过";
+            echo "";
+            echo "未发现占位产物。相关提醒 Issue 已自动关闭（如有）。";
+            echo "- 事件：${{ github.event_name }}";
+            echo "- 提交：${{ github.sha }}";
+          } >> $GITHUB_STEP_SUMMARY
+        if: steps.changes.outputs.docs == 'true' && steps.ai_check.outputs.exit_code == '0'
+
+      - name: Fail job if placeholders detected
+        if: steps.changes.outputs.docs == 'true' && steps.ai_check.outputs.exit_code != '0' && (github.event_name == 'push' || github.event.pull_request.draft == false)
+        run: |
+          echo "Placeholders detected. Failing job." && exit 1
+
+      - name: Write Step Summary (skipped by path filter)
+        shell: bash
+        run: |
+          {
+            echo "### Docs AI 检测结果：跳过";
+            echo "";
+            echo "未检测到文档相关路径变更，作业步骤已跳过。";
+          } >> $GITHUB_STEP_SUMMARY
+        if: steps.changes.outputs.docs != 'true'
+
+  quality-summary:
+    name: Quality Summary (on failure)
+    runs-on: windows-latest
+    needs: quality-check
+    if: ${{ always() && needs.quality-check.result == 'failure' }}
+    defaults:
+      run:
+        working-directory: backend
+        shell: pwsh
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Render Timeout Evidence Summary (no reproduction)
+        env:
+          SUMMARY_NOTE: "> Quality-check failed (lint/typecheck/security). Reproduction not executed; if timeout-related, run 'npm run ci:timeout-evidence'."
+        run: |
+          node scripts/ci/render-timeout-summary.cjs | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
+
+      - name: Upload latest evidence artifacts (if present)
+        if: ${{ hashFiles('backend/test-output/latest/index.json') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: timeout-evidence-${{ github.run_id }}
+          path: backend/test-output/latest/
+          retention-days: 14
 
   unit-tests:
     runs-on: ubuntu-latest
@@ -121,6 +397,46 @@ jobs:
           DATABASE_URL: postgresql://postgres:test@localhost:5432/test
           REDIS_URL: redis://localhost:6379
         run: npm run test:integration
+
+  timeout-evidence:
+    name: Timeout Evidence (on failure)
+    runs-on: windows-latest
+    needs: [unit-tests, integration-tests]
+    if: ${{ always() && (needs.unit-tests.result == 'failure' || needs.integration-tests.result == 'failure') }}
+    defaults:
+      run:
+        working-directory: backend
+        shell: pwsh
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate timeout evidence
+        run: npm run ci:timeout-evidence
+
+      - name: Render Job Summary
+        run: |
+          node scripts/ci/render-timeout-summary.cjs | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
+
+      - name: Collect latest evidence artifacts
+        run: node scripts/ci/collect-latest-timeout-evidence.cjs
+
+      - name: Upload timeout evidence artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: timeout-evidence-${{ github.run_id }}
+          path: backend/test-output/latest/
+          retention-days: 14
 
   build-image:
     runs-on: ubuntu-latest
@@ -258,6 +574,60 @@ jobs:
           done
           echo "健康检查失败"
           exit 1
+
+  failure-summary:
+    name: Failure Summary (render-only)
+    runs-on: windows-latest
+    needs: [build-image, security-scan, deploy-staging, e2e-tests]
+    if: ${{ always() && (needs.build-image.result == 'failure' || needs.security-scan.result == 'failure' || needs.deploy-staging.result == 'failure' || needs.e2e-tests.result == 'failure') }}
+    defaults:
+      run:
+        working-directory: backend
+        shell: pwsh
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Compute SUMMARY_NOTE from failed jobs
+        env:
+          BUILD_IMAGE_RESULT: ${{ needs.build-image.result }}
+          SECURITY_SCAN_RESULT: ${{ needs.security-scan.result }}
+          DEPLOY_STAGING_RESULT: ${{ needs.deploy-staging.result }}
+          E2E_TESTS_RESULT: ${{ needs.e2e-tests.result }}
+        run: |
+          $failed = @()
+          if ($env:BUILD_IMAGE_RESULT -eq "failure") { $failed += "build-image" }
+          if ($env:SECURITY_SCAN_RESULT -eq "failure") { $failed += "security-scan" }
+          if ($env:DEPLOY_STAGING_RESULT -eq "failure") { $failed += "deploy-staging" }
+          if ($env:E2E_TESTS_RESULT -eq "failure") { $failed += "e2e-tests" }
+          if ($failed.Count -gt 0) {
+            $note = "> Failure detected in: " + ($failed -join ", ") + ". Reproduction not executed; use 'npm run ci:timeout-evidence' if timeout-related."
+          } else {
+            $note = "> Failure detected. Reproduction not executed."
+          }
+          Add-Content -Path $env:GITHUB_ENV -Value ("SUMMARY_NOTE=" + $note)
+
+      - name: Render Timeout Evidence Summary (no reproduction)
+        run: |
+          node scripts/ci/render-timeout-summary.cjs | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
+
+      - name: Upload latest evidence artifacts (if present)
+        if: ${{ hashFiles('backend/test-output/latest/index.json') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: timeout-evidence-${{ github.run_id }}
+          path: backend/test-output/latest/
+          retention-days: 14
 
   deploy-production:
     runs-on: ubuntu-latest

@@ -88,22 +88,28 @@ import { Metric } from './monitoring/monitoring.service';
             return {
               // pg-pool options
               max: env('DATABASE_CONNECTION_LIMIT', 20),
-              idleTimeoutMillis: env('DB_IDLE_TIMEOUT_MILLIS', env('DATABASE_IDLE_TIMEOUT', 300000)),
+              idleTimeoutMillis: env(
+                'DB_IDLE_TIMEOUT_MILLIS',
+                env('DATABASE_IDLE_TIMEOUT', 300000),
+              ),
               connectionTimeoutMillis: env('DB_CONNECTION_TIMEOUT', env('DATABASE_TIMEOUT', 30000)),
             };
           }
           return { busyTimeout: 30000 };
         };
 
-        const makeConfig = (driver: 'mysql' | 'postgres' | 'sqlite', source: 'primary' | 'fallback') => {
+        const makeConfig = (
+          driver: 'mysql' | 'postgres' | 'sqlite',
+          source: 'primary' | 'fallback',
+        ) => {
           const cfg: any = {
             type: driver,
             database:
               driver === 'sqlite'
                 ? env('DB_DATABASE', './data/caddy_shopping.db')
                 : source === 'primary'
-                ? env('DB_DATABASE', 'shopping_db')
-                : env('PG_DATABASE', env('DB_DATABASE', 'shopping_db')),
+                  ? env('DB_DATABASE', 'shopping_db')
+                  : env('PG_DATABASE', env('DB_DATABASE', 'shopping_db')),
             ssl: env('DATABASE_SSL') === 'true' ? { rejectUnauthorized: false } : false,
             entities: [
               CartItemEntity,
@@ -123,13 +129,25 @@ import { Metric } from './monitoring/monitoring.service';
             extra: buildExtra(driver),
           };
           if (driver !== 'sqlite') {
-            cfg.host = source === 'primary' ? env('DB_HOST', 'localhost') : env('PG_HOST', env('DB_HOST', 'localhost'));
+            cfg.host =
+              source === 'primary'
+                ? env('DB_HOST', 'localhost')
+                : env('PG_HOST', env('DB_HOST', 'localhost'));
             cfg.port =
               source === 'primary'
-                ? env('DB_PORT', wantedType === 'postgres' ? 5432 : wantedType === 'tidb' ? 4000 : 3306)
+                ? env(
+                    'DB_PORT',
+                    wantedType === 'postgres' ? 5432 : wantedType === 'tidb' ? 4000 : 3306,
+                  )
                 : env('PG_PORT', 5432);
-            cfg.username = source === 'primary' ? env('DB_USERNAME', 'root') : env('PG_USERNAME', env('DB_USERNAME', 'postgres'));
-            cfg.password = source === 'primary' ? env('DB_PASSWORD', '123456') : env('PG_PASSWORD', env('DB_PASSWORD', 'postgres'));
+            cfg.username =
+              source === 'primary'
+                ? env('DB_USERNAME', 'root')
+                : env('PG_USERNAME', env('DB_USERNAME', 'postgres'));
+            cfg.password =
+              source === 'primary'
+                ? env('DB_PASSWORD', '123456')
+                : env('PG_PASSWORD', env('DB_PASSWORD', 'postgres'));
           }
           return cfg;
         };
@@ -143,12 +161,17 @@ import { Metric } from './monitoring/monitoring.service';
           const host = env('DB_HOST', 'localhost');
           const port = Number(env('DB_PORT', 4000));
 
-          const canReach = await new Promise<boolean>((resolve) => {
+          const canReach = await new Promise<boolean>(resolve => {
             const socket = new net.Socket();
-            const timeout = setTimeout(() => {
-              try { socket.destroy(); } catch {}
-              resolve(false);
-            }, Number(env('DB_CONNECTION_TIMEOUT', env('DATABASE_TIMEOUT', 3000))));
+            const timeout = setTimeout(
+              () => {
+                try {
+                  socket.destroy();
+                } catch {}
+                resolve(false);
+              },
+              Number(env('DB_CONNECTION_TIMEOUT', env('DATABASE_TIMEOUT', 3000))),
+            );
             socket.once('error', () => {
               clearTimeout(timeout);
               resolve(false);

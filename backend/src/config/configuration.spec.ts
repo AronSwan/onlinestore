@@ -70,7 +70,9 @@ describe('ConfigurationValidator', () => {
     it('应该在生产环境检查localhost', () => {
       // 模拟生产环境
       const originalEnv = process.env.NODE_ENV;
+      const originalDbType = process.env.DB_TYPE;
       process.env.NODE_ENV = 'production';
+      process.env.DB_TYPE = 'mysql'; // 生产环境不能使用sqlite
 
       // 重新导入配置模块以获取新的环境变量
       jest.resetModules();
@@ -82,6 +84,7 @@ describe('ConfigurationValidator', () => {
 
       // 恢复环境变量
       process.env.NODE_ENV = originalEnv;
+      process.env.DB_TYPE = originalDbType;
     });
 
     it('应该检查数据库密码强度', () => {

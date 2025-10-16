@@ -109,7 +109,10 @@ export class HealthModule {
       providers.push(DependencyCheckersService);
       exports.push(DependencyCheckersService);
     } else {
-      providers.push({ provide: DependencyCheckersService, useClass: NoopDependencyCheckersService });
+      providers.push({
+        provide: DependencyCheckersService,
+        useClass: NoopDependencyCheckersService,
+      });
       exports.push(DependencyCheckersService);
     }
 
@@ -169,7 +172,10 @@ export class HealthModule {
       providers.push(DependencyCheckersService);
       exports.push(DependencyCheckersService);
     } else {
-      providers.push({ provide: DependencyCheckersService, useClass: NoopDependencyCheckersService });
+      providers.push({
+        provide: DependencyCheckersService,
+        useClass: NoopDependencyCheckersService,
+      });
       exports.push(DependencyCheckersService);
     }
 

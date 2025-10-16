@@ -513,3 +513,7 @@ graph LR
 **⭐ 如果这个文档系统对你有帮助，请给我们一个Star！**
 
 </div>
+
+## AI 工作规范
+- AI 开发与问题解决提示词文档（仓库顶层）：../../AI_DEV_PROMPT_GUIDE.md
+- 模板（templates）：./templates/

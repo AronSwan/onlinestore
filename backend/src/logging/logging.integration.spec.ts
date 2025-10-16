@@ -20,11 +20,12 @@ describe('Logging Integration', () => {
 
   beforeAll(async () => {
     mockConfig = {
-      url: 'http://localhost:5080',
-      organization: 'test-org',
+      // 显式使用“环境适配器”所期望的配置值
+      url: 'https://adapter.example.com',
+      organization: 'adapter-org',
       auth: {
         type: 'bearer',
-        token: 'test-token',
+        token: 'adapter-token',
       },
       streams: {
         application_logs: 'application-logs',
@@ -372,6 +373,19 @@ describe('Logging Integration', () => {
       // 联合类型安全访问：仅在存在 data 字段时断言
       expect('data' in result && result.data).toBeDefined();
       expect('data' in result && Array.isArray(result.data)).toBe(true);
+    });
+
+    it('should return error message when popular pages request fails', async () => {
+      // 让 HttpService.post 抛出错误，触发控制器的失败路径
+      mockHttpService.post.mockImplementation(() => {
+        throw new Error('network error');
+      });
+
+      const query = { start: '2023-01-01T00:00:00Z', end: '2023-01-02T00:00:00Z', limit: '10' };
+      const result = await loggingController.getPopularPages(query.start, query.end, query.limit);
+
+      expect(result.success).toBe(false);
+      expect('message' in result && result.message).toBe('Failed to get popular pages');
     });
 
     it('should get conversion funnel through controller', async () => {
