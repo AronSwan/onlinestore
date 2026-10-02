@@ -14,11 +14,11 @@
 | 健康检查 | 可用 | `GET /api/health`（另有 `backend/src/health` 模块） |
 | 注册 / 登录 | 可用 | `/api/auth/*`，JWT（访问令牌默认 15m，刷新 7d） |
 | 商品 | 可用 | `/api/products` |
-| 购物车 | 后端路由可用 / 前端同步未对齐 | 后端为参数化路由（`GET /api/cart/items/:customerUserId` 等，见 `backend/src/cart`），未挂认证守卫；前端为本地购物车，服务端同步因身份映射与 SKU 契约未对齐而静默降级 |
+| 购物车 | 后端路由可用 / 前端同步未打通 | 后端购物车路由已挂 `JwtAuthGuard` + `CartOwnerGuard`（见 `backend/src/cart/interfaces/cart.controller.ts`）：`customerUserId` 必须等于认证用户 JWT `sub`，不一致一律 403（越权拦截）；前端 gap 是 `js/cart.js` 仍在调用不存在的 `/api/cart` 根路由，失败后静默回退本地购物车。接通需按 `/api/cart/items/{sub}` 契约改造前端（携带认证令牌，body 需 `productSkuId` 等 SKU 域字段） |
 | 订单 | 可用 | `/api/orders`；前端带演示回退（后端不可用时使用本地演示数据） |
 | 支付 | 演示 / 未完成 | `backend/src/payment` 各策略（alipay / wechat-pay / credit-card）实现为 TODO；回调验签 fail-closed（校验失败即拒绝） |
 | AI 助手 | 演示 / 未接线 | 仓库内是规则式（非大模型）演示代码（如 `js/nextchat-advanced-unified.js`），未挂载到任何页面；旧版 README 宣称的"NextChat 多模态 AI 助手"与现实不符 |
-| OpenObserve 监控 | 未部署 | 配置与 compose 片段齐全（`.env.openobserve*`、`docker-compose.openobserve.yml`），仓库内无实际部署 |
+| OpenObserve 监控 | 未部署 | compose 片段与 example 模板齐全（`docker-compose.openobserve.yml`、`backend/.env.openobserve.example`），仓库内无实际部署 |
 
 ## 快速开始
 
@@ -59,13 +59,14 @@ docker compose up -d frontend backend
 
 ## 测试
 
-- 后端：`cd backend && npm run test:unit`（Jest 单测基线 905 个用例，2026-10-02 在本机全绿，可复跑）
+- 后端：`cd backend && npm run test:unit`（928 个用例 / 48 个套件，2026-10-02 本机全绿，可复跑）
+- 后端安全检查：全新 clone 后需先 `cp backend/.env.test.example backend/.env.test`（`npm run security:check:test` 依赖该文件，`.env.test` 不入库）
 - 前端：`npm test`（Playwright，部分用例需要后端在本地运行）
 
 ## 已知限制与改进路线
 
 - 支付为演示态：策略层 TODO，未接真实网关；回调验签 fail-closed。
-- 购物车服务端同步未打通：后端购物车以 `customerUserId`（顾客域 ID，与认证用户 `User.id` 是两套身份）+ `productSkuId`（SKU 域）为键，前端只有认证令牌和商品 ID，缺少身份映射与 SKU 数据模型。打通前需要先做身份映射设计与商品 SKU 化，当前前端同步失败时静默回退本地存储。
+- 购物车服务端同步未打通：后端购物车的 `customerUserId` 键即认证用户 JWT `sub`（有意决策，路由已挂 `JwtAuthGuard` + `CartOwnerGuard`，越权 403）；差距在前端——`js/cart.js` 仍在调用不存在的 `/api/cart` 根路由，失败后静默回退本地存储。接通需按 `/api/cart/items/{sub}` 契约改造前端（携带认证令牌，body 需 `productSkuId` 等 SKU 域字段）。
 - AI 助手是规则式演示代码，与页面未接线，无后端会话支持。
 - 监控栈（Prometheus / Grafana / OpenObserve）只有配置与编排，未部署。
 - 大量历史过程文档（优化报告、修复记录、方案稿）已移入 `docs/archive/` 与 `backend/docs/archive/`，仅作历史参考，不代表当前系统行为，其中的相对链接可能失效。
