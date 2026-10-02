@@ -12,12 +12,8 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-
-export interface AuthenticatedUser {
-  sub: number;
-  email: string;
-  role: string;
-}
+import { Role } from '../../auth/enums/role.enum';
+import { AuthenticatedUser } from './authenticated-user.interface';
 
 /** 路由参数名元数据键：@OwnerParam('userId') 声明归属比对用哪个路径参数 */
 export const OWNERSHIP_PARAM_KEY = 'ownershipParam';
@@ -29,7 +25,7 @@ export const OwnerParam = (param: string) => SetMetadata(OWNERSHIP_PARAM_KEY, pa
  * 通用归属守卫（fail-closed）：本人（JWT sub === 路径参数）或 admin 放行，其余 403。
  *
  * 用法：@UseGuards(JwtAuthGuard, OwnerOrAdminGuard) + @OwnerParam('userId')。
- * 未声明 @OwnerParam 时默认使用 'id'。moderator 不给旁路（权限语义未定义，从严）。
+ * 未声明 @OwnerParam 视为接线错误（显式拒绝）。moderator 不给旁路（权限语义未定义，从严）。
  */
 @Injectable()
 export class OwnerOrAdminGuard implements CanActivate {
@@ -43,12 +39,19 @@ export class OwnerOrAdminGuard implements CanActivate {
       throw new UnauthorizedException('未认证：请先登录');
     }
 
-    if (user.role === 'admin') {
+    if (user.role === Role.ADMIN) {
       return true;
     }
 
-    const paramName =
-      this.reflector.get<string>(OWNERSHIP_PARAM_KEY, context.getHandler()) || 'id';
+    // getAllAndOverride 与本库 RolesGuard 一致：支持 handler 级与 class 级声明
+    const paramName = this.reflector.getAllAndOverride<string>(OWNERSHIP_PARAM_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (!paramName) {
+      // 未声明 @OwnerParam 视为接线错误——显式拒绝并给出可排查的文案，不做静默默认
+      throw new ForbiddenException('路由未声明 @OwnerParam（归属参数名），拒绝访问');
+    }
     const paramValue = request?.params?.[paramName];
     if (paramValue === undefined || paramValue === null || paramValue === '') {
       throw new ForbiddenException('只能访问本人资源');

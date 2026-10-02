@@ -121,6 +121,10 @@ export class OrdersService {
       where: { id },
       relations: ['items', 'user'],
     });
+    // 越权审计(2026-10-03): user 关系会把 bcrypt 哈希整包吐给客户端, 统一剥离
+    if (result?.user) {
+      delete (result.user as any).password;
+    }
     const endDb = process.hrtime.bigint();
 
     this.monitoring.observeDbQuery('detail', 'orders', Number(endDb - startDb) / 1_000_000_000);
@@ -139,6 +143,10 @@ export class OrdersService {
       order: { createdAt: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
+    });
+    // 越权审计(2026-10-03): 列表同样剥离 user.password
+    orders.forEach((o) => {
+      if (o.user) delete (o.user as any).password;
     });
     const endDb = process.hrtime.bigint();
 

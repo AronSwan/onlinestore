@@ -15,6 +15,12 @@
 
 ## P1 安全收尾（8 项）
 
+### 攻防审计残留（2026-10-03 无情审计发现，本轮已修主体、余项挂账）· 【S/M】
+- **订单创建防篡改（V13 余项）**：归属已绑 req.user.sub；余 totalAmount/items[].unitPrice 仍客户端可控——服务端须按商品现价重算；order_items.productSnapshot 非空列导致创建 500（功能 bug，修好当天必须同时落价格重算防"替他人下单+改价"复活）。锚：orders.controller create + orders.service create
+- **Casdoor 角色白名单**：auth-proxy ensureUserExists 直落 IdP 角色，接通即提权入口——须显式映射白名单（IdP 角色≠本地 admin）
+- **影子控制器**：users/interfaces/web/controllers/user.controller.ts 与 cqrs/examples 的 @Controller('users') 是未接线死代码但内含无归属校验的 PATCH/:id 与改密——接线前必须先加固或删除
+- **监控面 ApiKey 方案**：本轮监控 GET 已 admin-only；如需给 Prometheus 抓取器用，改 ApiKeyGuard（X-API-Key）而非放开 JWT
+- **POST /api/users DTO 补装饰器时同步评估**：当前因 CreateUserDto 无装饰器而"砖"（安全上 fail-closed）；补齐时保持 admin-only（已挂）并审视 role 字段是否应收紧
 ### S6-full · 六横切面控制器全量守卫与 admin 分级 【M】
 - **问题**：六横切面控制器读路由仍匿名可达；Day 2 精简版已给管理写面挂 Guard（alert 5/notification test+bulk/cache 2/search 管理面 3），但 **POST /api/notifications（根创建）、POST /api/search/history、POST /api/search/popular、POST /api/products/:id/view、logging.controller 的 11 个匿名 ingest POST（含 flush 落盘）** 仍无守卫（验收审计补记）。
 - **锚**：`backend/src` 内零 `@UseGuards` 的控制器（audit_head 实测 19 件、约百级路由装饰器，覆盖审计所指六横切面）：`monitoring/monitoring.controller.ts`、`monitoring/alert.controller.ts`、`address/address.controller.ts`、`common/monitoring/security-monitoring.controller.ts`、`common/circuit-breaker/circuit-breaker.controller.ts`、`bff/bff.controller.ts`、`notification/notification.controller.ts`、`cache/cache.controller.ts`、`aggregation/aggregation.controller.ts`、`performance/performance.controller.ts` 等；现成可复用件 `auth/guards/jwt-auth.guard.ts`（JwtAuthGuard）、`auth/guards/roles.guard.ts` / `auth/guards/enhanced-rbac.guard.ts`（角色分级）。
@@ -149,6 +155,7 @@
 ## P3 地基与运维（7 项）
 
 ### K5 · CI 复活与依赖更新基建 【M】
+- **追加**：backend-openobserve / ci-light-security-scan / e2e-cart-refresh 三个工作流已于 2026-10-03 改 workflow_dispatch（恒红止血）——依赖修复（openobserve 部署 / cart-refresh 用例选择器更新）后恢复自动触发；ci-light-security-scan 恢复 PR 扫描。
 - **追加（验收审计）**：ci.yml deploy-staging/deploy-production 段引用已归档的 backend/k8s/staging|production（合并 main 即断）；docker-validation.yml 引用已整体归档的 docker-validation-scripts/——K5 清理工作流时一并处置（删或改触发分支）。
 - **问题**：CI 已红十周（安装段根因 D1 锁文件已于 Day 2 重锁修复，流水线三段仍需各自修通）；依赖更新双配置失真；README badge 撒谎。
 - **锚**：`.github/workflows/ci.yml`（安装/构建/测试三段）；`.dependabot/config.yml`（Dependabot v1 已废弃格式，需迁移）；根目录 `renovate.json`（含废弃 preset 与无效字段，需三修）；`README.md` 头部 CI/CodeQL/dependency-check/sbom-sign 四 badge（工作流实际状态与 badge 不符）；`.github/workflows/secrets-check.yml`（已随 T1 历史收编合入，此后改动归本项，需确认在 CI 实跑而非摆设）。

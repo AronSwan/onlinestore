@@ -34,6 +34,10 @@ describe('LoggingModule providers (adapter priority)', () => {
     );
 
     const { LoggingModule } = require('./logging.module');
+    // 守卫适配(2026-10-03): resetModules 后须与被测模块同注册表取类, overrideGuard 才能命中
+    const { JwtAuthGuard } = require('../auth/guards/jwt-auth.guard');
+    const { RolesGuard } = require('../auth/guards/roles.guard');
+    const { Reflector } = require('@nestjs/core');
     jest.doMock('../config/environment-adapter', () => ({
       EnvironmentAdapter: {
         getOpenObserve: () => ({
@@ -49,7 +53,14 @@ describe('LoggingModule providers (adapter priority)', () => {
     }));
     const moduleRef: TestingModule = await Test.createTestingModule({
       imports: [LoggingModule],
-    }).compile();
+      // 守卫适配(2026-10-03): LoggingController 类级守卫需 Reflector 可注入
+      providers: [Reflector],
+      })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(RolesGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     const cfg = moduleRef.get<any>('OPENOBSERVE_CONFIG');
     expect(cfg).toBeTruthy();
@@ -100,9 +111,20 @@ describe('LoggingModule providers (adapter priority)', () => {
     process.env.OPENOBSERVE_TOKEN = 'test-token';
 
     const { LoggingModule } = require('./logging.module');
+    // 守卫适配(2026-10-03): resetModules 后须与被测模块同注册表取类, overrideGuard 才能命中
+    const { JwtAuthGuard } = require('../auth/guards/jwt-auth.guard');
+    const { RolesGuard } = require('../auth/guards/roles.guard');
+    const { Reflector } = require('@nestjs/core');
     const moduleRef: TestingModule = await Test.createTestingModule({
       imports: [LoggingModule],
-    }).compile();
+      // 守卫适配(2026-10-03): LoggingController 类级守卫需 Reflector 可注入
+      providers: [Reflector],
+      })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(RolesGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     const transport = moduleRef.get<any>('USER_BEHAVIOR_TRANSPORT');
     expect(transport).toBeTruthy();

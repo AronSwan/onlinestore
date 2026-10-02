@@ -8,6 +8,10 @@ import { createMockedFunction } from '../../test/utils/typed-mock-factory';
 import { Order, OrderStatus, PaymentStatus } from './entities/order.entity';
 import { NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 
+
+// 审计整改适配(2026-10-03): findOne/create 新增 @Request() 参数, 直调需传 req 夹具
+const reqOf = (sub = 1, role = 'user') => ({ user: { sub, email: 'spec@test.local', role } });
+
 describe('OrdersController', () => {
   let controller: OrdersController;
   let ordersService: OrdersService;
@@ -129,10 +133,10 @@ describe('OrdersController', () => {
 
       jest.spyOn(ordersService, 'create').mockResolvedValue(createdOrder);
 
-      const result = await controller.create(createOrderDto);
+      const result = await controller.create(createOrderDto, reqOf(1));
 
       expect(result).toEqual(createdOrder);
-      expect(ordersService.create).toHaveBeenCalledWith(createOrderDto);
+      expect(ordersService.create).toHaveBeenCalledWith({ ...createOrderDto, userId: 1 });
     });
 
     it('should throw error for invalid user', async () => {
@@ -156,7 +160,7 @@ describe('OrdersController', () => {
 
       jest.spyOn(ordersService, 'create').mockRejectedValue(new NotFoundException('用户不存在'));
 
-      await expect(controller.create(createOrderDto)).rejects.toThrow(
+      await expect(controller.create(createOrderDto, reqOf(1))).rejects.toThrow(
         new NotFoundException('用户不存在'),
       );
     });
@@ -182,7 +186,7 @@ describe('OrdersController', () => {
 
       jest.spyOn(ordersService, 'create').mockRejectedValue(new NotFoundException('产品不存在'));
 
-      await expect(controller.create(createOrderDto)).rejects.toThrow(
+      await expect(controller.create(createOrderDto, reqOf(1))).rejects.toThrow(
         new NotFoundException('产品不存在'),
       );
     });
@@ -208,7 +212,7 @@ describe('OrdersController', () => {
 
       jest.spyOn(ordersService, 'create').mockRejectedValue(new BadRequestException('库存不足'));
 
-      await expect(controller.create(createOrderDto)).rejects.toThrow(
+      await expect(controller.create(createOrderDto, reqOf(1))).rejects.toThrow(
         new BadRequestException('库存不足'),
       );
     });
@@ -228,7 +232,7 @@ describe('OrdersController', () => {
 
       jest.spyOn(ordersService, 'create').mockRejectedValue(new Error('无效的订单数据'));
 
-      await expect(controller.create(invalidDto)).rejects.toThrow(new Error('无效的订单数据'));
+      await expect(controller.create(invalidDto, reqOf(1))).rejects.toThrow(new Error('无效的订单数据'));
     });
 
     it('should calculate total amount correctly', async () => {
@@ -304,7 +308,7 @@ describe('OrdersController', () => {
 
       jest.spyOn(ordersService, 'create').mockResolvedValue(createdOrder);
 
-      const result = await controller.create(createOrderDto);
+      const result = await controller.create(createOrderDto, reqOf(1));
 
       expect(result.totalAmount).toBe(69.97);
     });
@@ -534,7 +538,7 @@ describe('OrdersController', () => {
 
       jest.spyOn(ordersService, 'findById').mockResolvedValue(order);
 
-      const result = await controller.findOne(1);
+      const result = await controller.findOne(1, reqOf(1));
 
       expect(result).toEqual(order);
       expect(ordersService.findById).toHaveBeenCalledWith(1);
@@ -543,7 +547,7 @@ describe('OrdersController', () => {
     it('should throw error for non-existent order', async () => {
       jest.spyOn(ordersService, 'findById').mockRejectedValue(new NotFoundException('订单不存在'));
 
-      await expect(controller.findOne(999)).rejects.toThrow(new NotFoundException('订单不存在'));
+      await expect(controller.findOne(999, reqOf(1))).rejects.toThrow(new NotFoundException('订单不存在'));
     });
 
     it('should handle invalid id format', async () => {
@@ -551,7 +555,7 @@ describe('OrdersController', () => {
         .spyOn(ordersService, 'findById')
         .mockRejectedValue(new BadRequestException('无效的订单ID'));
 
-      await expect(controller.findOne(0)).rejects.toThrow(new BadRequestException('无效的订单ID'));
+      await expect(controller.findOne(0, reqOf(1))).rejects.toThrow(new BadRequestException('无效的订单ID'));
     });
 
     it('should include user information', async () => {
@@ -605,7 +609,7 @@ describe('OrdersController', () => {
 
       jest.spyOn(ordersService, 'findById').mockResolvedValue(order);
 
-      const result = await controller.findOne(1);
+      const result = await controller.findOne(1, reqOf(1));
 
       expect(result).toEqual(order);
       expect(ordersService.findById).toHaveBeenCalledWith(1);

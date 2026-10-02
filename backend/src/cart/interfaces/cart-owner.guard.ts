@@ -16,11 +16,7 @@ import {
  * （见 src/auth/strategies/jwt.strategy.ts —— 返回最小化载荷 { sub, email, role }），
  * 经 passport 挂载到 req.user。
  */
-export interface AuthenticatedUser {
-  sub: number;
-  email: string;
-  role: string;
-}
+import { AuthenticatedUser } from '../../common/guards/authenticated-user.interface';
 
 /**
  * 购物车归属守卫（fail-closed）：

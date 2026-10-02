@@ -44,6 +44,7 @@ describe('JwtStrategy', () => {
       id: 42,
       email: 'user@example.com',
       isActive: true,
+      role: 'user', // 审计整改适配(2026-10-03): validate 的 role 改为 DB 回读
     });
 
     await expect(strategy.validate(validPayload)).resolves.toEqual({

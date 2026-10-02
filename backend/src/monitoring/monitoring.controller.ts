@@ -1,4 +1,8 @@
-import { Controller, Get, Query, Res, HttpStatus } from '@nestjs/common';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { Role } from '../auth/enums/role.enum';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Controller, Get, Query, Res, HttpStatus, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Response } from 'express';
 import { MonitoringService } from './monitoring.service';
 import { MetricsService } from './metrics.service';
@@ -9,6 +13,8 @@ import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
  * 提供监控指标和健康检查的API端点
  */
 @ApiTags('monitoring')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.ADMIN)
 @Controller('monitoring')
 export class MonitoringController {
   constructor(

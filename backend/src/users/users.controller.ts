@@ -21,14 +21,13 @@ import {
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { OwnerOrAdminGuard } from '../common/guards/owner-or-admin.guard';
+import { OwnerOrAdminGuard, OwnerParam } from '../common/guards/owner-or-admin.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../auth/enums/role.enum';
 import { CreateUserCommand } from './application/commands/create-user.command';
 import { UpdateUserCommand } from './application/commands/update-user.command';
 import { GetUserForEditingQuery } from './application/queries/get-user-for-editing.query';
-import { UserNotFoundException } from './domain/errors/user.errors';
 import { SearchUsersQuery } from './application/queries/search-users.query';
 import { CreateUserDto } from './application/dto/create-user.dto';
 import { UpdateUserDto } from './application/dto/update-user.dto';
@@ -67,6 +66,8 @@ export class UsersController {
   ) {}
 
   @Post()
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.CREATED)
   async createUser(@Body() createUserDto: CreateUserDto): Promise<UserResponseDto> {
     const command = new CreateUserCommand({
@@ -90,21 +91,16 @@ export class UsersController {
 
   @Get(':id')
   @UseGuards(OwnerOrAdminGuard)
+  @OwnerParam('id')
   async getUserById(@Param('id') id: string): Promise<UserResponseDto> {
+    // UserNotFoundException 已由全局过滤器统一转译 404（2026-10-03 审计整改）
     const query = new GetUserForEditingQuery(id);
-    try {
-      return await this.queryBus.execute(query);
-    } catch (e) {
-      // 领域异常转译: 未映射的 UserNotFoundException 会被全局过滤器当 500
-      if (e instanceof UserNotFoundException) {
-        throw new NotFoundException(`用户 ${id} 不存在`);
-      }
-      throw e;
-    }
+    return await this.queryBus.execute(query);
   }
 
   @Put(':id')
   @UseGuards(OwnerOrAdminGuard)
+  @OwnerParam('id')
   @HttpCode(HttpStatus.OK)
   async updateUser(
     @Param('id') id: string,

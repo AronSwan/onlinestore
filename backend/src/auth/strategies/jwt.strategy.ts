@@ -58,6 +58,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     // jwt.verify()）必然抛错，导致所有合法令牌 401。该冗余校验已删除。
     //
     // validate() 现在只做业务层校验：载荷最小字段 + 用户真实存在且可用。
+    if ((payload as any)?.typ === 'refresh') {
+      // 越权审计(2026-10-03): 刷新令牌与访问令牌同密钥, 必须拒绝刷新令牌直接访问接口
+      throw new UnauthorizedException('刷新令牌不能用于接口访问');
+    }
+
     if (!this.isValidPayload(payload)) {
       throw new UnauthorizedException('无效的JWT载荷');
     }
@@ -74,7 +79,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     return {
       sub: payload.sub,
       email: payload.email,
-      role: payload.role,
+      role: user.role,
     };
   }
 

@@ -5,10 +5,12 @@ import {
   HttpException,
   HttpStatus,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { EnhancedBusinessException, ErrorContext } from '../exceptions/enhanced-business.exception';
 import { ERROR_CODES } from '../constants/error-codes';
+import { UserNotFoundException } from '../../users/domain/errors/user.errors';
 
 /**
  * 增强版全局异常过滤器
@@ -38,6 +40,12 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     let errorResponse: any;
     let httpStatus: number;
     let logLevel: 'error' | 'warn' = 'error';
+
+    // 越权审计(2026-10-03): 领域"不存在"异常统一转译为 404（免逐路由 try/catch），
+    // 归一化后走下方标准 HttpException 分支构建响应
+    if (exception instanceof UserNotFoundException) {
+      exception = new NotFoundException(exception.message);
+    }
 
     if (exception instanceof EnhancedBusinessException) {
       // 处理增强业务异常
