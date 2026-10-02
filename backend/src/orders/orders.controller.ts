@@ -22,6 +22,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
+import { CreateOrderData } from './dto/order.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OwnerOrAdminGuard, OwnerParam } from '../common/guards/owner-or-admin.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -56,7 +57,7 @@ export class OrdersController {
       badRequest: '请求参数错误或库存不足',
     },
   })
-  create(@Body() createOrderData: any, @Request() req: any) {
+  create(@Body() createOrderData: CreateOrderData, @Request() req: any) {
     // 越权审计(2026-10-03): 归属绑定——订单的 userId 一律取令牌主体, 不信任请求体
     createOrderData = { ...createOrderData, userId: req?.user?.sub };
     return this.ordersService.create(createOrderData);

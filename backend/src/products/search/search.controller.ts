@@ -126,6 +126,7 @@ export class SearchController {
     },
   })
   @Post('history')
+  @UseGuards(JwtAuthGuard)
   async recordSearchHistory(
     @Body() body: { query: string; userId?: string; resultCount?: number },
   ) {
@@ -153,6 +154,8 @@ export class SearchController {
     },
   })
   @Post('popular')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   async addPopularSearchTerm(@Body() body: { term: string; category?: string }) {
     const { term, category } = body;
     await this.popularSearchService.addPopularSearchTerm(term, category);

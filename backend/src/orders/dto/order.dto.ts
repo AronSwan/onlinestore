@@ -18,14 +18,19 @@ export class OrderItemDto {
   @Min(1)
   quantity: number;
 
+  // V13: 单价由服务端按商品现价定价, 客户端字段仅兼容保留(被忽略)
+  @IsOptional()
   @IsNumber()
   @Min(0)
-  unitPrice: number;
+  unitPrice?: number;
 }
 
 export class CreateOrderData {
+  // V13(2026-10-03): userId 由服务端从令牌注入(controller 覆盖), 客户端可不传;
+  // 传了也会被覆盖——归属不可由请求体决定
+  @IsOptional()
   @IsNumber()
-  userId: number;
+  userId?: number;
 
   @IsArray()
   @ValidateNested({ each: true })

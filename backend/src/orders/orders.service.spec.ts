@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Inject, forwardRef } from '@nestjs/common';
 
+import { PaymentMethod } from './enums/order.enums';
 import { OrdersService } from './orders.service';
 import { Order } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
@@ -65,7 +66,7 @@ const mockOrder = {
   shippingAddress: '测试地址',
   recipientName: '测试收件人',
   recipientPhone: '13800138000',
-  paymentMethod: 'alipay',
+  paymentMethod: 'alipay' as PaymentMethod,
   notes: '测试备注',
   createdAt: new Date(),
   updatedAt: new Date(),
@@ -249,7 +250,7 @@ describe('OrdersService', () => {
       shippingAddress: '测试地址',
       recipientName: '测试收件人',
       recipientPhone: '13800138000',
-      paymentMethod: 'alipay',
+      paymentMethod: 'alipay' as PaymentMethod,
       notes: '测试备注',
     };
 
@@ -307,6 +308,8 @@ describe('OrdersService', () => {
         quantity: 2,
         unitPrice: 100,
         totalPrice: 200,
+        // V13(2026-10-03): 服务端定价附带商品快照
+        productSnapshot: { name: '测试产品', image: '', specifications: {} },
       });
       expect(mockOrderEventsService.publishOrderCreated).toHaveBeenCalled();
     });
@@ -855,11 +858,10 @@ describe('OrdersService', () => {
       const created = await service.create({
         userId: 1,
         items: [{ productId: 1, quantity: 1, unitPrice: 100 }],
-        totalAmount: 100,
         shippingAddress: '地址',
         recipientName: '收件人',
         recipientPhone: '电话',
-        paymentMethod: 'alipay',
+        paymentMethod: 'alipay' as PaymentMethod,
       });
 
       expect(created).toBeDefined();
@@ -899,7 +901,7 @@ describe('OrdersService', () => {
         shippingAddress: '地址',
         recipientName: '收件人',
         recipientPhone: '电话',
-        paymentMethod: 'alipay',
+        paymentMethod: 'alipay' as PaymentMethod,
       };
 
       const mockProduct2 = { ...mockProduct, id: 2, stock: 10 };
@@ -963,7 +965,7 @@ describe('OrdersService', () => {
         shippingAddress: '地址',
         recipientName: '收件人',
         recipientPhone: '电话',
-        paymentMethod: 'alipay',
+        paymentMethod: 'alipay' as PaymentMethod,
       };
 
       await expect(service.create(createData)).rejects.toThrow('Transaction failed');
@@ -1043,7 +1045,7 @@ describe('OrdersService', () => {
           shippingAddress: '测试地址',
           recipientName: '测试收件人',
           recipientPhone: '13800138000',
-          paymentMethod: 'alipay',
+          paymentMethod: 'alipay' as PaymentMethod,
         };
 
         // 模拟事务管理器，使其在空订单项时抛出错误
@@ -1071,7 +1073,7 @@ describe('OrdersService', () => {
           shippingAddress: '测试地址',
           recipientName: '测试收件人',
           recipientPhone: '13800138000',
-          paymentMethod: 'alipay',
+          paymentMethod: 'alipay' as PaymentMethod,
         };
 
         await expect(service.create(createOrderDto)).rejects.toThrow();
@@ -1085,7 +1087,7 @@ describe('OrdersService', () => {
           shippingAddress: '测试地址',
           recipientName: '测试收件人',
           recipientPhone: '13800138000',
-          paymentMethod: 'alipay',
+          paymentMethod: 'alipay' as PaymentMethod,
         };
 
         mockProductRepository.findOne.mockResolvedValue({
@@ -1104,7 +1106,7 @@ describe('OrdersService', () => {
           shippingAddress: '测试地址',
           recipientName: '测试收件人',
           recipientPhone: '13800138000',
-          paymentMethod: 'alipay',
+          paymentMethod: 'alipay' as PaymentMethod,
         };
 
         await expect(service.create(createOrderDto)).rejects.toThrow();
@@ -1137,15 +1139,24 @@ describe('OrdersService', () => {
           shippingAddress: '测试地址',
           recipientName: '测试收件人',
           recipientPhone: '13800138000',
-          paymentMethod: 'alipay',
+          paymentMethod: 'alipay' as PaymentMethod,
         };
 
         mockProductRepository.findOne.mockResolvedValue(mockProduct);
         mockOrderRepository.manager.transaction.mockImplementation(async callback => {
           const mockManager = {
-            getRepository: jest.fn().mockReturnValue({
-              create: jest.fn().mockReturnValue(mockOrder),
-              save: jest.fn().mockRejectedValue(new Error('Save failed')),
+            // V13 适配: create 先查产品定价, mock 按实体分流
+            getRepository: jest.fn().mockImplementation((entity: any) => {
+              if (entity === Product) {
+                return { findOne: jest.fn().mockResolvedValue(mockProduct) };
+              }
+              if (entity === OrderItem) {
+                return { create: jest.fn().mockReturnValue({}) };
+              }
+              return {
+                create: jest.fn().mockReturnValue(mockOrder),
+                save: jest.fn().mockRejectedValue(new Error('Save failed')),
+              };
             }),
           };
           return callback(mockManager);
@@ -1201,7 +1212,7 @@ describe('OrdersService', () => {
           shippingAddress: '测试地址',
           recipientName: '测试收件人',
           recipientPhone: '13800138000',
-          paymentMethod: 'alipay',
+          paymentMethod: 'alipay' as PaymentMethod,
         };
 
         const expensiveProduct = {
@@ -1225,7 +1236,7 @@ describe('OrdersService', () => {
           shippingAddress: '测试地址',
           recipientName: '测试收件人',
           recipientPhone: '13800138000',
-          paymentMethod: 'alipay',
+          paymentMethod: 'alipay' as PaymentMethod,
         };
 
         const productRepo = {
@@ -1277,36 +1288,36 @@ describe('OrdersService', () => {
         const createOrderDto = {
           userId: 1,
           items: [{ productId: 1, quantity: 50, unitPrice: 100 }], // 购买全部库存
-          totalAmount: 50 * 100,
           shippingAddress: '测试地址',
           recipientName: '测试收件人',
           recipientPhone: '13800138000',
-          paymentMethod: 'alipay',
+          paymentMethod: 'alipay' as PaymentMethod,
         };
 
-        // 第一次查询库存充足
-        mockProductRepository.findOne.mockResolvedValueOnce({
+        // V13 适配(2026-10-03): 定价与库存校验合并为单次查询——并发场景=查询时
+        // 库存已被并发订单耗尽; 真并发竞态由库存乐观锁兜底(update affected=0 抛错)
+        mockProductRepository.findOne.mockResolvedValue({
           ...mockProduct,
-          stock: 50,
-        });
-
-        // 第二次查询库存不足（模拟并发购买）
-        mockProductRepository.findOne.mockResolvedValueOnce({
-          ...mockProduct,
-          stock: 0,
+          stock: 10, // 低于购买量 50
         });
 
         mockOrderRepository.manager.transaction.mockImplementation(async callback => {
           const mockManager = {
-            getRepository: jest.fn().mockReturnValue({
-              create: jest.fn().mockReturnValue(mockOrder),
-              save: jest.fn().mockRejectedValue(new Error('Insufficient stock')),
+            getRepository: jest.fn().mockImplementation((entity: any) => {
+              if (entity === Product) return mockProductRepository;
+              if (entity === OrderItem) {
+                return { create: jest.fn().mockReturnValue({}), save: jest.fn() };
+              }
+              return {
+                create: jest.fn().mockReturnValue(mockOrder),
+                save: jest.fn().mockResolvedValue(mockOrder),
+              };
             }),
           };
           return callback(mockManager);
         });
 
-        await expect(service.create(createOrderDto)).rejects.toThrow('Insufficient stock');
+        await expect(service.create(createOrderDto)).rejects.toThrow('库存不足');
       });
     });
 
@@ -1325,7 +1336,7 @@ describe('OrdersService', () => {
           shippingAddress: '测试地址',
           recipientName: '测试收件人',
           recipientPhone: '13800138000',
-          paymentMethod: 'alipay',
+          paymentMethod: 'alipay' as PaymentMethod,
         };
 
         await expect(service.create(createOrderDto)).rejects.toThrow();
@@ -1365,7 +1376,7 @@ describe('OrdersService', () => {
           shippingAddress: '测试地址',
           recipientName: '测试收件人',
           recipientPhone: '13800138000',
-          paymentMethod: 'alipay',
+          paymentMethod: 'alipay' as PaymentMethod,
         };
 
         mockProductRepository.findOne.mockResolvedValue(null);
@@ -1384,7 +1395,7 @@ describe('OrdersService', () => {
           shippingAddress: '测试地址',
           recipientName: '测试收件人',
           recipientPhone: '13800138000',
-          paymentMethod: 'alipay',
+          paymentMethod: 'alipay' as PaymentMethod,
         };
 
         const product1 = { ...mockProduct, id: 1, price: 100.5, version: 1 };

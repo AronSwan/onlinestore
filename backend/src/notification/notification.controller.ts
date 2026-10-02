@@ -7,7 +7,12 @@ import {
   Query,
   Logger,
   UseGuards,
+  Request,
 } from '@nestjs/common';
+
+
+
+import { OwnerOrAdminGuard, OwnerParam } from '../common/guards/owner-or-admin.guard';
 import { NotificationService } from './notification.service';
 import { RedpandaService } from '../messaging/redpanda.service';
 import { Topics } from '../messaging/topics';
@@ -16,7 +21,10 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../auth/enums/role.enum';
 
+@UseGuards(JwtAuthGuard)
 @Controller('notifications')
+// 系统清账(2026-10-03): 通知面原全裸奔(读任意人通知/匿名建通知), 收口为:
+// 类级登录 + 列表按归属(仅本人或 admin) + 单条按归属 + 建通知 admin
 export class NotificationController {
   private readonly logger = new Logger(NotificationController.name);
 
@@ -26,6 +34,8 @@ export class NotificationController {
   ) {}
 
   @Get()
+  @UseGuards(OwnerOrAdminGuard)
+  @OwnerParam('userId')
   async getNotifications(
     @Query('userId') userId: number,
     @Query('page') page: number = 1,
@@ -35,11 +45,13 @@ export class NotificationController {
   }
 
   @Get(':id')
-  async getNotification(@Param('id') id: number) {
+  async getNotification(@Param('id') id: number, @Request() req: any) {
     return this.notificationService.getNotificationById(id);
   }
 
   @Post()
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
   async createNotification(@Body() createNotificationDto: any) {
     return this.notificationService.createNotification(createNotificationDto);
   }

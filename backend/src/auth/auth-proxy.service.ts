@@ -3,6 +3,7 @@
 // 作者：后端开发团队
 // 时间：2025-06-17 12:35:00
 
+import { UserRole } from '../users/entities/user.entity';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { JwtService } from '@nestjs/jwt';
@@ -114,7 +115,9 @@ export class AuthProxyService {
         email: casdoorUser.email,
         username: casdoorUser.name || casdoorUser.email.split('@')[0],
         password: 'casdoor_auth_' + Math.random().toString(36).substr(2), // 随机密码，不实际使用
-        role: casdoorUser.role || 'user',
+        // 系统清账(2026-10-03): IdP 角色不直接信任(接通即提权入口)——本地一律普通用户;
+        // 如需 IdP 角色映射, 走显式白名单映射表(挂账)
+        role: UserRole.USER,
         avatar: casdoorUser.avatar,
         casdoorId: casdoorUser.id,
       });

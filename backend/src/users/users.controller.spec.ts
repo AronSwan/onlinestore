@@ -110,6 +110,7 @@ describe('UsersController', () => {
       const createUserDto: CreateUserDto = {
         firstName: 'New',
         lastName: 'User',
+        username: 'new',
         email: 'new@example.com',
         password: 'Password123!',
       };
@@ -139,6 +140,7 @@ describe('UsersController', () => {
       const createUserDto: CreateUserDto = {
         firstName: 'New',
         lastName: 'User',
+        username: 'existing',
         email: 'existing@example.com',
         password: 'Password123!',
       };
@@ -155,6 +157,7 @@ describe('UsersController', () => {
       const createUserDto: CreateUserDto = {
         firstName: 'New',
         lastName: 'User',
+        username: 'test',
         email: 'test@example.com',
         password: 'Password123!',
       };
@@ -173,6 +176,7 @@ describe('UsersController', () => {
       const createUserDto: CreateUserDto = {
         firstName: 'New',
         lastName: 'User',
+        username: 'test',
         email: 'test@example.com',
         password: 'Password123!',
       };
@@ -518,6 +522,7 @@ describe('UsersController', () => {
       const createUserDto: CreateUserDto = {
         firstName: 'New',
         lastName: 'User',
+        username: 'test',
         email: 'test@example.com',
         password: 'Password123!',
       };
@@ -534,6 +539,7 @@ describe('UsersController', () => {
       const createUserDto: CreateUserDto = {
         firstName: 'New',
         lastName: 'User',
+        username: 'test',
         email: 'test@example.com',
         password: 'Password123!',
       };
@@ -548,6 +554,7 @@ describe('UsersController', () => {
       const createUserDto: CreateUserDto = {
         firstName: 'New',
         lastName: 'User',
+        username: 'test',
         email: 'test@example.com',
         password: 'Password123!',
       };

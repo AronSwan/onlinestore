@@ -26,8 +26,6 @@ export * from './application/services/user-registration.service';
 // Controllers
 export * from './users.controller';
 export * from './users.profile.controller';
-export * from './interfaces/web/controllers/customer-management.controller';
-export * from './interfaces/web/controllers/user.controller';
 
 // Commands & Queries
 export * from './application/commands/change-user-password.command';

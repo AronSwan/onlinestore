@@ -17,6 +17,8 @@ import { OrdersController } from '../../orders/orders.controller';
 import { LoggingController } from '../../logging/logging.controller';
 import { MonitoringController } from '../../monitoring/monitoring.controller';
 import { AlertController } from '../../monitoring/alert.controller';
+import { NotificationController } from '../../notification/notification.controller';
+import { SearchController } from '../../products/search/search.controller';
 
 // 注意：方法级 @UseGuards 的元数据挂在方法函数自身(Nest 约定)，类级挂在构造函数上
 const guardsOf = (target: object, prop?: string): any[] => {
@@ -77,6 +79,28 @@ describe('授权接线锁（装饰器元数据断言）', () => {
     it('按用户查单挂 OwnerOrAdminGuard 且 @OwnerParam(userId)', () => {
       expect(guardsOf(c, 'findByUserId')).toContain(OwnerOrAdminGuard);
       expect(ownerParamOf(c, 'findByUserId')).toBe('userId');
+    });
+  });
+
+  describe('NotificationController', () => {
+    const c = NotificationController.prototype;
+
+    it('类级登录 + 列表归属(@OwnerParam(userId)) + 建通知 admin', () => {
+      expect(guardsOf(NotificationController)).toContain(JwtAuthGuard);
+      expect(guardsOf(c, 'getNotifications')).toContain(OwnerOrAdminGuard);
+      expect(ownerParamOf(c, 'getNotifications')).toBe('userId');
+      expect(guardsOf(c, 'createNotification')).toContain(RolesGuard);
+      expect(rolesOf(c, 'createNotification')).toContain(Role.ADMIN);
+    });
+  });
+
+  describe('SearchController 写面', () => {
+    const c = SearchController.prototype;
+
+    it('history 需登录, popular 注入需 admin', () => {
+      expect(guardsOf(c, 'recordSearchHistory')).toContain(JwtAuthGuard);
+      expect(guardsOf(c, 'addPopularSearchTerm')).toContain(RolesGuard);
+      expect(rolesOf(c, 'addPopularSearchTerm')).toContain(Role.ADMIN);
     });
   });
 

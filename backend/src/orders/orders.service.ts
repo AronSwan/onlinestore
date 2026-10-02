@@ -2,26 +2,13 @@ import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Order } from './entities/order.entity';
+import { CreateOrderData } from './dto/order.dto';
 import { OrderItem } from './entities/order-item.entity';
 import { Product } from '../products/entities/product.entity';
 import { OrderStatus, PaymentStatus } from './entities/order.entity';
 import { MonitoringService } from '../monitoring/monitoring.service';
 import { OrderEventsService } from '../messaging/order-events.service';
 
-export interface CreateOrderData {
-  userId: number;
-  items: Array<{
-    productId: number;
-    quantity: number;
-    unitPrice: number;
-  }>;
-  totalAmount: number;
-  shippingAddress: string;
-  recipientName: string;
-  recipientPhone: string;
-  paymentMethod: string;
-  notes?: string;
-}
 
 export interface UpdateOrderData {
   status?: OrderStatus;
@@ -51,11 +38,46 @@ export class OrdersService {
       // 生成订单号
       const orderNumber = this.generateOrderNumber();
 
-      // 创建订单
+      // V13(2026-10-03): 金额一律服务端重算——忽略请求体的 totalAmount/items[].unitPrice。
+      // 定价在创建订单之前完成, 库存校验与乐观锁版本以事务内最新数据为准。
+      const itemsWithPrice: Array<{
+        productId: number;
+        quantity: number;
+        unitPrice: number;
+        totalPrice: number;
+        productSnapshot: { name: string; image: string; specifications: Record<string, any> };
+        product: Product;
+      }> = [];
+      let serverTotal = 0;
+      for (const item of orderData.items) {
+        const product = await trx.getRepository(Product).findOne({
+          where: { id: item.productId },
+        });
+        if (!product || product.stock < item.quantity) {
+          throw new Error(`产品 ${item.productId} 库存不足`);
+        }
+        const unitPrice = Number(product.price);
+        const lineTotal = unitPrice * item.quantity;
+        serverTotal += lineTotal;
+        itemsWithPrice.push({
+          productId: item.productId,
+          quantity: item.quantity,
+          unitPrice,
+          totalPrice: lineTotal,
+          product,
+          productSnapshot: {
+            name: product.name,
+            image: (product as any).image || '',
+            specifications: {},
+          },
+        });
+      }
+
+      // 创建订单(金额为服务端计算值)
       const order = trx.getRepository(Order).create({
         orderNumber,
         userId: orderData.userId,
-        totalAmount: orderData.totalAmount,
+        totalAmount: serverTotal,
         status: OrderStatus.PENDING,
         paymentStatus: PaymentStatus.PENDING,
         shippingAddress: orderData.shippingAddress,
@@ -68,23 +90,19 @@ export class OrdersService {
 
       const savedOrder = await trx.getRepository(Order).save(order);
 
-      // 创建订单项并更新库存
-      for (const item of orderData.items) {
-        // 在事务内查询产品，确保获取最新版本号
-        const product = await trx.getRepository(Product).findOne({
-          where: { id: item.productId },
-        });
-
-        if (!product || product.stock < item.quantity) {
-          throw new Error(`产品 ${item.productId} 库存不足`);
-        }
+      // 创建订单项并更新库存(复用定价循环的产品对象与乐观锁版本, 单次查询)
+      for (let i = 0; i < orderData.items.length; i++) {
+        const item = orderData.items[i];
+        const priced = itemsWithPrice[i];
+        const product = priced.product;
 
         const orderItem = trx.getRepository(OrderItem).create({
           orderId: savedOrder.id,
           productId: item.productId,
           quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          totalPrice: item.quantity * item.unitPrice,
+          unitPrice: priced.unitPrice,
+          totalPrice: priced.totalPrice,
+          productSnapshot: priced.productSnapshot,
         });
 
         await trx.getRepository(OrderItem).save(orderItem);

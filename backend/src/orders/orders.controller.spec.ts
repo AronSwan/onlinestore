@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { PaymentMethod } from './enums/order.enums';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
 import { ProductsService } from '../products/products.service';
@@ -80,16 +81,10 @@ describe('OrdersController', () => {
           {
             productId: 1,
             quantity: 2,
-            price: 19.99,
+            unitPrice: 19.99,
           },
         ],
-        shippingAddress: {
-          street: '123 Main St',
-          city: 'New York',
-          state: 'NY',
-          zipCode: '10001',
-          country: 'USA',
-        },
+        shippingAddress: '123 Main St, New York, NY 10001, USA',
         billingAddress: {
           street: '123 Main St',
           city: 'New York',
@@ -97,6 +92,10 @@ describe('OrdersController', () => {
           zipCode: '10001',
           country: 'USA',
         },
+        recipientName: '测购人',
+        recipientPhone: '13800138000',
+        paymentMethod: 'alipay' as PaymentMethod,
+      
       };
 
       const createdOrder = {
@@ -111,7 +110,7 @@ describe('OrdersController', () => {
         shippingAddress: '123 Main St, New York, NY 10001, USA',
         recipientName: 'John Doe',
         recipientPhone: '123-456-7890',
-        paymentMethod: 'credit_card',
+        paymentMethod: 'alipay' as PaymentMethod,
         items: [
           {
             id: 1,
@@ -146,16 +145,13 @@ describe('OrdersController', () => {
           {
             productId: 1,
             quantity: 2,
-            price: 19.99,
+            unitPrice: 19.99,
           },
         ],
-        shippingAddress: {
-          street: '123 Main St',
-          city: 'New York',
-          state: 'NY',
-          zipCode: '10001',
-          country: 'USA',
-        },
+        shippingAddress: '123 Main St, New York, NY 10001, USA',
+        recipientName: '测购人',
+        recipientPhone: '13800138000',
+        paymentMethod: 'alipay' as PaymentMethod,
       };
 
       jest.spyOn(ordersService, 'create').mockRejectedValue(new NotFoundException('用户不存在'));
@@ -172,16 +168,13 @@ describe('OrdersController', () => {
           {
             productId: 999,
             quantity: 2,
-            price: 19.99,
+            unitPrice: 19.99,
           },
         ],
-        shippingAddress: {
-          street: '123 Main St',
-          city: 'New York',
-          state: 'NY',
-          zipCode: '10001',
-          country: 'USA',
-        },
+        shippingAddress: '123 Main St, New York, NY 10001, USA',
+        recipientName: '测购人',
+        recipientPhone: '13800138000',
+        paymentMethod: 'alipay' as PaymentMethod,
       };
 
       jest.spyOn(ordersService, 'create').mockRejectedValue(new NotFoundException('产品不存在'));
@@ -198,16 +191,13 @@ describe('OrdersController', () => {
           {
             productId: 1,
             quantity: 200,
-            price: 19.99,
+            unitPrice: 19.99,
           },
         ],
-        shippingAddress: {
-          street: '123 Main St',
-          city: 'New York',
-          state: 'NY',
-          zipCode: '10001',
-          country: 'USA',
-        },
+        shippingAddress: '123 Main St, New York, NY 10001, USA',
+        recipientName: '测购人',
+        recipientPhone: '13800138000',
+        paymentMethod: 'alipay' as PaymentMethod,
       };
 
       jest.spyOn(ordersService, 'create').mockRejectedValue(new BadRequestException('库存不足'));
@@ -221,18 +211,12 @@ describe('OrdersController', () => {
       const invalidDto = {
         userId: 1,
         items: [],
-        shippingAddress: {
-          street: '123 Main St',
-          city: 'New York',
-          state: 'NY',
-          zipCode: '10001',
-          country: 'USA',
-        },
+        shippingAddress: '123 Main St, New York, NY 10001, USA',
       };
 
       jest.spyOn(ordersService, 'create').mockRejectedValue(new Error('无效的订单数据'));
 
-      await expect(controller.create(invalidDto, reqOf(1))).rejects.toThrow(new Error('无效的订单数据'));
+      await expect(controller.create(invalidDto as any, reqOf(1))).rejects.toThrow(new Error('无效的订单数据'));
     });
 
     it('should calculate total amount correctly', async () => {
@@ -242,21 +226,18 @@ describe('OrdersController', () => {
           {
             productId: 1,
             quantity: 2,
-            price: 19.99,
+            unitPrice: 19.99,
           },
           {
             productId: 2,
             quantity: 1,
-            price: 29.99,
+            unitPrice: 29.99,
           },
         ],
-        shippingAddress: {
-          street: '123 Main St',
-          city: 'New York',
-          state: 'NY',
-          zipCode: '10001',
-          country: 'USA',
-        },
+        shippingAddress: '123 Main St, New York, NY 10001, USA',
+        recipientName: '测购人',
+        recipientPhone: '13800138000',
+        paymentMethod: 'alipay' as PaymentMethod,
       };
 
       const createdOrder = {
@@ -271,7 +252,7 @@ describe('OrdersController', () => {
         shippingAddress: '123 Main St, New York, NY 10001, USA',
         recipientName: 'John Doe',
         recipientPhone: '123-456-7890',
-        paymentMethod: 'credit_card',
+        paymentMethod: 'alipay' as PaymentMethod,
         items: [
           {
             id: 1,
@@ -420,7 +401,7 @@ describe('OrdersController', () => {
       expect(ordersService.findAll).toHaveBeenCalledWith(1, 10);
     });
   });
-  price: 29.99;
+  unitPrice: 29.99;
   describe('GET /orders/user/:userId', () => {
     it('should return orders for a specific user', async () => {
       const userId = 1;
