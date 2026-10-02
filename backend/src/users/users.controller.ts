@@ -14,9 +14,12 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
+  NotImplementedException,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateUserCommand } from './application/commands/create-user.command';
 import { UpdateUserCommand } from './application/commands/update-user.command';
 import { GetUserForEditingQuery } from './application/queries/get-user-for-editing.query';
@@ -47,7 +50,10 @@ export interface UserListResponseDto {
   totalPages: number;
 }
 
-@Controller('api/users')
+@Controller('users')
+// 整改（B2，2026-10-02）：用户管理面此前完全无认证，任何匿名请求都能读写用户。
+// 类级启用 JWT 认证，未带有效令牌的访问一律 401。
+@UseGuards(JwtAuthGuard)
 export class UsersController {
   constructor(
     private readonly commandBus: CommandBus,
@@ -110,8 +116,9 @@ export class UsersController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteUser(@Param('id') id: string): Promise<void> {
-    // 暂未实现，按测试期望抛出错误
-    throw new Error('Not implemented');
+    // 整改（B2，2026-10-02）：功能未实现时改抛 NotImplementedException（HTTP 501），
+    // 不再用裸 Error——裸 Error 会被全局过滤器按未知异常处理（500），语义不明。
+    throw new NotImplementedException('用户删除功能未实现');
   }
 
   @Get()
@@ -151,7 +158,7 @@ export class UsersController {
     // 这里可以实现激活用户命令
     // const command = new ActivateUserCommand(id);
     // return await this.commandBus.execute(command);
-    throw new Error('Not implemented');
+    throw new NotImplementedException('功能未实现');
   }
 
   @Put(':id/deactivate')
@@ -160,7 +167,7 @@ export class UsersController {
     // 这里可以实现停用用户命令
     // const command = new DeactivateUserCommand(id);
     // return await this.commandBus.execute(command);
-    throw new Error('Not implemented');
+    throw new NotImplementedException('功能未实现');
   }
 
   @Put(':id/verify-email')
@@ -169,7 +176,7 @@ export class UsersController {
     // 这里可以实现邮箱验证命令
     // const command = new VerifyUserEmailCommand(id);
     // return await this.commandBus.execute(command);
-    throw new Error('Not implemented');
+    throw new NotImplementedException('功能未实现');
   }
 
   @Get('stats/overview')

@@ -13,6 +13,7 @@ import { OrderItem } from './entities/order-item.entity';
 import { UsersModule } from '../users/users.module';
 import { ProductsModule } from '../products/products.module';
 import { MonitoringModule } from '../monitoring/monitoring.module';
+import { MessagingModule } from '../messaging/messaging.module';
 import { User } from '../users/entities/user.entity';
 import { Product } from '../products/entities/product.entity';
 
@@ -22,6 +23,7 @@ import { Product } from '../products/entities/product.entity';
     UsersModule,
     ProductsModule,
     MonitoringModule,
+    MessagingModule,
   ],
   controllers: [OrdersController],
   providers: [OrdersService],

@@ -262,7 +262,7 @@ class ConfigManager {
           endpoint: process.env.OPENOBSERVE_ENDPOINT || 'http://localhost:5080',
           organization: process.env.OPENOBSERVE_ORG || 'default',
           username: process.env.OPENOBSERVE_USERNAME || 'admin',
-          password: process.env.OPENOBSERVE_PASSWORD || 'Complexpass#123',
+          password: process.env.OPENOBSERVE_PASSWORD || 'CHANGE_ME_openobserve_password',
           batching: {
             enabled: true,
             maxBatchSize: 100,

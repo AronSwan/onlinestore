@@ -5,6 +5,33 @@ import { LogSanitizerService } from './log-sanitizer.service';
 import { SECURITY_CONSTANTS } from './security.constants';
 import * as crypto from 'crypto';
 
+/**
+ * 对象键深度排序（纯函数，无副作用）：递归对对象及数组内所有层级的 key 按字典序排序，
+ * 返回全新对象，用于签名序列化前的规范化 —— 只有递归排序才能保证嵌套 payload 的签名确定性。
+ *
+ * 唯一实现源（整改 M4，2026-10-02）：PaymentSecurityService 与支付策略基类
+ * PaymentStrategy.verifyCallbackSignature 共用本函数做签名序列化，
+ * 杜绝两套排序规则各自演进导致签名互不兼容。
+ */
+export function sortKeysDeep(obj: any): any {
+  if (typeof obj !== 'object' || obj === null) {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(item => sortKeysDeep(item));
+  }
+
+  const sortedObj: any = {};
+  Object.keys(obj)
+    .sort()
+    .forEach(key => {
+      sortedObj[key] = sortKeysDeep(obj[key]);
+    });
+
+  return sortedObj;
+}
+
 @Injectable()
 export class PaymentSecurityService {
   private readonly nonceCache = new Map<string, number>();
@@ -226,25 +253,10 @@ export class PaymentSecurityService {
   }
 
   /**
-   * 对象键排序（确保签名一致性）
+   * 对象键排序（确保签名一致性）—— 委托给共享纯函数 sortKeysDeep（递归深度排序）
    */
   private sortObjectKeys(obj: any): any {
-    if (typeof obj !== 'object' || obj === null) {
-      return obj;
-    }
-
-    if (Array.isArray(obj)) {
-      return obj.map(item => this.sortObjectKeys(item));
-    }
-
-    const sortedObj: any = {};
-    Object.keys(obj)
-      .sort()
-      .forEach(key => {
-        sortedObj[key] = this.sortObjectKeys(obj[key]);
-      });
-
-    return sortedObj;
+    return sortKeysDeep(obj);
   }
 
   /**

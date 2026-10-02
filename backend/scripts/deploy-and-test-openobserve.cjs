@@ -16,7 +16,7 @@ const config = {
   composeFile: path.join(__dirname, '../docker/openobserve/docker-compose.yml'),
   openobserveUrl: 'http://localhost:5080',
   username: 'admin@example.com',
-  password: 'Complexpass#123',
+  password: process.env.OPENOBSERVE_PASSWORD || 'CHANGE_ME_openobserve_password',
   organization: 'default',
   streamName: 'test-runner-metrics',
   maxWaitTime: 120000, // 2分钟

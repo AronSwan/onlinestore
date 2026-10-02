@@ -12,7 +12,70 @@ import { FileUploadInterceptor } from './common/interceptors/file-upload.interce
 import { MetricsInterceptor } from './monitoring/metrics.interceptor';
 import { MonitoringService } from './monitoring/monitoring.service';
 
+// 已知不安全的开发/测试默认 JWT 密钥 —— 生产环境出现即拒绝启动
+const KNOWN_INSECURE_JWT_SECRETS = [
+  'dev-jwt-secret-key-32-chars-xxxxxxxxxxxxxxxx',
+  'dev-secret-key-please-change-xxxxxxxxxxxxxxxxxxxx',
+  'dev-secret-key',
+  'your-super-secret-jwt-key-change-in-production',
+  'default-secret-change-in-production',
+  'test-jwt-secret-key-for-testing-only-32-chars',
+  'test-jwt-secret',
+  'test-secret-key',
+];
+
+function isInsecureJwtSecret(secret: string | undefined): boolean {
+  if (!secret) {
+    return true;
+  }
+  return (
+    KNOWN_INSECURE_JWT_SECRETS.includes(secret) ||
+    /CHANGE[_-]?ME/i.test(secret) ||
+    /your-super-secret/i.test(secret)
+  );
+}
+
+/**
+ * JWT_SECRET 环境校验：
+ * - production：缺失、弱（<32字符）、已知开发默认值或 CHANGE_ME 占位符均直接抛错阻止启动；
+ * - 非 production：仅打印警告，不影响开发/测试启动。
+ *
+ * 已知限制（2026-10-02 后端整改 M3，如实说明，暂不做入口重构）：
+ * 本函数虽在 bootstrap() 内最早调用，但执行时机晚于 ES 模块加载阶段 —— 若生产
+ * .env 缺失部分环境变量，个别模块（如 common/openobserve 的环境校验）会在模块
+ * 加载期（import 阶段）先行 throw。两种路径的结果一致：均为 fail-closed 拒绝启动，
+ * 生产环境不会带病运行；差别仅在于此时报错文案并非由本函数产出，而是来自先抛错
+ * 的模块，提示信息可能不够统一。留待后续整改把各模块加载期校验统一前置到入口，
+ * 使生产配置错误统一由本函数报告。
+ */
+function validateJwtSecretForEnvironment(): void {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const jwtSecret = process.env.JWT_SECRET;
+
+  if (isProduction) {
+    const problems: string[] = [];
+    if (!jwtSecret || jwtSecret.trim() === '') {
+      problems.push('JWT_SECRET 未设置');
+    } else {
+      if (jwtSecret.length < 32) {
+        problems.push(`JWT_SECRET 长度不足32字符（当前 ${jwtSecret.length}）`);
+      }
+      if (isInsecureJwtSecret(jwtSecret)) {
+        problems.push('JWT_SECRET 为已知开发默认值或占位符');
+      }
+    }
+    if (problems.length > 0) {
+      throw new Error(`生产环境安全校验失败，拒绝启动：${problems.join('；')}`);
+    }
+  } else if (isInsecureJwtSecret(jwtSecret)) {
+    console.warn('⚠️  JWT_SECRET 未设置或为开发默认值/占位符，仅供本地开发测试，严禁用于生产环境');
+  }
+}
+
 export async function bootstrap() {
+  // 生产环境 secret 校验（最早执行，任何其他初始化之前）
+  validateJwtSecretForEnvironment();
+
   // 配置验证（可通过环境变量跳过）
   const skipValidation = process.env.SKIP_CONFIG_VALIDATION === 'true';
   if (!skipValidation) {
@@ -227,7 +290,15 @@ export async function bootstrap() {
 
   logger.log(`🚀 应用启动成功！端口: ${port}`);
   logger.log(`🔗 健康检查: http://localhost:${port}/api/health`);
-  logger.log(`🛒 购物车 API: http://localhost:${port}/api/cart`);
+  // 已接线模块的真实路由清单（全局前缀 /api，控制器内不再硬编码 api/）
+  logger.log('🧭 业务路由（前缀 /api）:');
+  logger.log('   🔐 认证:        /api/auth（register/login/refresh/profile/change-password/logout）');
+  logger.log('   👤 用户:        /api/users');
+  logger.log('   📦 商品:        /api/products、/api/search');
+  logger.log('   🛒 购物车:      /api/cart/items/:customerUserId 等');
+  logger.log('   📋 订单:        /api/orders');
+  logger.log('   ✉️  验证码:      /api/customer-user/verify-code/send');
+  logger.log('   📊 监控:        /api/monitoring/*（含 /api/monitoring/metrics*）、/api/alerts/*（rules/active/history/stats）');
   logger.log(`🌍 环境: ${process.env.NODE_ENV || 'development'}`);
 }
 

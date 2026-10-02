@@ -31,14 +31,17 @@ import { RedisModule } from '../redis/redis.module';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
-        const algorithm = configService.get('jwt.algorithm', 'RS256');
+        // 注意：主配置经由 load: [createMasterConfiguration] 注册在 'master' 命名空间下，
+        // 必须用 master.jwt.* 读取；'jwt.*' 路径永远为 undefined 会导致 HS256 密钥为空。
+        // 默认算法与 JWT_ALGORITHM 的 Joi 默认值（HS256）及 jwt.strategy 保持一致。
+        const algorithm = configService.get('master.jwt.algorithm', 'HS256');
 
         if (algorithm === 'RS256') {
           return {
-            privateKey: configService.get('jwt.privateKey'),
-            publicKey: configService.get('jwt.publicKey'),
+            privateKey: configService.get('master.jwt.privateKey'),
+            publicKey: configService.get('master.jwt.publicKey'),
             signOptions: {
-              expiresIn: configService.get('jwt.expiresIn', '15m'),
+              expiresIn: configService.get('master.jwt.expiresIn', '15m'),
               algorithm: 'RS256',
               issuer: 'caddy-shopping-api',
               audience: 'caddy-shopping-client',
@@ -52,9 +55,9 @@ import { RedisModule } from '../redis/redis.module';
         } else {
           // 向后兼容HS256
           return {
-            secret: configService.get('jwt.secret'),
+            secret: configService.get('master.jwt.secret'),
             signOptions: {
-              expiresIn: configService.get('jwt.expiresIn', '15m'),
+              expiresIn: configService.get('master.jwt.expiresIn', '15m'),
               algorithm: 'HS256',
             },
           };

@@ -1,3 +1,8 @@
+/**
+ * ⚠️ LEGACY 备用入口（不参与生产部署）。
+ * 生产入口是 src/main.ts（package.json start:prod → dist/src/main.js），见 README。
+ * 本文件仅供最小化启动排查（AppMinimalModule）使用，路由与主入口不一致，勿在此新增功能。
+ */
 import { config as dotenvConfig } from 'dotenv';
 import { existsSync, statSync } from 'fs';
 import { resolve } from 'path';

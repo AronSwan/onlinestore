@@ -51,11 +51,21 @@ export class OrderEventsService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    // 初始化时创建必要的主题
-    await this.initializeTopics();
+    // 主题创建与消费者启动都不应阻断应用启动（开发环境通常没有 Kafka）：
+    // 任一步失败仅记录警告，事件发布/消费在运行期按能力降级。
+    try {
+      // 初始化时创建必要的主题
+      await this.initializeTopics();
+    } catch (error: any) {
+      console.warn('[OrderEventsService] 初始化主题失败（事件功能降级）:', error?.message);
+    }
 
-    // 启动消费者处理订单相关事件
-    await this.startConsumers();
+    try {
+      // 启动消费者处理订单相关事件
+      await this.startConsumers();
+    } catch (error: any) {
+      console.warn('[OrderEventsService] 启动事件消费者失败（事件功能降级）:', error?.message);
+    }
   }
 
   private async initializeTopics(): Promise<void> {

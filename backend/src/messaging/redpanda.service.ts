@@ -17,7 +17,7 @@ export class RedpandaService implements OnModuleInit, OnModuleDestroy {
   private consumers: Consumer[] = [];
 
   constructor() {
-    const isDev = process.env.NODE_ENV === 'development';
+    const isDev = process.env.NODE_ENV !== 'production'; // 非 production（含未设置）一律视为开发/测试环境
     const kafkaEnabledEnv = process.env.KAFKA_ENABLED;
     const kafkaEnabled = kafkaEnabledEnv === undefined ? !isDev : kafkaEnabledEnv !== 'false';
 
@@ -71,7 +71,7 @@ export class RedpandaService implements OnModuleInit, OnModuleDestroy {
   async onModuleInit() {
     try {
       const kafkaEnabledEnv = process.env.KAFKA_ENABLED;
-      const isDev = process.env.NODE_ENV === 'development';
+      const isDev = process.env.NODE_ENV !== 'production'; // 非 production（含未设置）一律视为开发/测试环境
       const kafkaEnabled = kafkaEnabledEnv === undefined ? !isDev : kafkaEnabledEnv !== 'false';
 
       if (!kafkaEnabled) {
@@ -91,7 +91,7 @@ export class RedpandaService implements OnModuleInit, OnModuleDestroy {
       });
       await admin.disconnect();
     } catch (error) {
-      const isDev = process.env.NODE_ENV === 'development';
+      const isDev = process.env.NODE_ENV !== 'production'; // 非 production（含未设置）一律视为开发/测试环境
       const kafkaEnabledEnv = process.env.KAFKA_ENABLED;
       const kafkaEnabled = kafkaEnabledEnv === undefined ? !isDev : kafkaEnabledEnv !== 'false';
       if (isDev || !kafkaEnabled) {

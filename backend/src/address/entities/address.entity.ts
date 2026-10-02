@@ -65,7 +65,7 @@ export class Address {
   @Column({ type: 'varchar', length: 50, default: 'manual' })
   source?: string;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   lastVerified?: Date;
 
   @Column({ type: 'json', nullable: true })

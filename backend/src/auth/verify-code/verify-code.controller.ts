@@ -9,7 +9,7 @@ class VerifyCodeSendDto {
 }
 
 @ApiTags('验证码')
-@Controller('api/customer-user/verify-code')
+@Controller('customer-user/verify-code')
 export class VerifyCodeController {
   constructor(private readonly service: VerifyCodeService) {}
 

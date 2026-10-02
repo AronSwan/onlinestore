@@ -32,9 +32,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private readonly configService: ConfigService,
   ) {
     // 首先调用super()，然后再使用this
-    const algorithm = configService.get('jwt.algorithm', 'HS256');
+    // 注意：主配置注册在 'master' 命名空间下，必须用 master.jwt.* 读取（'jwt.*' 恒为 undefined）
+    const algorithm = configService.get('master.jwt.algorithm', 'HS256');
     const secretOrKey =
-      algorithm === 'RS256' ? configService.get('jwt.publicKey') : configService.get('jwt.secret');
+      algorithm === 'RS256'
+        ? configService.get('master.jwt.publicKey')
+        : configService.get('master.jwt.secret');
 
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -134,14 +137,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     if (algorithm === 'HS256') {
-      // HS256算法要求密钥长度至少64字符
-      if (secretOrKey.length < 64) {
-        throw new Error(`JWT密钥长度不足64字符，当前长度：${secretOrKey.length}`);
+      // HS256算法要求密钥长度至少32字符（与 unified-master.config 的 Joi 校验、
+      // main.ts 生产启动校验的安全基线一致；旧值64会导致开发默认密钥无法启动）
+      if (secretOrKey.length < 32) {
+        throw new Error(`JWT密钥长度不足32字符，当前长度：${secretOrKey.length}`);
       }
     } else if (algorithm === 'RS256') {
       // RS256算法要求私钥和公钥都存在
-      const privateKey = this.configService.get('jwt.privateKey');
-      const publicKey = this.configService.get('jwt.publicKey');
+      const privateKey = this.configService.get('master.jwt.privateKey');
+      const publicKey = this.configService.get('master.jwt.publicKey');
 
       if (!privateKey || !publicKey) {
         throw new Error('RS256算法需要同时配置JWT_PRIVATE_KEY和JWT_PUBLIC_KEY');

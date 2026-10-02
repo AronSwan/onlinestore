@@ -57,7 +57,7 @@ export class AlertQueryDto {
  * 提供告警规则和告警事件管理的API
  */
 @ApiTags('告警管理')
-@Controller('api/alerts')
+@Controller('alerts')
 export class AlertController {
   constructor(private readonly alertService: AlertService) {}
 

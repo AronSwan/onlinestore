@@ -14,7 +14,7 @@ class TestMonitoringService {
   constructor(options = {}) {
     this.openObserveUrl = options.openObserveUrl || 'http://localhost:5080';
     this.openObserveUsername = options.openObserveUsername || 'admin@example.com';
-    this.openObservePassword = options.openObservePassword || 'ComplexPass#123';
+    this.openObservePassword = options.openObservePassword || process.env.OPENOBSERVE_PASSWORD || 'CHANGE_ME_openobserve_password';
     this.enabled = options.enabled !== false;
     this.reportDir = options.reportDir || path.resolve(__dirname, '..', '.test-reports');
     

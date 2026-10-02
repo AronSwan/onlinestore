@@ -24,7 +24,7 @@ services:
       - "5080:5080"
     environment:
       - ZO_ROOT_USER_EMAIL=admin@example.com
-      - ZO_ROOT_USER_PASSWORD=Complexpass#123
+      - ZO_ROOT_USER_PASSWORD=CHANGE_ME_openobserve_password
       - ZO_DATA_DIR=/data
     volumes:
       - openobserve_data:/data
@@ -89,7 +89,7 @@ networks:
 
 - **OpenObserve Web UI**: `http://localhost:5080`
 - **用户名**: `admin@example.com`
-- **密码**: `Complexpass#123`
+- **密码**: `CHANGE_ME_openobserve_password`
 - **组织**: `default`
 
 ## 📊 查看测试数据

@@ -18,7 +18,7 @@
 ❌ **默认凭据测试失败**
 
 尝试的凭据组合：
-1. `admin@example.com` / `Complexpass#123` - 失败 (401)
+1. `admin@example.com` / `CHANGE_ME_openobserve_password` - 失败 (401)
 2. `admin@openobserve.com` / `admin` - 失败 (401)
 3. `admin` / `admin` - 失败 (401)
 
@@ -66,13 +66,13 @@ sleep 30
 ```yaml
 environment:
   - ZO_ROOT_USER_EMAIL=admin@example.com
-  - ZO_ROOT_USER_PASSWORD=Complexpass#123
+  - ZO_ROOT_USER_PASSWORD=CHANGE_ME_openobserve_password
 ```
 
 #### 方案 3：尝试其他凭据
 根据 OpenObserve 版本不同，尝试以下凭据：
 - `root@example.com` / `root`
-- `admin` / `admin123`
+- `admin` / `CHANGE_ME_admin_password`
 - `admin` / `password`
 
 #### 方案 4：直接访问 Web 界面
@@ -102,7 +102,7 @@ try {
 }
 
 # 测试登录
-$body = '{"email":"admin@example.com","password":"Complexpass#123"}'
+$body = '{"email":"admin@example.com","password":"CHANGE_ME_openobserve_password"}'
 try { 
     $response = Invoke-RestMethod -Uri http://localhost:5080/api/default/login -Method POST -Body $body -ContentType "application/json"
     Write-Host "Login successful! Token:" $response.token.Substring(0,20) "..."

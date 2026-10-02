@@ -47,9 +47,9 @@ export class ReceiveAddressEntity {
   @Column({ type: 'boolean', default: false })
   isDefault!: boolean;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn({ type: 'datetime' })
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'timestamp' })
+  @UpdateDateColumn({ type: 'datetime' })
   updatedAt!: Date;
 }

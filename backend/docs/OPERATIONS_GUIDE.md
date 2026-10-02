@@ -25,7 +25,7 @@ npm run docs:system:start
 
 
 - 用户名: admin
-- 密码: admin123
+- 密码: CHANGE_ME_admin_password
 
 ### 文档集成管理
 

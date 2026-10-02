@@ -149,7 +149,7 @@ const WizardConfig = {
             endpoint: 'http://localhost:5080',
             organization: 'default',
             username: 'admin',
-            password: 'Complexpass#123',
+            password: process.env.OPENOBSERVE_PASSWORD || 'CHANGE_ME_openobserve_password',
             batching: {
               enabled: true,
               maxBatchSize: 100,

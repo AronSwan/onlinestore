@@ -16,7 +16,6 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 import { Exclude } from 'class-transformer';
 import { Order } from '../../orders/entities/order.entity';
-import { UserRoleEntity } from '../../auth/rbac/entities/user-role.entity';
 import { Address } from '../domain/entities/address.entity';
 import { CustomerProfile } from '../domain/entities/customer-profile.entity';
 
@@ -86,9 +85,10 @@ export class User {
   @ApiProperty({ description: '用户订单' })
   orders: Order[];
 
-  @OneToMany(() => UserRoleEntity, userRole => userRole.user)
-  @ApiProperty({ description: '用户角色关联' })
-  userRoles: UserRoleEntity[];
+  // 注意：原 userRoles 关联（UserRoleEntity）已移除 TypeORM 装饰器——
+  // UserRoleEntity 没有 @Entity 装饰器且 RBAC 表未在连接中注册，装饰器会导致
+  // "Entity metadata for User#userRoles was not found" 阻止启动。属性保留供业务代码兼容。
+  userRoles?: any[];
 
   @OneToMany(() => Address, address => address.user)
   @ApiProperty({ description: '用户地址列表' })

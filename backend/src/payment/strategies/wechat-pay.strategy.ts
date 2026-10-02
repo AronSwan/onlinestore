@@ -37,6 +37,14 @@ export class WechatPayStrategy extends PaymentStrategy {
 
   async handleCallback(data: any): Promise<GatewayResult<CallbackData>> {
     // TODO: 处理微信支付回调
+    // 整改（M2，2026-10-02）：回调必须先通过验签（fail-closed），验签失败直接拒绝，
+    // 堵住"PaymentModule 接线即被伪造回调置为支付成功"的绕过路径。
+    if (!this.validateCallback(data)) {
+      return {
+        success: false,
+        message: '回调验签失败',
+      };
+    }
     return {
       success: true,
       data: {
@@ -60,8 +68,8 @@ export class WechatPayStrategy extends PaymentStrategy {
   }
 
   validateCallback(data: any): boolean {
-    // TODO: 验证微信支付回调签名
-    // 这里应该验证微信支付的签名
-    return true;
+    // 通用HMAC-SHA256验签：使用 PAYMENT_SIGNATURE_SECRET，
+    // 未配置密钥或签名不匹配一律拒绝（fail-closed）
+    return this.verifyCallbackSignature(data);
   }
 }

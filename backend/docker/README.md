@@ -5,21 +5,21 @@
 ## 📚 文档导航
 
 ### 总领文档
-- **[Docker 部署指南](../../README-DOCKER.md)** - 完整的Docker部署和使用说明（总领文档）
+- **[Docker 部署指南](../../docs/archive/README-DOCKER.md)** - 完整的Docker部署和使用说明（总领文档，已归档）
 
 ### 后端Docker配置文档
-- **[Docker配置优化指南](../DOCKER_OPTIMIZATION_GUIDE.md)** - 详细的优化过程和最佳实践
-- **[Docker配置优化总结](../DOCKER_OPTIMIZATION_SUMMARY.md)** - 优化成果和效果总结
+- **[Docker配置优化指南](../docs/archive/DOCKER_OPTIMIZATION_GUIDE.md)** - 详细的优化过程和最佳实践
+- **[Docker配置优化总结](../docs/archive/DOCKER_OPTIMIZATION_SUMMARY.md)** - 优化成果和效果总结
 
 ### 后端Docker快速参考
 - **[当前文档 - Docker使用说明](README.md)** - 简化的使用说明和快速开始
 
 ### 文档关系图
 ```
-../../README-DOCKER.md (总领文档)
+../../docs/archive/README-DOCKER.md (总领文档，已归档)
     ↓
-    ├── ../DOCKER_OPTIMIZATION_GUIDE.md (详细优化指南)
-    ├── ../DOCKER_OPTIMIZATION_SUMMARY.md (优化总结)
+    ├── ../docs/archive/DOCKER_OPTIMIZATION_GUIDE.md (详细优化指南)
+    ├── ../docs/archive/DOCKER_OPTIMIZATION_SUMMARY.md (优化总结)
     └── README.md (当前文档 - 快速使用说明)
 ```
 
@@ -130,7 +130,7 @@ JWT_SECRET=your_jwt_secret_key
 
 # OpenObserve配置
 ZO_ROOT_USER_EMAIL=admin@example.com
-ZO_ROOT_USER_PASSWORD=ComplexPass#123
+ZO_ROOT_USER_PASSWORD=CHANGE_ME_openobserve_password
 
 # 支付服务配置
 ALIPAY_APP_ID=your_alipay_app_id
@@ -194,4 +194,4 @@ docker-compose logs -f service_name
 
 ## 更多信息
 
-详细的优化指南和最佳实践请参考 [`../DOCKER_OPTIMIZATION_GUIDE.md`](../DOCKER_OPTIMIZATION_GUIDE.md)。
+详细的优化指南和最佳实践请参考 [`../docs/archive/DOCKER_OPTIMIZATION_GUIDE.md`](../docs/archive/DOCKER_OPTIMIZATION_GUIDE.md)。

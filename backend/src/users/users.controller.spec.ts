@@ -3,7 +3,7 @@ import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { AuthService } from '../auth/auth.service';
 import { ConfigService } from '@nestjs/config';
-import { ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
+import { ConflictException, NotFoundException, BadRequestException, NotImplementedException } from '@nestjs/common';
 import { ValidationPipe } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { CreateUserDto } from './application/dto/create-user.dto';
@@ -455,14 +455,16 @@ describe('UsersController', () => {
   });
 
   describe('DELETE /users/:id', () => {
-    it('should delete user successfully', async () => {
-      // Since deleteUser is not implemented, we expect it to throw an error
-      await expect(controller.deleteUser('1')).rejects.toThrow('Not implemented');
+    it('should throw NotImplementedException (501) while delete is not implemented', async () => {
+      // 整改（B2）：deleteUser 未实现时改抛 NotImplementedException（501），
+      // 不再是裸 Error('Not implemented')（会被当未知异常渲染为 500）
+      await expect(controller.deleteUser('1')).rejects.toThrow(NotImplementedException);
+      await expect(controller.deleteUser('1')).rejects.toThrow('用户删除功能未实现');
     });
 
-    it('should throw error for non-existent user', async () => {
-      // Since deleteUser is not implemented, we expect it to throw an error
-      await expect(controller.deleteUser('999')).rejects.toThrow('Not implemented');
+    it('should throw NotImplementedException regardless of user existence', async () => {
+      // 未实现与目标用户是否存在无关，统一 501
+      await expect(controller.deleteUser('999')).rejects.toThrow(NotImplementedException);
     });
   });
 

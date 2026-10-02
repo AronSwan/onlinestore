@@ -91,16 +91,17 @@ export class SearchManagerService implements OnModuleInit {
             this.logger.warn('ZincSearch索引映射创建失败，但服务仍可用');
           }
         } else {
-          this.logger.error('所有搜索引擎服务都不可用');
-          throw new Error('所有搜索引擎服务都不可用');
+          // 搜索引擎均不可用时不阻断应用启动（与 RedisModule stub、Redpanda/OrderEvents
+          // 的降级策略一致）：记录警告并降级运行，由下方健康监控周期性重试自动恢复。
+          this.logger.warn('所有搜索引擎服务都不可用，搜索服务降级运行，等待健康监控自动恢复');
         }
       }
 
       this.isInitialized = true;
       this.logger.log('搜索服务管理器初始化完成');
     } catch (error) {
-      this.logger.error('搜索服务管理器初始化失败', error);
-      throw error;
+      // 初始化失败（如健康检查网络异常）不阻断启动，降级等待健康监控恢复
+      this.logger.warn('搜索服务管理器初始化失败，搜索服务降级运行', error);
     }
   }
 
@@ -131,6 +132,10 @@ export class SearchManagerService implements OnModuleInit {
       if (!isHealthy) {
         this.logger.warn(`当前搜索引擎 ${this.currentStrategy} 不可用，尝试切换到备用引擎`);
         await this.switchToFallback();
+      } else if (!this.isInitialized) {
+        // 降级启动后搜索引擎恢复可用，自动恢复搜索服务
+        this.isInitialized = true;
+        this.logger.log(`搜索引擎 ${this.currentStrategy} 已恢复，搜索服务恢复可用`);
       }
     } catch (error) {
       this.logger.error('健康检查失败', error);

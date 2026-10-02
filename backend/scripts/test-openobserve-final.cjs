@@ -13,7 +13,7 @@ const sleep = promisify(setTimeout);
 const config = {
   openobserveUrl: 'http://localhost:5080',
   username: 'admin@example.com',
-  password: 'Complexpass#123',
+  password: process.env.OPENOBSERVE_PASSWORD || 'CHANGE_ME_openobserve_password',
   organization: 'default',
   streamName: 'test_runner_metrics'
 };

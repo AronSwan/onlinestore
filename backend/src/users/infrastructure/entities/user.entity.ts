@@ -70,7 +70,7 @@ export class UserEntity {
   @Column({ type: 'boolean', default: false })
   emailVerified: boolean;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   lastLoginAt: Date;
 
   @CreateDateColumn()

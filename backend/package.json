@@ -35,14 +35,12 @@
     "test:monitor": "jest --config=jest.config.cjs --detectOpenHandles",
     "test:secure": "jest --config=jest.config.cjs --detectOpenHandles",
     "test:legacy": "jest --config=jest.config.cjs",
-    "test:perf": "jest --config=jest.config.test.cjs --runTestsByPath test/performance/**/*.spec.ts",
     "test:idle": "jest --config=jest.config.cjs --runInBand",
     "test:smart": "jest --config=jest.config.cjs",
     "test:analysis": "jest --config=jest.config.cjs --listTests",
     "test:openobserve": "jest --config=jest.config.cjs openobserve",
     "test:contract:openobserve": "jest --config=jest.config.cjs openobserve",
     "test:validate": "jest --help",
-
     "security:check": "node scripts/security-check.js",
     "security:check:auth": "node scripts/security-check.js -- --category=auth",
     "security:check:input": "node scripts/security-check.js -- --category=input-validation",
@@ -62,7 +60,6 @@
     "security:validate-data:json": "node scripts/validate-vulnerability-data.js -- --format=json --output=validation-report.json",
     "security:validate-data:ci": "node scripts/validate-vulnerability-data.js -- --ci",
     "security:heatmap": "node scripts/generate-risk-heatmap-v2.js",
-    "security:heatmap:v1": "node scripts/generate-risk-heatmap.js",
     "security:heatmap:v2": "node scripts/generate-risk-heatmap-v2.js",
     "security:heatmap:test": "node scripts/generate-risk-heatmap.test.js",
     "security:heatmap:jest": "jest scripts/generate-risk-heatmap.test.js",
@@ -109,21 +106,7 @@
     "config:generate": "copy .env.master .env.example",
     "config:test": "NODE_ENV=test node scripts/config-validator.js",
     "config:prod": "NODE_ENV=production node scripts/config-validator.js",
-    "jwt:check": "node backend/jwt-secret-check.js",
-
-    "docs:sync:start": "node scripts/docs-sync-daemon.js start",
-    "docs:sync:stop": "node scripts/docs-sync-daemon.js stop",
-    "docs:sync:status": "node scripts/docs-sync-daemon.js status",
-    "docs:system:init": "node scripts/docs-system-controller.js init",
-    "docs:system:start": "node scripts/docs-system-controller.js start",
-    "docs:system:stop": "node scripts/docs-system-controller.js stop",
-    "docs:system:restart": "node scripts/docs-system-controller.js restart",
-    "docs:system:status": "node scripts/docs-system-controller.js status",
-    "docs:system:health": "node scripts/docs-system-controller.js health",
-    "docs:system:report": "node scripts/docs-system-controller.js report",
-    "docs:install": "npm install && node scripts/docs-system-controller.js check-deps",
-    "metrics:typed-mock": "node scripts/typed-mock-adoption.cjs"
-    ,
+    "metrics:typed-mock": "node scripts/typed-mock-adoption.cjs",
     "ci:timeout-evidence": "node scripts/ci/generate-timeout-evidence.cjs"
   },
   "dependencies": {
@@ -231,4 +214,3 @@
     "remark-normalize-headings": "^5.1.1"
   }
 }
-

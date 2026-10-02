@@ -9,7 +9,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
  * 提供监控指标和健康检查的API端点
  */
 @ApiTags('monitoring')
-@Controller('api/monitoring')
+@Controller('monitoring')
 export class MonitoringController {
   constructor(
     private readonly monitoringService: MonitoringService,

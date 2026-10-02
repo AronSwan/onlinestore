@@ -27,7 +27,7 @@ export class ZincSearchService implements SearchStrategy {
         this.configService.get<string>('search.zincsearch.host') || 'http://localhost:4080';
       this.username = this.configService.get<string>('search.zincsearch.username') || 'admin';
       this.password =
-        this.configService.get<string>('search.zincsearch.password') || 'Complexpass#123';
+        this.configService.get<string>('search.zincsearch.password') || 'CHANGE_ME_zinc_admin_password';
 
       this.logger.log(`ZincSearch客户端初始化成功: ${this.baseUrl}`);
       this.isConnected = true;

@@ -24,14 +24,22 @@ import { UpdateCartItemDto } from '../application/dto/update-cart-item.dto';
 import { CartItemResponseDto } from '../application/dto/cart-item-response.dto';
 import { CartSummaryResponseDto } from '../application/dto/cart-summary-response.dto';
 import { PagedCartResponseDto } from '../application/dto/paged-cart-response.dto';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { CartOwnerGuard } from './cart-owner.guard';
 
 /**
  * 购物车控制器 - 参考 CongoMall CartItemController 设计
+ *
+ * 安全（整改 B1，2026-10-02）：所有路由原先仅凭 :customerUserId 路径参数定位资源，
+ * 属于全组 IDOR。现启用认证 + 归属绑定：
+ * - JwtAuthGuard 先行认证（bearer token -> passport -> req.user = { sub, email, role }）；
+ * - CartOwnerGuard 把 :customerUserId 与令牌主体 sub 严格绑定，越权访问一律 403。
+ * 有意决策：购物车的 customerUserId 键 = 认证用户的 id（sub）。
  */
 @ApiTags('购物车管理')
-@Controller('api/cart')
+@Controller('cart')
 @ApiBearerAuth()
-// @UseGuards(JwtAuthGuard) // 需要实现 JWT 认证守卫
+@UseGuards(JwtAuthGuard, CartOwnerGuard)
 export class CartController {
   constructor(private readonly cartApplicationService: CartApplicationService) {}
 

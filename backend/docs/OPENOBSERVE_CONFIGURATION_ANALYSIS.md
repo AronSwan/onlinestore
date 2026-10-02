@@ -91,7 +91,7 @@ services:
       - "5080:5080"
     environment:
       - ZO_ROOT_USER_EMAIL=admin@example.com
-      - ZO_ROOT_USER_PASSWORD=Complexpass#123
+      - ZO_ROOT_USER_PASSWORD=CHANGE_ME_openobserve_password
     volumes:
       - openobserve_data:/data
     restart: unless-stopped
@@ -106,7 +106,7 @@ services:
       - "5081:5080"
     environment:
       - ZO_ROOT_USER_EMAIL=admin@example.com
-      - ZO_ROOT_USER_PASSWORD=Complexpass#123
+      - ZO_ROOT_USER_PASSWORD=CHANGE_ME_openobserve_password
     volumes:
       - openobserve_ui_data:/data
     restart: unless-stopped

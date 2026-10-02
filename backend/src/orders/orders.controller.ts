@@ -34,7 +34,7 @@ import {
 } from '../common/decorators/api-docs.decorator';
 
 @ApiTags('订单管理')
-@Controller('api/orders')
+@Controller('orders')
 @UseInterceptors(RouteLabelInterceptor)
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}

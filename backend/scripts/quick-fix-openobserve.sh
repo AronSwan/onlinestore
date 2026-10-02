@@ -95,7 +95,7 @@ services:
       - "5080:5080"
     environment:
       - ZO_ROOT_USER_EMAIL=admin@example.com
-      - ZO_ROOT_USER_PASSWORD=Complexpass#123
+      - ZO_ROOT_USER_PASSWORD=${OPENOBSERVE_ROOT_USER_PASSWORD:-CHANGE_ME_openobserve_password}
       - ZO_DATA_DIR=/data
       - ZO_META_DIR=/data/meta
       - ZO_FILE_DATA_DIR=/data/files
@@ -161,7 +161,7 @@ test_login() {
     # 尝试使用默认凭据
     local response=$(curl -s -X POST http://localhost:5080/api/default/login \
         -H "Content-Type: application/json" \
-        -d '{"email":"admin@example.com","password":"Complexpass#123"}' || echo "")
+        -d '{"email":"admin@example.com","password":"CHANGE_ME_openobserve_password"}' || echo "")
     
     if [[ $response == *"token"* ]]; then
         log_success "Login test successful"
@@ -182,7 +182,7 @@ show_access_info() {
     echo ""
     echo "📋 Login Credentials:"
     echo "  Email: admin@example.com"
-    echo "  Password: Complexpass#123"
+    echo "  Password: ${OPENOBSERVE_ROOT_USER_PASSWORD:-CHANGE_ME_openobserve_password}"
     echo ""
     echo "🔧 Management Commands:"
     echo "  View logs: docker logs -f openobserve"

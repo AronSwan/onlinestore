@@ -7,7 +7,7 @@ const config = {
   organization: 'default',
   stream: 'caddy-shopping-logs',
   username: 'admin@example.com',
-  password: 'admin123',
+  password: 'CHANGE_ME_openobserve_password',
   timeout: 10000
 };
 

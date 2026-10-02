@@ -219,7 +219,7 @@ class SecurityManagementService extends EventEmitter {
         id: 'admin',
         username: 'admin',
         email: 'admin@example.com',
-        passwordHash: this.hashPassword('admin123'),
+        passwordHash: this.hashPassword(process.env.ADMIN_INITIAL_PASSWORD || 'CHANGE_ME_admin_initial_password'),
         roles: ['super_admin'],
         isActive: true,
         createdAt: Date.now(),

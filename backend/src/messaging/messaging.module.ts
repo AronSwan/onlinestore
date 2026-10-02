@@ -8,10 +8,11 @@ import { MonitoringModule } from '../monitoring/monitoring.module';
 import { ConfigModule } from '@nestjs/config';
 import { RedpandaService } from './redpanda.service';
 import { ProductEventsService } from './product-events.service';
+import { OrderEventsService } from './order-events.service';
 
 @Module({
   imports: [ConfigModule, forwardRef(() => MonitoringModule)],
-  providers: [RedpandaService, ProductEventsService],
-  exports: [RedpandaService, ProductEventsService],
+  providers: [RedpandaService, ProductEventsService, OrderEventsService],
+  exports: [RedpandaService, ProductEventsService, OrderEventsService],
 })
 export class MessagingModule {}

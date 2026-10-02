@@ -1,584 +1,334 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConfigService } from '@nestjs/config';
-import { OpenObserveService } from './openobserve.service';
 import axios from 'axios';
+import * as zlib from 'zlib';
+import { OpenObserveService } from './openobserve.service';
+import { OpenObserveConfigService } from './config/openobserve-config.service';
+import { OpenObserveError } from './utils/error-handler';
 
-// Mock axios
+// Mock axios：服务内部通过 axios.create() 自建实例，需拦截 create 返回 mock 实例
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 describe('OpenObserveService', () => {
   let service: OpenObserveService;
 
-  beforeEach(async () => {
-    // Mock ConfigService
-    const mockConfigService = {
-      get: jest.fn(),
+  let mockConfigService: {
+    getConfig: jest.Mock;
+    isEnabled: jest.Mock;
+    getAuthHeaders: jest.Mock;
+    getApiEndpoint: jest.Mock;
+    getHealthEndpoint: jest.Mock;
+    getSearchEndpoint: jest.Mock;
+    getStatsEndpoint: jest.Mock;
+  };
+
+  let mockAxiosInstance: {
+    post: jest.Mock;
+    get: jest.Mock;
+    interceptors: {
+      request: { use: jest.Mock };
+      response: { use: jest.Mock };
     };
+  };
+
+  const baseConfig = {
+    url: 'http://localhost:5080',
+    timeout: 10000,
+    compression: false,
+    organization: 'default',
+    username: 'admin@example.com',
+    password: 'CHANGE_ME_test_password',
+  };
+
+  beforeEach(async () => {
+    mockConfigService = {
+      getConfig: jest.fn().mockReturnValue(baseConfig),
+      isEnabled: jest.fn().mockReturnValue(true),
+      getAuthHeaders: jest.fn().mockReturnValue({ Authorization: 'Basic dGVzdDp0ZXN0' }),
+      getApiEndpoint: jest.fn(
+        (stream: string) => `${baseConfig.url}/api/${baseConfig.organization}/${stream}/_json`,
+      ),
+      getHealthEndpoint: jest.fn(() => `${baseConfig.url}/api/_health`),
+      getSearchEndpoint: jest.fn(() => `${baseConfig.url}/api/${baseConfig.organization}/_search`),
+      getStatsEndpoint: jest.fn(() => `${baseConfig.url}/api/${baseConfig.organization}/stats`),
+    };
+
+    mockAxiosInstance = {
+      post: jest.fn(),
+      get: jest.fn(),
+      interceptors: {
+        request: { use: jest.fn() },
+        response: { use: jest.fn() },
+      },
+    };
+    mockedAxios.create.mockReturnValue(mockAxiosInstance as any);
+
+    // 先清上一轮用例的调用记录（实现保留），再编译模块，保证构造期间的调用可被断言
+    jest.clearAllMocks();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         OpenObserveService,
         {
-          provide: ConfigService,
+          provide: OpenObserveConfigService,
           useValue: mockConfigService,
         },
       ],
     }).compile();
 
     service = module.get<OpenObserveService>(OpenObserveService);
-
-    // Clear all mocks before each test
-    jest.clearAllMocks();
   });
 
   it('should be defined', () => {
     expect(service).toBeDefined();
-  });
-
-  describe('initializeConfig', () => {
-    it('should initialize OpenObserve configuration', () => {
-      const expectedConfig = {
-        url: 'http://localhost:5080',
-        organization: 'default',
-        username: 'admin@example.com',
-        password: 'ComplexPass#123',
-      };
-
-      // Mock the ConfigService.get method
-      const originalGet = (ConfigService.prototype as any).get;
-      (ConfigService.prototype as any).get = jest.fn((key: string) => {
-        switch (key) {
-          case 'OPENOBSERVE_URL':
-            return expectedConfig.url;
-          case 'OPENOBSERVE_ORGANIZATION':
-            return expectedConfig.organization;
-          case 'OPENOBSERVE_USERNAME':
-            return expectedConfig.username;
-          case 'OPENOBSERVE_PASSWORD':
-            return expectedConfig.password;
-          default:
-            return undefined;
-        }
-      });
-
-      // Create a new service instance to trigger initialization
-      const newService = new OpenObserveService(ConfigService.prototype as any);
-      expect(newService).toBeDefined();
-
-      // Restore original method
-      (ConfigService.prototype as any).get = originalGet;
-    });
-  });
-
-  describe('ingestData', () => {
-    it('should ingest data to OpenObserve', async () => {
-      const mockConfig = {
-        url: 'http://localhost:5080',
-        organization: 'default',
-        username: 'admin@example.com',
-        password: 'ComplexPass#123',
-      };
-
-      // Mock the ConfigService.get method
-      const originalGet = (ConfigService.prototype as any).get;
-      (ConfigService.prototype as any).get = jest.fn((key: string) => {
-        switch (key) {
-          case 'OPENOBSERVE_URL':
-            return mockConfig.url;
-          case 'OPENOBSERVE_ORGANIZATION':
-            return mockConfig.organization;
-          case 'OPENOBSERVE_USERNAME':
-            return mockConfig.username;
-          case 'OPENOBSERVE_PASSWORD':
-            return mockConfig.password;
-          default:
-            return undefined;
-        }
-      });
-
-      // Create a new service instance with the mock config
-      const newService = new OpenObserveService(ConfigService.prototype as any);
-
-      const stream = 'test-stream';
-      const data = [
-        {
-          timestamp: new Date().toISOString(),
-          level: 'info',
-          message: 'Test log message',
-          service: 'test-service',
-        },
-      ];
-
-      // Mock the HTTP POST request
-      const mockResponse = {
-        status: 200,
-        data: {},
-      };
-
-      mockedAxios.post.mockResolvedValue(mockResponse);
-
-      const result = await newService.ingestData(stream, data);
-      expect(result.success).toBe(true);
-      expect(result.count).toBe(data.length);
-      expect(mockedAxios.post).toHaveBeenCalledWith(
-        `${mockConfig.url}/api/${mockConfig.organization}/${stream}/_json`,
-        data,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Content-Encoding': 'gzip',
-            Authorization: `Basic ${Buffer.from(`${mockConfig.username}:${mockConfig.password}`).toString('base64')}`,
-          },
-          timeout: 10000,
-        },
-      );
-    });
-
-    it('should handle ingestion errors', async () => {
-      const mockConfig = {
-        url: 'http://localhost:5080',
-        organization: 'default',
-        username: 'admin@example.com',
-        password: 'ComplexPass#123',
-      };
-
-      // Mock the ConfigService.get method
-      const originalGet = (ConfigService.prototype as any).get;
-      (ConfigService.prototype as any).get = jest.fn((key: string) => {
-        switch (key) {
-          case 'OPENOBSERVE_URL':
-            return mockConfig.url;
-          case 'OPENOBSERVE_ORGANIZATION':
-            return mockConfig.organization;
-          case 'OPENOBSERVE_USERNAME':
-            return mockConfig.username;
-          case 'OPENOBSERVE_PASSWORD':
-            return mockConfig.password;
-          default:
-            return undefined;
-        }
-      });
-
-      // Create a new service instance with the mock config
-      const newService = new OpenObserveService(ConfigService.prototype as any);
-
-      const stream = 'test-stream';
-      const data = [
-        {
-          timestamp: new Date().toISOString(),
-          level: 'info',
-          message: 'Test log message',
-          service: 'test-service',
-        },
-      ];
-
-      // Mock the HTTP POST request to throw an error
-      const error = new Error('Network error');
-      mockedAxios.post.mockRejectedValue(error);
-
-      const result = await newService.ingestData(stream, data);
-      expect(result.success).toBe(false);
-      expect(result.error).toBe(error.message);
-
-      // Restore original method
-      (ConfigService.prototype as any).get = originalGet;
-    });
+    expect(mockedAxios.create).toHaveBeenCalledWith(
+      expect.objectContaining({ baseURL: baseConfig.url, timeout: baseConfig.timeout }),
+    );
   });
 
   describe('querySingleSourceOfTruth', () => {
     it('should query data from OpenObserve', async () => {
-      const mockConfig = {
-        url: 'http://localhost:5080',
-        organization: 'default',
-        username: 'admin@example.com',
-        password: 'ComplexPass#123',
-      };
-
-      // Mock the ConfigService.get method
-      const originalGet = (ConfigService.prototype as any).get;
-      (ConfigService.prototype as any).get = jest.fn((key: string) => {
-        switch (key) {
-          case 'OPENOBSERVE_URL':
-            return mockConfig.url;
-          case 'OPENOBSERVE_ORGANIZATION':
-            return mockConfig.organization;
-          case 'OPENOBSERVE_USERNAME':
-            return mockConfig.username;
-          case 'OPENOBSERVE_PASSWORD':
-            return mockConfig.password;
-          default:
-            return undefined;
-        }
+      const hits = [
+        { timestamp: new Date().toISOString(), level: 'info', message: 'Test log message' },
+      ];
+      mockAxiosInstance.post.mockResolvedValue({
+        data: { hits, total: 1, took: 10 },
+        headers: {},
       });
 
-      // Create a new service instance with the mock config
-      const newService = new OpenObserveService(ConfigService.prototype as any);
+      const result = await service.querySingleSourceOfTruth(['test-stream'], 'SELECT * FROM test-stream');
 
-      const streams = ['test-stream'];
-      const query = 'SELECT * FROM test-stream';
-
-      const mockResponse = {
-        data: {
-          hits: [
-            {
-              timestamp: new Date().toISOString(),
-              level: 'info',
-              message: 'Test log message',
-              service: 'test-service',
-            },
-          ],
-          total: 1,
-          took: 10,
-        },
-      };
-
-      mockedAxios.post.mockResolvedValue(mockResponse);
-
-      const result = await newService.querySingleSourceOfTruth(streams, query);
-      expect(result.data).toEqual(mockResponse.data.hits);
-      expect(result.total).toBe(mockResponse.data.total);
-      expect(result.took).toBe(mockResponse.data.took);
-      expect(mockedAxios.post).toHaveBeenCalledWith(
-        `${mockConfig.url}/api/${mockConfig.organization}/_search`,
-        {
-          query,
-          streams,
+      expect(result.data).toEqual(hits);
+      expect(result.total).toBe(1);
+      expect(result.took).toBe(10);
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith(
+        `${baseConfig.url}/api/${baseConfig.organization}/_search`,
+        expect.objectContaining({
+          query: 'SELECT * FROM test-stream',
+          streams: ['test-stream'],
           start_time: 'now-1h',
           end_time: 'now',
           limit: 1000,
           sql_mode: true,
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Basic ${Buffer.from(`${mockConfig.username}:${mockConfig.password}`).toString('base64')}`,
-          },
-          timeout: 30000,
-        },
+        }),
+        expect.objectContaining({ headers: { Authorization: 'Basic dGVzdDp0ZXN0' } }),
       );
+    });
 
-      // Restore original method
-      (ConfigService.prototype as any).get = originalGet;
+    it('should reject when OpenObserve is not enabled', async () => {
+      mockConfigService.isEnabled.mockReturnValue(false);
+
+      await expect(
+        service.querySingleSourceOfTruth(['logs'], 'SELECT 1'),
+      ).rejects.toThrow('OpenObserve is not enabled');
+    });
+
+    it('should reject when streams array is empty', async () => {
+      await expect(service.querySingleSourceOfTruth([], 'SELECT 1')).rejects.toThrow(
+        'Streams array is required',
+      );
+    });
+
+    it('should reject when query string is empty', async () => {
+      await expect(service.querySingleSourceOfTruth(['logs'], '  ')).rejects.toThrow(
+        'Query string is required',
+      );
+    });
+  });
+
+  describe('ingestData', () => {
+    const sampleData = [
+      {
+        timestamp: new Date().toISOString(),
+        level: 'info',
+        message: 'Test log message',
+        service: 'test-service',
+      },
+    ];
+
+    it('should ingest data to OpenObserve', async () => {
+      mockAxiosInstance.post.mockResolvedValue({ status: 200, data: {}, headers: {} });
+
+      const result = await service.ingestData('test-stream', sampleData);
+
+      expect(result.success).toBe(true);
+      expect(result.message).toBe('Data ingested successfully');
+      expect(result.count).toBe(sampleData.length);
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith(
+        `${baseConfig.url}/api/${baseConfig.organization}/test-stream/_json`,
+        sampleData,
+        expect.objectContaining({
+          headers: expect.objectContaining({ Authorization: 'Basic dGVzdDp0ZXN0' }),
+        }),
+      );
+    });
+
+    it('should gzip payload when compression is enabled', async () => {
+      mockConfigService.getConfig.mockReturnValue({ ...baseConfig, compression: true });
+      // 压缩配置在构造函数里已读取，需重建实例以生效
+      const compressedService = new OpenObserveService(mockConfigService as any);
+      mockAxiosInstance.post.mockClear();
+      mockAxiosInstance.post.mockResolvedValue({ status: 200, data: {}, headers: {} });
+
+      const result = await compressedService.ingestData('test-stream', sampleData);
+
+      expect(result.success).toBe(true);
+      const [, payload, requestConfig] = mockAxiosInstance.post.mock.calls[0];
+      expect(Buffer.isBuffer(payload)).toBe(true);
+      expect(JSON.parse(zlib.gunzipSync(payload as Buffer).toString())).toEqual(sampleData);
+      expect(requestConfig.headers['Content-Encoding']).toBe('gzip');
+    });
+
+    it('should reject when OpenObserve is not enabled', async () => {
+      mockConfigService.isEnabled.mockReturnValue(false);
+
+      await expect(service.ingestData('logs', sampleData)).rejects.toThrow(
+        'OpenObserve is not enabled',
+      );
+    });
+
+    it('should reject when stream name is empty', async () => {
+      await expect(service.ingestData('  ', sampleData)).rejects.toThrow(
+        'Stream name is required',
+      );
+    });
+
+    it('should reject when data array is empty', async () => {
+      await expect(service.ingestData('logs', [])).rejects.toThrow('Data array is required');
+    });
+
+    it('should wrap request errors into OpenObserveError', async () => {
+      const axiosLikeError = Object.assign(new Error('Network error'), {
+        isAxiosError: true,
+        config: {},
+        response: { status: 500 },
+      });
+      mockAxiosInstance.post.mockRejectedValue(axiosLikeError);
+
+      await expect(service.ingestData('test-stream', sampleData)).rejects.toBeInstanceOf(
+        OpenObserveError,
+      );
     });
   });
 
   describe('getSystemHealth', () => {
     it('should check OpenObserve health', async () => {
-      const mockConfig = {
-        url: 'http://localhost:5080',
-        organization: 'default',
-        username: 'admin@example.com',
-        password: 'ComplexPass#123',
-      };
-
-      // Mock the ConfigService.get method
-      const originalGet = (ConfigService.prototype as any).get;
-      (ConfigService.prototype as any).get = jest.fn((key: string) => {
-        switch (key) {
-          case 'OPENOBSERVE_URL':
-            return mockConfig.url;
-          case 'OPENOBSERVE_ORGANIZATION':
-            return mockConfig.organization;
-          case 'OPENOBSERVE_USERNAME':
-            return mockConfig.username;
-          case 'OPENOBSERVE_PASSWORD':
-            return mockConfig.password;
-          default:
-            return undefined;
-        }
+      mockAxiosInstance.get.mockResolvedValue({
+        status: 200,
+        data: { status: 'healthy', version: '1.0.0', uptime: 3600 },
+        headers: {},
       });
 
-      // Create a new service instance with the mock config
-      const newService = new OpenObserveService(ConfigService.prototype as any);
+      const result = await service.getSystemHealth();
 
-      const mockResponse = {
-        status: 200,
-        data: {
-          status: 'healthy',
-          version: '1.0.0',
-          uptime: 3600,
-        },
-      };
-
-      mockedAxios.get.mockResolvedValue(mockResponse);
-
-      const result = await newService.getSystemHealth();
       expect(result.status).toBe('healthy');
       expect(result.details.version).toBe('1.0.0');
       expect(result.details.uptime).toBe(3600);
-      expect(mockedAxios.get).toHaveBeenCalledWith(`${mockConfig.url}/api/_health`, {
+      expect(result.responseTime).toBeGreaterThanOrEqual(0);
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(`${baseConfig.url}/api/_health`, {
+        headers: { Authorization: 'Basic dGVzdDp0ZXN0' },
         timeout: 5000,
       });
     });
 
-    it('should handle unhealthy status', async () => {
-      const mockConfig = {
-        url: 'http://localhost:5080',
-        organization: 'default',
-        username: 'admin@example.com',
-        password: 'ComplexPass#123',
-      };
+    it('should report unhealthy on non-200 status', async () => {
+      mockAxiosInstance.get.mockResolvedValue({ status: 500, data: {}, headers: {} });
 
-      // Mock the ConfigService.get method
-      const originalGet = (ConfigService.prototype as any).get;
-      (ConfigService.prototype as any).get = jest.fn((key: string) => {
-        switch (key) {
-          case 'OPENOBSERVE_URL':
-            return mockConfig.url;
-          case 'OPENOBSERVE_ORGANIZATION':
-            return mockConfig.organization;
-          case 'OPENOBSERVE_USERNAME':
-            return mockConfig.username;
-          case 'OPENOBSERVE_PASSWORD':
-            return mockConfig.password;
-          default:
-            return undefined;
-        }
-      });
+      const result = await service.getSystemHealth();
 
-      // Create a new service instance with the mock config
-      const newService = new OpenObserveService(ConfigService.prototype as any);
-
-      const mockResponse = {
-        status: 500,
-        data: {},
-      };
-
-      mockedAxios.get.mockResolvedValue(mockResponse);
-
-      const result = await newService.getSystemHealth();
       expect(result.status).toBe('unhealthy');
+    });
 
-      // Restore original method
-      (ConfigService.prototype as any).get = originalGet;
+    it('should reject when OpenObserve is not enabled', async () => {
+      mockConfigService.isEnabled.mockReturnValue(false);
+
+      await expect(service.getSystemHealth()).rejects.toThrow('OpenObserve is not enabled');
     });
   });
 
   describe('sendLogs', () => {
-    it('should send logs to OpenObserve', async () => {
-      const mockConfig = {
-        url: 'http://localhost:5080',
-        organization: 'default',
-        username: 'admin@example.com',
-        password: 'ComplexPass#123',
-      };
+    it('should ingest logs into the logs stream', async () => {
+      const logs = [{ level: 'info', message: 'Test log message' }];
+      const ingestSpy = jest
+        .spyOn(service, 'ingestData')
+        .mockResolvedValue({ success: true, message: 'Data ingested successfully' });
 
-      // Mock the ConfigService.get method
-      const originalGet = (ConfigService.prototype as any).get;
-      (ConfigService.prototype as any).get = jest.fn((key: string) => {
-        switch (key) {
-          case 'OPENOBSERVE_URL':
-            return mockConfig.url;
-          case 'OPENOBSERVE_ORGANIZATION':
-            return mockConfig.organization;
-          case 'OPENOBSERVE_USERNAME':
-            return mockConfig.username;
-          case 'OPENOBSERVE_PASSWORD':
-            return mockConfig.password;
-          default:
-            return undefined;
-        }
-      });
-
-      // Create a new service instance with the mock config
-      const newService = new OpenObserveService(ConfigService.prototype as any);
-
-      const logs = [
-        {
-          timestamp: new Date().toISOString(),
-          level: 'info',
-          message: 'Test log message',
-          service: 'test-service',
-        },
-      ];
-
-      // Mock the ingestData method
-      jest.spyOn(newService, 'ingestData').mockResolvedValue({
-        success: true,
-        message: 'Data ingested successfully',
-        count: logs.length,
-      });
-
-      // Should not throw an error
-      await expect(newService.sendLogs(logs)).resolves.not.toThrow();
-      expect(newService.ingestData).toHaveBeenCalledWith('logs', logs);
-
-      // Restore original method
-      (ConfigService.prototype as any).get = originalGet;
+      await expect(service.sendLogs(logs)).resolves.toBeUndefined();
+      expect(ingestSpy).toHaveBeenCalledWith('logs', logs);
     });
 
-    it('should handle empty logs array', async () => {
-      const mockConfig = {
-        url: 'http://localhost:5080',
-        organization: 'default',
-        username: 'admin@example.com',
-        password: 'ComplexPass#123',
-      };
+    it('should skip ingestion for empty logs array', async () => {
+      const ingestSpy = jest.spyOn(service, 'ingestData');
 
-      // Mock the ConfigService.get method
-      const originalGet = (ConfigService.prototype as any).get;
-      (ConfigService.prototype as any).get = jest.fn((key: string) => {
-        switch (key) {
-          case 'OPENOBSERVE_URL':
-            return mockConfig.url;
-          case 'OPENOBSERVE_ORGANIZATION':
-            return mockConfig.organization;
-          case 'OPENOBSERVE_USERNAME':
-            return mockConfig.username;
-          case 'OPENOBSERVE_PASSWORD':
-            return mockConfig.password;
-          default:
-            return undefined;
-        }
-      });
+      await expect(service.sendLogs([])).resolves.toBeUndefined();
+      expect(ingestSpy).not.toHaveBeenCalled();
+    });
 
-      // Create a new service instance with the mock config
-      const newService = new OpenObserveService(ConfigService.prototype as any);
+    it('should wrap ingestion failures', async () => {
+      jest
+        .spyOn(service, 'ingestData')
+        .mockRejectedValue(new Error('OpenObserve is not enabled'));
 
-      // Should not throw an error with empty logs
-      await expect(newService.sendLogs([])).resolves.not.toThrow();
-
-      // Restore original method
-      (ConfigService.prototype as any).get = originalGet;
+      await expect(service.sendLogs([{ level: 'info' }])).rejects.toThrow(
+        '发送日志到OpenObserve失败: OpenObserve is not enabled',
+      );
     });
   });
 
   describe('queryLogs', () => {
-    it('should query logs from OpenObserve', async () => {
-      const mockConfig = {
-        url: 'http://localhost:5080',
-        organization: 'default',
-        username: 'admin@example.com',
-        password: 'ComplexPass#123',
-      };
+    it('should delegate to querySingleSourceOfTruth on the logs stream', async () => {
+      const hits = [{ level: 'info', message: 'Test log message' }];
+      const querySpy = jest
+        .spyOn(service, 'querySingleSourceOfTruth')
+        .mockResolvedValue({ data: hits, total: 1, took: 10 });
 
-      // Mock the ConfigService.get method
-      const originalGet = (ConfigService.prototype as any).get;
-      (ConfigService.prototype as any).get = jest.fn((key: string) => {
-        switch (key) {
-          case 'OPENOBSERVE_URL':
-            return mockConfig.url;
-          case 'OPENOBSERVE_ORGANIZATION':
-            return mockConfig.organization;
-          case 'OPENOBSERVE_USERNAME':
-            return mockConfig.username;
-          case 'OPENOBSERVE_PASSWORD':
-            return mockConfig.password;
-          default:
-            return undefined;
-        }
-      });
+      const result = await service.queryLogs({ query: 'level="info"', size: 10 });
 
-      // Create a new service instance with the mock config
-      const newService = new OpenObserveService(ConfigService.prototype as any);
+      expect(result.total).toBe(1);
+      expect(result.hits).toEqual(hits);
+      expect(result.took).toBe(10);
+      expect(querySpy).toHaveBeenCalledWith(['logs'], expect.any(String), undefined, undefined, 10);
+    });
 
-      const query = {
-        query: 'test',
-        size: 10,
-      };
+    it('should reject when OpenObserve is not enabled', async () => {
+      mockConfigService.isEnabled.mockReturnValue(false);
 
-      const mockQueryResult = {
-        data: [
-          {
-            timestamp: new Date().toISOString(),
-            level: 'info',
-            message: 'Test log message',
-            service: 'test-service',
-          },
-        ],
-        total: 1,
-        took: 10,
-      };
-
-      // Mock the querySingleSourceOfTruth method
-      jest.spyOn(newService, 'querySingleSourceOfTruth').mockResolvedValue(mockQueryResult);
-
-      const result = await newService.queryLogs(query);
-      expect(result.total).toBe(mockQueryResult.total);
-      expect(result.hits).toEqual(mockQueryResult.data);
-      expect(result.took).toBe(mockQueryResult.took);
-      expect(newService.querySingleSourceOfTruth).toHaveBeenCalledWith(
-        ['logs'],
-        expect.any(String),
-        undefined,
-        undefined,
-        10,
+      await expect(service.queryLogs({ query: 'level="info"' })).rejects.toThrow(
+        'OpenObserve is not enabled',
       );
     });
   });
 
   describe('testConnection', () => {
-    it('should test OpenObserve connection successfully', async () => {
-      const mockConfig = {
-        url: 'http://localhost:5080',
-        organization: 'default',
-        username: 'admin@example.com',
-        password: 'ComplexPass#123',
-      };
+    it('should succeed when the service is healthy', async () => {
+      jest
+        .spyOn(service, 'getSystemHealth')
+        .mockResolvedValue({ status: 'healthy', details: {} });
 
-      (ConfigService.prototype as any).get.mockImplementation((key: string) => {
-        switch (key) {
-          case 'OPENOBSERVE_URL':
-            return mockConfig.url;
-          case 'OPENOBSERVE_ORGANIZATION':
-            return mockConfig.organization;
-          case 'OPENOBSERVE_USERNAME':
-            return mockConfig.username;
-          case 'OPENOBSERVE_PASSWORD':
-            return mockConfig.password;
-          default:
-            return undefined;
-        }
-      });
+      const result = await service.testConnection();
 
-      // Create a new service instance with the mock config
-      const newService = new OpenObserveService(ConfigService.prototype as any);
-
-      // Mock the getSystemHealth method
-      jest.spyOn(newService, 'getSystemHealth').mockResolvedValue({
-        status: 'healthy',
-        details: {},
-      });
-
-      // Should not throw an error
-      await expect(newService.testConnection()).resolves.not.toThrow();
+      expect(result.success).toBe(true);
+      expect(result.message).toBe('连接测试成功');
     });
 
-    it('should throw error when connection test fails', async () => {
-      const mockConfig = {
-        url: 'http://localhost:5080',
-        organization: 'default',
-        username: 'admin@example.com',
-        password: 'ComplexPass#123',
-      };
+    it('should fail when the service is unhealthy', async () => {
+      jest
+        .spyOn(service, 'getSystemHealth')
+        .mockResolvedValue({ status: 'unhealthy', details: {} });
 
-      (ConfigService.prototype as any).get.mockImplementation((key: string) => {
-        switch (key) {
-          case 'OPENOBSERVE_URL':
-            return mockConfig.url;
-          case 'OPENOBSERVE_ORGANIZATION':
-            return mockConfig.organization;
-          case 'OPENOBSERVE_USERNAME':
-            return mockConfig.username;
-          case 'OPENOBSERVE_PASSWORD':
-            return mockConfig.password;
-          default:
-            return undefined;
-        }
-      });
+      const result = await service.testConnection();
 
-      // Create a new service instance with the mock config
-      const newService = new OpenObserveService(ConfigService.prototype as any);
+      expect(result.success).toBe(false);
+      expect(result.message).toBe('OpenObserve服务不健康');
+    });
 
-      // Mock the getSystemHealth method to return unhealthy status
-      jest.spyOn(newService, 'getSystemHealth').mockResolvedValue({
-        status: 'unhealthy',
-        details: {},
-      });
+    it('should fail when the health check throws', async () => {
+      jest.spyOn(service, 'getSystemHealth').mockRejectedValue(new Error('timeout'));
 
-      // Should throw an error
-      await expect(newService.testConnection()).rejects.toThrow('OpenObserve服务不健康');
+      const result = await service.testConnection();
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('连接测试失败');
     });
   });
 });

@@ -1,3 +1,8 @@
+/**
+ * ⚠️ LEGACY 备用入口（不参与生产部署）。
+ * 生产入口是 src/main.ts（package.json start:prod → dist/src/main.js），见 README。
+ * 本文件仅用于购物车服务单独启动/联调，路由与主入口不一致，勿在此新增功能。
+ */
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { Module } from '@nestjs/common';

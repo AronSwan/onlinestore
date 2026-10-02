@@ -238,7 +238,7 @@ services:
     ports: ["5080:5080"]
     environment:
       - ZO_ROOT_USER_EMAIL=admin@example.com
-      - ZO_ROOT_USER_PASSWORD=Complexpass#123
+      - ZO_ROOT_USER_PASSWORD=CHANGE_ME_openobserve_password
       - ZO_DATA_DIR=/data
     volumes:
       - ./data:/data

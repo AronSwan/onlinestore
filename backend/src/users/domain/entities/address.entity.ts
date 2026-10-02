@@ -13,7 +13,10 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-import { UserEntity } from '../../infrastructure/persistence/typeorm/user.entity';
+// 关联用户实体必须使用已在连接中注册的 users/entities/user.entity。
+// users/infrastructure/persistence/typeorm/user.entity 未在 app.module 注册（避免同表多实体冲突），
+// 指向它会导致 "Entity metadata for Address#user was not found"。
+import { User } from '../../entities/user.entity';
 
 export enum AddressType {
   SHIPPING = 'shipping',
@@ -27,10 +30,10 @@ export class Address {
   @ApiProperty({ description: '地址ID' })
   id: number;
 
-  @ManyToOne(() => UserEntity, { nullable: true })
+  @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'user_id' })
   @ApiProperty({ description: '所属用户' })
-  user: UserEntity;
+  user: User;
 
   @Column()
   @ApiProperty({ description: '用户ID' })

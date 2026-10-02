@@ -177,7 +177,7 @@ show_access_info() {
     echo ""
     echo "📋 Default Credentials:"
     echo "  Email: admin@example.com"
-    echo "  Password: Complexpass#123"
+    echo "  Password: ${OPENOBSERVE_ROOT_USER_PASSWORD:-CHANGE_ME_openobserve_password}"
     echo ""
     echo "🔧 Management Commands:"
     echo "  View logs: docker logs -f openobserve"

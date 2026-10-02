@@ -43,7 +43,7 @@ import {
   PopularPagesQueryDto,
 } from './dto/logging.dto';
 
-@Controller('api/logging')
+@Controller('logging')
 @UseFilters(LoggingExceptionFilter)
 @UsePipes(
   new ValidationPipe({

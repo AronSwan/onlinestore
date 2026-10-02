@@ -8,7 +8,7 @@ OpenObserve 的默认凭据可能因版本而异。请尝试以下组合：
 
 #### 组合 1（推荐）
 - 邮箱：`admin@example.com`
-- 密码：`Complexpass#123`
+- 密码：`CHANGE_ME_openobserve_password`
 
 #### 组合 2
 - 邮箱：`admin@openobserve.com`
@@ -95,7 +95,7 @@ async function createUser() {
   try {
     const response = await axios.post('http://localhost:5080/api/default/users', {
       email: 'admin@example.com',
-      password: 'Admin123!',
+      password: 'CHANGE_ME_openobserve_password',
       role: 'admin',
       first_name: 'Admin',
       last_name: 'User'
@@ -107,7 +107,7 @@ async function createUser() {
     
     console.log('✅ User created successfully');
     console.log('Email: admin@example.com');
-    console.log('Password: Admin123!');
+    console.log('Password: CHANGE_ME_openobserve_password');
   } catch (error) {
     console.error('❌ Failed to create user:', error.response?.data || error.message);
   }
@@ -130,7 +130,7 @@ cat .env.openobserve | grep -E "(USERNAME|PASSWORD|EMAIL)"
 
 # 如果需要，更新环境变量
 sed -i 's/LOGGING_OPENOBSERVE_USERNAME=.*/LOGGING_OPENOBSERVE_USERNAME=admin@example.com/' .env.openobserve
-sed -i 's/LOGGING_OPENOBSERVE_PASSWORD=.*/LOGGING_OPENOBSERVE_PASSWORD=Complexpass#123/' .env.openobserve
+sed -i 's/LOGGING_OPENOBSERVE_PASSWORD=.*/LOGGING_OPENOBSERVE_PASSWORD=CHANGE_ME_openobserve_password/' .env.openobserve
 ```
 
 ### 步骤 4：使用 Token 认证
@@ -146,7 +146,7 @@ sed -i 's/LOGGING_OPENOBSERVE_PASSWORD=.*/LOGGING_OPENOBSERVE_PASSWORD=Complexpa
 # 获取 Token
 curl -X POST http://localhost:5080/api/default/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@example.com","password":"Complexpass#123"}'
+  -d '{"email":"admin@example.com","password":"CHANGE_ME_openobserve_password"}'
 ```
 
 ### 步骤 5：修改 Docker Compose 配置
@@ -165,7 +165,7 @@ services:
       - "5080:5080"
     environment:
       - ZO_ROOT_USER_EMAIL=admin@example.com
-      - ZO_ROOT_USER_PASSWORD=Complexpass#123
+      - ZO_ROOT_USER_PASSWORD=CHANGE_ME_openobserve_password
       - ZO_DATA_DIR=/data
     volumes:
       - openobserve_data:/data
@@ -185,7 +185,7 @@ docker run -d \
   --name openobserve \
   -p 5080:5080 \
   -e ZO_ROOT_USER_EMAIL=admin@example.com \
-  -e ZO_ROOT_USER_PASSWORD=Complexpass#123 \
+  -e ZO_ROOT_USER_PASSWORD=CHANGE_ME_openobserve_password \
   public.ecr.aws/zinclabs/openobserve:latest
 ```
 
@@ -218,7 +218,7 @@ spec:
         - name: ZO_ROOT_USER_EMAIL
           value: "admin@example.com"
         - name: ZO_ROOT_USER_PASSWORD
-          value: "Complexpass#123"
+          value: "CHANGE_ME_openobserve_password"
 ---
 apiVersion: v1
 kind: Service
@@ -253,7 +253,7 @@ curl http://localhost:5080/api/organizations
 ```bash
 # 测试基本 API 访问
 curl -X GET http://localhost:5080/api/default/streams \
-  -H "Authorization: Basic $(echo -n 'admin@example.com:Complexpass#123' | base64)"
+  -H "Authorization: Basic $(echo -n 'admin@example.com:CHANGE_ME_openobserve_password' | base64)"
 ```
 
 ## 联系支持
@@ -293,7 +293,7 @@ services:
       - "5080:5080"
     environment:
       - ZO_ROOT_USER_EMAIL=admin@example.com
-      - ZO_ROOT_USER_PASSWORD=Complexpass#123
+      - ZO_ROOT_USER_PASSWORD=CHANGE_ME_openobserve_password
     volumes:
       - openobserve_data:/data
     restart: unless-stopped
@@ -313,7 +313,7 @@ sleep 30
 if curl -f http://localhost:5080/api/_health > /dev/null 2>&1; then
     echo "✅ OpenObserve is running"
     echo "🌐 Web UI: http://localhost:5080"
-    echo "📋 Login: admin@example.com / Complexpass#123"
+    echo "📋 Login: admin@example.com / CHANGE_ME_openobserve_password"
 else
     echo "❌ OpenObserve failed to start"
     echo "📋 Logs:"

@@ -334,8 +334,11 @@ export const createMasterConfiguration = (): MasterConfig => {
     abortEarly: false,
   });
 
+  // 非 production 环境（development / test / 未设置 NODE_ENV）均跳过严格校验，
+  // 使用下方安全的开发默认值，保证 npm run start:dev / jest 开箱可用；
+  // production 下仍强制校验并在缺参时抛错阻止启动。
   const skipValidation =
-    process.env.SKIP_CONFIG_VALIDATION === 'true' || process.env.NODE_ENV === 'development';
+    process.env.SKIP_CONFIG_VALIDATION === 'true' || process.env.NODE_ENV !== 'production';
   if (error) {
     if (!skipValidation) {
       // 统一生产环境下的错误文案，使与强校验分支一致
@@ -472,7 +475,9 @@ export const createMasterConfiguration = (): MasterConfig => {
       charset: env.DB_CHARSET || 'utf8mb4',
       timezone: env.DB_TIMEZONE || '+08:00',
       ssl: env.DB_SSL === 'true',
-      synchronize: isProd ? false : env.DB_SYNCHRONIZE === 'true',
+      // 生产环境禁止自动建表；开发/测试默认开启 synchronize 以便 SQLite 开箱可用，
+      // 可通过 DB_SYNCHRONIZE=false 显式关闭
+      synchronize: isProd ? false : env.DB_SYNCHRONIZE !== 'false',
       logging: isProd ? false : env.DB_LOGGING === 'true',
       poolSize: parseInt(env.DB_POOL_SIZE, 10),
       maxConnections: parseInt(env.DB_MAX_CONNECTIONS, 10),

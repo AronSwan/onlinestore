@@ -14,7 +14,10 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { OrderItem } from './order-item.entity';
-import { UserEntity } from '../../users/infrastructure/persistence/typeorm/user.entity';
+// 关联用户实体必须使用已在连接中注册的 users/entities/user.entity（users/entities glob）。
+// 不能指向 users/infrastructure/persistence/typeorm/user.entity：该目录为避免同表多实体
+// 冲突未在 app.module 注册，指向它会导致 "Entity metadata for Order#user was not found"。
+import { User } from '../../users/entities/user.entity';
 
 export enum OrderStatus {
   PENDING = 'pending',
@@ -37,9 +40,9 @@ export class Order {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => UserEntity, { nullable: true })
+  @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'user_id' })
-  user?: UserEntity;
+  user?: User;
 
   @Column('int', { name: 'user_id' })
   userId: number;
@@ -82,13 +85,13 @@ export class Order {
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @Column({ name: 'shipped_at', type: 'timestamp', nullable: true })
+  @Column({ name: 'shipped_at', type: 'datetime', nullable: true })
   shippedAt?: Date;
 
-  @Column({ name: 'paid_at', type: 'timestamp', nullable: true })
+  @Column({ name: 'paid_at', type: 'datetime', nullable: true })
   paidAt?: Date;
 
-  @Column({ name: 'completed_at', type: 'timestamp', nullable: true })
+  @Column({ name: 'completed_at', type: 'datetime', nullable: true })
   completedAt?: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })

@@ -44,7 +44,7 @@ docker-compose -f docker-compose.tracing.yml --profile zipkin up -d zipkin
 
 - **Jaeger UI**: http://localhost:16686
 - **Zipkin UI**: http://localhost:9411 (如果启用)
-- **Grafana**: http://localhost:3000 (admin/admin123)
+- **Grafana**: http://localhost:3000 (admin/CHANGE_ME_admin_password)
 - **Prometheus**: http://localhost:9090
 
 ### 4. 启动应用
