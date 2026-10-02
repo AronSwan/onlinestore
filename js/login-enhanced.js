@@ -1,5 +1,8 @@
 // 用途：增强的登录页面功能
-// 包含表单验证、密码强度检查、验证码、OAuth回调等功能
+// 包含表单验证、密码强度检查、验证码等功能
+// （OAuth 回调由 js/oauth-handler.js 独家处理，本文件不再参与，
+//   避免两者在 login.html?code= 上竞争处理：此处旧逻辑会直接
+//   alert 并跳转 index.html，打断真实换 token 流程）
 // 作者：AI Assistant
 // 时间：2024-11-09 10:30:00
 
@@ -19,20 +22,25 @@ class LoginEnhanced {
         this.initPasswordToggle();
         this.initTabSwitching();
         this.checkLockoutStatus();
-        this.handleOAuthCallback();
+        // 注意：这里不再调用 handleOAuthCallback —— OAuth 回调(?code=)由
+        // js/oauth-handler.js（同页加载）独家处理，避免竞争。
         this.generateCaptcha();
     }
 
     bindEvents() {
         // 表单提交事件
+        // auth.js（同页以 module 方式加载，先于 DOMContentLoaded 执行）已为
+        // #login-form/#register-form 绑定真实的 API 提交处理，并在表单上设置
+        // data-submit-bound="auth" 标志。这里检查该标志，避免重复绑定导致
+        // 双重提交（本类的模拟提交会 alert 并跳转，打断真实登录流程）。
         const loginForm = document.getElementById('login-form');
         const registerForm = document.getElementById('register-form');
-        
-        if (loginForm) {
+
+        if (loginForm && !loginForm.dataset.submitBound) {
             loginForm.addEventListener('submit', this.handleLogin.bind(this));
         }
-        
-        if (registerForm) {
+
+        if (registerForm && !registerForm.dataset.submitBound) {
             registerForm.addEventListener('submit', this.handleRegister.bind(this));
         }
 
@@ -175,20 +183,10 @@ class LoginEnhanced {
         }
     }
     
-    // 添加缺失的handleOAuthCallback方法
-    handleOAuthCallback() {
-        // 处理OAuth登录回调，这里只是一个示例实现
-        const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code');
-        
-        if (code) {
-            console.log('OAuth授权码:', code);
-            // 这里应该向服务器发送授权码以获取访问令牌
-            alert('OAuth登录成功！');
-            window.location.href = 'index.html';
-        }
-    }
-    
+    // handleOAuthCallback 方法已移除：其“alert 后跳转 index.html”的模拟实现
+    // 会与 js/oauth-handler.js 的真实换 token 流程在 login.html?code= 上竞争。
+    // OAuth 回调统一由 oauth-handler.js 处理。
+
     // 添加缺失的generateCaptcha方法
     generateCaptcha() {
         // 生成验证码，这里只是一个示例实现

@@ -1,4 +1,6 @@
-import NextChatAdvanced from '../nextchat-advanced-optimized.js';
+// [已归档] 此测试依赖的 nextchat-advanced-optimized.js 已一并归档到本目录，
+// 且该文件并无 default export —— 保留仅作历史参考，不参与任何构建/测试。
+import NextChatAdvanced from './nextchat-advanced-optimized.js';
 
 describe('NextChatAdvanced', () => {
   let chat;

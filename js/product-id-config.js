@@ -157,7 +157,7 @@ function integrateWithCartSystem() {
     },
     querySelector: () => ({ 
       textContent: '示例产品',
-      src: 'product.jpg'
+      src: 'images/products/product-1.jpg'
     })
   };
   
@@ -176,7 +176,7 @@ function integrateWithCartSystem() {
       id: rawProductId,
       name: '示例产品',
       price: '¥100',
-      image: 'product.jpg',
+      image: 'images/products/product-1.jpg',
       type: parsedInfo.type
     };
     

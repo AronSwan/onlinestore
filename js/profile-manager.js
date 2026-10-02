@@ -7,7 +7,8 @@ class ProfileManager {
     constructor() {
         this.currentUser = null;
         this.addresses = [];
-        this.baseUrl = 'http://localhost:3000/api';
+        // 同源相对路径，与 auth.js 等其他模块的 fetch 写法保持一致
+        this.baseUrl = '/api';
         this.init();
     }
 
@@ -650,7 +651,10 @@ class ProfileManager {
     }
 
     getAccessToken() {
-        return localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+        // auth.js 登录成功后写入的键名是 'token'（rememberMe 时在 localStorage，否则 sessionStorage）；
+        // 'access_token' 作为旧键名兜底保留
+        return localStorage.getItem('token') || sessionStorage.getItem('token') ||
+               localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
     }
 
     saveUserToStorage() {

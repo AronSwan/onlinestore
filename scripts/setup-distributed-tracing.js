@@ -422,7 +422,7 @@ node -r ./backend/src/tracing/opentelemetry-config.js backend/src/app.js
     console.log('  - 在应用中使用 TracingUtils.createCustomSpan() 创建自定义span');
     console.log('  - 使用 TracingUtils.recordBusinessEvent() 记录业务事件');
     console.log('  - 使用 TracingUtils.recordError() 记录错误信息');
-    console.log('  - 前端集成: 引入 js/tracing/frontend-tracing.js');
+    console.log('  - 前端集成: 引入 js/_archive/frontend-tracing.js（已归档）');
   }
 }
 

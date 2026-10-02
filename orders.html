@@ -19,11 +19,7 @@
     <meta property="og:url" content="https://reich.com/orders">
     
     <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-    <link rel="manifest" href="/site.webmanifest">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     
     <!-- 关键资源预加载 -->
     <link rel="preload" href="css/variables/complete-variables.css" as="style">
@@ -158,7 +154,7 @@
                 <!-- 右侧功能区 -->
                 <div class="flex items-center space-x-4" role="toolbar" aria-label="用户操作">
                     <!-- 返回账户按钮 -->
-                    <a href="account.html" 
+                    <a href="profile.html" 
                        class="text-[var(--dark-primary)] hover:text-[var(--gold-standard)] transition-colors p-2"
                        aria-label="返回我的账户">
                         <i class="fas fa-arrow-left text-xl" aria-hidden="true"></i>
@@ -194,7 +190,7 @@
                     <a href="/#accessories" class="nav-link-luxury py-2 text-lg">配饰</a>
                     <a href="/#perfume" class="nav-link-luxury py-2 text-lg">香水</a>
                     <a href="/#gifts" class="nav-link-luxury py-2 text-lg">礼品</a>
-                    <a href="account.html" class="nav-link-luxury py-2 text-lg">我的账户</a>
+                    <a href="profile.html" class="nav-link-luxury py-2 text-lg">我的账户</a>
                 </nav>
             </div>
         </div>
@@ -210,7 +206,7 @@
                     <ol class="flex items-center space-x-2 text-sm">
                         <li><a href="/" class="text-[var(--gold-standard)] hover:underline">首页</a></li>
                         <li><i class="fas fa-chevron-right text-xs text-[var(--text-muted)]" aria-hidden="true"></i></li>
-                        <li><a href="account.html" class="text-[var(--gold-standard)] hover:underline">我的账户</a></li>
+                        <li><a href="profile.html" class="text-[var(--gold-standard)] hover:underline">我的账户</a></li>
                         <li><i class="fas fa-chevron-right text-xs text-[var(--text-muted)]" aria-hidden="true"></i></li>
                         <li class="text-[var(--text-primary)] font-medium">我的订单</li>
                     </ol>
@@ -256,6 +252,12 @@
         <!-- 订单列表 -->
         <section class="py-8">
             <div class="container mx-auto px-4">
+                <!-- 演示数据徽标：后端订单API不可用/未登录时回退演示数据，明确告知用户 -->
+                <div id="demoDataBadge" class="hidden mb-6 flex items-center gap-2 text-sm text-[#7a5c12] bg-[#faf3dd] border border-[#e6d48a] rounded px-4 py-3" role="status">
+                    <i class="fas fa-circle-info text-[#b8941f]" aria-hidden="true"></i>
+                    <span>当前展示的是<b>演示数据</b>，并非您的真实订单（后端订单服务不可用或尚未登录）。</span>
+                </div>
+
                 <!-- 加载状态 -->
                 <div id="loadingState" class="text-center py-12">
                     <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--gold-standard)]" aria-hidden="true"></div>

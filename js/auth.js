@@ -88,6 +88,9 @@ function setupFormSubmissions() {
   }
   
   // 登录表单提交事件
+  // data-submit-bound 标志：告知 login-enhanced.js 本表单已绑定真实提交处理，
+  // 避免同一表单被绑定两次 submit 造成双重提交
+  loginForm.dataset.submitBound = "auth";
   loginForm.addEventListener("submit", async e => {
     e.preventDefault();
         
@@ -103,6 +106,7 @@ function setupFormSubmissions() {
   });
     
   // 注册表单提交事件
+  registerForm.dataset.submitBound = "auth";
   registerForm.addEventListener("submit", async e => {
     e.preventDefault();
         

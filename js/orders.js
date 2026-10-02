@@ -35,8 +35,12 @@ class OrderManager {
             orderDetailModal: document.getElementById('orderDetailModal'),
             modalTitle: document.getElementById('modalTitle'),
             modalContent: document.getElementById('modalContent'),
-            closeModal: document.getElementById('closeModal')
+            closeModal: document.getElementById('closeModal'),
+            demoDataBadge: document.getElementById('demoDataBadge')
         };
+        
+        // 是否正在展示演示数据（后端不可用时的回退）
+        this.isDemoData = false;
         
         // 初始化
         this.init();
@@ -99,20 +103,137 @@ class OrderManager {
     
     /**
      * 加载订单数据
+     * 优先携带 token 请求后端真实订单 GET /api/orders（token 存取键名与 auth.js 保持一致）；
+     * 未登录、401 或网络错误时回退到本地演示数据，并显示"演示数据"徽标，
+     * 避免用户把演示数据误认为真实订单。
      */
     async loadOrders() {
         this.showLoading();
         
         try {
-            // 模拟API调用
-            const mockOrders = this.generateMockOrders();
-            this.orders = mockOrders;
-            this.filterAndDisplayOrders();
+            const token = this.getAccessToken();
+            
+            if (token) {
+                const response = await fetch('/api/orders', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    // 兼容常见的返回形状：数组、{orders: [...]}、{items: [...]}（最终以后端对齐为准）
+                    const rawOrders = Array.isArray(data) ? data : (data.orders || data.items || []);
+                    this.orders = this.normalizeApiOrders(rawOrders);
+                    this.isDemoData = false;
+                    this.hideDemoBadge();
+                    this.filterAndDisplayOrders();
+                    return;
+                }
+                
+                console.warn(`订单API返回 ${response.status}，回退到演示数据`);
+            }
+            
+            // 未登录或API返回非2xx：回退演示数据
+            this.loadDemoData();
         } catch (error) {
-            console.error('加载订单失败:', error);
-            this.showError('加载订单失败，请稍后重试');
+            console.warn('从API加载订单失败，回退到演示数据:', error.message);
+            this.loadDemoData();
         } finally {
             this.hideLoading();
+        }
+    }
+    
+    /**
+     * 加载演示数据（标记为演示模式并显示徽标）
+     */
+    loadDemoData() {
+        this.orders = this.generateMockOrders();
+        this.isDemoData = true;
+        this.showDemoBadge();
+        this.filterAndDisplayOrders();
+    }
+    
+    /**
+     * 读取登录令牌（键名与 auth.js 的登录逻辑保持一致：'token'）
+     */
+    getAccessToken() {
+        return localStorage.getItem('token') || sessionStorage.getItem('token');
+    }
+    
+    /**
+     * 将后端返回的订单归一化为渲染所需的形状（防御性映射，
+     * 兼容 camelCase / snake_case 字段，最终以后端对齐为准）
+     */
+    normalizeApiOrders(rawOrders) {
+        return (rawOrders || []).map((raw, index) => {
+            const rawItems = Array.isArray(raw.items) ? raw.items : [];
+            const items = rawItems.map(item => {
+                const price = Number(item.price) || 0;
+                const quantity = Number(item.quantity) || 1;
+                return {
+                    id: item.id || item.itemId || '',
+                    productId: item.productId || item.product_id || '',
+                    name: item.name || item.productName || '商品',
+                    sku: item.sku || '',
+                    price: price,
+                    quantity: quantity,
+                    subtotal: Number(item.subtotal) || price * quantity,
+                    image: item.image || 'images/products/product-1.jpg'
+                };
+            });
+            
+            const address = raw.shippingAddress || raw.shipping_address || {};
+            const total = Number(raw.total ?? raw.totalAmount ?? raw.total_amount) ||
+                items.reduce((sum, item) => sum + item.subtotal, 0);
+
+            // 日期防御：后端可能返回非法日期串（如空对象、乱码），
+            // new Date(非法输入) 产出 Invalid Date，而后续
+            // Intl.DateTimeFormat.format(Invalid Date) 会抛
+            // RangeError: Invalid time value，导致订单列表/详情渲染中断
+            // （此时演示徽标已隐藏，用户看到空白页）。
+            // 在归一化边界统一兜底为当前时间，保证下游
+            // formatDate/formatDateTime/order.date.getTime() 永远拿到合法 Date。
+            const parsedDate = new Date(raw.date || raw.createdAt || raw.created_at || Date.now());
+
+            return {
+                id: raw.id || raw.orderId || raw.orderNumber || `ORD-${String(index + 1).padStart(6, '0')}`,
+                reference: raw.reference || raw.orderRef || raw.id || '',
+                date: isNaN(parsedDate.getTime()) ? new Date() : parsedDate,
+                status: raw.status || 'pending',
+                total: total,
+                currency: raw.currency || 'CNY',
+                items: items,
+                shippingAddress: {
+                    name: address.name || '-',
+                    phone: address.phone || '-',
+                    address: address.address || address.street || '-',
+                    city: address.city || '-',
+                    province: address.province || address.state || '-',
+                    postalCode: address.postalCode || address.postal_code || '-'
+                },
+                paymentMethod: raw.paymentMethod || raw.payment_method || '-',
+                trackingNumber: raw.trackingNumber || raw.tracking_number || null,
+                invoiceUrl: raw.invoiceUrl || raw.invoice_url || null
+            };
+        });
+    }
+    
+    /**
+     * 显示"演示数据"徽标
+     */
+    showDemoBadge() {
+        if (this.elements.demoDataBadge) {
+            this.elements.demoDataBadge.classList.remove('hidden');
+        }
+    }
+    
+    /**
+     * 隐藏"演示数据"徽标
+     */
+    hideDemoBadge() {
+        if (this.elements.demoDataBadge) {
+            this.elements.demoDataBadge.classList.add('hidden');
         }
     }
     
@@ -603,9 +724,9 @@ class OrderManager {
         // 关闭模态框
         this.closeOrderDetailModal();
         
-        // 跳转到购物车页面
+        // 跳转回首页（首页加载了 cart.js 可查看购物车；cart.html 页面不存在）
         setTimeout(() => {
-            window.location.href = 'cart.html';
+            window.location.href = 'index.html';
         }, 1000);
     }
     
@@ -628,8 +749,8 @@ class OrderManager {
         const order = this.orders.find(o => o.id === orderId);
         if (!order) return;
         
-        // 跳转到退货申请页面
-        window.location.href = `return-request.html?orderId=${orderId}`;
+        // 退货申请页面不存在（return-request.html），演示站明确告知功能未开通
+        this.showSuccess(`退货申请功能即将上线，如需退货请联系客服（订单号 ${orderId}）`);
     }
     
     /**

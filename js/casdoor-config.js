@@ -20,7 +20,9 @@ const CasdoorConfig = {
   applicationName: "reich-app", // 应用名称
   
   // OAuth2/OIDC 配置
-  redirectUri: window.location.origin + "/login-callback.html", // 回调地址
+  // 回调到登录页：login.html 加载了 oauth-handler.js，会解析 ?code= 完成回调处理
+  // （原 login-callback.html 页面不存在，会 404）
+  redirectUri: window.location.origin + "/login.html", // 回调地址
   scope: "openid profile email", // 权限范围
   responseType: "code", // 响应类型：code（推荐）或 token
   

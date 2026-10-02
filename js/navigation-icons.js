@@ -74,8 +74,7 @@ class NavigationIconManager {
       userMenu.innerHTML = `
         <a href="/profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">个人资料</a>
         <a href="/orders.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">我的订单</a>
-        <a href="/wishlist.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">我的收藏</a>
-        <a href="/settings.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">设置</a>
+        <a href="/profile.html#preferences" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">设置</a>
         <hr class="my-1">
         <a href="#" id="logout-btn" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">退出登录</a>
       `;
@@ -178,8 +177,8 @@ class NavigationIconManager {
     if (window.cartManager && typeof window.cartManager.showCartModal === 'function') {
       window.cartManager.showCartModal();
     } else {
-      // 否则跳转到购物车页面
-      window.location.href = '/cart.html';
+      // 否则跳回首页（首页加载了 cart.js，可查看购物车；cart.html 页面不存在）
+      window.location.href = '/';
     }
   }
 
@@ -224,8 +223,8 @@ class NavigationIconManager {
           window.wishlistManager.showWishlistModal();
         } else if (attempts >= maxAttempts) {
           clearInterval(checkInterval);
-          // 如果多次尝试后仍未初始化，跳转到心愿单页面
-          window.location.href = '/wishlist.html';
+          // 心愿单页面不存在：回到首页（首页加载了 wishlist.js，可打开收藏弹层）
+          window.location.href = '/';
         }
       }, 100);
     }

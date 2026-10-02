@@ -430,3 +430,50 @@
         width: 100%;
     }
 }
+
+/* ==========================================================================
+   导航栏用户区样式（历史欠账补齐）
+   profile.html 使用了 .nav-container / .nav-user / .user-icon-btn，但本页
+   此前未加载任何定义这些类的样式表（.user-icon-btn 原只定义在
+   css/responsive/touch-optimization.css，而 .nav-container/.nav-user 此前
+   全仓无定义）。为避免引入 touch-optimization.css 中影响全页的裸元素规则
+   （button/a/input/select/textarea 的 min-height:44px + user-select:none
+   会改变本页所有表单控件行为），这里以最小规则并入本文件。
+   ========================================================================== */
+
+.nav-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 12px 20px;
+}
+
+.nav-user {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+}
+
+.user-icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    margin: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.user-icon-btn img {
+    display: block;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+}
