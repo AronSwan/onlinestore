@@ -5,7 +5,22 @@
 // 时间：2025-10-05
 
 import { registerAs } from '@nestjs/config';
+import * as crypto from 'crypto';
 import * as Joi from 'joi';
+
+// 已知不安全的 ENCRYPTION_KEY 值(开发默认值/文档样例), 生产环境直接拒绝
+const KNOWN_INSECURE_ENCRYPTION_KEYS = [
+  '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+];
+
+function isInsecureEncryptionKey(key: string | undefined): boolean {
+  if (!key) {
+    return true;
+  }
+  return (
+    KNOWN_INSECURE_ENCRYPTION_KEYS.includes(key) || /^CHANGE[_-]?ME/i.test(key)
+  );
+}
 
 // ================================
 // 📋 配置接口定义
@@ -397,8 +412,8 @@ export const createMasterConfiguration = (): MasterConfig => {
   let env: any = validatedEnvConfig;
   if (skipValidation) {
     env.JWT_SECRET = env.JWT_SECRET || 'dev-jwt-secret-key-32-chars-xxxxxxxxxxxxxxxx';
-    env.ENCRYPTION_KEY =
-      env.ENCRYPTION_KEY || '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+    // S5-min: 回退默认改为随机生成, 不再使用固定已知密钥
+    env.ENCRYPTION_KEY = env.ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex');
     env.DB_DATABASE = env.DB_DATABASE || './data/dev_caddy_shopping.db';
     env.CORS_ORIGINS = env.CORS_ORIGINS || 'http://localhost:3000';
   }
@@ -444,6 +459,12 @@ export const createMasterConfiguration = (): MasterConfig => {
     if (!encryptionKey || encryptionKey.length !== 64) {
       throw new Error(
         `生产环境 ENCRYPTION_KEY 必须为64字符长度，当前长度: ${encryptionKey?.length || 0}。请设置有效的加密密钥`,
+      );
+    }
+    // S5-min: 已知不安全值黑名单(开发默认值/CHANGE_ME 占位符), 参考 main.ts KNOWN_INSECURE_JWT_SECRETS
+    if (isInsecureEncryptionKey(encryptionKey)) {
+      throw new Error(
+        '生产环境 ENCRYPTION_KEY 为已知不安全值(开发默认值或 CHANGE_ME 占位符)，请使用 openssl rand -hex 32 生成新密钥',
       );
     }
 

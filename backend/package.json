@@ -202,15 +202,6 @@
     "ts-loader": "^9.5.4",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.9.3",
-    "typedoc": "^0.26.11",
-    "typedoc-plugin-markdown": "^3.16.0",
-    "unified": "^11.0.5",
-    "remark": "^15.0.1",
-    "remark-parse": "^11.0.0",
-    "remark-stringify": "^11.0.0",
-    "remark-gfm": "^4.0.0",
-    "remark-slug": "^7.0.1",
-    "remark-normalize-headings": "^5.1.1"
+    "typescript": "^5.9.3"
   }
 }

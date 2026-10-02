@@ -33,16 +33,16 @@ export class LoggingExceptionFilter implements ExceptionFilter {
         details = (exceptionResponse as any).details || null;
       }
     } else if (exception instanceof Error) {
-      message = exception.message;
-      details = {
-        stack: exception.stack,
-      };
+      // S4 修复: 非 HttpException 的内部错误不向客户端泄漏原始 message/stack,
+      // 客户端固定文案; 原始细节仅保留在服务端 logger.error 中
+      message = '服务器内部错误';
+      details = null;
     }
 
     const errorInfo = extractErrorInfo(exception);
-    // 记录错误日志
+    // 记录错误日志(服务端保留原始 message 与 stack)
     this.logger.error(
-      `${request.method} ${request.url} - Status: ${status} - Message: ${message}`,
+      `${request.method} ${request.url} - Status: ${status} - Message: ${errorInfo.message}`,
       errorInfo.stack,
     );
 

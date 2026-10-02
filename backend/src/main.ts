@@ -139,10 +139,15 @@ export async function bootstrap() {
   );
   app.use(compression());
 
-  // CORS 配置 - 根据环境调整
-  const corsOrigins = isProduction
-    ? (process.env.CORS_ORIGINS || '').split(',').filter(Boolean)
-    : true;
+  // CORS 配置(S7 修复): 统一白名单, 所有环境均使用显式数组而非 origin:true 反射。
+  // 生产未配置 CORS_ORIGINS 时数组退化为仅本地开发源(非空、比拒启温和, 演示站够用)
+  const corsOrigins = (
+    process.env.CORS_ORIGINS ||
+    'http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173'
+  )
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
 
   app.enableCors({
     origin: corsOrigins,

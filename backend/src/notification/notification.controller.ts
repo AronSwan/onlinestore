@@ -1,7 +1,20 @@
-import { Controller, Get, Post, Body, Param, Query, Logger } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Query,
+  Logger,
+  UseGuards,
+} from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { RedpandaService } from '../messaging/redpanda.service';
 import { Topics } from '../messaging/topics';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { Role } from '../auth/enums/role.enum';
 
 @Controller('notifications')
 export class NotificationController {
@@ -32,6 +45,8 @@ export class NotificationController {
   }
 
   @Post('test')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   async testNotification(
     @Body()
     testData: {
@@ -68,6 +83,8 @@ export class NotificationController {
   }
 
   @Post('bulk')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   async sendBulkNotifications(
     @Body()
     bulkData: {

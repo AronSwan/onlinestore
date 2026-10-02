@@ -21,6 +21,10 @@ import { SearchSuggestionService } from './search-suggestion.service';
 import { PopularSearchService, PopularSearchOptions } from './popular-search.service';
 import { SearchOptions, SearchResult } from './search-strategy.interface';
 import { ApiDocs, ApiPaginatedQuery } from '../../common/decorators/api-docs.decorator';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../auth/guards/roles.guard';
+import { Roles } from '../../auth/decorators/roles.decorator';
+import { Role } from '../../auth/enums/role.enum';
 
 @ApiTags('搜索')
 @Controller('search')
@@ -160,6 +164,8 @@ export class SearchController {
     description: '清除所有搜索相关的缓存数据',
   })
   @Delete('cache')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   async clearSearchCache() {
     await this.searchSuggestionService.clearCache();
     await this.popularSearchService.clearCache();
@@ -181,6 +187,8 @@ export class SearchController {
     params: [{ name: 'engine', required: true, description: '搜索引擎名称' }],
   })
   @Post('switch/:engine')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   async switchSearchEngine(@Param('engine') engine: string) {
     return this.searchManagerService.switchEngine(engine as any);
   }
@@ -190,6 +198,8 @@ export class SearchController {
     description: '重新初始化搜索引擎，重建索引和配置',
   })
   @Post('reinitialize')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   async reinitializeSearchEngine() {
     return this.searchManagerService.reinitialize();
   }

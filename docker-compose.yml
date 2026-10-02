@@ -46,7 +46,7 @@ services:
       - DB_DATABASE=${POSTGRES_DB}
       - DB_USERNAME=postgres
       - DB_PORT=5432
-      - ENCRYPTION_KEY=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:?ENCRYPTION_KEY is required}
       - CORS_ORIGINS=http://localhost
       # Production strict config fixes
       - DB_HOST=postgres

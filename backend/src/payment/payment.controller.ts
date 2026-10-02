@@ -112,6 +112,11 @@ export class PaymentController {
       throw new BadRequestException('无效的回调数据');
     }
 
+    // P1-min fail-closed: x-signature 头必填, 缺失直接 400, 不再进入无签名处理
+    if (!signature) {
+      throw new BadRequestException('缺少 x-signature 请求头');
+    }
+
     // 验证必要字段
     const requiredFields = ['paymentId', 'status'];
     for (const field of requiredFields) {

@@ -46,7 +46,7 @@ export class AuthController {
   ) {}
 
   @Post('register')
-  @Throttle({ default: { limit: 1500, ttl: 60 } })
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @HttpCode(HttpStatus.CREATED)
   @ApiCreateResource(Object, Object, '用户注册')
   async register(@Body(ValidationPipe) registerData: RegisterDto): Promise<LoginResponseDto> {
@@ -54,7 +54,7 @@ export class AuthController {
   }
 
   @Post('login')
-  @Throttle({ default: { limit: 1500, ttl: 60 } })
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   @ApiCreateResource(Object, Object, '用户登录')
   async login(@Body(ValidationPipe) loginData: LoginDto): Promise<LoginResponseDto> {

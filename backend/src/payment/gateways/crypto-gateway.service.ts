@@ -135,6 +135,11 @@ export class CryptoGatewayService {
   }
 
   validateCallback(data: any, signature: string): boolean {
+    // P1-min fail-closed: secret 未配置时拒绝验签, 不再拼 &secret=undefined
+    if (!this.apiSecret) {
+      this.logger.warn('CRYPTO_API_SECRET 未配置, 拒绝回调验签(fail-closed)');
+      return false;
+    }
     const expectedSignature = this.generateCallbackSignature(data);
     return crypto.timingSafeEqual(
       Buffer.from(signature, 'hex'),
@@ -143,12 +148,25 @@ export class CryptoGatewayService {
   }
 
   private generateSignature(data: any, timestamp: string): string {
+    // P1-min fail-closed: 密钥缺失时抛错, 不生成伪造签名
+    if (!this.apiKey || !this.apiSecret) {
+      throw new HttpException(
+        '加密货币网关 API 密钥未配置, 拒绝生成签名(fail-closed)',
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
+    }
     const payload = JSON.stringify(data || {});
     const signString = `${this.apiKey}${timestamp}${payload}${this.apiSecret}`;
     return crypto.createHash('sha256').update(signString).digest('hex');
   }
 
   private generateCallbackSignature(data: any): string {
+    if (!this.apiSecret) {
+      throw new HttpException(
+        '加密货币网关 API 密钥未配置, 拒绝生成回调签名(fail-closed)',
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
+    }
     const keys = Object.keys(data).sort();
     const signString =
       keys

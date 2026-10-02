@@ -141,6 +141,11 @@ export class GopayGatewayService {
   }
 
   validateCallback(data: any, signature: string): boolean {
+    // P1-min fail-closed: secret 未配置时拒绝验签, 不再拼 &key=undefined
+    if (!this.appSecret) {
+      this.logger.warn('GOPAY_APP_SECRET 未配置, 拒绝回调验签(fail-closed)');
+      return false;
+    }
     const expectedSignature = this.generateCallbackSignature(data);
     return crypto.timingSafeEqual(
       Buffer.from(signature, 'hex'),
@@ -149,12 +154,25 @@ export class GopayGatewayService {
   }
 
   private generateSignature(data: any, timestamp: string, nonce: string): string {
+    // P1-min fail-closed: 密钥缺失时抛错, 不生成伪造签名
+    if (!this.appId || !this.appSecret) {
+      throw new HttpException(
+        'Gopay 网关 APP 密钥未配置, 拒绝生成签名(fail-closed)',
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
+    }
     const payload = JSON.stringify(data || {});
     const signString = `${this.appId}${timestamp}${nonce}${payload}${this.appSecret}`;
     return crypto.createHash('sha256').update(signString).digest('hex');
   }
 
   private generateCallbackSignature(data: any): string {
+    if (!this.appSecret) {
+      throw new HttpException(
+        'Gopay 网关 APP 密钥未配置, 拒绝生成回调签名(fail-closed)',
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
+    }
     const keys = Object.keys(data).sort();
     const signString =
       keys
@@ -166,6 +184,11 @@ export class GopayGatewayService {
   }
 
   private verifyResponseSignature(response: any): boolean {
+    // P1-min fail-closed: secret 未配置时直接判定验签失败
+    if (!this.appId || !this.appSecret) {
+      this.logger.warn('GOPAY_APP_SECRET 未配置, 响应验签直接判定失败(fail-closed)');
+      return false;
+    }
     const signature = response.headers['x-signature'];
     if (!signature) return false;
 

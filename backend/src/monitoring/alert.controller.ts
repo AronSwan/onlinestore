@@ -9,9 +9,14 @@ import {
   Query,
   HttpStatus,
   HttpCode,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { AlertService, AlertRule, AlertEvent, AlertSeverity, AlertStatus } from './alert.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { Role } from '../auth/enums/role.enum';
 
 /**
  * 告警管理请求DTO
@@ -85,6 +90,8 @@ export class AlertController {
    * 创建新的告警规则
    */
   @Post('rules')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: '创建新的告警规则' })
   @ApiResponse({ status: HttpStatus.CREATED, description: '成功创建告警规则' })
@@ -112,6 +119,8 @@ export class AlertController {
    * 更新告警规则
    */
   @Put('rules/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: '更新告警规则' })
   @ApiParam({ name: 'id', description: '告警规则ID' })
   @ApiResponse({ status: HttpStatus.OK, description: '成功更新告警规则' })
@@ -128,6 +137,8 @@ export class AlertController {
    * 删除告警规则
    */
   @Delete('rules/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: '删除告警规则' })
   @ApiParam({ name: 'id', description: '告警规则ID' })
@@ -185,6 +196,8 @@ export class AlertController {
    * 手动解决告警
    */
   @Post(':id/resolve')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '手动解决告警' })
   @ApiParam({ name: 'id', description: '告警ID' })
@@ -243,6 +256,8 @@ export class AlertController {
    * 测试告警规则
    */
   @Post('rules/:id/test')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '测试告警规则' })
   @ApiParam({ name: 'id', description: '告警规则ID' })

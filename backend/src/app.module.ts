@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AppController } from 'src/app.controller';
 import { AppService } from 'src/app.service';
 import { LoggingModule } from './logging/logging.module';
@@ -89,6 +91,17 @@ import { CartModule } from './cart/cart.module';
     // 日志模块
     LoggingModule,
 
+    // 限流模块(S3-min): 全局 300 次/60s, 可通过 THROTTLER_LIMIT/THROTTLER_TTL 环境变量覆盖
+    ThrottlerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => [
+        {
+          ttl: configService.get<number>('THROTTLER_TTL', 60) * 1000,
+          limit: configService.get<number>('THROTTLER_LIMIT', 300),
+        },
+      ],
+    }),
+
     // 监控模块
     MonitoringModule,
 
@@ -100,6 +113,13 @@ import { CartModule } from './cart/cart.module';
     CartModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    // 全局限流守卫(S3-min)
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}
