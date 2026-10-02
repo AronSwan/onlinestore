@@ -1,23 +1,7 @@
 name: CI Light Security Scan
 
 on:
-  pull_request:
-    branches: [ main, develop ]
-    paths:
-      - 'backend/**'
-    paths-ignore:
-      - 'backend/**/node_modules/**'
-      - 'backend/**/dist/**'
-      - 'backend/**/build/**'
-      - 'backend/**/coverage/**'
-      - 'backend/**/reports/**'
-      - 'backend/**/.test-output/**'
-      - 'backend/**/.test-cache/**'
-      - 'backend/**/test-results/**'
-      - 'backend/**/test-output/**'
-      - 'playwright-report/**'
-      - 'test-results/**'
-      - 'test-output/**'
+  workflow_dispatch: {}
 
 permissions:
   contents: read

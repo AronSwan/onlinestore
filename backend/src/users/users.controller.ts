@@ -13,6 +13,7 @@ import {
   Param,
   Query,
   HttpCode,
+  NotFoundException,
   HttpStatus,
   UseGuards,
   NotImplementedException,
@@ -21,9 +22,13 @@ import { CommandBus, QueryBus } from '@nestjs/cqrs';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OwnerOrAdminGuard } from '../common/guards/owner-or-admin.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { Role } from '../auth/enums/role.enum';
 import { CreateUserCommand } from './application/commands/create-user.command';
 import { UpdateUserCommand } from './application/commands/update-user.command';
 import { GetUserForEditingQuery } from './application/queries/get-user-for-editing.query';
+import { UserNotFoundException } from './domain/errors/user.errors';
 import { SearchUsersQuery } from './application/queries/search-users.query';
 import { CreateUserDto } from './application/dto/create-user.dto';
 import { UpdateUserDto } from './application/dto/update-user.dto';
@@ -87,7 +92,15 @@ export class UsersController {
   @UseGuards(OwnerOrAdminGuard)
   async getUserById(@Param('id') id: string): Promise<UserResponseDto> {
     const query = new GetUserForEditingQuery(id);
-    return await this.queryBus.execute(query);
+    try {
+      return await this.queryBus.execute(query);
+    } catch (e) {
+      // 领域异常转译: 未映射的 UserNotFoundException 会被全局过滤器当 500
+      if (e instanceof UserNotFoundException) {
+        throw new NotFoundException(`用户 ${id} 不存在`);
+      }
+      throw e;
+    }
   }
 
   @Put(':id')
@@ -117,6 +130,8 @@ export class UsersController {
   }
 
   @Delete(':id')
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteUser(@Param('id') id: string): Promise<void> {
     // 整改（B2，2026-10-02）：功能未实现时改抛 NotImplementedException（HTTP 501），
@@ -125,6 +140,8 @@ export class UsersController {
   }
 
   @Get()
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
   async searchUsers(
     @Query('search') searchTerm?: string,
     @Query('page') page?: number,
@@ -156,6 +173,8 @@ export class UsersController {
   }
 
   @Put(':id/activate')
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   async activateUser(@Param('id') id: string): Promise<UserResponseDto> {
     // 这里可以实现激活用户命令
@@ -165,6 +184,8 @@ export class UsersController {
   }
 
   @Put(':id/deactivate')
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   async deactivateUser(@Param('id') id: string): Promise<UserResponseDto> {
     // 这里可以实现停用用户命令
@@ -174,6 +195,8 @@ export class UsersController {
   }
 
   @Put(':id/verify-email')
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   async verifyUserEmail(@Param('id') id: string): Promise<UserResponseDto> {
     // 这里可以实现邮箱验证命令
@@ -183,6 +206,8 @@ export class UsersController {
   }
 
   @Get('stats/overview')
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
   async getUserStats(): Promise<any> {
     // 这里可以实现用户统计查询
     // const query = new GetUserStatsQuery();
@@ -197,6 +222,8 @@ export class UsersController {
 
   // 兼容测试：统计计数路由
   @Get('stats/count')
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
   async getUserStatsCount(): Promise<any> {
     const stats = await this.getUserStats();
     return {

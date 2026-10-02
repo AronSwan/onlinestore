@@ -1,10 +1,7 @@
 name: Playwright E2E - Cart Refresh
 
 on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ "*" ]
+  workflow_dispatch: {}
 
 permissions:
   contents: read

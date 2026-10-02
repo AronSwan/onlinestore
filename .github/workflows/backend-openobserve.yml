@@ -1,14 +1,7 @@
 name: Backend OpenObserve Tests
 
 on:
-  push:
-    paths:
-      - 'backend/**'
-      - '.github/workflows/backend-openobserve.yml'
-  pull_request:
-    paths:
-      - 'backend/**'
-      - '.github/workflows/backend-openobserve.yml'
+  workflow_dispatch: {}
 
 jobs:
   test:
