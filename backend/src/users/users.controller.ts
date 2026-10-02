@@ -20,6 +20,7 @@ import {
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { OwnerOrAdminGuard } from '../common/guards/owner-or-admin.guard';
 import { CreateUserCommand } from './application/commands/create-user.command';
 import { UpdateUserCommand } from './application/commands/update-user.command';
 import { GetUserForEditingQuery } from './application/queries/get-user-for-editing.query';
@@ -83,12 +84,14 @@ export class UsersController {
   }
 
   @Get(':id')
+  @UseGuards(OwnerOrAdminGuard)
   async getUserById(@Param('id') id: string): Promise<UserResponseDto> {
     const query = new GetUserForEditingQuery(id);
     return await this.queryBus.execute(query);
   }
 
   @Put(':id')
+  @UseGuards(OwnerOrAdminGuard)
   @HttpCode(HttpStatus.OK)
   async updateUser(
     @Param('id') id: string,

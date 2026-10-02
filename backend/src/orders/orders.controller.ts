@@ -20,6 +20,7 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { OwnerOrAdminGuard, OwnerParam } from '../common/guards/owner-or-admin.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../auth/enums/role.enum';
@@ -96,7 +97,8 @@ export class OrdersController {
   }
 
   @Get('user/:userId')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, OwnerOrAdminGuard)
+  @OwnerParam('userId')
   @ApiPaginatedQuery(Object, '获取用户订单', '获取指定用户的订单列表')
   @ApiDocs({
     summary: '获取用户订单',
