@@ -56,18 +56,31 @@ class LoginUtils {
 
     static showNotification(message, type = 'info') {
         const container = document.getElementById('notification-container') || document.body;
-        
+
+        // 安全修复（S1 XSS）：message 可能包含外部输入（OAuth 错误参数、后端消息等），
+        // 禁止 innerHTML 拼接，改用 DOM API + textContent 设置纯文本
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
-        notification.innerHTML = `
-            <div class="flex items-center justify-between">
-                <span>${message}</span>
-                <button type="button" class="ml-4 text-white hover:text-gray-200" onclick="this.parentElement.parentElement.remove()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        `;
-        
+
+        const inner = document.createElement('div');
+        inner.className = 'flex items-center justify-between';
+
+        const messageSpan = document.createElement('span');
+        messageSpan.textContent = message;
+        inner.appendChild(messageSpan);
+
+        const closeButton = document.createElement('button');
+        closeButton.type = 'button';
+        closeButton.className = 'ml-4 text-white hover:text-gray-200';
+        closeButton.setAttribute('aria-label', '关闭通知');
+        const closeIcon = document.createElement('i');
+        closeIcon.className = 'fas fa-times';
+        closeButton.appendChild(closeIcon);
+        closeButton.addEventListener('click', () => notification.remove());
+        inner.appendChild(closeButton);
+
+        notification.appendChild(inner);
+
         container.appendChild(notification);
         
         // 显示通知
@@ -107,14 +120,23 @@ class LoginUtils {
     }
 
     static async processOAuthCallback(provider, code) {
+        // 安全修复（S1 XSS）：provider 来自 URL 查询参数，禁止拼入 innerHTML，
+        // 改用 DOM API + textContent 构建加载提示
         const loadingContainer = document.createElement('div');
         loadingContainer.className = 'oauth-callback-loading';
-        loadingContainer.innerHTML = `
-            <div class="oauth-spinner"></div>
-            <h3>正在处理${provider}登录...</h3>
-            <p>请稍候，我们正在验证您的身份</p>
-        `;
-        
+
+        const spinner = document.createElement('div');
+        spinner.className = 'oauth-spinner';
+        loadingContainer.appendChild(spinner);
+
+        const title = document.createElement('h3');
+        title.textContent = `正在处理${provider}登录...`;
+        loadingContainer.appendChild(title);
+
+        const hint = document.createElement('p');
+        hint.textContent = '请稍候，我们正在验证您的身份';
+        loadingContainer.appendChild(hint);
+
         document.body.appendChild(loadingContainer);
 
         try {

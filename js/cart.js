@@ -551,30 +551,33 @@ class CartUI {
    */
   updateItemsList(cart) {
     if (!this.elements.cartItemsList) return;
-    
+
+    // F7 渲染层转义：购物车数据来自 localStorage/后端同步，
+    // 所有字符串字段插值统一包 escapeHtml()（js/utils/escape-html.js，
+    // 由页面在 cart.js 之前加载）；数量/价格为数字，无需转义
     this.elements.cartItemsList.innerHTML = cart.map(item => `
-      <div class="cart-item" data-sku-id="${item.productSkuId}">
+      <div class="cart-item" data-sku-id="${escapeHtml(item.productSkuId)}">
         <div class="item-checkbox">
-          <input type="checkbox" ${item.selected ? 'checked' : ''} 
-                 onchange="cartManager.setItemSelected('${item.productSkuId}', this.checked)">
+          <input type="checkbox" ${item.selected ? 'checked' : ''}
+                 onchange="cartManager.setItemSelected('${escapeHtml(item.productSkuId)}', this.checked)">
         </div>
         <div class="item-image">
-          <img src="${item.productPic}" alt="${item.productName}">
+          <img src="${escapeHtml(item.productPic)}" alt="${escapeHtml(item.productName)}">
         </div>
         <div class="item-details">
-          <h4 class="item-name">${item.productName}</h4>
-          <p class="item-brand">${item.productBrand}</p>
+          <h4 class="item-name">${escapeHtml(item.productName)}</h4>
+          <p class="item-brand">${escapeHtml(item.productBrand)}</p>
           <p class="item-price">¥${item.productPrice.toFixed(2)}</p>
         </div>
         <div class="item-quantity">
-          <button onclick="cartManager.updateItemQuantity('${item.productSkuId}', ${item.productQuantity - 1})">-</button>
+          <button onclick="cartManager.updateItemQuantity('${escapeHtml(item.productSkuId)}', ${item.productQuantity - 1})">-</button>
           <span>${item.productQuantity}</span>
-          <button onclick="cartManager.updateItemQuantity('${item.productSkuId}', ${item.productQuantity + 1})">+</button>
+          <button onclick="cartManager.updateItemQuantity('${escapeHtml(item.productSkuId)}', ${item.productQuantity + 1})">+</button>
         </div>
         <div class="item-total">
           ¥${(item.productPrice * item.productQuantity).toFixed(2)}
         </div>
-        <button class="item-remove" onclick="cartManager.removeItem('${item.productSkuId}')">
+        <button class="item-remove" onclick="cartManager.removeItem('${escapeHtml(item.productSkuId)}')">
           ×
         </button>
       </div>

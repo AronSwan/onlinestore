@@ -502,6 +502,8 @@
     </footer>
 
     <!-- JavaScript -->
+    <!-- escapeHtml 全局工具：经典脚本立即执行，先于下方 defer 的 module（cart.js 渲染依赖它） -->
+    <script src="js/utils/escape-html.js"></script>
     <script type="module" defer src="js/navigation.js"></script>
     <script type="module" defer src="js/main.js"></script>
     <script type="module" defer src="js/product-id-manager.js"></script>

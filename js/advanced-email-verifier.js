@@ -48,8 +48,10 @@ class AdvancedEmailVerifier {
         const {
             checkDisposable = true,
             checkRole = true,
-            checkMX = false, // MX检查需要后端支持
-            checkSMTP = false, // SMTP检查需要后端支持
+            // checkMX / checkSMTP 选项保留以兼容既有调用方，
+            // 但演示环境后端未提供对应接口，已短路为本地跳过（见下方第4/5步）
+            checkMX = false,
+            checkSMTP = false,
             useCache = true
         } = options;
 
@@ -104,37 +106,11 @@ class AdvancedEmailVerifier {
                 }
             }
 
-            // 4. 域名和MX记录检查（需要后端API支持）
-            if (checkMX) {
-                try {
-                    const mxResult = await this.checkMXRecord(domain);
-                    result.mx = mxResult;
-                    if (!mxResult.valid) {
-                        result.reason = '邮箱域名无效或无法接收邮件';
-                        result.suggestions.push('请检查邮箱地址是否正确');
-                        return this.cacheResult(cacheKey, result, useCache);
-                    }
-                } catch (error) {
-                    console.warn('MX记录检查失败:', error);
-                    // MX检查失败不影响整体验证
-                }
-            }
-
-            // 5. SMTP验证（需要后端API支持）
-            if (checkSMTP) {
-                try {
-                    const smtpResult = await this.checkSMTPDeliverability(email);
-                    result.smtp = smtpResult;
-                    if (!smtpResult.deliverable) {
-                        result.reason = '邮箱地址可能不存在或无法接收邮件';
-                        result.suggestions.push('请确认邮箱地址是否正确');
-                        return this.cacheResult(cacheKey, result, useCache);
-                    }
-                } catch (error) {
-                    console.warn('SMTP验证失败:', error);
-                    // SMTP检查失败不影响整体验证
-                }
-            }
+            // 4/5. 域名MX记录与SMTP可达性检查（原为远程 /api/email/check-mx、
+            // /api/email/check-smtp 调用）：演示环境未开通这两个后端接口，
+            // 已删除远程分支，直接走本地验证路径，不再发出这两个请求
+            void checkMX;
+            void checkSMTP;
 
             // 6. 计算总体评分
             result.score = this.calculateScore(result);
@@ -274,54 +250,23 @@ class AdvancedEmailVerifier {
     }
 
     /**
-     * 检查MX记录（需要后端API支持）
+     * 检查MX记录
+     * 演示环境未开通 /api/email/check-mx 后端接口，已短路为本地跳过结果，
+     * 不再发起远程请求；语法/域名结构校验由 validateSyntax 在本地完成
      */
     async checkMXRecord(domain) {
-        // 检查缓存
-        if (this.mxCache.has(domain)) {
-            return this.mxCache.get(domain);
-        }
-
-        try {
-            const response = await fetch('/api/email/check-mx', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ domain })
-            });
-
-            const result = await response.json();
-            
-            // 缓存结果（5分钟）
-            setTimeout(() => this.mxCache.delete(domain), 5 * 60 * 1000);
-            this.mxCache.set(domain, result);
-            
-            return result;
-        } catch (error) {
-            console.error('MX记录检查失败:', error);
-            return { valid: false, error: error.message };
-        }
+        void domain;
+        return { valid: true, skipped: true, reason: '演示环境未开通MX记录检查，已跳过' };
     }
 
     /**
-     * 检查SMTP可达性（需要后端API支持）
+     * 检查SMTP可达性
+     * 演示环境未开通 /api/email/check-smtp 后端接口，已短路为本地跳过结果，
+     * 不再发起远程请求
      */
     async checkSMTPDeliverability(email) {
-        try {
-            const response = await fetch('/api/email/check-smtp', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email })
-            });
-
-            return await response.json();
-        } catch (error) {
-            console.error('SMTP验证失败:', error);
-            return { deliverable: false, error: error.message };
-        }
+        void email;
+        return { deliverable: true, skipped: true, reason: '演示环境未开通SMTP检查，已跳过' };
     }
 
     /**

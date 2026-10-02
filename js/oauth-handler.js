@@ -56,9 +56,11 @@ class OAuthHandler {
 
         try {
             // 验证state参数防止CSRF攻击
+            // 安全修复（S2）：state 或 storedState 任一缺失（fail-open）都视为无效，
+            // 必须同时存在且一致才继续
             const storedState = sessionStorage.getItem(`oauth_state_${provider}`);
-            if (state !== storedState) {
-                throw new Error('Invalid state parameter');
+            if (!state || !storedState || state !== storedState) {
+                throw new Error('无效的登录状态参数(state)');
             }
 
             const response = await fetch('/api/auth/oauth/callback', {
@@ -83,7 +85,9 @@ class OAuthHandler {
             }
         } catch (error) {
             console.error('OAuth回调处理错误:', error);
-            this.handleOAuthError('认证过程中发生错误', provider);
+            // handleOAuthError 的 default 分支会原样展示传入文本，
+            // 因此 state 校验失败时用户能看到"无效的登录状态参数(state)"而非白屏
+            this.handleOAuthError(error.message || '认证过程中发生错误', provider);
         } finally {
             loadingOverlay.remove();
             // 清理URL参数
@@ -94,7 +98,9 @@ class OAuthHandler {
     }
 
     createLoadingOverlay(provider) {
-        const providerInfo = this.providers[provider] || { name: provider };
+        // 安全修复（S1 XSS）：provider 来自 URL 查询参数，查不到映射时使用固定文案，
+        // 禁止把原始 provider 值插入 HTML
+        const providerInfo = this.providers[provider] || { name: '第三方登录' };
         
         const overlay = document.createElement('div');
         overlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
@@ -114,7 +120,8 @@ class OAuthHandler {
     }
 
     handleOAuthSuccess(result, provider) {
-        const providerInfo = this.providers[provider] || { name: provider };
+        // 安全修复（S1 XSS）：与 createLoadingOverlay 一致，未知 provider 使用固定文案
+        const providerInfo = this.providers[provider] || { name: '第三方登录' };
         
         LoginUtils.showNotification(`${providerInfo.name}登录成功！正在跳转...`, 'success');
         
@@ -130,7 +137,8 @@ class OAuthHandler {
     }
 
     handleOAuthError(error, provider) {
-        const providerInfo = this.providers[provider] || { name: provider };
+        // 安全修复（S1 XSS）：与 createLoadingOverlay 一致，未知 provider 使用固定文案
+        const providerInfo = this.providers[provider] || { name: '第三方登录' };
         
         let errorMessage = '';
         switch (error) {

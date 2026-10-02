@@ -192,15 +192,17 @@ class ProfileManager {
             return;
         }
 
+        // F7 渲染层转义：地址数据（后端/示例数据）插值统一包 escapeHtml()
+        // （js/utils/escape-html.js 由 profile.html 在本文件之前加载）
         container.innerHTML = this.addresses.map(address => `
-            <div class="address-card ${address.isDefault ? 'default' : ''}" data-id="${address.id}">
+            <div class="address-card ${address.isDefault ? 'default' : ''}" data-id="${escapeHtml(address.id)}">
                 <div class="address-header">
-                    <h4>${address.name} ${address.phone}</h4>
+                    <h4>${escapeHtml(address.name)} ${escapeHtml(address.phone)}</h4>
                     ${address.isDefault ? '<span class="default-badge">默认</span>' : ''}
                 </div>
                 <div class="address-content">
-                    <p>${address.province} ${address.city} ${address.detail}</p>
-                    <p>邮编: ${address.postalCode}</p>
+                    <p>${escapeHtml(address.province)} ${escapeHtml(address.city)} ${escapeHtml(address.detail)}</p>
+                    <p>邮编: ${escapeHtml(address.postalCode)}</p>
                 </div>
                 <div class="address-actions">
                     ${!address.isDefault ? '<button class="btn-secondary set-default-btn">设为默认</button>' : ''}
@@ -379,72 +381,18 @@ class ProfileManager {
 
     async handleBasicInfoSubmit(e) {
         e.preventDefault();
-        
-        const formData = new FormData(e.target);
-        const data = {
-            phone: formData.get('phone'),
-            nickname: formData.get('nickname'),
-            birthday: formData.get('birthday'),
-            gender: formData.get('gender')
-        };
 
-        try {
-            const response = await fetch(`${this.baseUrl}/users/profile`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${this.getAccessToken()}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            });
-
-            if (response.ok) {
-                this.showNotification('基本信息更新成功', 'success');
-                // 更新本地用户数据
-                Object.assign(this.currentUser, data);
-                this.saveUserToStorage();
-            } else {
-                throw new Error('更新失败');
-            }
-        } catch (error) {
-            console.error('更新基本信息失败:', error);
-            this.showNotification('更新失败，请稍后重试', 'error');
-        }
+        // F5-min 诚实 UI：PUT /api/users/profile 在演示环境未开通（404），
+        // 在提交入口直接提示并返回，不再发起注定失败的请求
+        this.showNotification('演示环境未开通：基本信息保存功能暂不可用', 'info');
     }
 
     async handlePreferencesSubmit(e) {
         e.preventDefault();
-        
-        const formData = new FormData(e.target);
-        const data = {
-            language: formData.get('language'),
-            currency: formData.get('currency'),
-            newsletter: formData.get('newsletter') === 'on',
-            smsNotifications: formData.get('sms-notifications') === 'on'
-        };
 
-        try {
-            const response = await fetch(`${this.baseUrl}/users/preferences`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${this.getAccessToken()}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            });
-
-            if (response.ok) {
-                this.showNotification('偏好设置更新成功', 'success');
-                // 更新本地用户数据
-                Object.assign(this.currentUser, data);
-                this.saveUserToStorage();
-            } else {
-                throw new Error('更新失败');
-            }
-        } catch (error) {
-            console.error('更新偏好设置失败:', error);
-            this.showNotification('更新失败，请稍后重试', 'error');
-        }
+        // F5-min 诚实 UI：PUT /api/users/preferences 在演示环境未开通（404），
+        // 在提交入口直接提示并返回，不再发起注定失败的请求
+        this.showNotification('演示环境未开通：偏好设置保存功能暂不可用', 'info');
     }
 
     openAddressModal(address = null) {
@@ -503,124 +451,27 @@ class ProfileManager {
 
     async handleAddressSubmit(e) {
         e.preventDefault();
-        
-        const formData = new FormData(e.target);
-        const addressData = {
-            id: formData.get('id'),
-            name: formData.get('name'),
-            phone: formData.get('phone'),
-            province: formData.get('province'),
-            city: formData.get('city'),
-            detail: formData.get('detail'),
-            postalCode: formData.get('postalCode'),
-            isDefault: formData.get('isDefault') === 'on'
-        };
 
-        try {
-            let response;
-            if (addressData.id) {
-                // 更新地址
-                response = await fetch(`${this.baseUrl}/users/addresses/${addressData.id}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `Bearer ${this.getAccessToken()}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(addressData)
-                });
-            } else {
-                // 添加新地址
-                response = await fetch(`${this.baseUrl}/users/addresses`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${this.getAccessToken()}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(addressData)
-                });
-            }
-
-            if (response.ok) {
-                this.showNotification(addressData.id ? '地址更新成功' : '地址添加成功', 'success');
-                this.closeAddressModal();
-                // 重新加载地址列表
-                await this.loadAddresses();
-                this.renderAddresses();
-            } else {
-                throw new Error('操作失败');
-            }
-        } catch (error) {
-            console.error('地址操作失败:', error);
-            this.showNotification('操作失败，请稍后重试', 'error');
-        }
+        // F5-min 诚实 UI：POST/PUT /api/users/addresses* 在演示环境未开通（404），
+        // 地址新增/编辑在提交入口直接提示并返回，不再发起注定失败的请求
+        this.showNotification('演示环境未开通：地址保存功能暂不可用', 'info');
+        this.closeAddressModal();
     }
 
     async handlePasswordSubmit(e) {
         e.preventDefault();
-        
-        const formData = new FormData(e.target);
-        const currentPassword = formData.get('currentPassword');
-        const newPassword = formData.get('newPassword');
-        const confirmPassword = formData.get('confirmPassword');
 
-        // 验证新密码
-        if (newPassword !== confirmPassword) {
-            this.showNotification('两次输入的新密码不一致', 'error');
-            return;
-        }
-
-        if (newPassword.length < 6) {
-            this.showNotification('新密码长度不能少于6位', 'error');
-            return;
-        }
-
-        try {
-            const response = await fetch(`${this.baseUrl}/users/change-password`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${this.getAccessToken()}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    currentPassword,
-                    newPassword
-                })
-            });
-
-            if (response.ok) {
-                this.showNotification('密码修改成功', 'success');
-                this.closePasswordModal();
-            } else {
-                throw new Error('密码修改失败');
-            }
-        } catch (error) {
-            console.error('密码修改失败:', error);
-            this.showNotification('密码修改失败，请检查当前密码是否正确', 'error');
-        }
+        // F5-min 诚实 UI：POST /api/users/change-password 在演示环境未开通（404），
+        // 改密码在提交入口直接提示并返回，不再发起注定失败的请求
+        this.showNotification('演示环境未开通：密码修改功能暂不可用', 'info');
+        this.closePasswordModal();
     }
 
     async setDefaultAddress(addressId) {
-        try {
-            const response = await fetch(`${this.baseUrl}/users/addresses/${addressId}/default`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${this.getAccessToken()}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (response.ok) {
-                this.showNotification('已设为默认地址', 'success');
-                // 重新加载地址列表
-                await this.loadAddresses();
-                this.renderAddresses();
-            } else {
-                throw new Error('设置失败');
-            }
-        } catch (error) {
-            console.error('设置默认地址失败:', error);
-            this.showNotification('设置失败，请稍后重试', 'error');
-        }
+        // F5-min 诚实 UI：PUT /api/users/addresses/{id}/default 在演示环境未开通（404），
+        // 直接提示并返回，不再发起注定失败的请求
+        void addressId;
+        this.showNotification('演示环境未开通：默认地址设置功能暂不可用', 'info');
     }
 
     editAddress(addressId) {
@@ -631,31 +482,10 @@ class ProfileManager {
     }
 
     async deleteAddress(addressId) {
-        if (!confirm('确定要删除这个地址吗？')) {
-            return;
-        }
-
-        try {
-            const response = await fetch(`${this.baseUrl}/users/addresses/${addressId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${this.getAccessToken()}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (response.ok) {
-                this.showNotification('地址删除成功', 'success');
-                // 重新加载地址列表
-                await this.loadAddresses();
-                this.renderAddresses();
-            } else {
-                throw new Error('删除失败');
-            }
-        } catch (error) {
-            console.error('删除地址失败:', error);
-            this.showNotification('删除失败，请稍后重试', 'error');
-        }
+        // F5-min 诚实 UI：DELETE /api/users/addresses/{id} 在演示环境未开通（404），
+        // 在删除入口直接提示并返回（不发 confirm，也不发起注定失败的请求）
+        void addressId;
+        this.showNotification('演示环境未开通：地址删除功能暂不可用', 'info');
     }
 
     getAccessToken() {

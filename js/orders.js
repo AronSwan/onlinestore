@@ -216,6 +216,9 @@ class OrderManager {
      */
     normalizeApiOrders(rawOrders) {
         return (rawOrders || []).map((raw, index) => {
+            // F9 防御：后端数组中可能混入 null/undefined 元素，跳过，
+            // 并在链尾 filter(Boolean) 剔除，避免下游渲染抛错
+            if (!raw) return null;
             const rawItems = Array.isArray(raw.items) ? raw.items : [];
             const items = rawItems.map(item => {
                 const price = Number(item.price) || 0;
@@ -265,7 +268,7 @@ class OrderManager {
                 trackingNumber: raw.trackingNumber || raw.tracking_number || null,
                 invoiceUrl: raw.invoiceUrl || raw.invoice_url || null
             };
-        });
+        }).filter(Boolean);
     }
     
     /**
@@ -344,8 +347,10 @@ class OrderManager {
                     postalCode: '100000'
                 },
                 paymentMethod: '支付宝',
-                trackingNumber: status === 'shipped' || status === 'delivered' ? `TN${String(i).padStart(10, '0')}` : null,
-                invoiceUrl: status !== 'cancelled' ? `/api/orders/${i}/invoice` : null
+                trackingNumber: status === 'shipped' || status === 'delivered' ? `TN${String(i).padStart(10, '0')}` : null
+                // F9 诚实化：演示数据不再伪造 invoiceUrl——/api/orders/{id}/invoice
+                // 在演示环境并不存在；渲染模板已有 order.invoiceUrl 条件判断，
+                // 去掉后"下载发票"按钮自然消失
             });
         }
         
@@ -401,45 +406,47 @@ class OrderManager {
      */
     createOrderCard(order) {
         const statusText = this.getStatusText(order.status);
-        const statusClass = `order-status ${order.status}`;
-        
+        // F7 渲染层转义：状态可能原样回显后端数据（getStatusText 兜底 || status），
+        // class 属性与文本节点统一转义
+        const statusClass = `order-status ${escapeHtml(order.status)}`;
+
         return `
-            <article class="order-card" data-order-id="${order.id}">
+            <article class="order-card" data-order-id="${escapeHtml(order.id)}">
                 <div class="order-card-header">
                     <div>
-                        <h3 class="order-number">${order.id}</h3>
+                        <h3 class="order-number">${escapeHtml(order.id)}</h3>
                         <p class="order-date">${this.formatDate(order.date)}</p>
                     </div>
-                    <span class="${statusClass}">${statusText}</span>
+                    <span class="${statusClass}">${escapeHtml(statusText)}</span>
                 </div>
-                
+
                 <div class="order-card-body">
                     <div class="order-items">
                         ${order.items.slice(0, 2).map(item => this.createOrderItem(item)).join('')}
                         ${order.items.length > 2 ? `<p class="text-sm text-[var(--text-muted)]">还有 ${order.items.length - 2} 件商品...</p>` : ''}
                     </div>
-                    
+
                     <div class="order-summary">
                         <span class="order-total">总计: ${this.formatCurrency(order.total)}</span>
                     </div>
                 </div>
-                
+
                 <div class="order-card-footer">
-                    <button class="order-action-btn primary" onclick="orderManager.showOrderDetail('${order.id}')">
+                    <button class="order-action-btn primary" onclick="orderManager.showOrderDetail('${escapeHtml(order.id)}')">
                         查看详情
                     </button>
                     ${order.status === 'delivered' ? `
-                        <button class="order-action-btn secondary" onclick="orderManager.reorder('${order.id}')">
+                        <button class="order-action-btn secondary" onclick="orderManager.reorder('${escapeHtml(order.id)}')">
                             再次购买
                         </button>
                     ` : ''}
                     ${order.invoiceUrl ? `
-                        <button class="order-action-btn secondary" onclick="orderManager.downloadInvoice('${order.id}')">
+                        <button class="order-action-btn secondary" onclick="orderManager.downloadInvoice('${escapeHtml(order.id)}')">
                             下载发票
                         </button>
                     ` : ''}
                     ${order.status === 'delivered' ? `
-                        <button class="order-action-btn outline" onclick="orderManager.requestReturn('${order.id}')">
+                        <button class="order-action-btn outline" onclick="orderManager.requestReturn('${escapeHtml(order.id)}')">
                             申请退货
                         </button>
                     ` : ''}
@@ -454,9 +461,9 @@ class OrderManager {
     createOrderItem(item) {
         return `
             <div class="order-item">
-                <img src="${item.image}" alt="${item.name}" class="order-item-image" loading="lazy">
+                <img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}" class="order-item-image" loading="lazy">
                 <div class="order-item-details">
-                    <h4 class="order-item-name">${item.name}</h4>
+                    <h4 class="order-item-name">${escapeHtml(item.name)}</h4>
                     <p class="order-item-quantity">数量: ${item.quantity}</p>
                 </div>
                 <span class="order-item-price">${this.formatCurrency(item.subtotal)}</span>
@@ -549,19 +556,20 @@ class OrderManager {
      */
     createOrderDetailContent(order) {
         const statusText = this.getStatusText(order.status);
-        const statusClass = `order-status ${order.status}`;
-        
+        // F7 渲染层转义：与 createOrderCard 一致
+        const statusClass = `order-status ${escapeHtml(order.status)}`;
+
         return `
             <div class="order-detail-section">
                 <h3 class="order-detail-title">基本信息</h3>
                 <div class="order-detail-grid">
                     <div class="order-detail-item">
                         <span class="order-detail-label">订单号</span>
-                        <span class="order-detail-value">${order.id}</span>
+                        <span class="order-detail-value">${escapeHtml(order.id)}</span>
                     </div>
                     <div class="order-detail-item">
                         <span class="order-detail-label">订单参考</span>
-                        <span class="order-detail-value">${order.reference}</span>
+                        <span class="order-detail-value">${escapeHtml(order.reference)}</span>
                     </div>
                     <div class="order-detail-item">
                         <span class="order-detail-label">下单时间</span>
@@ -569,11 +577,11 @@ class OrderManager {
                     </div>
                     <div class="order-detail-item">
                         <span class="order-detail-label">订单状态</span>
-                        <span class="${statusClass}">${statusText}</span>
+                        <span class="${statusClass}">${escapeHtml(statusText)}</span>
                     </div>
                     <div class="order-detail-item">
                         <span class="order-detail-label">支付方式</span>
-                        <span class="order-detail-value">${order.paymentMethod}</span>
+                        <span class="order-detail-value">${escapeHtml(order.paymentMethod)}</span>
                     </div>
                     <div class="order-detail-item">
                         <span class="order-detail-label">订单总额</span>
@@ -581,50 +589,50 @@ class OrderManager {
                     </div>
                 </div>
             </div>
-            
+
             <div class="order-detail-section">
                 <h3 class="order-detail-title">商品清单</h3>
                 <div class="order-detail-items-list">
                     ${order.items.map(item => this.createOrderDetailItem(item)).join('')}
                 </div>
             </div>
-            
+
             <div class="order-detail-section">
                 <h3 class="order-detail-title">收货信息</h3>
                 <div class="order-detail-grid">
                     <div class="order-detail-item">
                         <span class="order-detail-label">收货人</span>
-                        <span class="order-detail-value">${order.shippingAddress.name}</span>
+                        <span class="order-detail-value">${escapeHtml(order.shippingAddress.name)}</span>
                     </div>
                     <div class="order-detail-item">
                         <span class="order-detail-label">联系电话</span>
-                        <span class="order-detail-value">${order.shippingAddress.phone}</span>
+                        <span class="order-detail-value">${escapeHtml(order.shippingAddress.phone)}</span>
                     </div>
                     <div class="order-detail-item">
                         <span class="order-detail-label">收货地址</span>
-                        <span class="order-detail-value">${order.shippingAddress.address}</span>
+                        <span class="order-detail-value">${escapeHtml(order.shippingAddress.address)}</span>
                     </div>
                     <div class="order-detail-item">
                         <span class="order-detail-label">城市</span>
-                        <span class="order-detail-value">${order.shippingAddress.city}</span>
+                        <span class="order-detail-value">${escapeHtml(order.shippingAddress.city)}</span>
                     </div>
                     <div class="order-detail-item">
                         <span class="order-detail-label">省份</span>
-                        <span class="order-detail-value">${order.shippingAddress.province}</span>
+                        <span class="order-detail-value">${escapeHtml(order.shippingAddress.province)}</span>
                     </div>
                     <div class="order-detail-item">
                         <span class="order-detail-label">邮政编码</span>
-                        <span class="order-detail-value">${order.shippingAddress.postalCode}</span>
+                        <span class="order-detail-value">${escapeHtml(order.shippingAddress.postalCode)}</span>
                     </div>
                 </div>
             </div>
-            
+
             ${order.trackingNumber ? `
                 <div class="order-detail-section">
                     <h3 class="order-detail-title">物流信息</h3>
                     <div class="order-detail-item">
                         <span class="order-detail-label">运单号</span>
-                        <span class="order-detail-value">${order.trackingNumber}</span>
+                        <span class="order-detail-value">${escapeHtml(order.trackingNumber)}</span>
                     </div>
                     <div class="order-detail-timeline mt-6">
                         <div class="order-detail-timeline-item">
@@ -666,21 +674,21 @@ class OrderManager {
             <div class="order-detail-section">
                 <h3 class="order-detail-title">订单操作</h3>
                 <div class="flex flex-wrap gap-3">
-                    <button class="order-action-btn primary" onclick="orderManager.reorder('${order.id}')">
+                    <button class="order-action-btn primary" onclick="orderManager.reorder('${escapeHtml(order.id)}')">
                         再次购买
                     </button>
                     ${order.invoiceUrl ? `
-                        <button class="order-action-btn secondary" onclick="orderManager.downloadInvoice('${order.id}')">
+                        <button class="order-action-btn secondary" onclick="orderManager.downloadInvoice('${escapeHtml(order.id)}')">
                             下载发票
                         </button>
                     ` : ''}
                     ${order.status === 'delivered' ? `
-                        <button class="order-action-btn outline" onclick="orderManager.requestReturn('${order.id}')">
+                        <button class="order-action-btn outline" onclick="orderManager.requestReturn('${escapeHtml(order.id)}')">
                             申请退货
                         </button>
                     ` : ''}
                     ${order.status === 'pending' ? `
-                        <button class="order-action-btn outline" onclick="orderManager.cancelOrder('${order.id}')">
+                        <button class="order-action-btn outline" onclick="orderManager.cancelOrder('${escapeHtml(order.id)}')">
                             取消订单
                         </button>
                     ` : ''}
@@ -695,10 +703,10 @@ class OrderManager {
     createOrderDetailItem(item) {
         return `
             <div class="order-detail-item-row">
-                <img src="${item.image}" alt="${item.name}" class="order-detail-item-image" loading="lazy">
+                <img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}" class="order-detail-item-image" loading="lazy">
                 <div class="order-detail-item-info">
-                    <h4 class="order-detail-item-name">${item.name}</h4>
-                    <p class="order-detail-item-sku">SKU: ${item.sku}</p>
+                    <h4 class="order-detail-item-name">${escapeHtml(item.name)}</h4>
+                    <p class="order-detail-item-sku">SKU: ${escapeHtml(item.sku)}</p>
                     <p class="order-detail-item-quantity">数量: ${item.quantity}</p>
                 </div>
                 <div class="text-right">
@@ -826,18 +834,14 @@ class OrderManager {
     
     /**
      * 取消订单
+     * 对齐 requestReturn 的既有写法：演示环境未开通后端取消接口，
+     * 如实提示而非本地假改状态+假报成功（F9 诚实化）
      */
     cancelOrder(orderId) {
-        if (!confirm('确定要取消这个订单吗？')) return;
-        
-        // 模拟取消订单
-        const orderIndex = this.orders.findIndex(o => o.id === orderId);
-        if (orderIndex !== -1) {
-            this.orders[orderIndex].status = 'cancelled';
-            this.filterAndDisplayOrders();
-            this.showSuccess('订单已取消');
-            this.closeOrderDetailModal();
-        }
+        const order = this.orders.find(o => o.id === orderId);
+        if (!order) return;
+
+        this.showToast(`订单取消功能未开通，请联系客服（订单号 ${orderId}）`, 'info');
     }
     
     /**
