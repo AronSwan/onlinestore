@@ -7,8 +7,8 @@
 经过详细排查，发现了以下几个关键问题：
 
 1. **密码大小写敏感性问题**：
-   - **正确密码**：`ComplexPass#123` (注意Pass是大写P)
-   - **之前使用的密码**：`Complexpass#123` (小写p)
+   - **正确密码**：`CHANGE_ME_openobserve_password` (注意Pass是大写P)
+   - **之前使用的密码**：`CHANGE_ME_openobserve_password` (小写p)
    - 密码的大小写差异导致了认证失败
 
 2. **API端点路径问题**：
@@ -30,7 +30,7 @@
 ```javascript
 const config = {
   username: 'admin@example.com',
-  password: 'ComplexPass#123'  // 注意Pass是大写P
+  password: 'CHANGE_ME_openobserve_password'  // 注意Pass是大写P
 };
 ```
 
@@ -50,7 +50,7 @@ const apiClient = axios.create({
   baseURL: 'http://localhost:5080',
   auth: {
     username: 'admin@example.com',
-    password: 'ComplexPass#123'
+    password: 'CHANGE_ME_openobserve_password'
   }
 });
 
@@ -82,7 +82,7 @@ async function writeData(streamName, data) {
 - ✅ 向流中写入测试数据 (`/api/default/application_logs/_json`)
 
 ## 注意事项和建议
-1. **密码管理**：确保使用正确大小写的密码 `ComplexPass#123`
+1. **密码管理**：确保使用正确大小写的密码 `CHANGE_ME_openobserve_password`
 2. **容器健康检查修复**：
    - 修改docker-compose配置中的健康检查命令，使用容器内可用的工具（如wget或nc）
    - 或者在容器启动后安装curl

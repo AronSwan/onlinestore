@@ -13,7 +13,7 @@ const path = require('path');
 const OPENOBSERVE_URL = process.env.OPENOBSERVE_URL || 'http://localhost:5080';
 const OPENOBSERVE_ORGANIZATION = process.env.OPENOBSERVE_ORGANIZATION || 'default';
 const OPENOBSERVE_ROOT_USER_EMAIL = process.env.OPENOBSERVE_ROOT_USER_EMAIL || 'admin@example.com';
-const OPENOBSERVE_ROOT_USER_PASSWORD = process.env.OPENOBSERVE_ROOT_USER_PASSWORD || 'ComplexPass#123';
+const OPENOBSERVE_ROOT_USER_PASSWORD = process.env.OPENOBSERVE_ROOT_USER_PASSWORD || 'CHANGE_ME_openobserve_password';
 
 // 数据流配置
 const streams = [

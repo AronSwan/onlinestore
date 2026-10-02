@@ -27,7 +27,7 @@ async function checkStatus() {
     try {
       const authResponse = await axios.post(`${OPENOBSERVE_URL}/api/auth/login`, {
         email: 'admin@example.com',
-        password: 'ComplexPass#123'
+        password: 'CHANGE_ME_openobserve_password'
       });
       console.log('✓ 认证成功');
       console.log('Token:', authResponse.data.data.token);

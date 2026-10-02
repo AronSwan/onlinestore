@@ -12,7 +12,7 @@ const config = {
   url: env.url,
   organization: env.organization,
   username: 'admin@example.com', // 硬编码为docker-compose中设置的用户名
-  password: 'ComplexPass#123',   // 硬编码为docker-compose中设置的密码
+  password: 'CHANGE_ME_openobserve_password',   // 硬编码为docker-compose中设置的密码
   logStream: process.env.LOG_STREAM || 'application-logs', // 使用默认的流名称
   metricsStream: process.env.METRICS_STREAM || 'system-metrics', // 使用默认的流名称
   timeout: 10000,

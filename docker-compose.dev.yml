@@ -93,7 +93,7 @@ services:
     container_name: shopping-pgadmin
     environment:
       - PGADMIN_DEFAULT_EMAIL=admin@example.com
-      - PGADMIN_DEFAULT_PASSWORD=admin123
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD:-CHANGE_ME_pgadmin_password}
     volumes:
       - pgadmin_data:/var/lib/pgadmin
     networks:

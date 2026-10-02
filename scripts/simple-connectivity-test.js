@@ -12,7 +12,7 @@ const CONFIG = {
     organization: 'default',
     requestTimeout: 10000,
     username: 'admin@example.com',
-    password: 'ComplexPass#123'
+    password: 'CHANGE_ME_openobserve_password'
 };
 
 // 颜色输出

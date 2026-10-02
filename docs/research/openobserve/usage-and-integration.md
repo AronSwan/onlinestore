@@ -14,7 +14,7 @@ docker run -d \
   -v $PWD/data:/data \
   -p 5080:5080 \
   -e ZO_ROOT_USER_EMAIL="root@example.com" \
-  -e ZO_ROOT_USER_PASSWORD="Complexpass#123" \
+  -e ZO_ROOT_USER_PASSWORD="CHANGE_ME_openobserve_password" \
   public.ecr.aws/zinclabs/openobserve:latest
 ```
 - HA 部署：参见官方文档，结合对象存储（S3/MinIO/GCS/Azure）与副本配置。

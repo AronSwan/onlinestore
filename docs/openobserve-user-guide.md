@@ -36,7 +36,7 @@ graph TB
 1. 打开浏览器访问: http://localhost:5080
 2. 使用管理员账户登录:
    - 邮箱: admin@example.com
-   - 密码: ComplexPass#123
+   - 密码: CHANGE_ME_openobserve_password
 
 ### 2.2 基本界面导航
 

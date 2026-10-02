@@ -176,7 +176,7 @@ services:
     restart: unless-stopped
     environment:
       - ZINC_FIRST_ADMIN_USER=${ZINC_ADMIN_USER:-admin}
-      - ZINC_FIRST_ADMIN_PASSWORD=${ZINC_ADMIN_PASSWORD:-Complexpass#123}
+      - ZINC_FIRST_ADMIN_PASSWORD=${ZINC_ADMIN_PASSWORD:-CHANGE_ME_zinc_admin_password}
       - ZINC_DATA_PATH=/data
     volumes:
       - zinc_data:/data

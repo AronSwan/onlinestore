@@ -9,7 +9,7 @@ const axios = require('axios');
 const config = {
   baseURL: 'http://localhost:5080',
   username: 'admin@example.com',
-  password: 'ComplexPass#123'  // 正确的密码，注意Pass是大写P
+  password: 'CHANGE_ME_openobserve_password'  // 正确的密码，注意Pass是大写P
 };
 
 // 要探索的API路径列表

@@ -50,7 +50,7 @@ MEILI_SEARCH_API_KEY=your-meilisearch-master-key-here
 # ZincSearch配置
 ZINC_SEARCH_URL=http://localhost:4080
 ZINC_SEARCH_USERNAME=admin
-ZINC_SEARCH_PASSWORD=Complexpass#123
+ZINC_SEARCH_PASSWORD=CHANGE_ME_zinc_search_password
 ```
 
 ### 配置结构

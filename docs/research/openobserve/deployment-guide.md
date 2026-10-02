@@ -61,7 +61,7 @@ docker run -d \
   -p 5080:5080 \
   -v /data/openobserve:/data \
   -e ZO_ROOT_USER_EMAIL=root@example.com \
-  -e ZO_ROOT_USER_PASSWORD=Complexpass#123 \
+  -e ZO_ROOT_USER_PASSWORD=CHANGE_ME_openobserve_password \
   -e ZO_DATA_DIR=/data \
   o2cr.ai/openobserve/openobserve:latest
 ```
@@ -172,7 +172,7 @@ spec:
         - name: ZO_ROOT_USER_EMAIL
           value: "root@example.com"
         - name: ZO_ROOT_USER_PASSWORD
-          value: "Complexpass#123"
+          value: "CHANGE_ME_openobserve_password"
         - name: ZO_DATA_DIR
           value: "/data"
         ports:

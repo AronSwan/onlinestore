@@ -12,7 +12,7 @@ async function getAuthToken() {
   try {
     const response = await axios.post(`${OPENOBSERVE_URL}/api/auth/login`, {
       email: 'admin@example.com',
-      password: 'ComplexPass#123'
+      password: 'CHANGE_ME_openobserve_password'
     });
     return response.data.data.token;
   } catch (error) {

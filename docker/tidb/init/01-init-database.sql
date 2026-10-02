@@ -103,6 +103,6 @@ INSERT IGNORE INTO products (name, description, price, stock_quantity, category_
 ('小说', '畅销小说，精彩故事', 39.00, 300, 4, TRUE);
 
 -- 创建应用用户
-CREATE USER IF NOT EXISTS 'shopping_user'@'%' IDENTIFIED BY 'Complexpass#123';
+CREATE USER IF NOT EXISTS 'shopping_user'@'%' IDENTIFIED BY 'CHANGE_ME_shopping_user_password';
 GRANT SELECT, INSERT, UPDATE, DELETE ON shopping_db.* TO 'shopping_user'@'%';
 FLUSH PRIVILEGES;

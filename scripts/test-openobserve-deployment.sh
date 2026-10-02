@@ -23,7 +23,7 @@ echo ""
 echo "🔧 测试OpenObserve API..."
 
 # 获取认证令牌 (这里使用基本认证)
-AUTH="admin@example.com:Complexpass#123"
+AUTH="admin@example.com:CHANGE_ME_openobserve_password"
 
 # 创建组织 (如果不存在)
 ORG_RESPONSE=$(curl -s -u $AUTH -X POST http://localhost:5080/api/organizations \
@@ -87,7 +87,7 @@ echo ""
 echo "📊 访问OpenObserve界面:"
 echo "   URL: http://localhost:5080"
 echo "   账户: admin@example.com"
-echo "   密码: Complexpass#123"
+echo "   密码: CHANGE_ME_openobserve_password"
 echo ""
 echo "📋 查看测试日志:"
 echo "   1. 登录OpenObserve界面"

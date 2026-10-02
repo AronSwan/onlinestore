@@ -13,7 +13,7 @@ const axios = require('axios');
 const CONFIG = {
     openobserveUrl: 'http://localhost:5080',
     username: 'admin@example.com',
-    password: 'ComplexPass#123',
+    password: 'CHANGE_ME_openobserve_password',
     organization: 'default',
     backupDir: './backups',
     maxBackups: 7, // 保留最近7天的备份

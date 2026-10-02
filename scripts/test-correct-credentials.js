@@ -9,7 +9,7 @@ const axios = require('axios');
 const config = {
   baseURL: 'http://localhost:5080',
   username: 'admin@example.com',
-  password: 'ComplexPass#123',  // 注意这里的Pass是大写P
+  password: 'CHANGE_ME_openobserve_password',  // 注意这里的Pass是大写P
   organization: 'default',
   stream: 'caddy-shopping-logs'
 };

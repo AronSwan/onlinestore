@@ -169,7 +169,7 @@ OpenObserve
 1. 访问OpenObserve Web界面: http://localhost:5080/web/
 2. 创建管理员账户:
    - 邮箱: admin@example.com
-   - 密码: ComplexPass#123
+   - 密码: CHANGE_ME_openobserve_password
 3. 创建组织: caddy-shopping
 4. 获取认证令牌
 

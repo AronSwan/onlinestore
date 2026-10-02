@@ -196,3 +196,30 @@ id_ed25519*
 # Specific project keys
 onlinestore_nopass_ed25519
 onlinestore_nopass_ed25519.pub
+# ============================================
+# Repository hygiene (2026-10)
+# ============================================
+
+# All dotenv variants are ignored; only example templates are tracked
+**/.env.*
+!**/.env.example
+!**/.env.*.example
+
+# Local SQLite / binary database files
+*.sqlite
+*.sqlite3
+backend/data/*.db
+
+# Security-scan and test-runner artifacts
+*.sarif
+.jest-unit-results.json
+.test-performance-history.json
+
+# Local env overrides (no-dot variants used by compose/dev tooling)
+env.dev.local
+*.env.local
+
+
+# Auto backup artifacts (contain environment snapshots)
+backups/
+backend/data/security-vulnerabilities*.json

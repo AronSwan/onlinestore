@@ -8,7 +8,7 @@ docker run -d \
   -v $PWD/data:/data \
   -p 5080:5080 \
   -e ZO_ROOT_USER_EMAIL="root@example.com" \
-  -e ZO_ROOT_USER_PASSWORD="Complexpass#123" \
+  -e ZO_ROOT_USER_PASSWORD="CHANGE_ME_openobserve_password" \
   public.ecr.aws/zinclabs/openobserve:latest
 ```
 - Docker Compose：
@@ -19,7 +19,7 @@ services:
     restart: unless-stopped
     environment:
       ZO_ROOT_USER_EMAIL: "root@example.com"
-      ZO_ROOT_USER_PASSWORD: "Complexpass#123"
+      ZO_ROOT_USER_PASSWORD: "CHANGE_ME_openobserve_password"
     ports:
       - "5080:5080"
     volumes:

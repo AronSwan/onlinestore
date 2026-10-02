@@ -17,8 +17,8 @@ const config = {
 
 // 定义要测试的凭据组合
 const credentialsList = [
-  { username: 'admin@example.com', password: 'Complexpass#123', description: '推荐组合（docker-compose中定义的）' },
-  { username: 'admin@example.com', password: 'ComplexPass#123', description: '大写Pass版本' },
+  { username: 'admin@example.com', password: 'CHANGE_ME_openobserve_password', description: '推荐组合（docker-compose中定义的）' },
+  { username: 'admin@example.com', password: 'CHANGE_ME_openobserve_password', description: '大写Pass版本' },
   { username: 'admin@openobserve.com', password: 'admin', description: '备选组合2' },
   { username: 'admin', password: 'admin', description: '备选组合3' },
   { username: 'root', password: 'root@example.com', description: '备选组合4' },

@@ -7,8 +7,8 @@ $credentialsList = @(
     @{ username = "admin"; password = "admin" },
     @{ username = "admin"; password = "admin123" },
     @{ username = "admin@example.com"; password = "admin123" },
-    @{ username = "admin@example.com"; password = "ComplexPass#123" },
-    @{ username = "admin@example.com"; password = "Complexpass#123" }
+    @{ username = "admin@example.com"; password = "CHANGE_ME_openobserve_password" },
+    @{ username = "admin@example.com"; password = "CHANGE_ME_openobserve_password" }
 )
 
 # 定义要测试的端点

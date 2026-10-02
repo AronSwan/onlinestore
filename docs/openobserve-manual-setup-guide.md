@@ -14,8 +14,8 @@
 
 1. **创建管理员账户**
    - 邮箱：admin@example.com
-   - 密码：ComplexPass#123
-   - 确认密码：ComplexPass#123
+   - 密码：CHANGE_ME_openobserve_password
+   - 确认密码：CHANGE_ME_openobserve_password
 
 2. **登录系统**
    - 使用上述管理员账户登录

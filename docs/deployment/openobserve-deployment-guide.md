@@ -86,7 +86,7 @@ docker-compose -f docker-compose.openobserve.yml logs -f
 
 1. **访问OpenObserve界面**
    - 打开浏览器访问: http://localhost:5080
-   - 使用默认账户登录: admin@example.com / Complexpass#123
+   - 使用默认账户登录: admin@example.com / CHANGE_ME_openobserve_password
 
 2. **访问应用健康检查**
    - 打开浏览器访问: http://localhost:3000/health

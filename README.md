@@ -3,420 +3,83 @@
 [![依赖安全检查](https://github.com/AronSwan/onlinestore/actions/workflows/dependency-check.yml/badge.svg?branch=master)](https://github.com/AronSwan/onlinestore/actions/workflows/dependency-check.yml)
 [![SBOM & 签名](https://github.com/AronSwan/onlinestore/actions/workflows/sbom-sign.yml/badge.svg?branch=master)](https://github.com/AronSwan/onlinestore/actions/workflows/sbom-sign.yml)
 
-# Gucci在线商店 - NextChat高级AI助手集成与OpenObserve监控架构
+# Reich 在线商店（电商演示项目）
 
-## 项目概述
+静态 HTML/JS 前端 + NestJS 后端的电商演示站，用于功能演示与工程实践。不含真实支付通道与商户能力。
 
-本项目为Reich在线商店网站集成了基于NextChat的高级AI助手，支持多模态交互（文字、语音、图片），并提供向量数据库集成功能，为用户提供智能购物体验。同时，项目已完成了从Grafana到OpenObserve的监控架构迁移，实现了统一的可观测性平台。
+## 当前状态
 
-## 监控架构亮点
+| 模块 | 状态 | 说明 |
+| --- | --- | --- |
+| 健康检查 | 可用 | `GET /api/health`（另有 `backend/src/health` 模块） |
+| 注册 / 登录 | 可用 | `/api/auth/*`，JWT（访问令牌默认 15m，刷新 7d） |
+| 商品 | 可用 | `/api/products` |
+| 购物车 | 后端路由可用 / 前端同步未对齐 | 后端为参数化路由（`GET /api/cart/items/:customerUserId` 等，见 `backend/src/cart`），未挂认证守卫；前端为本地购物车，服务端同步因身份映射与 SKU 契约未对齐而静默降级 |
+| 订单 | 可用 | `/api/orders`；前端带演示回退（后端不可用时使用本地演示数据） |
+| 支付 | 演示 / 未完成 | `backend/src/payment` 各策略（alipay / wechat-pay / credit-card）实现为 TODO；回调验签 fail-closed（校验失败即拒绝） |
+| AI 助手 | 演示 / 未接线 | 仓库内是规则式（非大模型）演示代码（如 `js/nextchat-advanced-unified.js`），未挂载到任何页面；旧版 README 宣称的"NextChat 多模态 AI 助手"与现实不符 |
+| OpenObserve 监控 | 未部署 | 配置与 compose 片段齐全（`.env.openobserve*`、`docker-compose.openobserve.yml`），仓库内无实际部署 |
 
-### 🚀 OpenObserve一体化监控
-- **统一数据平台**: 集成日志、指标、追踪数据于一体的监控解决方案
-- **高性能存储**: 列式存储，压缩比提升3-5倍，查询性能提升50-80%
-- **资源优化**: 内存使用减少35-48%，存储空间节省60%，运维复杂度降低60%
-- **实时告警**: 内置告警引擎，支持多种通知渠道
+## 快速开始
 
-### 📊 监控覆盖范围
-- **应用监控**: 请求响应时间、错误率、吞吐量
-- **系统监控**: CPU、内存、磁盘、网络使用率
-- **业务监控**: 用户活跃度、订单统计、转化率分析
-- **基础设施**: Docker容器、数据库、缓存服务状态
+### 后端（默认 SQLite，零外部依赖）
 
-## 技术架构
-
-### 核心组件
-- **NextChat**: 基于ChatGPTNextWeb的轻量级AI助手框架
-- **多模态交互**: 支持文字、语音、图片三种交互方式
-- **向量数据库**: 为未来的智能推荐和知识管理预留接口
-- **CDN服务**: 使用jsdelivr CDN加载NextChat相关资源
-
-### 文件结构
-```
-caddy-style-shopping-site/
-├── index.html                    # 主页面，包含AI助手界面
-├── css/
-│   ├── main.css                  # 主样式文件
-│   └── nextchat-advanced.css     # AI助手高级样式
-├── js/
-│   ├── main.js                   # 主JavaScript文件
-│   ├── nextchat-advanced.js      # 高级AI助手核心逻辑
-│   └── main_backup_20250910.js   # 备份文件
-└── README.md                     # 项目文档
-```
-
-## AI助手功能特性
-
-### 1. 多模态交互支持
-
-#### 文字交互
-- 智能商品搜索和推荐
-- 尺码建议和价格查询
-- 订单状态跟踪
-- 退换货处理
-
-#### 语音交互
-- 基于Web Speech API的语音识别
-- 实时语音转文字
-- 语音消息播放
-
-#### 图片交互
-- 拖拽上传和点击上传
-- 商品图片识别
-- 多图片同时处理
-- 图片预览功能
-
-### 2. 智能对话功能
-
-#### 商品咨询
-- 商品信息查询
-- 库存状态检查
-- 价格比较和优惠提醒
-- 新品上市通知
-
-#### 购物辅助
-- 尺码推荐算法
-- 搭配建议
-- 购物车管理
-- 支付流程指导
-
-#### 售后服务
-- 订单跟踪
-- 退换货政策解释
-- 物流信息查询
-- 客服转接
-
-### 3. 向量数据库集成（预留）
-
-#### 用户行为分析
-- 浏览历史记录
-- 购买偏好分析
-- 个性化推荐
-- 智能客服记录
-
-#### 商品知识库
-- 产品信息向量化
-- 用户评价分析
-- 智能问答系统
-- 推荐算法优化
-
-## 技术实现细节
-
-### 监控架构实现
-
-#### OpenObserve配置
-```yaml
-# 核心配置
-services:
-  openobserve:
-    image: public.ecr.aws/zinclabs/openobserve:latest
-    ports:
-      - "5080:5080"
-    environment:
-      - ZO_MEMORY_CACHE_ENABLED=true
-      - ZO_MEMORY_CACHE_MAX_SIZE=2048
-      - ZO_COMPRESSION=gzip
-      - ZO_QUERY_CACHE_ENABLED=true
-```
-
-#### 数据流配置
-```yaml
-# 预配置数据流
-streams:
-  - name: "application-logs"
-    type: "logs"
-    retention: "30d"
-  - name: "system-metrics"
-    type: "metrics"
-    retention: "90d"
-  - name: "request-traces"
-    type: "traces"
-    retention: "7d"
-  - name: "business-events"
-    type: "logs"
-    retention: "365d"
-```
-
-### NextChat集成
-```javascript
-// 核心功能模块
-- initNextChatAdvanced(): 初始化AI助手
-- handleTextMessage(): 文字消息处理
-- handleVoiceMessage(): 语音消息处理
-- handleImageMessage(): 图片消息处理
-- vectorDatabaseIntegration(): 向量数据库接口
-```
-
-### CDN资源配置
-```html
-<!-- 使用jsdelivr CDN -->
-https://cdn.jsdelivr.net/gh/ChatGPTNextWeb/NextChat@main/
-- 图标资源
-- 样式文件
-- 核心JavaScript库
-```
-
-### 响应式设计
-- 移动端适配（max-width: 480px）
-- 深色模式支持
-- 触摸优化
-- 性能优化
-
-## 部署说明
-
-### 监控系统部署
-
-#### 快速启动OpenObserve
 ```bash
-# 启动OpenObserve监控服务
-docker-compose -f docker-compose.openobserve.yml up -d
-
-# 验证服务状态
-curl http://localhost:5080/health
+cd backend
+npm install
+npm run start:dev      # http://localhost:3000/api/health
 ```
 
-#### 访问监控面板
-- **OpenObserve Web界面**: http://localhost:5080
-- **登录信息**: admin@example.com / ComplexPass#123
-- **Prometheus指标**: http://localhost:9090
-- **Node Exporter**: http://localhost:9100/metrics
+- 默认数据库为 SQLite（`DB_TYPE=sqlite`，参考 `backend/.env.example`），首次启动自动生成库文件（`backend/data/*.db`，已加入 `.gitignore`，不入库）。
+- 需要切换 Postgres / Redis / TiDB 时，复制 `backend/.env.example` 为 `backend/.env`（后端按 `.env.local` → `.env` → `../.env` 顺序加载），或参考 `backend/.env.example` 与 `docker-compose.yml`。
 
-### 开发环境
+### 前端
+
 ```bash
-# 使用Node.js本地服务器
-npx http-server -p 3000 -c-1
+# 方式一：任意静态服务器（页面通过同源 /api 访问后端，需自备反向代理 /api -> http://localhost:3000）
+npx http-server -p 8080
 
-# 启动完整开发环境
-docker-compose -f docker-compose.dev.yml up -d
+# 方式二：docker compose（frontend 服务即 nginx：静态资源 + /api 反代到 backend:3000）
+docker compose up -d frontend backend
 ```
 
-### 生产环境
-- 支持静态文件托管
-- CDN加速
-- 负载均衡
-- 容器化部署
+## 目录结构
 
-## 使用说明
-
-### 监控系统使用
-
-#### 查看日志数据
-1. 访问 http://localhost:5080
-2. 导航到 **日志** 页面
-3. 选择数据流（如：application-logs）
-4. 使用SQL语法查询日志数据
-
-#### 监控系统指标
-1. 导航到 **指标** 页面
-2. 选择system-metrics数据流
-3. 查看CPU、内存、磁盘使用率
-4. 创建自定义监控面板
-
-#### 配置告警规则
-1. 导航到 **告警** 页面
-2. 点击 **新建告警规则**
-3. 设置告警条件和通知方式
-4. 测试告警规则是否正常工作
-
-### 启动AI助手
-1. 点击右下角AI助手图标
-2. 选择交互模式（文字/语音/图片）
-3. 输入消息或上传文件
-4. 获得智能回复
-
-### 功能切换
-- 💬 文字模式：传统聊天界面
-- 🎤 语音模式：语音识别和合成
-- 📷 图片模式：图片上传和识别
-
-### 高级功能
-- 多轮对话记忆
-- 上下文理解
-- 个性化推荐
-- 实时翻译
-
-## 性能优化
-
-### 监控系统性能
-
-#### 查询优化
-```sql
--- 优化前：全表扫描
-SELECT * FROM application-logs WHERE message LIKE '%error%';
-
--- 优化后：使用时间限制和索引
-SELECT * FROM application-logs
-WHERE level = 'ERROR'
-AND timestamp >= now() - INTERVAL '1 hour'
-ORDER BY timestamp DESC
-LIMIT 1000;
+```
+├── index.html / login.html / orders.html / profile.html   # 静态页面
+├── js/  css/  images/                                     # 前端资源
+├── backend/                # NestJS 后端（src/ 按模块划分：auth、products、cart、orders、payment、health 等）
+│   ├── docs/               # 后端现行文档；docs/archive/ 为历史报告归档
+│   └── data/               # SQLite 库文件（仅本地，不入库）
+├── docs/                   # 项目文档；archive/ 为历史过程文档归档
+├── docker-compose*.yml     # 本地编排（frontend / backend / postgres / redis / nginx-lb 等）
+├── k8s/  docker/  scripts/ # 部署配置与脚本
+└── tests/                  # Playwright 前端测试
 ```
 
-#### 系统资源优化
-- 内存缓存配置：2GB
-- 查询结果缓存：10分钟TTL
-- 并发查询限制：10个
-- 数据压缩：gzip级别6
+## 测试
 
-### 加载优化
-- 懒加载机制
-- CDN资源缓存
-- 代码分割
-- 图片压缩
+- 后端：`cd backend && npm run test:unit`（Jest 单测基线 905 个用例，2026-10-02 在本机全绿，可复跑）
+- 前端：`npm test`（Playwright，部分用例需要后端在本地运行）
 
-### 用户体验
-- 打字机动画
-- 加载状态提示
-- 错误处理
-- 离线支持
+## 已知限制与改进路线
 
-## 安全考虑
+- 支付为演示态：策略层 TODO，未接真实网关；回调验签 fail-closed。
+- 购物车服务端同步未打通：后端购物车以 `customerUserId`（顾客域 ID，与认证用户 `User.id` 是两套身份）+ `productSkuId`（SKU 域）为键，前端只有认证令牌和商品 ID，缺少身份映射与 SKU 数据模型。打通前需要先做身份映射设计与商品 SKU 化，当前前端同步失败时静默回退本地存储。
+- AI 助手是规则式演示代码，与页面未接线，无后端会话支持。
+- 监控栈（Prometheus / Grafana / OpenObserve）只有配置与编排，未部署。
+- 大量历史过程文档（优化报告、修复记录、方案稿）已移入 `docs/archive/` 与 `backend/docs/archive/`，仅作历史参考，不代表当前系统行为，其中的相对链接可能失效。
+- 仍保留在原位的专项文档：`README-SEARCH.md`、`README-K8S-SEARCH.md`（被 `k8s/search/README.md` 引用），以及 `docs/`、`backend/docs/` 下的现行文档。
 
-### 监控系统安全
+## 安全提示
 
-#### 访问控制
-- 基于角色的访问控制（RBAC）
-- API密钥管理
-- 网络访问限制
-- 审计日志记录
+- 仓库内所有 `.env*` 文件均为消毒后的模板：`.env.example` 与 `.env.test` 类模板使用 `test_password` / `your_*` 类占位符，其余已消毒文件使用 `CHANGE_ME_*` 占位符（键与非敏感配置保留）。**生产部署必须通过环境注入真实密钥**：`JWT_SECRET`（≥32 字符）、`ENCRYPTION_KEY`（32 字节）、数据库 / Redis / 监控密码等。
+- `.gitignore` 已收口：`**/.env.*`（保留 `*.env.example` 类模板例外）、`*.sqlite`、`backend/data/*.db`、`*.sarif`、Jest 运行结果等不再入库。
+- 历史提交中仍可能残留旧的密钥或数据文件；若仓库公开，请另行审计 git 历史（不在本 README 范围内）。
 
-#### 数据安全
-- 传输加密（HTTPS/TLS）
-- 静态数据加密
-- 敏感信息脱敏
-- 数据保留策略
+## 相关入口
 
-### 数据保护
-- 用户输入验证
-- XSS防护
-- CSRF保护
-- 隐私数据加密
-
-### 内容过滤
-- 敏感词检测
-- 恶意内容拦截
-- 图片内容审核
-- 语音内容过滤
-
-## 扩展功能
-
-### 监控系统扩展
-
-#### 高级分析功能
-- 异常检测算法
-- 预测性告警
-- 智能容量规划
-- 自适应阈值调整
-
-#### 集成扩展
-- 更多数据源集成
-- 自定义插件开发
-- 第三方工具集成
-- API网关集成
-
-### 未来规划
-- 多语言支持
-- AR/VR集成
-- 情感分析
-- 智能推荐引擎
-
-### API接口
-- RESTful API设计
-- WebSocket实时通信
-- GraphQL查询优化
-- 微服务架构
-
-## 技术支持
-
-### 监控系统文档
-- 📖 [OpenObserve使用指南](docs/openobserve-user-guide.md)
-- 🔧 [故障排除和维护指南](docs/troubleshooting-maintenance-guide.md)
-- 📊 [迁移方案与架构优化](从Grafana到OpenObserve迁移方案与架构优化计划.md)
-
-### 依赖库
-- NextChat核心库
-- OpenObserve监控平台
-- Prometheus指标收集
-- Web Speech API
-- File API
-- IndexedDB
-
-### 浏览器兼容性
-- Chrome 80+
-- Firefox 75+
-- Safari 13+
-- Edge 80+
-
-### 系统要求
-- Docker 20.10+
-- Docker Compose 2.0+
-- 内存: 最少4GB，推荐8GB
-- 存储: 最少20GB，推荐50GB
-
-## 维护和运维
-
-### 日常维护
-```bash
-# 系统清理脚本
-./scripts/system-cleanup.sh
-
-# 每日健康检查
-./scripts/daily-check.sh
-
-# 性能监控
-curl http://localhost:5080/health
-```
-
-### 监控指标
-- 系统可用性: ≥99.9%
-- 查询响应时间: P95 < 2秒
-- 错误率: <0.1%
-- 资源使用率: <80%
-
-## 许可证
-
-本项目基于NextChat开源协议，遵循相应的开源许可条款。
-
-## 安全指南
-
-本项目配置了多层安全防护机制，防止敏感文件被意外提交。
-
-📚 **详细文档**: [安全和敏感文件保护指南](.github/SECURITY_GUIDE.md)
-
-### 快速设置
-
-**安装 Git 安全钩子**（防止本地提交敏感文件）:
-
-Linux/MacOS/Git Bash:
-```bash
-cd .github/hooks
-chmod +x install-hooks.sh
-./install-hooks.sh
-```
-
-Windows:
-```cmd
-cd .github\hooks
-install-hooks.bat
-```
-
-### 保护的内容
-- ✅ SSH 私钥和证书
-- ✅ .env 环境变量文件
-- ✅ API 令牌和密钥
-- ✅ 项目特定敏感文件
-
-更多信息请参阅 [完整安全指南](.github/SECURITY_GUIDE.md)。
-
-## 联系方式
-
-如有技术问题或功能建议，请联系开发团队。
-
----
-
-**注意**: 本AI助手集成了先进的自然语言处理和机器学习技术，持续学习和优化中。监控系统已完成从Grafana到OpenObserve的迁移，提供了更高效、更统一的可观测性解决方案。
-
-## AI 开发与问题解决提示词文档
-- 指南：AI_DEV_PROMPT_GUIDE.md
-- 位置：仓库顶层（全局规范，适用于全部模块）
-- 建议：在提交变更前，按“质量检查清单”逐项自检；新任务按“简化提示模板”执行
+- 后端 API 文档：`backend/docs/API_DOCUMENTATION.md`
+- 搜索服务集成：`README-SEARCH.md`；K8s 搜索部署：`README-K8S-SEARCH.md`
+- CI / 安全工作流：`.github/workflows/`
+- 运维与排障：`docs/operations.md`、`docs/troubleshooting-maintenance-guide.md`

@@ -9,7 +9,7 @@ const axios = require('axios');
 
 const OPENOBSERVE_URL = 'http://localhost:5080';
 const ROOT_EMAIL = 'admin@example.com';
-const ROOT_PASSWORD = 'ComplexPass#123';
+const ROOT_PASSWORD = 'CHANGE_ME_openobserve_password';
 
 async function setupRootUser() {
   console.log('🔧 设置OpenObserve根用户...');

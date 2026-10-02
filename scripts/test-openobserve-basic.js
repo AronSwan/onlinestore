@@ -27,7 +27,7 @@ class OpenObserveConfig {
     this.url = config.url;
     this.organization = config.organization || 'default'; // 默认组织名称为'default'
     this.username = config.username || 'admin@example.com';
-    this.password = config.password || 'ComplexPass#123';
+    this.password = config.password || 'CHANGE_ME_openobserve_password';
     this.logStream = config.logStream || 'application-logs';
     this.metricsStream = config.metricsStream || 'system-metrics';
     this.timeout = config.timeout;
@@ -62,7 +62,7 @@ class OpenObserveConfig {
       url: options.url || process.env.OPENOBSERVE_URL || envConfig.url || 'http://localhost:5080',
       organization: options.organization || process.env.OPENOBSERVE_ORGANIZATION || envConfig.organization || 'default',
       username: options.username || process.env.OPENOBSERVE_USERNAME || envConfig.username || 'admin@example.com',
-      password: options.password || process.env.OPENOBSERVE_PASSWORD || envConfig.password || 'Complexpass#123',
+      password: options.password || process.env.OPENOBSERVE_PASSWORD || envConfig.password || 'CHANGE_ME_openobserve_password',
       logStream: options.logStream || process.env.OPENOBSERVE_LOG_STREAM || envConfig.logStream || 'application-logs',
       metricsStream: options.metricsStream || process.env.OPENOBSERVE_METRICS_STREAM || envConfig.metricsStream || 'system-metrics',
       timeout: options.timeout || parseInt(process.env.OPENOBSERVE_TIMEOUT) || envConfig.timeout || 30000,

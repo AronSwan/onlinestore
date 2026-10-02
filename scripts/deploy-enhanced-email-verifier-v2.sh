@@ -546,7 +546,7 @@ show_deployment_info() {
     echo ""
     echo "OpenObserve监控:"
     echo "  OpenObserve: http://localhost:5080"
-    echo "  登录凭据: ${OPENOBSERVE_EMAIL:-admin@example.com} / ${OPENOBSERVE_PASSWORD:-Complexpass#123}"
+    echo "  登录凭据: ${OPENOBSERVE_EMAIL:-admin@example.com} / ${OPENOBSERVE_PASSWORD:-CHANGE_ME_openobserve_password}"
     echo ""
     echo "管理命令:"
     echo "  查看日志: $0 logs"
@@ -647,7 +647,7 @@ open_monitoring() {
     else
         log_info "请手动访问OpenObserve监控面板:"
         echo "  OpenObserve: http://localhost:5080"
-        echo "  登录凭据: ${OPENOBSERVE_EMAIL:-admin@example.com} / ${OPENOBSERVE_PASSWORD:-Complexpass#123}"
+        echo "  登录凭据: ${OPENOBSERVE_EMAIL:-admin@example.com} / ${OPENOBSERVE_PASSWORD:-CHANGE_ME_openobserve_password}"
     fi
 }
 

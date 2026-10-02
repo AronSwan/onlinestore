@@ -9,7 +9,7 @@ const axios = require('axios');
 const config = {
   baseURL: 'http://localhost:5080',
   username: 'admin@example.com',
-  password: 'ComplexPass#123',  // 正确的密码，注意Pass是大写P
+  password: 'CHANGE_ME_openobserve_password',  // 正确的密码，注意Pass是大写P
   organization: 'default',
   stream: 'application_logs'    // 从流列表中获取的有效流名称
 };
@@ -145,7 +145,7 @@ async function runTests() {
     console.log(`   写入数据: POST ${config.baseURL}/api/${config.organization}/{stream}/_json (需要基础认证)`);
     console.log(`   搜索数据: POST ${config.baseURL}/api/${config.organization}/{stream}/_search (需要基础认证)`);
     console.log('\n⚠️  重要注意事项:');
-    console.log('   1. 密码区分大小写，ComplexPass#123 中的Pass是大写P');
+    console.log('   1. 密码区分大小写，CHANGE_ME_openobserve_password 中的Pass是大写P');
     console.log('   2. 基础认证(Basic Auth)是当前有效的认证方式');
     console.log('   3. 容器健康检查显示为unhealthy是因为容器内没有安装curl');
     console.log('   4. 服务本身运行正常，可以正常使用API');
