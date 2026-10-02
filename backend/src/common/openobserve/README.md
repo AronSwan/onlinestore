@@ -161,7 +161,7 @@ curl http://localhost:5080/health
 
 - **端口**: 5080
 - **管理员用户**: admin
-- **管理员密码**: admin123
+- **管理员密码**: CHANGE_ME_openobserve_password
 - **组织**: default
 - **缓存**: Redis (端口6379)
 

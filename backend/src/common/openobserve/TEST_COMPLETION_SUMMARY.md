@@ -72,7 +72,7 @@
 ### OpenObserve服务配置
 - **部署方式**: Docker Compose
 - **服务地址**: http://localhost:5080
-- **管理员账户**: admin/admin123
+- **管理员账户**: admin/CHANGE_ME_openobserve_password
 - **组织**: default
 - **缓存服务**: Redis (端口6379)
 

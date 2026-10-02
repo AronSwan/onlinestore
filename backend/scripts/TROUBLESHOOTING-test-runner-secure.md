@@ -307,7 +307,7 @@ Error: connect ECONNREFUSED 127.0.0.1:5080
        enableOpenObserve: true,
        openobserveEndpoint: 'http://localhost:5080',
        openobserveUsername: 'admin',
-       openobservePassword: 'complexpassword'
+       openobservePassword: 'CHANGE_ME_openobserve_password'
    }
    ```
 3. 启动 OpenObserve 服务：

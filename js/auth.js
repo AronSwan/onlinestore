@@ -393,17 +393,38 @@ async function login(email, password, rememberMe) {
     const data = await response.json();
     
     if (response.ok) {
-      // 存储用户登录状态和令牌
+      // 后端登录响应形状为 { access_token, refresh_token, expires_in, user }
+      // （见 backend/src/auth/auth.service.ts 的 LoginResponse / generateTokens）。
+      // 兼容读取两种命名，避免把字符串 "undefined" 存进 storage。
+      const accessToken = data.access_token || data.token;
+      const refreshToken = data.refresh_token || data.refreshToken;
+
+      if (!accessToken || !refreshToken) {
+        // 响应缺少有效令牌：不能走"成功"分支，防止存储无效令牌
+        showError("login-email", "登录响应异常：未返回有效令牌，请稍后重试");
+        return;
+      }
+
+      // 存储用户登录状态和令牌（键名保持 'token'/'refreshToken'/'userId'，
+      // 下游 orders.js、cart.js 等按同名键读取）
+      const user = data.user;
+      const userId = user && user.id != null ? String(user.id) : null;
       if (rememberMe) {
         localStorage.setItem("userLoggedIn", "true");
         localStorage.setItem("userEmail", email);
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("refreshToken", data.refreshToken);
+        localStorage.setItem("token", accessToken);
+        localStorage.setItem("refreshToken", refreshToken);
+        if (userId) {
+          localStorage.setItem("userId", userId);
+        }
       } else {
         sessionStorage.setItem("userLoggedIn", "true");
         sessionStorage.setItem("userEmail", email);
-        sessionStorage.setItem("token", data.token);
-        sessionStorage.setItem("refreshToken", data.refreshToken);
+        sessionStorage.setItem("token", accessToken);
+        sessionStorage.setItem("refreshToken", refreshToken);
+        if (userId) {
+          sessionStorage.setItem("userId", userId);
+        }
       }
       
       // 登录成功
@@ -463,6 +484,27 @@ async function register(name, email, password) {
     const data = await response.json();
     
     if (response.ok) {
+      // 后端注册响应与登录一致：{ access_token, refresh_token, expires_in, user }
+      // （见 backend/src/auth/auth.controller.ts register -> auth.service.ts generateTokens）。
+      // 兼容读取并在缺失时不走"成功"分支，避免把 "undefined" 存进 storage。
+      const accessToken = data.access_token || data.token;
+      const refreshToken = data.refresh_token || data.refreshToken;
+
+      if (!accessToken || !refreshToken) {
+        showError("register-email", "注册响应异常：未返回有效令牌，请稍后重试或直接登录");
+        return;
+      }
+
+      // 注册即返回令牌：直接写入会话（注册表单没有"记住我"，默认 sessionStorage，
+      // 与登录未勾选 rememberMe 的分支规则一致）
+      sessionStorage.setItem("userLoggedIn", "true");
+      sessionStorage.setItem("userEmail", email);
+      sessionStorage.setItem("token", accessToken);
+      sessionStorage.setItem("refreshToken", refreshToken);
+      if (data.user && data.user.id != null) {
+        sessionStorage.setItem("userId", String(data.user.id));
+      }
+
       // 注册成功
       showSuccessMessage("注册成功，即将登录...");
       

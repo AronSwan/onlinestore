@@ -5,8 +5,8 @@ Write-Host "🔍 开始测试OpenObserve认证..."
 # 定义要测试的凭据组合
 $credentialsList = @(
     @{ username = "admin"; password = "admin" },
-    @{ username = "admin"; password = "admin123" },
-    @{ username = "admin@example.com"; password = "admin123" },
+    @{ username = "admin"; password = "CHANGE_ME_admin_password" },
+    @{ username = "admin@example.com"; password = "CHANGE_ME_admin_password" },
     @{ username = "admin@example.com"; password = "CHANGE_ME_openobserve_password" },
     @{ username = "admin@example.com"; password = "CHANGE_ME_openobserve_password" }
 )

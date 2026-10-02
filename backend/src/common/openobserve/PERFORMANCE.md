@@ -129,13 +129,13 @@ traces.requests          // 请求追踪
 ```bash
 # 写入压测
 curl -X POST http://localhost:5080/api/default/test/_json \
-  -H "Authorization: Bearer admin123" \
+  -H "Authorization: Bearer CHANGE_ME_openobserve_password" \
   -H "Content-Type: application/json" \
   -d '[{"timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)'", "message": "test"}]'
 
 # 查询压测
 curl -X POST http://localhost:5080/api/default/_search \
-  -H "Authorization: Bearer admin123" \
+  -H "Authorization: Bearer CHANGE_ME_openobserve_password" \
   -H "Content-Type: application/json" \
   -d '{"query": "SELECT * FROM test", "sql_mode": true}'
 ```

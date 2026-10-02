@@ -103,9 +103,11 @@ class OrderManager {
     
     /**
      * 加载订单数据
-     * 优先携带 token 请求后端真实订单 GET /api/orders（token 存取键名与 auth.js 保持一致）；
-     * 未登录、401 或网络错误时回退到本地演示数据，并显示"演示数据"徽标，
-     * 避免用户把演示数据误认为真实订单。
+     * 优先携带 token 请求用户级订单路由 GET /api/orders/user/{userId}
+     * （GET /api/orders 是 ADMIN-only 路由，RolesGuard 强制，普通用户必 403；
+     * token/userId 存取键名与 auth.js 保持一致）；
+     * 未登录、无法确定 userId、401/403 或网络错误时回退到本地演示数据，
+     * 并显示"演示数据"徽标，避免用户把演示数据误认为真实订单。
      */
     async loadOrders() {
         this.showLoading();
@@ -114,27 +116,34 @@ class OrderManager {
             const token = this.getAccessToken();
             
             if (token) {
-                const response = await fetch('/api/orders', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
+                const userId = this.resolveUserId(token);
+                
+                if (userId) {
+                    const response = await fetch(`/api/orders/user/${userId}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        // 后端 findByUserId 返回 { orders: [...], total }（orders.service.ts），
+                        // 兼容常见的返回形状：数组、{orders: [...]}、{items: [...]}
+                        const rawOrders = Array.isArray(data) ? data : (data.orders || data.items || []);
+                        this.orders = this.normalizeApiOrders(rawOrders);
+                        this.isDemoData = false;
+                        this.hideDemoBadge();
+                        this.filterAndDisplayOrders();
+                        return;
                     }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    // 兼容常见的返回形状：数组、{orders: [...]}、{items: [...]}（最终以后端对齐为准）
-                    const rawOrders = Array.isArray(data) ? data : (data.orders || data.items || []);
-                    this.orders = this.normalizeApiOrders(rawOrders);
-                    this.isDemoData = false;
-                    this.hideDemoBadge();
-                    this.filterAndDisplayOrders();
-                    return;
+                    
+                    console.warn(`订单API返回 ${response.status}，回退到演示数据`);
+                } else {
+                    console.warn('无法确定当前用户ID（storage 与令牌均无有效 userId），使用演示数据');
                 }
-                
-                console.warn(`订单API返回 ${response.status}，回退到演示数据`);
             }
             
-            // 未登录或API返回非2xx：回退演示数据
+            // 未登录、无法确定 userId 或API返回非2xx：回退演示数据
             this.loadDemoData();
         } catch (error) {
             console.warn('从API加载订单失败，回退到演示数据:', error.message);
@@ -159,6 +168,46 @@ class OrderManager {
      */
     getAccessToken() {
         return localStorage.getItem('token') || sessionStorage.getItem('token');
+    }
+    
+    /**
+     * 解析当前用户ID（供 GET /api/orders/user/{userId} 使用）：
+     * 1. 优先读 storage 的 'userId'（auth.js 登录/注册成功时随令牌写入，
+     *    键名与 user-behavior-analytics.js 等既有约定一致）；
+     * 2. 否则客户端解码 JWT payload 取 sub（后端签发令牌时 sub = user.id，
+     *    见 backend/src/auth/auth.service.ts generateTokens）。
+     * 返回正整数字符串；两者都拿不到时返回 null（调用方直接回落演示数据，不发请求）。
+     */
+    resolveUserId(token) {
+        const stored = localStorage.getItem('userId') || sessionStorage.getItem('userId');
+        if (stored && /^\d+$/.test(String(stored).trim())) {
+            return String(stored).trim();
+        }
+        return this.getJwtSub(token);
+    }
+    
+    /**
+     * 解码 JWT payload 并提取 sub。
+     * JWT 的 payload 段是 base64url 编码：需要把 '-' 换回 '+'、'_' 换回 '/'，
+     * 并补齐 '=' padding 后才能用 atob 解码。
+     */
+    getJwtSub(token) {
+        try {
+            const parts = String(token).split('.');
+            if (parts.length < 2) {
+                return null;
+            }
+            let payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+            while (payload.length % 4 !== 0) {
+                payload += '=';
+            }
+            const decoded = JSON.parse(atob(payload));
+            const id = Number(decoded && decoded.sub);
+            return Number.isInteger(id) && id > 0 ? String(id) : null;
+        } catch (error) {
+            console.warn('解析令牌中的用户ID失败:', error.message);
+            return null;
+        }
     }
     
     /**
@@ -700,23 +749,45 @@ class OrderManager {
     
     /**
      * 再次购买
+     * 将订单项映射为 cart.js CartManager.addToCart 的真实参数键
+     * （productId/productSkuId/productName/productPrice/productQuantity/productPic，
+     * 其中 productId、productSkuId、productName、productPrice 为必填校验项）。
+     * cartManager 不存在或任一商品添加失败时明确报错，绝不假报成功。
      */
-    reorder(orderId) {
+    async reorder(orderId) {
         const order = this.orders.find(o => o.id === orderId);
         if (!order) return;
         
-        // 将商品添加到购物车
-        order.items.forEach(item => {
-            if (typeof addToCart === 'function') {
-                addToCart({
-                    id: item.productId,
-                    name: item.name,
-                    price: item.price,
-                    quantity: item.quantity,
-                    image: item.image
+        const cartManager = window.cartManager;
+        if (!cartManager || typeof cartManager.addToCart !== 'function') {
+            this.showError('购物车模块未就绪，添加失败，请稍后重试');
+            return;
+        }
+        
+        let addedCount = 0;
+        let failedCount = 0;
+        for (const item of order.items) {
+            try {
+                await cartManager.addToCart({
+                    productId: item.productId || item.id,
+                    productSkuId: item.sku || item.id || item.productId,
+                    productName: item.name,
+                    productPrice: item.price,
+                    productQuantity: item.quantity || 1,
+                    productPic: item.image
                 });
+                addedCount++;
+            } catch (error) {
+                console.error('再次购买：添加商品到购物车失败:', error);
+                failedCount++;
             }
-        });
+        }
+        
+        if (failedCount > 0) {
+            // 有失败：不提示成功、不跳转（部分已加入的商品保留在购物车中）
+            this.showError(`添加到购物车失败：成功 ${addedCount} 件，失败 ${failedCount} 件，请稍后重试`);
+            return;
+        }
         
         // 显示成功消息
         this.showSuccess('商品已添加到购物车');

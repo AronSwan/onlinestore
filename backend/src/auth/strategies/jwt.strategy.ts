@@ -8,9 +8,8 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as crypto from 'crypto';
 
-import { AuthService } from '../auth.service';
+import { UsersService } from '../../users/users.service';
 import { SECURITY_CONSTANTS } from '../../common/security/security.constants';
 
 // 定义JWT载荷接口
@@ -28,7 +27,7 @@ export interface JwtPayload {
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
-    private readonly authService: AuthService,
+    private readonly usersService: UsersService,
     private readonly configService: ConfigService,
   ) {
     // 首先调用super()，然后再使用this
@@ -53,24 +52,30 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload) {
-    try {
-      // 验证JWT载荷最小要求字段
-      if (!this.isValidPayload(payload)) {
-        throw new UnauthorizedException('无效的JWT载荷');
-      }
-
-      // 验证令牌 - 修复类型转换错误
-      await this.authService.validateToken(payload as unknown as string);
-
-      // 返回最小化载荷，避免敏感信息泄露
-      return {
-        sub: payload.sub,
-        email: payload.email,
-        role: payload.role,
-      };
-    } catch (error) {
-      throw new UnauthorizedException('令牌验证失败');
+    // Blocker 2（2026-10-02）：passport-jwt 在到达 validate() 之前已完成
+    // 签名/过期/iss/aud 校验（错签令牌根本进不来），原实现在此处把解码后的
+    // payload 对象二次传给要求字符串的 authService.validateToken()（内部
+    // jwt.verify()）必然抛错，导致所有合法令牌 401。该冗余校验已删除。
+    //
+    // validate() 现在只做业务层校验：载荷最小字段 + 用户真实存在且可用。
+    if (!this.isValidPayload(payload)) {
+      throw new UnauthorizedException('无效的JWT载荷');
     }
+
+    const user = await this.usersService.findById(payload.sub);
+    if (!user) {
+      throw new UnauthorizedException('用户不存在');
+    }
+    if (!user.isActive) {
+      throw new UnauthorizedException('用户已被禁用');
+    }
+
+    // 返回守卫可用的最小化身份（CartOwnerGuard 依赖 user.sub；/api/auth/profile 返回 req.user）
+    return {
+      sub: payload.sub,
+      email: payload.email,
+      role: payload.role,
+    };
   }
 
   /**

@@ -21,6 +21,7 @@ import { User } from '../users/entities/user.entity';
 import { CaptchaService } from './captcha.service';
 import { VerifyCodeModule } from './verify-code/verify-code.module';
 import { RedisModule } from '../redis/redis.module';
+import { SECURITY_CONSTANTS } from '../common/security/security.constants';
 
 @Module({
   imports: [
@@ -43,22 +44,28 @@ import { RedisModule } from '../redis/redis.module';
             signOptions: {
               expiresIn: configService.get('master.jwt.expiresIn', '15m'),
               algorithm: 'RS256',
-              issuer: 'caddy-shopping-api',
-              audience: 'caddy-shopping-client',
+              issuer: SECURITY_CONSTANTS.JWT.ISSUER,
+              audience: SECURITY_CONSTANTS.JWT.AUDIENCE,
             },
             verifyOptions: {
               algorithms: ['RS256'],
-              issuer: 'caddy-shopping-api',
-              audience: 'caddy-shopping-client',
+              issuer: SECURITY_CONSTANTS.JWT.ISSUER,
+              audience: SECURITY_CONSTANTS.JWT.AUDIENCE,
             },
           };
         } else {
           // 向后兼容HS256
+          // Blocker 2 配套修复（2026-10-02）：jwt.strategy 校验端强制 issuer/audience
+          // （SECURITY_CONSTANTS.JWT.ISSUER/AUDIENCE），但 HS256 签发端不带这两个
+          // 声明 → jsonwebtoken 抛 JsonWebTokenError('jwt issuer invalid')，合法令牌
+          // 全部 401。签发端补齐 issuer/audience，与 RS256 分支及校验端契约一致。
           return {
             secret: configService.get('master.jwt.secret'),
             signOptions: {
               expiresIn: configService.get('master.jwt.expiresIn', '15m'),
               algorithm: 'HS256',
+              issuer: SECURITY_CONSTANTS.JWT.ISSUER,
+              audience: SECURITY_CONSTANTS.JWT.AUDIENCE,
             },
           };
         }

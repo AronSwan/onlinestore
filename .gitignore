@@ -223,3 +223,16 @@ env.dev.local
 # Auto backup artifacts (contain environment snapshots)
 backups/
 backend/data/security-vulnerabilities*.json
+
+# Extensionless SQLite database (magic "SQLite format 3") — bypasses *.db/*.sqlite globs
+backend/caddy_shopping
+backend/caddy_shopping*
+
+# Orphan one-off tooling + backups (archived under docs/archive/update_hex/)
+update_hex/
+
+# AI session logs
+roo_task_*.md
+
+# Security-scan output artifacts
+security-report.json

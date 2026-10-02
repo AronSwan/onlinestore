@@ -164,7 +164,7 @@ class SecurityManagementTest {
     await this.runTest('成功用户认证测试', async () => {
       const authData = {
         username: 'admin',
-        password: 'admin123'
+        password: 'CHANGE_ME_admin_password'
       };
       
       const response = await axios.post(
@@ -225,7 +225,7 @@ class SecurityManagementTest {
       // 先登录获取令牌
       const authResponse = await axios.post(
         `${this.config.openobserveUrl}/api/${this.config.organization}/auth/login`,
-        { username: 'admin', password: 'admin123' },
+        { username: 'admin', password: 'CHANGE_ME_admin_password' },
         {
           headers: {
             'Authorization': `Bearer ${this.config.token}`,
@@ -266,7 +266,7 @@ class SecurityManagementTest {
       // 先登录获取令牌
       const authResponse = await axios.post(
         `${this.config.openobserveUrl}/api/${this.config.organization}/auth/login`,
-        { username: 'admin', password: 'admin123' },
+        { username: 'admin', password: 'CHANGE_ME_admin_password' },
         {
           headers: {
             'Authorization': `Bearer ${this.config.token}`,
@@ -307,7 +307,7 @@ class SecurityManagementTest {
       // 先登录获取令牌
       const authResponse = await axios.post(
         `${this.config.openobserveUrl}/api/${this.config.organization}/auth/login`,
-        { username: 'admin', password: 'admin123' },
+        { username: 'admin', password: 'CHANGE_ME_admin_password' },
         {
           headers: {
             'Authorization': `Bearer ${this.config.token}`,
@@ -348,7 +348,7 @@ class SecurityManagementTest {
       // 先登录获取令牌
       const authResponse = await axios.post(
         `${this.config.openobserveUrl}/api/${this.config.organization}/auth/login`,
-        { username: 'admin', password: 'admin123' },
+        { username: 'admin', password: 'CHANGE_ME_admin_password' },
         {
           headers: {
             'Authorization': `Bearer ${this.config.token}`,
@@ -388,7 +388,7 @@ class SecurityManagementTest {
       // 先登录获取令牌
       const authResponse = await axios.post(
         `${this.config.openobserveUrl}/api/${this.config.organization}/auth/login`,
-        { username: 'admin', password: 'admin123' },
+        { username: 'admin', password: 'CHANGE_ME_admin_password' },
         {
           headers: {
             'Authorization': `Bearer ${this.config.token}`,
@@ -421,7 +421,7 @@ class SecurityManagementTest {
       // 先登录获取令牌
       const authResponse = await axios.post(
         `${this.config.openobserveUrl}/api/${this.config.organization}/auth/login`,
-        { username: 'admin', password: 'admin123' },
+        { username: 'admin', password: 'CHANGE_ME_admin_password' },
         {
           headers: {
             'Authorization': `Bearer ${this.config.token}`,
@@ -461,7 +461,7 @@ class SecurityManagementTest {
       // 先登录获取令牌
       const authResponse = await axios.post(
         `${this.config.openobserveUrl}/api/${this.config.organization}/auth/login`,
-        { username: 'admin', password: 'admin123' },
+        { username: 'admin', password: 'CHANGE_ME_admin_password' },
         {
           headers: {
             'Authorization': `Bearer ${this.config.token}`,
@@ -507,7 +507,7 @@ class SecurityManagementTest {
       // 先登录获取令牌
       const authResponse = await axios.post(
         `${this.config.openobserveUrl}/api/${this.config.organization}/auth/login`,
-        { username: 'admin', password: 'admin123' },
+        { username: 'admin', password: 'CHANGE_ME_admin_password' },
         {
           headers: {
             'Authorization': `Bearer ${this.config.token}`,
@@ -552,7 +552,7 @@ class SecurityManagementTest {
       // 先登录获取令牌
       const authResponse = await axios.post(
         `${this.config.openobserveUrl}/api/${this.config.organization}/auth/login`,
-        { username: 'admin', password: 'admin123' },
+        { username: 'admin', password: 'CHANGE_ME_admin_password' },
         {
           headers: {
             'Authorization': `Bearer ${this.config.token}`,
@@ -655,7 +655,7 @@ class SecurityManagementTest {
       // 先登录获取令牌
       const authResponse = await axios.post(
         `${this.config.openobserveUrl}/api/${this.config.organization}/auth/login`,
-        { username: 'admin', password: 'admin123' },
+        { username: 'admin', password: 'CHANGE_ME_admin_password' },
         {
           headers: {
             'Authorization': `Bearer ${this.config.token}`,
@@ -699,7 +699,7 @@ class SecurityManagementTest {
       // 先登录获取令牌
       const authResponse = await axios.post(
         `${this.config.openobserveUrl}/api/${this.config.organization}/auth/login`,
-        { username: 'admin', password: 'admin123' },
+        { username: 'admin', password: 'CHANGE_ME_admin_password' },
         {
           headers: {
             'Authorization': `Bearer ${this.config.token}`,
@@ -747,7 +747,7 @@ class SecurityManagementTest {
       // 先登录获取令牌
       const authResponse = await axios.post(
         `${this.config.openobserveUrl}/api/${this.config.organization}/auth/login`,
-        { username: 'admin', password: 'admin123' },
+        { username: 'admin', password: 'CHANGE_ME_admin_password' },
         {
           headers: {
             'Authorization': `Bearer ${this.config.token}`,

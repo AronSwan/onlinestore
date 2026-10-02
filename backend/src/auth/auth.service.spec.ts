@@ -43,6 +43,7 @@ const mockUsersService = {
   findByEmail: jest.fn(),
   findById: jest.fn(),
   create: jest.fn(),
+  isUsernameExists: jest.fn(),
 };
 
 // Mock UserRepository
@@ -202,6 +203,17 @@ describe('AuthService', () => {
 
       await expect(service.register(registerData)).rejects.toThrow(ConflictException);
       expect(mockUsersService.findByEmail).toHaveBeenCalledWith(registerData.email);
+    });
+
+    it('should throw ConflictException when username is already taken', async () => {
+      mockUsersService.findByEmail.mockResolvedValue(null);
+      mockUsersService.isUsernameExists.mockResolvedValue(true);
+      mockRedisHealthService.getClient.mockReturnValue(mockRedisClient);
+      mockRedisClient.get.mockResolvedValue('0');
+
+      await expect(service.register(registerData)).rejects.toThrow('用户名已被使用');
+      expect(mockUsersService.isUsernameExists).toHaveBeenCalledWith(registerData.username);
+      expect(mockUsersService.create).not.toHaveBeenCalled();
     });
 
     it('should require captcha when registration fails exceed threshold', async () => {

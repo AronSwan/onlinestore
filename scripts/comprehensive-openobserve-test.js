@@ -22,7 +22,7 @@ const credentialsList = [
   { username: 'admin@openobserve.com', password: 'admin', description: '备选组合2' },
   { username: 'admin', password: 'admin', description: '备选组合3' },
   { username: 'root', password: 'root@example.com', description: '备选组合4' },
-  { username: 'admin@example.com', password: 'admin123', description: '在test-openobserve.js中使用的组合' }
+  { username: 'admin@example.com', password: 'CHANGE_ME_admin_password', description: '在test-openobserve.js中使用的组合' }
 ];
 
 // 定义要测试的端点

@@ -182,7 +182,7 @@ docker-compose -f docker-compose.openobserve.yml up -d
 curl http://localhost:5080/health
 
 # 测试API端点
-curl -H "Authorization: Bearer admin123" \
+curl -H "Authorization: Bearer CHANGE_ME_openobserve_password" \
      http://localhost:5080/api/default/_health
 ```
 

@@ -100,6 +100,13 @@ export class AuthService {
       throw new ConflictException('用户已存在');
     }
 
+    // username 与邮箱同为唯一约束：预检冲突，避免落库时唯一约束违反升级为 500
+    // （2026-10-02 注册链路整改）
+    const usernameTaken = await this.usersService.isUsernameExists(registerData.username);
+    if (usernameTaken) {
+      throw new ConflictException('用户名已被使用');
+    }
+
     // 加密密码
     const hashedPassword = await bcrypt.hash(registerData.password, 12);
 

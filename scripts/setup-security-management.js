@@ -711,7 +711,7 @@ docker-compose -f docker-compose.security.yml up -d
 
 系统会自动创建一个默认管理员账户：
 - 用户名: \`admin\`
-- 密码: \`admin123\`
+- 密码: \`CHANGE_ME_admin_password\`
 
 **重要**: 首次登录后请立即修改默认密码！
 
@@ -731,7 +731,7 @@ const service = new SecurityManagementService({
 await service.initialize();
 
 // 用户认证
-const authResult = await service.authenticateUser('admin', 'admin123');
+const authResult = await service.authenticateUser('admin', 'CHANGE_ME_admin_password');
 console.log(authResult);
 \`\`\`
 
@@ -926,7 +926,7 @@ POST /api/auth/login
 \`\`\`json
 {
   "username": "admin",
-  "password": "admin123",
+  "password": "CHANGE_ME_admin_password",
   "mfaToken": "123456"
 }
 \`\`\`
@@ -1473,7 +1473,7 @@ echo "📝 请查看报告并根据建议进行安全加固"
     console.log('  - 安全检查: scripts/security-check.sh');
     console.log('\n🔐 默认管理员账户:');
     console.log('  - 用户名: admin');
-    console.log('  - 密码: admin123');
+    console.log('  - 密码: CHANGE_ME_admin_password');
     console.log('  ⚠️ 首次登录后请立即修改密码！');
   }
 }

@@ -44,7 +44,13 @@ import { CartModule } from './cart/cart.module';
             // 注意：users/infrastructure/persistence/typeorm 下的实体与 users/entities、
             // users/infrastructure/entities 存在同表名冲突（TypeORM 同表多实体会破坏
             // synchronize），且没有任何 forFeature 使用它们，故不再注册。
-            __dirname + '/users/infrastructure/entities/*.entity{.ts,.js}',
+            //
+            // Blocker 1（2026-10-02）：摘除 users/infrastructure/entities glob——该目录的
+            // UserEntity（@PrimaryGeneratedColumn('uuid')）与 users/entities 的 User
+            // （@PrimaryGeneratedColumn() 自增 int）同为 @Entity('users')，双注册导致
+            // SQLite synchronize 建出的 users 表 id 为 varchar NOT NULL，认证链路的
+            // 自增 INSERT 缺 id 直接 500。其唯一真实消费方（EnhancedUsersRepository
+            // CQRS 链）已改用规范 User 实体，见 typeorm-enhanced-users.repository.ts。
             __dirname + '/users/entities/*.entity{.ts,.js}',
             // users/domain/entities 下的 Address('user_addresses')、CustomerProfile('customer_profiles')
             // 是 User 实体 addresses/customerProfile 关联的目标实体，必须注册；

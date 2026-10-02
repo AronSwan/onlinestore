@@ -9,7 +9,8 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { MonitoringModule } from '../monitoring/monitoring.module';
 
 // Entities
-import { UserEntity } from './infrastructure/entities/user.entity';
+// 整改（Blocker 1，2026-10-02）：UserEntity（uuid 形态，@Entity('users')）已从连接中
+// 摘除，forFeature 不再注册它——注册未在连接中的实体会导致 Repository 解析失败。
 import { User } from './entities/user.entity';
 
 // Repositories
@@ -35,7 +36,7 @@ const CommandHandlers = [CreateUserHandler, UpdateUserHandler];
 const QueryHandlers = [GetUserForEditingHandler, SearchUsersHandler];
 
 @Module({
-  imports: [TypeOrmModule.forFeature([UserEntity, User]), CqrsModule, MonitoringModule],
+  imports: [TypeOrmModule.forFeature([User]), CqrsModule, MonitoringModule],
   controllers: [UsersController],
   providers: [
     UsersService,
