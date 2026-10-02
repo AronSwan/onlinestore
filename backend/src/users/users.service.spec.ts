@@ -85,7 +85,7 @@ describe('UsersService', () => {
       expect(mockUserRepository.findOne).toHaveBeenCalledWith({
         where: { email: 'test@example.com' },
       });
-      expect(bcrypt.hash).toHaveBeenCalledWith('password123', 10);
+      expect(bcrypt.hash).toHaveBeenCalledWith('password123', 12);
       expect(mockUserRepository.create).toHaveBeenCalledWith({
         ...createUserDto,
         password: 'hashedPassword',
@@ -306,7 +306,7 @@ describe('UsersService', () => {
 
       const result = await service.update(1, updateUserDto);
 
-      expect(bcrypt.hash).toHaveBeenCalledWith('newpassword', 10);
+      expect(bcrypt.hash).toHaveBeenCalledWith('newpassword', 12);
       expect(result).toEqual(updatedUser);
     });
   });

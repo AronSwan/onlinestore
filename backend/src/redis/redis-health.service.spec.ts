@@ -77,7 +77,13 @@ describe('RedisHealthService', () => {
       process.env.REDIS_HOST = 'localhost';
       process.env.REDIS_PORT = '6379';
       process.env.REDIS_DB = '0';
-      
+      // production 下 unified-master.config 启用 Joi 严格校验：
+      // 需补齐合规测试值（JWT_SECRET>=32 / ENCRYPTION_KEY=64 / CORS_ORIGINS 必填），
+      // 否则 createMasterConfiguration() 在校验期抛错（D6.7 整改）
+      process.env.JWT_SECRET = 'unit-test-jwt-secret-with-at-least-32-chars!!';
+      process.env.ENCRYPTION_KEY = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+      process.env.CORS_ORIGINS = process.env.CORS_ORIGINS || 'http://localhost:3000';
+
       // 重新创建配置实例以获取更新后的环境变量
       const updatedConfig = createMasterConfiguration();
       

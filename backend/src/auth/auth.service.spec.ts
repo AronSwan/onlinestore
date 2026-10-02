@@ -58,6 +58,7 @@ const mockRedisHealthService = {
 
 // Mock Redis client
 const mockRedisClient = {
+  status: 'ready', // 守卫适配：auth.service 现要求客户端就绪才启用失败计数
   get: jest.fn(),
   set: jest.fn(),
   del: jest.fn(),
@@ -132,7 +133,7 @@ describe('AuthService', () => {
     Object.values(mockRedisHealthService).forEach(mock => mock.mockReset());
     Object.values(mockJwtService).forEach(mock => mock.mockReset());
     Object.values(mockCaptchaService).forEach(mock => mock.mockReset());
-    Object.values(mockRedisClient).forEach(mock => mock.mockReset());
+    (Object.values(mockRedisClient) as any[]).forEach(mock => typeof mock?.mockReset === 'function' && mock.mockReset());
   });
 
   afterEach(() => {
@@ -163,7 +164,6 @@ describe('AuthService', () => {
     it('should successfully register a new user', async () => {
       // Setup mocks
       mockUsersService.findByEmail.mockResolvedValue(null);
-      mockedBcrypt.hash.mockResolvedValue('hashedPassword');
       mockUsersService.create.mockResolvedValue(mockUser);
       mockJwtService.sign.mockReturnValue('accessToken');
       mockRedisHealthService.getClient.mockReturnValue(mockRedisClient);
@@ -184,10 +184,10 @@ describe('AuthService', () => {
       });
 
       expect(mockUsersService.findByEmail).toHaveBeenCalledWith(registerData.email);
-      expect(mockedBcrypt.hash).toHaveBeenCalledWith(registerData.password, 12);
+      // 哈希职责收敛到 UsersService.create()：register 不再预哈希，必须传明文
+      expect(mockedBcrypt.hash).not.toHaveBeenCalled();
       expect(mockUsersService.create).toHaveBeenCalledWith({
         ...registerData,
-        password: 'hashedPassword',
         role: UserRole.USER,
       });
     });
@@ -260,7 +260,6 @@ describe('AuthService', () => {
 
     it('should clear registration failure counter on successful registration', async () => {
       mockUsersService.findByEmail.mockResolvedValue(null);
-      mockedBcrypt.hash.mockResolvedValue('hashedPassword');
       mockUsersService.create.mockResolvedValue(mockUser);
       mockJwtService.sign.mockReturnValue('accessToken');
       mockRedisHealthService.getClient.mockReturnValue(mockRedisClient);
@@ -274,7 +273,6 @@ describe('AuthService', () => {
 
     it('should handle registration without Redis', async () => {
       mockUsersService.findByEmail.mockResolvedValue(null);
-      mockedBcrypt.hash.mockResolvedValue('hashedPassword');
       mockUsersService.create.mockResolvedValue(mockUser);
       mockJwtService.sign.mockReturnValue('accessToken');
       mockRedisHealthService.getClient.mockReturnValue(undefined);
@@ -284,7 +282,6 @@ describe('AuthService', () => {
       expect(result).toBeDefined();
       expect(mockUsersService.create).toHaveBeenCalledWith({
         ...registerData,
-        password: 'hashedPassword',
         role: UserRole.USER,
       });
     });
@@ -638,7 +635,6 @@ describe('AuthService', () => {
       };
 
       mockUsersService.findByEmail.mockResolvedValue(null);
-      mockedBcrypt.hash.mockResolvedValue('hashedPassword');
       mockUsersService.create.mockResolvedValue(mockUser);
       mockJwtService.sign.mockReturnValue('accessToken');
       mockRedisHealthService.getClient.mockReturnValue(mockRedisClient);
@@ -659,7 +655,8 @@ describe('AuthService', () => {
       };
 
       mockUsersService.findByEmail.mockResolvedValue(null);
-      mockedBcrypt.hash.mockRejectedValue(new Error('Bcrypt error'));
+      // 哈希收敛到 UsersService.create() 后，bcrypt 错误经 create() 抛出
+      mockUsersService.create.mockRejectedValue(new Error('Bcrypt error'));
 
       await expect(service.register(registerData)).rejects.toThrow();
     });

@@ -134,7 +134,8 @@ export class EnhancedUser extends AggregateRoot {
    */
   public static fromPersistence(data: any): EnhancedUser {
     const email = new EnhancedEmail(data.email);
-    const firstName = new FirstName(data.firstName);
+    // 持久化重建走宽松路径：历史 firstName 可能是 username 形态（含数字/下划线）
+    const firstName = FirstName.fromPersisted(data.firstName);
     const lastName = new LastName(data.lastName);
     const birthday = data.birthday ? new Birthday(data.birthday) : Birthday.createEmpty();
 

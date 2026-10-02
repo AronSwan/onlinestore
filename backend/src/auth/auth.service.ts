@@ -107,13 +107,10 @@ export class AuthService {
       throw new ConflictException('用户名已被使用');
     }
 
-    // 加密密码
-    const hashedPassword = await bcrypt.hash(registerData.password, 12);
-
-    // 创建用户
+    // 创建用户：UsersService.create() 内部是唯一哈希点，此处必须传明文
+    // （2026-10-02 修复：此前在此预哈希导致 create() 内二次哈希，登录 compare 恒 false）
     const user = await this.usersService.create({
       ...registerData,
-      password: hashedPassword,
       role: UserRole.USER,
     });
 
@@ -137,7 +134,9 @@ export class AuthService {
     password: string;
     captcha_token?: string;
   }): Promise<LoginResponse> {
-    const redis = this.redisHealth.getClient?.() as Redis | undefined;
+    // 失败计数是尽力而为：客户端未就绪（未配置/断连）时跳过，不阻断登录
+    const client = this.redisHealth.getClient?.() as Redis | undefined;
+    const redis = client?.status === 'ready' ? client : undefined;
     const loginFailKey = `auth:login:fail:${loginData.email}`;
     const windowSec = 600; // 10分钟窗口
     const threshold = 5; // 默认值，因为新配置系统中没有captcha配置

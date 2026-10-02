@@ -34,8 +34,8 @@ export class UsersService {
       throw new ConflictException();
     }
 
-    // 加密密码
-    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+    // 唯一哈希点：调用方必须传明文
+    const hashedPassword = await bcrypt.hash(createUserDto.password, 12);
 
     const user = this.userRepository.create({
       ...createUserDto,
@@ -144,7 +144,7 @@ export class UsersService {
 
     // 如果更新密码，需要加密
     if (updateUserDto.password) {
-      updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
+      updateUserDto.password = await bcrypt.hash(updateUserDto.password, 12);
     }
 
     await this.userRepository.update(id, updateUserDto);

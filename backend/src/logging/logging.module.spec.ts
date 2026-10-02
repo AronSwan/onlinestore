@@ -92,6 +92,13 @@ describe('LoggingModule providers (adapter priority)', () => {
       };
     });
 
+    // 本用例验证"启用态"传输器的 endpoint 组装：补齐完整 OPENOBSERVE_* 测试配置，
+    // 使 openobserve-env 在非 production 环境保持 enabled=true
+    // （D6.6 整改后：非 production 缺配置会降级为 enabled:false 并返回 noop 传输器）
+    process.env.OPENOBSERVE_URL = 'http://openobserve.test.local';
+    process.env.OPENOBSERVE_ORGANIZATION = 'test-org';
+    process.env.OPENOBSERVE_TOKEN = 'test-token';
+
     const { LoggingModule } = require('./logging.module');
     const moduleRef: TestingModule = await Test.createTestingModule({
       imports: [LoggingModule],

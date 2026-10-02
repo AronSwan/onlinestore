@@ -17,22 +17,39 @@ export class FirstName extends ValueObjectBase<string> {
    */
   private static readonly NAME_PATTERN = /^[^0-9!<>,;?=+()@#"°{}_$%:¤|]*$/;
 
-  constructor(value: string) {
+  constructor(value: string, options?: { skipPatternCheck?: boolean }) {
     super(value);
-    this.validate();
+    this.validate(options?.skipPatternCheck === true);
   }
 
-  protected validate(): void {
-    this.assertFirstNameIsValid(this.value);
+  /**
+   * 从持久化数据重建值对象（宽松路径）
+   *
+   * 跳过 NAME_PATTERN 字符集校验，仅保留非空与长度上限（MAX_LENGTH）约束，
+   * 用于兼容历史数据（如以 username 形态落库的 firstName，含数字/下划线）。
+   * 失败时抛出与严格路径同款的 UserConstraintException。
+   *
+   * 注意：创建/更新命令路径必须继续使用 new FirstName()（严格校验），不要改用本方法。
+   */
+  public static fromPersisted(value: string): FirstName {
+    return new FirstName(value, { skipPatternCheck: true });
+  }
+
+  protected validate(skipPatternCheck: boolean = false): void {
+    this.assertFirstNameIsValid(this.value, skipPatternCheck);
     this.assertFirstNameDoesNotExceedAllowedLength(this.value);
   }
 
   /**
    * 验证名字格式是否有效
    */
-  private assertFirstNameIsValid(firstName: string): void {
+  private assertFirstNameIsValid(firstName: string, skipPatternCheck: boolean): void {
     if (!firstName || firstName.trim().length === 0) {
       throw new UserConstraintException('First name cannot be empty', 'INVALID_FIRST_NAME');
+    }
+
+    if (skipPatternCheck) {
+      return;
     }
 
     const matchesPattern = FirstName.NAME_PATTERN.test(firstName.trim());
