@@ -16,7 +16,7 @@
 ## P1 安全收尾（8 项）
 
 ### S6-full · 六横切面控制器全量守卫与 admin 分级 【M】
-- **问题**：六横切面控制器 40+ 路由匿名可达（含匿名写）；Day 2 精简版只给写路由挂了 Guard，读路由与管理面仍裸奔。
+- **问题**：六横切面控制器读路由仍匿名可达；Day 2 精简版已给管理写面挂 Guard（alert 5/notification test+bulk/cache 2/search 管理面 3），但 **POST /api/notifications（根创建）、POST /api/search/history、POST /api/search/popular、POST /api/products/:id/view、logging.controller 的 11 个匿名 ingest POST（含 flush 落盘）** 仍无守卫（验收审计补记）。
 - **锚**：`backend/src` 内零 `@UseGuards` 的控制器（audit_head 实测 19 件、约百级路由装饰器，覆盖审计所指六横切面）：`monitoring/monitoring.controller.ts`、`monitoring/alert.controller.ts`、`address/address.controller.ts`、`common/monitoring/security-monitoring.controller.ts`、`common/circuit-breaker/circuit-breaker.controller.ts`、`bff/bff.controller.ts`、`notification/notification.controller.ts`、`cache/cache.controller.ts`、`aggregation/aggregation.controller.ts`、`performance/performance.controller.ts` 等；现成可复用件 `auth/guards/jwt-auth.guard.ts`（JwtAuthGuard）、`auth/guards/roles.guard.ts` / `auth/guards/enhanced-rbac.guard.ts`（角色分级）。
 - **修法**：全量路由挂 JwtAuthGuard；管理/监控/熔断类再叠加 RolesGuard/EnhancedRbacGuard 做 admin 分级（角色判定来自用户实体的 role 字段）；health 类端点如需匿名，用显式 @Public 白名单。存量 spec 适配按上列"守卫适配"纪律单列清单。
 - **验证**：匿名 curl 打任一原裸奔路由得 401；普通用户打 admin 路由得 403；G2 单测基线不降。
@@ -149,6 +149,7 @@
 ## P3 地基与运维（7 项）
 
 ### K5 · CI 复活与依赖更新基建 【M】
+- **追加（验收审计）**：ci.yml deploy-staging/deploy-production 段引用已归档的 backend/k8s/staging|production（合并 main 即断）；docker-validation.yml 引用已整体归档的 docker-validation-scripts/——K5 清理工作流时一并处置（删或改触发分支）。
 - **问题**：CI 已红十周（安装段根因 D1 锁文件已于 Day 2 重锁修复，流水线三段仍需各自修通）；依赖更新双配置失真；README badge 撒谎。
 - **锚**：`.github/workflows/ci.yml`（安装/构建/测试三段）；`.dependabot/config.yml`（Dependabot v1 已废弃格式，需迁移）；根目录 `renovate.json`（含废弃 preset 与无效字段，需三修）；`README.md` 头部 CI/CodeQL/dependency-check/sbom-sign 四 badge（工作流实际状态与 badge 不符）；`.github/workflows/secrets-check.yml`（已随 T1 历史收编合入，此后改动归本项，需确认在 CI 实跑而非摆设）。
 - **修法**：三件套逐段修绿（npm ci 可复现 → tsc → jest 单测）；Dependabot 迁移 v1 config.yml → `.github/dependabot.yml` v2 格式后删除旧文件；Renovate 三修（按当前 schema 校验：废弃 preset 如 config:base、无效字段、失效账号/排期类）；badge 与真实工作流逐一核真（死了的摘除）；secrets-check 挂入必过 job。
@@ -173,6 +174,7 @@
 - **验证**：grep `uses:` 无裸 tag 引用；CI 全绿。
 
 ### K2-full · compose 收敛（20 → 3 套）【M】
+- **追加（验收审计）**：①六个枚举外残骸脚本仍引用已归档 compose，同批归档：backend/scripts/{start-openobserve.sh, quick-fix-openobserve.sh, init-openobserve-streams.js, deploy.sh, deploy.ps1, deploy-and-test-redis.cjs}；②根 k8s/search/（9 文件）决策：README-K8S-SEARCH 引用它为活文档——保留则 README 措辞需澄清"backend/k8s 已归档、k8s/search 保留"，或一并归档并修文档链接；③现行文档指向归档 compose 的链接清理（backend/docs/DISTRIBUTED_TRACING.md、backend/docker/README.md、docs/docker-deployment-verification-report.md 等）。
 - **问题**：全仓 20 套 compose 端口互相漂移且无一绑 127.0.0.1（Day 3 只做了归档与主 compose 三处修）。
 - **锚**：全仓 docker-compose*.yml 共 20 件（audit_head 实测：`backend/docker/` 树 5、backend 根 4、`docker/` 3、仓库根 5、`docker-validation-scripts/` 1、backend/scripts 与 backend/src/payment 各 1）；引用方脚本 = `docker-validation-scripts/` 与 `backend/scripts/` 内 yml/js。
 - **修法**：收敛至 3 套（主 `docker-compose.yml`、`docker-compose.dev.yml`、观测栈一套），其余 17 套移 `docs/archive/deployments/`（警示头）；保留套端口统一绑 127.0.0.1 并出端口真值表；引用方脚本改指向保留套或随归档声明。
