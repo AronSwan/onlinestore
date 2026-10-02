@@ -9,19 +9,27 @@ class ProfileManager {
         this.addresses = [];
         // 同源相对路径，与 auth.js 等其他模块的 fetch 写法保持一致
         this.baseUrl = '/api';
-        this.init();
+        // 注意：构造函数不再调用 init()——profile.html 在 DOMContentLoaded 中
+        // 会显式调用 profileManager.init()，构造函数内再调一次会导致双跑
+        // （重复绑定 submit、重复加载数据）
     }
 
     init() {
+        // 登录守卫：未登录时 checkAuth() 会跳转到登录页并返回 false，
+        // 此处按其现有行为接入，跳转后不再继续加载/绑定
+        if (!this.checkAuth()) {
+            return;
+        }
+
         // 确保DOM完全加载后再初始化
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
-                this.loadUserInfo();
+                this.loadUserData();
                 this.bindEvents();
             });
         } else {
             // DOM已经加载完成
-            this.loadUserInfo();
+            this.loadUserData();
             this.bindEvents();
         }
     }

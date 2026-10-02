@@ -114,12 +114,12 @@ function setupFormSubmissions() {
         // 作者：AI Assistant
         // 时间：2025-01-26 15:30:00
         // 修复：更新元素ID以匹配login.html中的实际ID
-        const name = document.getElementById("register-username").value;
+        const username = document.getElementById("register-username").value;
       const email = document.getElementById("register-email").value;
       const password = document.getElementById("register-password").value;
-            
+
       // 调用注册API
-      await register(name, email, password);
+      await register(username, email, password);
     }
   });
 }
@@ -209,7 +209,7 @@ function validateLoginForm() {
     
   // 验证密码
   if (!validatePassword(password)) {
-    showError("login-password", "密码不能为空且长度至少为6个字符");
+    showError("login-password", "密码不能为空，且需至少8位并包含大写字母、小写字母、数字和特殊字符");
     isValid = false;
   } else {
     hideError("login-password");
@@ -243,9 +243,9 @@ function validateRegisterForm() {
     
   let isValid = true;
     
-  // 验证姓名
+  // 验证用户名
   if (!validateName(name)) {
-    showError("register-username", "请输入您的姓名");
+    showError("register-username", "用户名须为3-20位字母、数字或下划线");
             isValid = false;
         } else {
             hideError("register-username");
@@ -261,7 +261,7 @@ function validateRegisterForm() {
     
   // 验证密码
   if (!validatePassword(password)) {
-    showError("register-password", "密码不能为空且长度至少为8个字符");
+    showError("register-password", "密码不能为空，且需至少8位并包含大写字母、小写字母、数字和特殊字符");
     isValid = false;
   } else {
     hideError("register-password");
@@ -294,16 +294,25 @@ function validateEmail(email) {
 
 /**
  * 验证密码
+ * 与后端注册规则对齐：至少8位，且需同时包含大写字母、小写字母、数字和特殊字符
  */
 function validatePassword(password) {
-  return password && password.length >= 6;
+  return (
+    typeof password === "string" &&
+    password.length >= 8 &&
+    /[A-Z]/.test(password) &&
+    /[a-z]/.test(password) &&
+    /[0-9]/.test(password) &&
+    /[^A-Za-z0-9]/.test(password)
+  );
 }
 
 /**
- * 验证姓名
+ * 验证用户名
+ * 与后端及 login.html pattern 语义对齐：3-20位字母、数字或下划线
  */
 function validateName(name) {
-  return name && name.trim().length > 0;
+  return /^[a-zA-Z0-9_]{3,20}$/.test(name || "");
 }
 
 /**
@@ -453,7 +462,7 @@ async function login(email, password, rememberMe) {
 /**
  * 注册API调用
  */
-async function register(name, email, password) {
+async function register(username, email, password) {
   // 显示加载状态
   const registerForm = document.getElementById("register-form");
   if (!registerForm) {
@@ -478,7 +487,9 @@ async function register(name, email, password) {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ name, email, password })
+      // 请求体键名与后端 DTO 对齐：username（后端注册接口要求的字段名），
+      // 不是 name；否则后端校验会直接拒绝注册
+      body: JSON.stringify({ username, email, password })
     });
     
     const data = await response.json();

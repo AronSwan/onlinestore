@@ -17,8 +17,9 @@ class NavigationIconManager {
     this.bindUserIconClick();
     this.bindCartIconClick();
     this.bindWishlistIconClick();
-    this.bindSearchIconClick();
-    this.bindMobileMenuClick();
+    // 搜索按钮/移动端菜单不再在此绑定：index.html 内联脚本已有更完整的
+    // 独占绑定（含 aria-expanded、ESC 关闭、焦点管理），此处再绑一次
+    // 会导致同一点击触发两次 toggle（开关互相抵消，表现为"点不动"）
     console.log('NavigationIconManager: 初始化完成');
   }
 
@@ -227,48 +228,6 @@ class NavigationIconManager {
           window.location.href = '/';
         }
       }, 100);
-    }
-  }
-
-  /**
-   * 绑定搜索图标点击事件
-   */
-  bindSearchIconClick() {
-    const searchBtn = document.getElementById('searchBtn');
-    const searchBar = document.getElementById('searchBar');
-    const closeSearchBtn = document.getElementById('closeSearchBtn');
-    
-    if (searchBtn && searchBar) {
-      searchBtn.addEventListener('click', () => {
-        searchBar.classList.toggle('hidden');
-        if (!searchBar.classList.contains('hidden')) {
-          // 聚焦搜索输入框
-          const searchInput = searchBar.querySelector('input[type="text"]');
-          if (searchInput) {
-            searchInput.focus();
-          }
-        }
-      });
-    }
-    
-    if (closeSearchBtn && searchBar) {
-      closeSearchBtn.addEventListener('click', () => {
-        searchBar.classList.add('hidden');
-      });
-    }
-  }
-
-  /**
-   * 绑定移动端菜单点击事件
-   */
-  bindMobileMenuClick() {
-    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-    const mobileMenu = document.getElementById('mobileMenu');
-    
-    if (mobileMenuBtn && mobileMenu) {
-      mobileMenuBtn.addEventListener('click', () => {
-        mobileMenu.classList.toggle('hidden');
-      });
     }
   }
 
