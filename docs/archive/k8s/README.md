@@ -1,5 +1,7 @@
 # Kubernetes 部署指南
 
+> ⚠️ **已归档（2026-10-02，原 `backend/k8s/`）**：本目录清单存在 secretKeyRef 键名 / 探针路径 / namespace 三重缺陷，`kubectl apply` 无法运行；修复方案见 [`docs/BACKLOG.md`](../../../BACKLOG.md)。以下内容仅作历史参考。
+
 ## 用途
 本目录包含Caddy Shopping后端应用的Kubernetes部署配置文件，用于实现容器编排、自动化部署和分布式部署。
 

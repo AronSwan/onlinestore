@@ -5,6 +5,8 @@
 
 # Reich 在线商店（电商演示项目）
 
+> ⚠️ **演示项目，请勿原样部署**：本仓库为学习/演示用途的电商原型。支付未接线（回调验签 fail-closed）、鉴权为演示级（部分管理接口仅挡匿名）、依赖存在已知未修复漏洞（见 `docs/BACKLOG.md`）、e2e 测试不维护。生产部署前必须完成 BACKLOG 全部 P1 项并轮换全部密钥。
+
 静态 HTML/JS 前端 + NestJS 后端的电商演示站，用于功能演示与工程实践。不含真实支付通道与商户能力。
 
 ## 当前状态
@@ -40,7 +42,12 @@ npm run start:dev      # http://localhost:3000/api/health
 npx http-server -p 8080
 
 # 方式二：docker compose（frontend 服务即 nginx：静态资源 + /api 反代到 backend:3000）
-docker compose up -d frontend backend
+# 三步（根目录执行）：
+cp .env.example .env      # 1) 生成环境配置
+# 2) 在 .env 中填入真实密钥：JWT_SECRET 与 ENCRYPTION_KEY 用 `openssl rand -hex 32` 生成
+#    （ENCRYPTION_KEY 需恰好 64 个十六进制字符）；POSTGRES_PASSWORD、REDIS_PASSWORD 亦为必填
+#    （redis 已启用 --requirepass，REDIS_PASSWORD 缺失时 compose 直接拒启）
+docker compose up -d frontend backend   # 3) 起服务，入口 http://localhost（80/443 对外，数据面端口仅绑 127.0.0.1）
 ```
 
 ## 目录结构
@@ -51,26 +58,29 @@ docker compose up -d frontend backend
 ├── backend/                # NestJS 后端（src/ 按模块划分：auth、products、cart、orders、payment、health 等）
 │   ├── docs/               # 后端现行文档；docs/archive/ 为历史报告归档
 │   └── data/               # SQLite 库文件（仅本地，不入库）
-├── docs/                   # 项目文档；archive/ 为历史过程文档归档
-├── docker-compose*.yml     # 本地编排（frontend / backend / postgres / redis / nginx-lb 等）
-├── k8s/  docker/  scripts/ # 部署配置与脚本
+├── docs/                   # 项目文档；archive/ 为历史归档（含 k8s 清单、17 套 compose 变体与一次性部署脚本）
+├── docker-compose.yml / docker-compose.local.yml / docker-compose.openobserve.yml   # 现行编排仅此三套（frontend / backend / postgres / redis / nginx-lb 等）
+├── docker/  scripts/       # 运行配置与运维脚本（冒烟自测：scripts/smoke.sh）
 └── tests/                  # Playwright 前端测试
 ```
 
 ## 测试
 
-- 后端：`cd backend && npm run test:unit`（928 个用例 / 48 个套件，2026-10-02 本机全绿，可复跑）
+- 后端：`cd backend && npm run test:unit`（958 个用例 / 52 个套件，2026-10-02 本机全绿，可复跑）
+- 冒烟自测：`bash scripts/smoke.sh`（需后端已在本机运行，默认 3000 端口，`PORT=xxxx` 可指定；覆盖 健康检查 → 注册 → 登录 → 带凭据购物车 → 匿名 401 → 错误密码 401）
 - 后端安全检查：全新 clone 后需先 `cp backend/.env.test.example backend/.env.test`（`npm run security:check:test` 依赖该文件，`.env.test` 不入库）
 - 前端：`npm test`（Playwright，部分用例需要后端在本地运行）
 
 ## 已知限制与改进路线
 
+- 已验证可用的后端链路：健康检查、注册、登录、购物车（参数化路由 `/api/cart/items/{sub}`，挂 `JwtAuthGuard` + `CartOwnerGuard`）、订单——经 958 项单测与 `scripts/smoke.sh` 冒烟验证；差距集中在前端接通与下列各项。
 - 支付为演示态：策略层 TODO，未接真实网关；回调验签 fail-closed。
-- 购物车服务端同步未打通：后端购物车的 `customerUserId` 键即认证用户 JWT `sub`（有意决策，路由已挂 `JwtAuthGuard` + `CartOwnerGuard`，越权 403）；差距在前端——`js/cart.js` 仍在调用不存在的 `/api/cart` 根路由，失败后静默回退本地存储。接通需按 `/api/cart/items/{sub}` 契约改造前端（携带认证令牌，body 需 `productSkuId` 等 SKU 域字段）。
+- 购物车前端同步未打通：后端购物车的 `customerUserId` 键即认证用户 JWT `sub`（有意决策，越权 403）；差距在前端——`js/cart.js` 仍在调用不存在的 `/api/cart` 根路由，失败后静默回退本地存储。接通需按 `/api/cart/items/{sub}` 契约改造前端（携带认证令牌，body 需 `productSkuId` 等 SKU 域字段）。
 - AI 助手是规则式演示代码，与页面未接线，无后端会话支持。
 - 监控栈（Prometheus / Grafana / OpenObserve）只有配置与编排，未部署。
+- 部署残骸已归档：`backend/k8s/`（清单存在 secretKeyRef 键名 / 探针路径 / namespace 三重缺陷，`kubectl apply` 无法运行，修复方案见 `docs/BACKLOG.md`）与 17 套 compose 变体、12 个一次性部署/验证脚本已移至 `docs/archive/k8s/` 与 `docs/archive/deployments/`，仅作历史参考；根目录仅保留 `docker-compose.yml`（主）、`docker-compose.local.yml`、`docker-compose.openobserve.yml` 三套。
 - 大量历史过程文档（优化报告、修复记录、方案稿）已移入 `docs/archive/` 与 `backend/docs/archive/`，仅作历史参考，不代表当前系统行为，其中的相对链接可能失效。
-- 仍保留在原位的专项文档：`README-SEARCH.md`、`README-K8S-SEARCH.md`（被 `k8s/search/README.md` 引用），以及 `docs/`、`backend/docs/` 下的现行文档。
+- 仍保留在原位的专项文档：`README-SEARCH.md`、`README-K8S-SEARCH.md`（历史搜索方案文档，其对应的 k8s 清单已随 `backend/k8s/` 归档至 `docs/archive/k8s/`），以及 `docs/`、`backend/docs/` 下的现行文档。
 
 ## 安全提示
 
