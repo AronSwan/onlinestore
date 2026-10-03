@@ -1,0 +1,251 @@
+/* ============================================================
+   Reich UI v3.1 · 统一站点导航（ui-redesign P3）
+   四页共用：11-12px 全大写小标签 + 0.05-0.08em 字距 + candy ink hover
+   零 Tailwind / 零 Font Awesome 依赖
+   ============================================================ */
+
+.site-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 72px;
+  padding: 0 clamp(1rem, 4vw, 3rem);
+  background: var(--bg-base);
+  border-bottom: 1px solid var(--line);
+  transition: box-shadow var(--dur-fast) var(--ease-lux);
+}
+
+.site-header.scrolled {
+  box-shadow: var(--shadow-sm);
+}
+
+/* 左侧导航 */
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: clamp(1rem, 2.5vw, 2rem);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.site-nav a {
+  font-size: var(--text-caption);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--ink);
+  padding: 0.5rem 0;
+  position: relative;
+  transition: color var(--dur-fast) var(--ease-lux);
+}
+
+.site-nav a::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--candy-blush-ink);
+  transition: width var(--dur-slow) var(--ease-lux);
+}
+
+.site-nav a:hover,
+.site-nav a[aria-current="page"] {
+  color: var(--candy-blush-ink);
+}
+
+.site-nav a:hover::after,
+.site-nav a[aria-current="page"]::after {
+  width: 100%;
+}
+
+/* 居中品牌 */
+.site-brand {
+  font-size: 1.5rem;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-luxury);
+  text-decoration: none;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.site-brand:hover {
+  color: var(--candy-blush-ink);
+  transition: color var(--dur-fast) var(--ease-lux);
+}
+
+/* 右侧工具栏 */
+.site-tools {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.75rem, 1.5vw, 1.5rem);
+}
+
+.site-tools button,
+.site-tools a {
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  cursor: pointer;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: var(--radius-sm);
+  transition: color var(--dur-fast) var(--ease-lux);
+  text-decoration: none;
+  position: relative;
+}
+
+.site-tools button:hover,
+.site-tools a:hover {
+  color: var(--candy-blush-ink);
+}
+
+.site-tools svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* 购物车徽章 */
+.site-cart-badge {
+  position: absolute;
+  top: 4px;
+  right: 0;
+  min-width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--bg-base);
+  background: var(--candy-blush);
+  border-radius: var(--radius-full);
+  padding: 0 4px;
+}
+
+/* 汉堡（移动端） */
+.site-burger {
+  display: none;
+}
+
+/* 移动菜单 */
+.site-mobile-menu {
+  display: none;
+  position: fixed;
+  top: 72px;
+  left: 0;
+  right: 0;
+  z-index: 999;
+  background: var(--bg-base);
+  border-bottom: 1px solid var(--line);
+  padding: var(--spacing-4) clamp(1rem, 4vw, 3rem);
+  box-shadow: var(--shadow-md);
+}
+
+.site-mobile-menu.open {
+  display: block;
+}
+
+.site-mobile-menu ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.site-mobile-menu a {
+  display: block;
+  padding: 0.75rem 0;
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-medium);
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px solid var(--line);
+}
+
+.site-mobile-menu a:last-child {
+  border-bottom: none;
+}
+
+.site-mobile-menu a:hover {
+  color: var(--candy-blush-ink);
+}
+
+/* 返回个人中心（orders 页并入 toolbar 的返回钮） */
+.site-tools-back {
+  font-size: var(--text-caption);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--tracking-caps);
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+/* index 搜索展开区（冻结契约 #searchBar）：原为旧 header 内部子节点，
+   P3 后独立为 header 的兄弟节点，固定锚定在 header 下沿 */
+#searchBar {
+  position: fixed;
+  top: 72px;
+  left: 0;
+  right: 0;
+  z-index: 999;
+  background: var(--bg-base);
+}
+
+/* ---- 响应式 ---- */
+@media (max-width: 768px) {
+  body {
+    /* 新 header 移动端高度 60px（覆盖四页 body 上的内联 padding-top: 72px） */
+    padding-top: 60px !important;
+  }
+
+  .site-header {
+    height: 60px;
+  }
+
+  .site-nav {
+    display: none;
+  }
+
+  .site-burger {
+    display: flex;
+  }
+
+  .site-mobile-menu {
+    top: 60px;
+  }
+
+  #searchBar {
+    top: 60px;
+  }
+
+  .site-brand {
+    font-size: 1.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-header,
+  .site-nav a,
+  .site-nav a::after {
+    transition: none;
+  }
+}
