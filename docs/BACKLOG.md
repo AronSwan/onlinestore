@@ -26,7 +26,7 @@
 
 ### S8 · Casdoor OAuth state 改 HMAC 签名 【S】
 - **问题**：Casdoor 登录的 state 用 `Math.random()` 生成且回调完全不校验，state 保护形同虚设，可构造回调伪造。
-- **锚**：`backend/src/auth/auth-proxy.service.ts` 的 `getCasdoorLoginUrl()`（state 生成与 authorize URL 拼接处）和 `handleCasdoorCallback(code, state)`（未做任何 state 校验）；前端 `js/casdoor-config.js` 已有 `casdoor_auth_state` 的 sessionStorage 存取逻辑可复用。
+- **锚**：`backend/src/auth/auth-proxy.service.ts` 的 `getCasdoorLoginUrl()`（state 生成与 authorize URL 拼接处）和 `handleCasdoorCallback(code, state)`（未做任何 state 校验）；前端 `js/_archive/casdoor-config.js`（已归档，复活先过 safety.md 接线锁） 已有 `casdoor_auth_state` 的 sessionStorage 存取逻辑可复用。
 - **修法**：state 改为 `HMAC-SHA256(服务端密钥, nonce+时间戳)` 签名串；回调时验签 + 时效窗（如 10 分钟）+ 一次性消费（已用 state 拒绝），任一失败返回 401。
 - **验证**：篡改/过期/重放的 state 回调均被拒，正常 Casdoor 链路（G4 浏览器注册→登录）不回归。
 
@@ -90,13 +90,13 @@
 
 ### PR8 · Casdoor 单按钮改造 + F13 邮箱验证完整降级 【M】
 - **问题**：登录页多协议入口中只有 Casdoor 线可通（死入口 Day 2 已砍），但 Casdoor 按钮未收敛为主入口；邮箱验证线无后端支撑却仍有 UI 残留。
-- **锚**：`login.html` 的 `#casdoor-login` 按钮与验证码容器；`js/casdoor-auth-service.js` / `js/casdoor-config.js` / `js/oauth-handler.js`；`js/email-verification.js` / `js/email-verification-client.js` / `js/advanced-email-verifier.js`；`index.html` 原 casdoor 探测与参数拼接死协议块（若 Day 2 砍入口时未删净，此处删净）。
+- **锚**：`login.html` 的 `#casdoor-login` 按钮与验证码容器；`js/_archive/casdoor-auth-service.js` / `js/_archive/casdoor-config.js`（已归档，复活先过 safety.md 接线锁） / `js/oauth-handler.js`；`js/email-verification.js` / `js/_archive/email-verification-client.js` / `js/advanced-email-verifier.js`；`index.html` 原 casdoor 探测与参数拼接死协议块（若 Day 2 砍入口时未删净，此处删净）。
 - **修法**：登录页收敛为 Casdoor 单按钮（加载/错误状态诚实展示，前置 = 后端官交付 Casdoor 回调 token 形状确认）；邮箱验证完整降级 = 注册后展示"邮箱验证暂未开通"状态条 + 后端能力开关，移除死表单与假提交。
 - **验证**：浏览器走 Casdoor 登录全链路成功；邮箱验证线 UI 与后端能力一致，无假提交入口。
 
 ### PR6 · 登出闭环 【S】
 - **问题**：登出只清了部分 localStorage 键——sessionStorage 副本、userId 与 casdoor 键族全部残留，且无服务端登出调用。
-- **锚**：`js/navigation-icons.js` 的 logout-btn 点击处理（现仅 removeItem localStorage 的 userLoggedIn/userEmail/token/refreshToken）；登录写入处 `js/auth.js`（两存储 × userLoggedIn/userEmail/token/refreshToken/userId）；casdoor 键族 `js/casdoor-config.js`（casdoor_tokens / casdoor_user / casdoor_auth_state）；服务端 `backend/src/auth/auth-proxy.service.ts` 已有 `casdoorLogout()` 可复用。
+- **锚**：`js/navigation-icons.js` 的 logout-btn 点击处理（现仅 removeItem localStorage 的 userLoggedIn/userEmail/token/refreshToken）；登录写入处 `js/auth.js`（两存储 × userLoggedIn/userEmail/token/refreshToken/userId）；casdoor 键族 `js/_archive/casdoor-config.js`（已归档，复活先过 safety.md 接线锁）（casdoor_tokens / casdoor_user / casdoor_auth_state）；服务端 `backend/src/auth/auth-proxy.service.ts` 已有 `casdoorLogout()` 可复用。
 - **修法**：登出统一清理两存储全部会话键（含 userId 与 casdoor 键族），并调用服务端登出端点（补 REST 出口或复用 casdoorLogout）；token 黑名单不做（挂账区，见文末）。
 - **验证**：登出后两存储无任何会话键、刷新页面不恢复登录态、Network 可见服务端登出请求。
 
@@ -160,7 +160,7 @@
 - **验证**：ci.yml 全绿；badge 与 actions 实况一致；两份依赖更新配置通过各自官方校验。
 
 ### D2 · 依赖漏洞分批升级 【M-L】
-- **批 1 已完成（2026-10-03）**：8 个直接生产依赖清零公告（axios 1.20.0 / typeorm 0.3.31 / mysql2 3.24.5 / joi 18.2.9 / @nestjs core+common+platform-express 11.1.18→解析为 11.2.7 / swagger 11.2.7→解析为 11.4.7）+ 顶层 js-yaml override ^4.1.1。**遗留**：@nestjs/swagger 内嵌 js-yaml@5.3.0（moderate，原型污染）——npm 嵌套 override 对直接依赖不生效，且该路径仅解析自产 OpenAPI 文档，非攻击者可控，接受风险挂账至 swagger 发版。
+- **批 1 已完成（2026-10-03）**：8 个直接生产依赖清零公告（axios 1.20.0 / typeorm 0.3.31 / mysql2 3.24.5 / joi 18.2.9 / @nestjs core+common+platform-express 11.1.18→解析为 11.2.7 / swagger 11.2.7→解析为 11.4.7）+ 顶层 js-yaml override ^4.1.1。**遗留**：@nestjs/swagger 内嵌 js-yaml@5.3.0（moderate，GHSA-r3ph-w7gj-g6xm merge-key CPU DoS——swagger 仅 dump 不 load，实际不可达；一审核实）——npm 嵌套 override 对直接依赖不生效，且该路径仅解析自产 OpenAPI 文档，非攻击者可控，接受风险挂账至 swagger 发版。
 - **批 2（待做）**：4 个 critical 间接依赖的载体升级——protobufjs←otel 系（sdk-node 0.222）、tar←sqlite3 6.0.1、fast-xml-parser←@types/nodemailer（迁 devDeps 即消）、handlebars←ts-jest；semver-major 逐个过专属冒烟。
 - **批 3（待做）**：dev 树清理+根目录 puppeteer/sharp/mocha/chai 迁 devDependencies。
 ### D2 · 依赖三批次升级 【L】

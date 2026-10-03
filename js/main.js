@@ -221,7 +221,7 @@ function setupNavigation() {
     state.lastScrollPosition = scrollPosition;
 
     // 如果没有状态管理器，使用基本的滚动检测逻辑
-    if (hasNavManager) {return;}
+    // 归档清理(2026-10-03): 第7处 hasNavManager 引用漏删, 一审修复
 
     let currentSection = null;
     let minDistance = Infinity;

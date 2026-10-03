@@ -10,7 +10,8 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { OrderStatus, PaymentStatus, PaymentMethod } from '../enums/order.enums';
+import { PaymentMethod } from '../enums/order.enums';
+import { OrderStatus, PaymentStatus } from '../entities/order.entity';
 
 export class OrderItemDto {
   @IsNumber()

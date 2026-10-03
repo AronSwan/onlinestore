@@ -17,6 +17,9 @@ import { OrdersController } from '../../orders/orders.controller';
 import { LoggingController } from '../../logging/logging.controller';
 import { MonitoringController } from '../../monitoring/monitoring.controller';
 import { AlertController } from '../../monitoring/alert.controller';
+import { CartController } from '../../cart/interfaces/cart.controller';
+import { CacheController } from '../../cache/cache.controller';
+import { CartOwnerGuard } from '../../cart/interfaces/cart-owner.guard';
 import { NotificationController } from '../../notification/notification.controller';
 import { SearchController } from '../../products/search/search.controller';
 
@@ -80,6 +83,35 @@ describe('授权接线锁（装饰器元数据断言）', () => {
       expect(guardsOf(c, 'findByUserId')).toContain(OwnerOrAdminGuard);
       expect(ownerParamOf(c, 'findByUserId')).toBe('userId');
     });
+
+    it('一审补(2026-10-03): 详情/删除/状态变更/统计/消息 六路由守卫全锁——删任何一行即红', () => {
+      expect(guardsOf(c, 'findOne')).toContain(JwtAuthGuard); // 曾是 V1 critical 越权位
+      for (const m of ['update', 'remove', 'getStatisticsOverview', 'getMessageHistory']) {
+        if (typeof (c as any)[m] !== 'function') continue;
+        expect(guardsOf(c, m)).toContain(JwtAuthGuard);
+        expect(guardsOf(c, m)).toContain(RolesGuard);
+        expect(rolesOf(c, m)).toContain(Role.ADMIN);
+      }
+    });
+  });
+
+  describe('CartController(一审补)', () => {
+    it('类级 JwtAuthGuard+CartOwnerGuard', () => {
+      expect(guardsOf(CartController)).toContain(JwtAuthGuard);
+      expect(guardsOf(CartController)).toContain(CartOwnerGuard);
+    });
+  });
+
+  describe('CacheController(一审补)', () => {
+    const c = CacheController.prototype;
+
+    it('写路由 flush/reset 挂 admin', () => {
+      for (const m of ['resetStats', 'flushByTag']) {
+        if (typeof (c as any)[m] !== 'function') continue;
+        expect(guardsOf(c, m)).toContain(RolesGuard);
+        expect(rolesOf(c, m)).toContain(Role.ADMIN);
+      }
+    });
   });
 
   describe('NotificationController', () => {
@@ -89,22 +121,29 @@ describe('授权接线锁（装饰器元数据断言）', () => {
       expect(guardsOf(NotificationController)).toContain(JwtAuthGuard);
       expect(guardsOf(c, 'createNotification')).toContain(RolesGuard);
       expect(rolesOf(c, 'createNotification')).toContain(Role.ADMIN);
-      // handler 归属的静态证据: 控制器源码包含比对逻辑(运行时三态由冒烟覆盖)
-      const src = NotificationController.prototype.getNotification.toString();
-      expect(src).toContain('user?.sub');
-      expect(NotificationController.prototype.getNotifications.toString()).toContain(
-        'user?.sub',
-      );
+      // 一审补: test/bulk 群发面同样入锁
+      for (const m of ['testNotification', 'sendBulkNotifications']) {
+        if (typeof (c as any)[m] !== 'function') continue;
+        expect(guardsOf(c, m)).toContain(RolesGuard);
+        expect(rolesOf(c, m)).toContain(Role.ADMIN);
+      }
+      // 一审修复(2026-10-03): 原 toString 文本锁可被一行注释骗过——改行为锁(直调断言 403)
+      // 详见 notification-behavior.spec.ts(本目录)
     });
   });
 
   describe('SearchController 写面', () => {
     const c = SearchController.prototype;
 
-    it('history 需登录, popular 注入需 admin', () => {
+    it('history 需登录, popular 注入需 admin; 管理面 switch/reinitialize/deleteCache 全 admin(一审补)', () => {
       expect(guardsOf(c, 'recordSearchHistory')).toContain(JwtAuthGuard);
       expect(guardsOf(c, 'addPopularSearchTerm')).toContain(RolesGuard);
       expect(rolesOf(c, 'addPopularSearchTerm')).toContain(Role.ADMIN);
+      for (const m of ['switchSearchEngine', 'reinitializeSearchEngine', 'clearSearchCache']) {
+        if (typeof (c as any)[m] !== 'function') continue;
+        expect(guardsOf(c, m)).toContain(RolesGuard);
+        expect(rolesOf(c, m)).toContain(Role.ADMIN);
+      }
     });
   });
 

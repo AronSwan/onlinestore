@@ -607,7 +607,7 @@ describe('OrdersController', () => {
   describe('PUT /orders/:id', () => {
     it('should update order successfully', async () => {
       const updateOrderDto = {
-        status: 'processing',
+        status: 'processing' as any, // 一审适配: 该字面量非合法枚举值(测 update 透传路径)
       };
 
       const existingOrder = {
@@ -657,7 +657,7 @@ describe('OrdersController', () => {
     it('should throw error for non-existent order', async () => {
       jest.spyOn(ordersService, 'update').mockRejectedValue(new Error('订单不存在'));
 
-      const updateDto = { status: 'processing' };
+      const updateDto = { status: 'processing' as any }; // 一审适配: 非法状态字面量(测拒绝路径)
 
       await expect(controller.update(999, updateDto)).rejects.toThrow(new Error('订单不存在'));
     });
@@ -694,7 +694,7 @@ describe('OrdersController', () => {
       jest.spyOn(ordersService, 'findById').mockResolvedValue(existingOrder);
 
       const invalidUpdateDto = {
-        status: 'invalid_status',
+        status: 'invalid_status' as any, // 非法枚举字面量(测拒绝)
       };
 
       jest.spyOn(ordersService, 'update').mockRejectedValue(new Error('无效的订单状态'));
@@ -747,7 +747,7 @@ describe('OrdersController', () => {
 
       jest.spyOn(ordersService, 'update').mockResolvedValue(updatedOrder);
 
-      const result = await controller.update(1, updateWithImmutableFields);
+      const result = await controller.update(1, updateWithImmutableFields as any); // 不可变字段透传测试(非 DTO 字段)
 
       expect(result.id).toBe(1); // ID should not change
       expect(result.userId).toBe(1); // User ID should not change

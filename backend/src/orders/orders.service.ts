@@ -2,7 +2,7 @@ import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Order } from './entities/order.entity';
-import { CreateOrderData } from './dto/order.dto';
+import { CreateOrderData, UpdateOrderData } from './dto/order.dto';
 import { OrderItem } from './entities/order-item.entity';
 import { Product } from '../products/entities/product.entity';
 import { OrderStatus, PaymentStatus } from './entities/order.entity';
@@ -10,13 +10,6 @@ import { MonitoringService } from '../monitoring/monitoring.service';
 import { OrderEventsService } from '../messaging/order-events.service';
 
 
-export interface UpdateOrderData {
-  status?: OrderStatus;
-  paymentStatus?: PaymentStatus;
-  shippingCompany?: string;
-  trackingNumber?: string;
-  notes?: string;
-}
 
 @Injectable()
 export class OrdersService {
@@ -189,6 +182,11 @@ export class OrdersService {
       order: { createdAt: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
+    });
+    // 一审修复(2026-10-03): admin 列表同样剥离 user.password(此前误将补丁落在
+    // 不加载 user 关系的 findByUserId 上——锚点撞车, 真 findAll 漏剥)
+    orders.forEach((o) => {
+      if (o.user) delete (o.user as any).password;
     });
     const endDb = process.hrtime.bigint();
 

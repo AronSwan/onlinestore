@@ -22,7 +22,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
-import { CreateOrderData } from './dto/order.dto';
+import { CreateOrderData, UpdateOrderData } from './dto/order.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OwnerOrAdminGuard, OwnerParam } from '../common/guards/owner-or-admin.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -186,7 +186,7 @@ export class OrdersController {
       },
     ],
   })
-  update(@Param('id', ParseIntPipe) id: number, @Body() updateOrderData: any) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() updateOrderData: UpdateOrderData) {
     return this.ordersService.update(id, updateOrderData);
   }
 
