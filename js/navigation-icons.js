@@ -28,9 +28,12 @@ class NavigationIconManager {
    */
   bindUserIconClick() {
     // 尝试多种可能的选择器来找到用户图标
-    const userIcon = document.querySelector('button img[src="gucci-style-user-icon.svg"]') || 
-                     document.querySelector('.user-icon img') ||
-                     document.querySelector('[data-user-icon] img');
+    // 求真修复(2026-10-04): P3 导航已改用内联 SVG <a class="site-user-btn">,
+    // 旧 img 选择器全空 → 退化为直接跳 login.html
+    const userIcon = document.querySelector('.site-user-btn') ||
+                     document.querySelector('[data-user-btn]') ||
+                     document.querySelector('.user-icon-btn') ||
+                     document.querySelector('button img[src="gucci-style-user-icon.svg"]');
     
     if (userIcon) {
       console.log('NavigationIconManager: 找到用户图标，绑定点击事件');
@@ -81,7 +84,8 @@ class NavigationIconManager {
       `;
       
       // 添加到DOM
-      const userIcon = document.querySelector('button img[src="gucci-style-user-icon.svg"]');
+      const userIcon = document.querySelector('.site-user-btn') ||
+                       document.querySelector('button img[src="gucci-style-user-icon.svg"]');
       if (userIcon) {
         const userButton = userIcon.parentElement;
         userButton.style.position = 'relative';

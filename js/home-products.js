@@ -57,11 +57,11 @@
       '<div class="relative overflow-hidden mb-6">' +
       picture +
       /* 加入购物袋 pill：卡片底部滑出（类名 .reich-product-action 冻结） */
-      '<button class="reich-product-action" type="button" aria-label="将' + name + '加入购物袋" data-add-to-cart="true" data-product-id="' + id8 + '" data-product-sku-id="' + id8 + '" data-product-name="' + encodeURIComponent(name) + '" data-product-price="' + price + '" data-product-pic="' + encodeURIComponent(jpg) + '">' +
+      '<button class="reich-product-action" type="button" aria-label="将' + name + '加入购物袋" data-add-to-cart="true" data-product-id="' + id8 + '" data-product-sku-id="' + id8 + '" data-product-name="' + encodeURIComponent(name) + '" data-product-price="' + priceNum + '" data-product-pic="' + encodeURIComponent(jpg) + '">' +
       '加入购物袋' +
       '</button>' +
       /* 心愿单小 pill（wishlist.js 冻结选择器：.reich-product-action 内 img[src*="heart-icon"]） */
-      '<button class="reich-product-action reich-heart-pill" type="button" aria-label="收藏' + name + '" data-add-to-cart="true" data-product-id="' + id8 + '" data-product-sku-id="' + id8 + '" data-product-name="' + encodeURIComponent(name) + '" data-product-price="' + price + '" data-product-pic="' + encodeURIComponent(jpg) + '">' +
+      '<button class="reich-product-action reich-heart-pill" type="button" aria-label="收藏' + name + '" data-add-to-cart="true" data-product-id="' + id8 + '" data-product-sku-id="' + id8 + '" data-product-name="' + encodeURIComponent(name) + '" data-product-price="' + priceNum + '" data-product-pic="' + encodeURIComponent(jpg) + '">' +
       '<img src="heart-icon.svg" alt="" width="14" height="14">' +
       '</button>' +
       '</div>' +
@@ -78,7 +78,7 @@
       '<a href="#featured-collections" class="inline-block text-[var(--candy-blush-ink)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">' +
       '来看看 <svg class="ml-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 12h16"/><path d="m13 5 7 7-7 7"/></svg>' +
       '</a>' +
-      '<button class="btn-pill btn-pill-primary" type="button" aria-label="将' + name + '加入购物袋" data-add-to-cart="true" data-product-id="' + id8 + '" data-product-sku-id="' + id8 + '" data-product-name="' + encodeURIComponent(name) + '" data-product-price="' + price + '" data-product-pic="' + encodeURIComponent(jpg) + '">' +
+      '<button class="btn-pill btn-pill-primary" type="button" aria-label="将' + name + '加入购物袋" data-add-to-cart="true" data-product-id="' + id8 + '" data-product-sku-id="' + id8 + '" data-product-name="' + encodeURIComponent(name) + '" data-product-price="' + priceNum + '" data-product-pic="' + encodeURIComponent(jpg) + '">' +
       '加入购物袋' +
       '</button>' +
       '</div>' +
@@ -111,8 +111,8 @@
         '<img src="' + jpg + '" alt="Reich ' + name + '" class="w-full object-cover reich-product-image"' +
         ' loading="lazy" decoding="async" itemprop="image" width="800" height="1067">' +
         '</picture>' +
-        '<button class="reich-product-action" type="button" aria-label="将' + name + '加入购物袋" data-add-to-cart="true" data-product-id="' + id8 + '" data-product-sku-id="' + id8 + '" data-product-name="' + encodeURIComponent(name) + '" data-product-price="' + price + '" data-product-pic="' + encodeURIComponent(jpg) + '">加入购物袋</button>' +
-        '<button class="reich-product-action reich-heart-pill" type="button" aria-label="收藏' + name + '" data-add-to-cart="true" data-product-id="' + id8 + '" data-product-sku-id="' + id8 + '" data-product-name="' + encodeURIComponent(name) + '" data-product-price="' + price + '" data-product-pic="' + encodeURIComponent(jpg) + '">' +
+        '<button class="reich-product-action" type="button" aria-label="将' + name + '加入购物袋" data-add-to-cart="true" data-product-id="' + id8 + '" data-product-sku-id="' + id8 + '" data-product-name="' + encodeURIComponent(name) + '" data-product-price="' + priceNum + '" data-product-pic="' + encodeURIComponent(jpg) + '">加入购物袋</button>' +
+        '<button class="reich-product-action reich-heart-pill" type="button" aria-label="收藏' + name + '" data-add-to-cart="true" data-product-id="' + id8 + '" data-product-sku-id="' + id8 + '" data-product-name="' + encodeURIComponent(name) + '" data-product-price="' + priceNum + '" data-product-pic="' + encodeURIComponent(jpg) + '">' +
         '<img src="heart-icon.svg" alt="" width="14" height="14">' +
         '</button>' +
         '</div>' +
@@ -129,7 +129,7 @@
         '<a href="#featured-collections" class="inline-block text-[var(--candy-blush-ink)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">' +
         '来看看 <svg class="ml-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 12h16"/><path d="m13 5 7 7-7 7"/></svg>' +
         '</a>' +
-        '<button class="btn-pill btn-pill-primary" type="button" aria-label="将' + name + '加入购物袋" data-add-to-cart="true" data-product-id="' + id8 + '" data-product-sku-id="' + id8 + '" data-product-name="' + encodeURIComponent(name) + '" data-product-price="' + price + '" data-product-pic="' + encodeURIComponent(jpg) + '">加入购物袋</button>' +
+        '<button class="btn-pill btn-pill-primary" type="button" aria-label="将' + name + '加入购物袋" data-add-to-cart="true" data-product-id="' + id8 + '" data-product-sku-id="' + id8 + '" data-product-name="' + encodeURIComponent(name) + '" data-product-price="' + priceNum + '" data-product-pic="' + encodeURIComponent(jpg) + '">加入购物袋</button>' +
         '</div>' +
         '<meta itemprop="description" content="' + desc + '">' +
         '<meta itemprop="brand" content="Reich">' +

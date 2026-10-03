@@ -17,7 +17,7 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://reich.com/">
     <meta property="og:title" content="Reich — 2025 秋冬系列，到货了">
-    <meta property="og:description" content="总有一只先背。女士手袋、男士西装、小配饰——慢慢挑，不着急。">
+    <meta property="og:description" content="总有一只先<span class="hero-accent">背</span>。女士手袋、男士西装、小配饰——慢慢挑，不着急。">
     <meta property="og:image" content="https://reich.com/images/og/og-image.jpg">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
@@ -642,12 +642,14 @@
             
             // 异步检测Casdoor可用性
             async function checkCasdoorAvailability() {
+                // 求真修复(2026-10-04): fetch door.casdoor.com 跨域 CORS 拒绝 → console 红错
+                // 改走后端同源探测(后端 GET /api/auth/casdoor/login 302→Casdoor, 存在即真)
                 try {
                     const response = await fetch('/api/auth/casdoor/login', {
-                        method: 'HEAD', // 使用HEAD请求减少网络开销
-                        credentials: 'include'
+                        method: 'HEAD',
+                        redirect: 'manual'
                     });
-                    casdoorAvailable = response.ok;
+                    casdoorAvailable = response.status >= 200 && response.status < 400;
                 } catch (error) {
                     console.log('Casdoor服务不可用:', error.message);
                     casdoorAvailable = false;

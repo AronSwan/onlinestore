@@ -74,6 +74,7 @@
   --radius-md: 12px;               /* 小卡 */
   --radius-pill: 999px;            /* 全部主 CTA */
   --radius-full: 50%;
+  --radius-xl: 16px;
   /* 旧名兼容映射 */
   --border-radius-sm: var(--radius-sm);
   --border-radius-md: var(--radius-md);

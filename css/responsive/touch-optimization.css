@@ -25,27 +25,24 @@ select,
 textarea,
 .clickable,
 .product-action-btn,
-.reich-product-action,
-.nav-link-luxury,
-.btn-luxury,
-.user-icon-btn,
-.cart-button,
-.btn-login,
-.action-btn {
-  /* 确保触摸区域至少为44x44像素（iOS建议的最小触摸区域） */
-  min-height: 44px;
-  min-width: 44px;
-  /* 优化触摸性能 */
-  touch-action: manipulation;
-  /* 禁用长按菜单和文本选择 */
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  user-select: none;
-  /* 添加触摸反馈 */
-  -webkit-tap-highlight-color: rgba(209, 77, 103, 0.3);
-  /* 确保元素在触摸时不会半透明 */
-  -webkit-opacity: 1;
-  opacity: 1;
+@media (hover: none), (pointer: coarse) {
+  .reich-product-action,
+  .nav-link-luxury,
+  .btn-luxury,
+  .user-icon-btn,
+  .cart-button,
+  .btn-login,
+  .action-btn {
+      min-height: 44px;
+      min-width: 44px;
+      touch-action: manipulation;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: rgba(209, 77, 103, 0.3);
+      -webkit-opacity: 1;
+      opacity: 1;
+  }
 }
 
 /* 特殊处理小图标按钮 */

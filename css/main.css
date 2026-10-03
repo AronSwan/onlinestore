@@ -275,7 +275,7 @@ body {
 .stagger-item {
     opacity: 0;
     transform: translateY(12px);
-    animation: fadeUp 0.4s ease-in-out backwards; /* backwards: 不锁终态, hover 可改 transform */
+    animation: fadeUp 0.4s ease-in-out both; /* backwards: 不锁终态, hover 可改 transform */
 }
 
 .stagger-item:nth-child(1) { animation-delay: 0ms; }
@@ -3668,4 +3668,22 @@ body {
 .user-profile-icon:hover {
     transform: scale(1.05);
     filter: brightness(1.1);
+}
+
+/* 求美修复(2026-10-04): hero Signature Moment——candy 色波浪下划线全站唯一记忆点 */
+.hero-accent {
+  position: relative;
+  color: var(--candy-blush-ink);
+}
+.hero-accent::after {
+  content: '';
+  position: absolute;
+  bottom: 0.05em;
+  left: 0;
+  width: 100%;
+  height: 0.08em;
+  background: var(--candy-blush);
+  opacity: 0.6;
+  z-index: -1;
+  border-radius: 2px;
 }

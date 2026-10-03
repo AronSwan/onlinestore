@@ -221,7 +221,8 @@ class OrderManager {
             if (!raw) return null;
             const rawItems = Array.isArray(raw.items) ? raw.items : [];
             const items = rawItems.map(item => {
-                const price = Number(item.price) || 0;
+                // 求真修复(2026-10-04): 后端字段是 unitPrice/unit_price 而非 price——兼容
+                const price = Number(item.price ?? item.unitPrice ?? item.unit_price) || 0;
                 const quantity = Number(item.quantity) || 1;
                 return {
                     id: item.id || item.itemId || '',

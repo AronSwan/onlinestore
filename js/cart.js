@@ -49,7 +49,9 @@ class CartManager {
     if (isLoggedIn) {
       try {
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-        const response = await fetch('/api/cart', {
+        // 求真修复(2026-10-04): /api/cart 根路由不存在(只有 /api/cart/items/:customerUserId)
+      // → 404 轮询每页一次 console 警告。本地优先模式下不再请求根路由。
+      const response = await fetch('/api/cart/items/' + (this.getUserId() || 'guest'), {
           method: 'GET',
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -375,6 +377,11 @@ class CartManager {
     });
   }
 
+  // 求真修复(2026-10-04): /api/cart 轮询路径的用户 ID
+  getUserId() {
+    return localStorage.getItem('userId') || sessionStorage.getItem('userId') || '';
+  }
+
   // 保留现有方法：绑定事件
   bindEvents() {
     // 保留现有事件绑定逻辑
@@ -405,6 +412,9 @@ class CartManager {
         productPrice = productPrice || (card.querySelector('.reich-product-price [itemprop=price], .reich-product-price') || {}).textContent || '';
         productPrice = parseFloat(String(productPrice).replace(/[^\d.]/g, '')) || 0;
         productPic = productPic || ((card.querySelector('.reich-product-image') || {}).src || '');
+        // 求真修复(2026-10-04): home-products.js 用 encodeURIComponent 存 name/pic——解码
+        try { productName = decodeURIComponent(productName); } catch(e) {}
+        try { productPic = decodeURIComponent(productPic); } catch(e) {}
       }
     }
     return {

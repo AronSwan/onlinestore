@@ -17,6 +17,7 @@ import {
   HttpStatus,
   UseGuards,
   NotImplementedException,
+  Request,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 
@@ -87,6 +88,13 @@ export class UsersController {
   // 兼容测试：提供无装饰器的别名方法
   async create(createUserDto: CreateUserDto): Promise<UserResponseDto> {
     return this.createUser(createUserDto);
+  }
+
+  // 求真修复(2026-10-04): /api/users/profile 是前端 profile-manager.js 的真实调用路径,
+  // 若声明在 @Get(':id') 之后会被 ':id' 抢先匹配("profile"被当用户 id 403 踢人)
+  @Get('profile')
+  getProfile(@Request() req: Record<string, any>) {
+    return { user: req.user };
   }
 
   @Get(':id')

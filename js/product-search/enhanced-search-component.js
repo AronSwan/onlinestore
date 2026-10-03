@@ -348,7 +348,9 @@ async fetchSearchSuggestions(query) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
-    const data = await response.json();
+    const rawData = await response.json();
+    // 求真修复(2026-10-04): 后端返回数组或 {suggestions:[...]}——兼容两形状
+    const data = { suggestions: Array.isArray(rawData) ? rawData : (rawData.suggestions || rawData.items || []) };
     
     // 更新状态
     this.state.searchSuggestions = data.suggestions || [];
@@ -711,10 +713,9 @@ async performSearch(query) {
       return;
     }
 
-    // 如果没有热门搜索数据，则加载
-    if (!this.state.popularSearches || this.state.popularSearches.length === 0) {
-      await this.loadPopularSearches();
-    }
+    // 求真修复(2026-10-04): loadPopularSearches → showPopularSearches →
+    // 空数据时再调 loadPopularSearches = 无限互调至栈溢出。
+    // load 调用方已保证有数据(或 mock); 空数据显示提示即可, 不再回调 load。
 
     // 清空容器
     this.elements.popularSearches.innerHTML = '';
