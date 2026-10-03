@@ -44,7 +44,7 @@
     "globals": "^13.24.0",
     "mocha": "^11.7.2",
     "playwright": "^1.55.0",
-    "postcss-preset-env": "^10.4.0",
+    "postcss-preset-env": "^11.5.4",
     "puppeteer": "^24.22.3",
     "puppeteer-core": "^24.22.3",
     "sharp": "^0.33.5",
