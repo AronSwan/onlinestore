@@ -86,7 +86,9 @@ class CartManager {
     await this.updateSvgCartIcons(total);
     
     // 新增：初始化CartUI组件（如果页面需要）
-    if (this.shouldInitCartUI()) {
+    // !this.cartUI 守卫：showCart() 可能已按需懒创建过 CartUI，
+    // 这里再建会出现第二个浮层 DOM
+    if (!this.cartUI && this.shouldInitCartUI()) {
       this.cartUI = new CartUI(this);
     }
   }
@@ -241,6 +243,63 @@ class CartManager {
     return this.cart
       .filter(item => item.selected)
       .reduce((total, item) => total + (item.productPrice * item.productQuantity), 0);
+  }
+
+  // 新增：设置单个商品勾选状态（cartUI 渲染的 checkbox onchange 调用，
+  // 此前该方法不存在，勾选即 TypeError——三层断裂之一）
+  setItemSelected(productSkuId, selected) {
+    const item = this.cart.find(item => item.productSkuId === productSkuId);
+    if (!item) {
+      console.warn('setItemSelected: 商品不存在于购物车中', productSkuId);
+      return false;
+    }
+    
+    item.selected = Boolean(selected);
+    
+    // 本地持久化
+    this.saveCart();
+    
+    // 同步到服务端（内部 try/catch，失败仅 console.error，静默降级）
+    this.syncToServer();
+    
+    // 通知监听器（cartUI 据此重渲染勾选态与已选合计）
+    this.notifyListeners('selectionChanged', { item });
+    
+    return true;
+  }
+
+  // 新增：清空所有勾选（selected=true）的商品
+  async clearSelectedItems() {
+    const removedItems = this.cart.filter(item => item.selected);
+    if (removedItems.length === 0) {
+      return [];
+    }
+    
+    this.cart = this.cart.filter(item => !item.selected);
+    
+    // 本地持久化
+    this.saveCart();
+    
+    // 同步到服务端（静默降级同上）
+    await this.syncToServer();
+    
+    // 更新图标徽章
+    await this.initCartUI();
+    
+    // 通知监听器（cartUI 重渲染列表与合计）
+    this.notifyListeners('selectedItemsCleared', { removedItems });
+    
+    return removedItems;
+  }
+
+  // 新增：公开打开购物车浮层的统一入口。外部（navigation-icons.js 的
+  // 购物袋图标等）此前直调管理器上并不存在的弹窗方法导致恒跳首页——
+  // 三层断裂之一。cartUI 是本实例属性但按页条件创建，这里按需懒建后委托。
+  showCart() {
+    if (!this.cartUI) {
+      this.cartUI = new CartUI(this);
+    }
+    this.cartUI.show();
   }
 
   // 保留现有方法：保存购物车
@@ -462,6 +521,26 @@ class CartUI {
         this.hide();
       }
     });
+    
+    // 去结算按钮：此前只管理 disabled 态、零点击绑定（纯装饰）。
+    // 演示环境未开通结算/下单后端，诚实提示，不做假跳转
+    if (this.elements.checkoutBtn) {
+      this.elements.checkoutBtn.addEventListener('click', () => {
+        this.showNotification('结算功能未开通：演示环境暂不支持下单');
+      });
+    }
+    
+    // 清空选中按钮：移除所有 selected=true 的商品并重渲染
+    if (this.elements.clearSelectedBtn) {
+      this.elements.clearSelectedBtn.addEventListener('click', async () => {
+        try {
+          await this.cartManager.clearSelectedItems();
+        } catch (error) {
+          console.error('清空选中商品失败:', error);
+          this.showNotification('清空选中商品失败，请重试', 'error');
+        }
+      });
+    }
   }
 
   /**
@@ -474,6 +553,8 @@ class CartUI {
         case 'itemRemoved':
         case 'quantityUpdated':
         case 'cartCleared':
+        case 'selectionChanged':
+        case 'selectedItemsCleared':
           this.updateCartDisplay();
           break;
       }
@@ -485,6 +566,9 @@ class CartUI {
    */
   show() {
     if (this.elements.cartOverlay) {
+      // 打开前先按当前购物车状态渲染：浮层可能是刚懒创建的，
+      // 不先渲染会误显示"购物车为空"
+      this.updateCartDisplay();
       this.elements.cartOverlay.style.display = 'block';
       setTimeout(() => {
         this.elements.cartOverlay.classList.add('visible');
@@ -620,6 +704,37 @@ class CartUI {
       el.textContent = total;
       el.style.display = total > 0 ? 'block' : 'none';
     });
+  }
+
+  /**
+   * 轻量提示 toast（对齐 F5-min 诚实 UI 语义）
+   * 说明：cart.js 页面（index/orders）未加载 login-utils.js，
+   * LoginUtils.showNotification 不可用，故自写内联样式 toast；
+   * z-index 取 11000，确保盖在 .cart-overlay（z-index:1000）之上
+   */
+  showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = 'cart-toast-notification';
+    notification.setAttribute('role', 'status');
+    notification.textContent = message;
+    notification.style.cssText = [
+      'position:fixed',
+      'top:24px',
+      'right:24px',
+      'z-index:11000',
+      'padding:12px 24px',
+      'border-radius:8px',
+      'color:#fff',
+      'font-size:14px',
+      'box-shadow:0 4px 16px rgba(0,0,0,0.2)',
+      type === 'error' ? 'background-color:#c0392b' : 'background-color:#1a1a1a',
+      'max-width:320px'
+    ].join(';');
+    
+    document.body.appendChild(notification);
+    
+    // 3秒后自动移除
+    setTimeout(() => notification.remove(), 3000);
   }
 }
 

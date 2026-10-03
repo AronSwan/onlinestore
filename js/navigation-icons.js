@@ -174,13 +174,16 @@ class NavigationIconManager {
    * 处理购物车图标点击事件
    */
   handleCartIconClick() {
-    // 如果已存在购物车管理器实例，则调用其方法
-    if (window.cartManager && typeof window.cartManager.showCartModal === 'function') {
-      window.cartManager.showCartModal();
-    } else {
-      // 否则跳回首页（首页加载了 cart.js，可查看购物车；cart.html 页面不存在）
-      window.location.href = '/';
+    // cart.js 暴露 window.cartManager（CartManager 实例），公开入口是
+    // showCart()：内部按需创建 cartUI 并打开购物车浮层。
+    // 此前误调管理器上并不存在的方法，条件恒为假，图标点击恒跳首页
+    if (window.cartManager && typeof window.cartManager.showCart === 'function') {
+      window.cartManager.showCart();
+      return;
     }
+    // 未加载 cart.js 的页面（如 login.html）：回首页查看购物车
+    // （cart.html 页面不存在）
+    window.location.href = '/';
   }
 
   /**
