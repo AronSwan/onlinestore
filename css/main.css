@@ -308,9 +308,9 @@ body {
    P6 · 超窄屏（≤380px）修补：hero 文案不溢出、大写标签可断词、跑马灯不撑宽页面
    ========================================================================== */
 @media (max-width: 380px) {
-    /* hero 主标题降一号（Tailwind text-4xl=36px 在 375px 略挤），副标同步收缩 */
+    /* hero 主标题 32px（"总有一只先背。"仅 7 字，360-380px 屏放 2rem 不溢出），副标同步收缩 */
     #hero-heading {
-        font-size: 1.75rem;
+        font-size: 2rem;
     }
 
     #hero-heading + p {

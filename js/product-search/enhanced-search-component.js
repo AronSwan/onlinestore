@@ -379,13 +379,13 @@ async fetchSearchSuggestions(query) {
 getMockSuggestions(query) {
   const allSuggestions = [
     '皮革手袋', '帆布包', '迷你包', '托特包', '斜挎包',
-    '丝质围巾', '羊毛围巾', '棉质围巾', '印花围巾', '冬季围巾',
-    '太阳镜', '光学眼镜', '阅读眼镜', '运动眼镜', '复古眼镜',
-    '经典香水', '淡香水', '男士香水', '女士香水', '限量版香水',
-    '男士西装', '休闲西装', '商务西装', '燕尾服', '定制西装',
-    '女士手表', '男士手表', '智能手表', '机械手表', '石英手表',
-    '珠宝首饰', '项链', '耳环', '手镯', '戒指',
-    '高跟鞋', '平底鞋', '运动鞋', '靴子', '凉鞋'
+    '凯莉包', '波士顿包', '褶皱手袋', '迷你链条包', '翻盖链条包',
+    '链条包', '手提包', '单肩包', '信封包', '水桶包',
+    '马鞍包', '云朵包', '腋下包', '法棍包', '手拿包',
+    '粒面皮', '光面皮', '印花皮革', '糖果色', '渐变褶皱',
+    '通勤包', '约会包', '银色链条', '粉色链条包', '湖蓝手提包',
+    '花语手提包', '复古包', '漆皮包', '编织包', '小方包',
+    '双肩包', '帆布托特', '迷你斜挎', '心形扣', '圆环扣'
   ];
 
   // 根据查询过滤建议
@@ -451,13 +451,13 @@ async loadPopularSearches() {
 getMockPopularSearches() {
   return [
     { term: '皮革手袋', count: 125 },
-    { term: '丝质围巾', count: 98 },
-    { term: '太阳镜', count: 76 },
-    { term: '经典香水', count: 65 },
-    { term: '男士西装', count: 54 },
-    { term: '女士手表', count: 43 },
-    { term: '珠宝首饰', count: 32 },
-    { term: '高跟鞋', count: 28 }
+    { term: '凯莉包', count: 98 },
+    { term: '波士顿包', count: 76 },
+    { term: '褶皱手袋', count: 65 },
+    { term: '迷你链条包', count: 54 },
+    { term: '翻盖链条包', count: 43 },
+    { term: '托特包', count: 32 },
+    { term: '斜挎包', count: 28 }
   ];
 }
 
@@ -977,68 +977,68 @@ getMockSearchResults(query, filters = {}) {
   const allProducts = [
     {
       id: 'prod-001',
-      name: '经典皮革手袋',
+      name: '渐变褶皱手袋',
       category: '手袋',
-      price: 5800,
-      originalPrice: 6800,
+      price: 299,
+      originalPrice: null,
       image: 'images/products/product-1.jpg',
-      description: '采用顶级意大利皮革制作，经典设计，永恒优雅。',
+      description: '绿到橙再到紫，渐变在褶皱上慢慢晕开，紫红提手一拎就走。',
       rating: 4.8,
       reviewCount: 124,
       inStock: true,
-      tags: ['皮革', '手袋', '经典']
+      tags: ['渐变', '褶皱', '手袋']
     },
     {
       id: 'prod-002',
-      name: '丝质印花围巾',
-      category: '围巾',
-      price: 1200,
+      name: '花语皮革手提包',
+      category: '手提包',
+      price: 229,
       originalPrice: null,
       image: 'images/products/product-5.jpg',
-      description: '100%真丝材质，手工印花，轻盈柔软。',
+      description: '棕榈叶与粉花朵开在蓝波浪纹上，银色大圆环一拎就走。',
       rating: 4.6,
       reviewCount: 89,
       inStock: true,
-      tags: ['丝质', '围巾', '印花']
+      tags: ['印花', '手提包', '花语']
     },
     {
       id: 'prod-003',
-      name: '限量版太阳镜',
-      category: '眼镜',
-      price: 3200,
+      name: '湖蓝凯莉手提包',
+      category: '手提包',
+      price: 189,
       originalPrice: null,
       image: 'images/products/product-3.jpg',
-      description: '限量版设计，防UV镜片，时尚与功能并重。',
+      description: '湖蓝色光面皮革，白色矩形锁扣配一点金色五金。',
       rating: 4.9,
       reviewCount: 67,
       inStock: true,
-      tags: ['太阳镜', '限量版', '防UV']
+      tags: ['凯莉包', '手提包', '湖蓝']
     },
     {
       id: 'prod-004',
-      name: '经典香水',
-      category: '香水',
-      price: 1800,
-      originalPrice: 2100,
+      name: '双色糖果链条包',
+      category: '斜挎包',
+      price: 168,
+      originalPrice: null,
       image: 'images/products/product-4.jpg',
-      description: '经典香调，持久留香，展现独特魅力。',
+      description: '薄荷绿与樱花粉各一只，挂在银色链条上晒太阳。',
       rating: 4.7,
       reviewCount: 156,
       inStock: true,
-      tags: ['香水', '经典', '持久']
+      tags: ['链条包', '斜挎包', '糖果色']
     },
     {
       id: 'prod-005',
-      name: '男士商务西装',
-      category: '服装',
-      price: 8800,
+      name: '黑皮波士顿包',
+      category: '手提包',
+      price: 259,
       originalPrice: null,
       image: 'images/products/product-2.jpg',
-      description: '精剪裁，高级面料，展现男士优雅气质。',
+      description: '黑色粒面皮革，双提手加一道皮带扣，精神又稳当。',
       rating: 4.5,
       reviewCount: 43,
       inStock: true,
-      tags: ['西装', '商务', '男士']
+      tags: ['手提包', '波士顿包', '皮革']
     }
   ];
 

@@ -296,11 +296,11 @@ class OrderManager {
     generateMockOrders() {
         const statuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
         const products = [
-            { name: '女士手袋系列', price: 8800, image: 'images/products/product-1.jpg' },
-            { name: '男士西装系列', price: 12500, image: 'images/products/product-2.jpg' },
-            { name: '奢华配饰系列', price: 5200, image: 'images/products/product-3.jpg' },
-            { name: '经典香水', price: 1200, image: 'images/products/product-4.jpg' },
-            { name: '丝巾系列', price: 2800, image: 'images/products/product-5.jpg' }
+            { name: '渐变褶皱手袋', price: 299, image: 'images/products/product-1.jpg' },
+            { name: '黑皮波士顿包', price: 259, image: 'images/products/product-2.jpg' },
+            { name: '湖蓝凯莉手提包', price: 189, image: 'images/products/product-3.jpg' },
+            { name: '双色糖果链条包', price: 168, image: 'images/products/product-4.jpg' },
+            { name: '花语皮革手提包', price: 229, image: 'images/products/product-5.jpg' }
         ];
         
         const orders = [];

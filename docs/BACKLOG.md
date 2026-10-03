@@ -27,6 +27,7 @@
 
 - **假遥测与卫生债（已知不修）**：logAuditLog 伪 id/getAuditLogs 恒空、MetricsInterceptor 双注册、时序攻击空壳测试×2、security-monitoring 四端点硬编码 success:true、新旧 CacheService 双轨、D8 僵尸命令四件（config:generate/file:.. 自引用/PM2 入口漂移/scripts 包边界）、webpack 生产 source-map、孤儿模块四控制器（见 safety.md 支付行警示）
 - **挂账区（产品决策类，永不自动开工）**：logout 服务端令牌黑名单 / verify-code 邮件 provider 选型 / 实体收敛触发器（真实 MySQL 部署时） / register 返回语义（201+token vs 纯 201）/ 中文用户名支持
+- **审美轮挂账（2026-10-04 审美改进组+审计组记录）**：① 导航"男士"入口 7 处（index/orders/profile/login/_header-template）指向 index.html，站点已无男士品类——入口可点通、非死链，去留属产品决策；② seed id1 spec"头层牛皮"图不可证（不矛盾，备案）；③ js/product-search/product-search-manager.js 未接线死代码（无任何页面引用），其 mock 词表（智能手表/蓝牙耳机等）不到达用户，随死代码清理批次处理；④ jest 44-46 个环境依赖型失败（Redis/OpenObserve 类）在 HEAD 既有，专项处理
 
 ## 若真要接手（非承诺）
 

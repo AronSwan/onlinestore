@@ -89,11 +89,12 @@
     );
   }
 
-  /* 回退卡：原 index.html 硬编码 3 卡的等价副本（P1 真图路径 + P2 pill 结构） */
+  /* 回退卡：原 index.html 硬编码 3 卡的等价副本（P1 真图路径 + P2 pill 结构）。
+     文案与 scripts/seed-products.sql 逐字一致（求真·名实相符，只写图里看得见的）。 */
   var FALLBACK_HTML = [
-    ['00000001', 'images/products/product-1.jpg', '渐变褶皱手袋', 299, '新到', '手袋', 'Reich 渐变褶皱手袋，粉到金的渐变慢慢晕开，本季的心头颜色。'],
-    ['00000002', 'images/products/product-2.jpg', '柠檬黄小圆筒包', 259, '心头好', '手袋', 'Reich 柠檬黄小圆筒包，黑色皮革配一面大胆的黄，通勤也俏皮。'],
-    ['00000003', 'images/products/product-3.jpg', '蓝白织纹托特包', 189, '经典款', '手袋', 'Reich 蓝白织纹托特包，装得下电脑和好心情，慢慢用很多年。']
+    ['00000001', 'images/products/product-1.jpg', '渐变褶皱手袋', 299, '新到', '手袋', '绿到橙再到紫，渐变在褶皱上慢慢晕开，紫红提手一拎就走。像把傍晚的天色收进包里，慢慢挑。'],
+    ['00000002', 'images/products/product-2.jpg', '黑皮波士顿包', 259, '心头好', '手提包', '黑色粒面皮革，双提手加一道皮带扣，精神又稳当。装得下手机、口红和一句俏皮话，通勤路上的老搭档。'],
+    ['00000003', 'images/products/product-3.jpg', '湖蓝凯莉手提包', 189, '经典款', '手提包', '湖蓝色光面皮革，白色矩形锁扣配一点金色五金。拎在手上，像拎着一小片晴天。']
   ]
     .map(function (row) {
       var id8 = row[0];
@@ -111,8 +112,8 @@
         '<img src="' + jpg + '" alt="Reich ' + name + '" class="w-full object-cover reich-product-image"' +
         ' loading="lazy" decoding="async" itemprop="image" width="800" height="1067">' +
         '</picture>' +
-        '<button class="reich-product-action" type="button" aria-label="将' + name + '加入购物袋" data-add-to-cart="true" data-product-id="' + id8 + '" data-product-sku-id="' + id8 + '" data-product-name="' + encodeURIComponent(name) + '" data-product-price="' + priceNum + '" data-product-pic="' + encodeURIComponent(jpg) + '">加入购物袋</button>' +
-        '<button class="reich-product-action reich-heart-pill" type="button" aria-label="收藏' + name + '" data-add-to-cart="true" data-product-id="' + id8 + '" data-product-sku-id="' + id8 + '" data-product-name="' + encodeURIComponent(name) + '" data-product-price="' + priceNum + '" data-product-pic="' + encodeURIComponent(jpg) + '">' +
+        '<button class="reich-product-action" type="button" aria-label="将' + name + '加入购物袋" data-add-to-cart="true" data-product-id="' + id8 + '" data-product-sku-id="' + id8 + '" data-product-name="' + encodeURIComponent(name) + '" data-product-price="' + price + '" data-product-pic="' + encodeURIComponent(jpg) + '">加入购物袋</button>' +
+        '<button class="reich-product-action reich-heart-pill" type="button" aria-label="收藏' + name + '" data-add-to-cart="true" data-product-id="' + id8 + '" data-product-sku-id="' + id8 + '" data-product-name="' + encodeURIComponent(name) + '" data-product-price="' + price + '" data-product-pic="' + encodeURIComponent(jpg) + '">' +
         '<img src="heart-icon.svg" alt="" width="14" height="14">' +
         '</button>' +
         '</div>' +
@@ -129,7 +130,7 @@
         '<a href="#featured-collections" class="inline-block text-[var(--candy-blush-ink)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">' +
         '来看看 <svg class="ml-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 12h16"/><path d="m13 5 7 7-7 7"/></svg>' +
         '</a>' +
-        '<button class="btn-pill btn-pill-primary" type="button" aria-label="将' + name + '加入购物袋" data-add-to-cart="true" data-product-id="' + id8 + '" data-product-sku-id="' + id8 + '" data-product-name="' + encodeURIComponent(name) + '" data-product-price="' + priceNum + '" data-product-pic="' + encodeURIComponent(jpg) + '">加入购物袋</button>' +
+        '<button class="btn-pill btn-pill-primary" type="button" aria-label="将' + name + '加入购物袋" data-add-to-cart="true" data-product-id="' + id8 + '" data-product-sku-id="' + id8 + '" data-product-name="' + encodeURIComponent(name) + '" data-product-price="' + price + '" data-product-pic="' + encodeURIComponent(jpg) + '">加入购物袋</button>' +
         '</div>' +
         '<meta itemprop="description" content="' + desc + '">' +
         '<meta itemprop="brand" content="Reich">' +
