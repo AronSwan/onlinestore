@@ -657,3 +657,14 @@
     border: 1px solid var(--text-secondary);
   }
 }
+/* 审计整改(2026-10-03): CartUI 生成的条目级类名(.item-*)与本文件词表(.cart-item-*)
+   错位 8 处——补别名对齐, 商品行从毛坯恢复样式 */
+.item-image { grid-area: image; }
+.cart-items-list .item-image,
+.cart-item-image { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; }
+.cart-items-list .item-details { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.cart-items-list .item-name { font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cart-items-list .item-price { font-size: 14px; color: #1a1a1a; font-weight: 600; }
+.cart-items-list .item-remove { background: none; border: none; color: #999; cursor: pointer; padding: 4px 8px; border-radius: 4px; font-size: 18px; line-height: 1; }
+.cart-items-list .item-remove:hover { color: #c3392f; background: #fdf0ef; }
+.cart-items-list .item-checkbox { width: 18px; height: 18px; accent-color: #c3392f; cursor: pointer; }

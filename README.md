@@ -66,14 +66,14 @@ docker compose up -d frontend backend   # 3) 起服务，入口 http://localhost
 
 ## 测试
 
-- 后端：`cd backend && npm run test:unit`（958 个用例 / 52 个套件，2026-10-02 本机全绿，可复跑）
+- 后端：`cd backend && npm run test:unit`（988 个用例 / 52 个套件，2026-10-02 本机全绿，可复跑）
 - 冒烟自测：`bash scripts/smoke.sh`（需后端已在本机运行，默认 3000 端口，`PORT=xxxx` 可指定；覆盖 健康检查 → 注册 → 登录 → 带凭据购物车 → 匿名 401 → 错误密码 401）
 - 后端安全检查：全新 clone 后需先 `cp backend/.env.test.example backend/.env.test`（`npm run security:check:test` 依赖该文件，`.env.test` 不入库）
 - 前端：`npm test`（Playwright，部分用例需要后端在本地运行）
 
 ## 已知限制与改进路线
 
-- 已验证可用的后端链路：健康检查、注册、登录、购物车（参数化路由 `/api/cart/items/{sub}`，挂 `JwtAuthGuard` + `CartOwnerGuard`）、订单——经 958 项单测与 `scripts/smoke.sh` 冒烟验证；差距集中在前端接通与下列各项。
+- 已验证可用的后端链路：健康检查、注册、登录、购物车（参数化路由 `/api/cart/items/{sub}`，挂 `JwtAuthGuard` + `CartOwnerGuard`）、订单——经 988 项单测与 `scripts/smoke.sh` 冒烟验证；差距集中在前端接通与下列各项。
 - 支付为演示态：策略层 TODO，未接真实网关；回调验签 fail-closed。
 - 购物车前端同步未打通：后端购物车的 `customerUserId` 键即认证用户 JWT `sub`（有意决策，越权 403）；差距在前端——`js/cart.js` 仍在调用不存在的 `/api/cart` 根路由，失败后静默回退本地存储。接通需按 `/api/cart/items/{sub}` 契约改造前端（携带认证令牌，body 需 `productSkuId` 等 SKU 域字段）。
 - AI 助手是规则式演示代码，与页面未接线，无后端会话支持。

@@ -73,7 +73,7 @@ class CartManager {
   async initCartUI() {
     // 保留现有购物车图标更新功能
     const total = this.getTotalItems();
-    const countEls = document.querySelectorAll('.cart-count');
+    const countEls = document.querySelectorAll('.cart-count, #cart-badge, #cart-count');
     if (countEls && countEls.length) {
       countEls.forEach(el => {
         el.textContent = total;
@@ -327,6 +327,8 @@ class CartManager {
 
   // 保留现有方法：同步到服务端
   async syncToServer() {
+    // 审计标注(2026-10-03): 本方法调用的 GET/POST /api/cart 根路由在后端不存在(只有
+    // /api/cart/items/:customerUserId 参数化路由)——服务端同步是静默降级的本地优先模式, 详见 README 已知限制
     const isLoggedIn = localStorage.getItem('userLoggedIn') === 'true' || sessionStorage.getItem('userLoggedIn') === 'true';
     
     if (!isLoggedIn) {
@@ -698,7 +700,7 @@ class CartUI {
    */
   updateCartBadge() {
     const total = this.cartManager.getTotalItems();
-    const badgeEls = document.querySelectorAll('.cart-badge, .cart-count');
+    const badgeEls = document.querySelectorAll('.cart-badge, .cart-count, #cart-badge, #cart-count');
     
     badgeEls.forEach(el => {
       el.textContent = total;

@@ -159,6 +159,9 @@
 - **修法**：三件套逐段修绿（npm ci 可复现 → tsc → jest 单测）；Dependabot 迁移 v1 config.yml → `.github/dependabot.yml` v2 格式后删除旧文件；Renovate 三修（按当前 schema 校验：废弃 preset 如 config:base、无效字段、失效账号/排期类）；badge 与真实工作流逐一核真（死了的摘除）；secrets-check 挂入必过 job。
 - **验证**：ci.yml 全绿；badge 与 actions 实况一致；两份依赖更新配置通过各自官方校验。
 
+### 前端 Playwright 套件修复（反诈组发现，2026-10-03）· 【S】
+- 5 个 spec 硬编码 5173 开发端口 vs 配置的 preview 4173；basic-navigation 标题断言过期（标题在 remediation 之前的 7016f2e 已改）。均为先存环境/断言漂移，非回归。
+
 ### 前端 SPA 死链（反诈实践席 P3，2026-10-03）· 【S】
 - 4 个 HTML 共 28 条导航/页脚链接指向不存在页面（/about /privacy /terms /collections/* 等）——静态托管下 404。处置：补页面/nginx try_files/改指现存页，三选一。
 - 顺带：safety.md CORS 行补一句"生效白名单以 backend/.env 的 CORS_ORIGINS 为准（main.ts 里的 3000/5173 是无 .env 时的兜底）"。
