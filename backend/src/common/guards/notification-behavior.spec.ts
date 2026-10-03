@@ -43,13 +43,17 @@ describe('通知归属行为锁(一审修复)', () => {
     );
   });
 
-  it('单条: 本人/admin 放行; 不存在 404', async () => {
+  it('单条: 本人/admin 放行', async () => {
     const c = makeController(makeService({ id: 9, userId: 22 }));
     await expect((c as any).getNotification(9, owner)).resolves.toMatchObject({ id: 9 });
     await expect((c as any).getNotification(9, admin)).resolves.toMatchObject({ id: 9 });
-    const c2 = makeController(makeService(null));
-    await expect((c as any).getNotification(99, owner)).resolves.toBeTruthy(); // null→404 分支
-    await expect((c2 as any).getNotification(99, owner)).rejects.toBeInstanceOf(
+  });
+
+  it('单条: 不存在(服务返回 null)→404', async () => {
+    // 反诈组量刑(2026-10-03): 原第4用例有一行装饰性断言(mock 恒返非 null 却注释
+    // 称测 404 分支)——删除, 只留真测 null 路径的断言
+    const c = makeController(makeService(null));
+    await expect((c as any).getNotification(99, owner)).rejects.toBeInstanceOf(
       NotFoundException,
     );
   });

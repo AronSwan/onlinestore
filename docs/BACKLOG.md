@@ -159,6 +159,10 @@
 - **修法**：三件套逐段修绿（npm ci 可复现 → tsc → jest 单测）；Dependabot 迁移 v1 config.yml → `.github/dependabot.yml` v2 格式后删除旧文件；Renovate 三修（按当前 schema 校验：废弃 preset 如 config:base、无效字段、失效账号/排期类）；badge 与真实工作流逐一核真（死了的摘除）；secrets-check 挂入必过 job。
 - **验证**：ci.yml 全绿；badge 与 actions 实况一致；两份依赖更新配置通过各自官方校验。
 
+### 前端 SPA 死链（反诈实践席 P3，2026-10-03）· 【S】
+- 4 个 HTML 共 28 条导航/页脚链接指向不存在页面（/about /privacy /terms /collections/* 等）——静态托管下 404。处置：补页面/nginx try_files/改指现存页，三选一。
+- 顺带：safety.md CORS 行补一句"生效白名单以 backend/.env 的 CORS_ORIGINS 为准（main.ts 里的 3000/5173 是无 .env 时的兜底）"。
+
 ### D2 · 依赖漏洞分批升级 【M-L】
 - **批 1 已完成（2026-10-03）**：8 个直接生产依赖清零公告（axios 1.20.0 / typeorm 0.3.31 / mysql2 3.24.5 / joi 18.2.9 / @nestjs core+common+platform-express 11.1.18→解析为 11.2.7 / swagger 11.2.7→解析为 11.4.7）+ 顶层 js-yaml override ^4.1.1。**遗留**：@nestjs/swagger 内嵌 js-yaml@5.3.0（moderate，GHSA-r3ph-w7gj-g6xm merge-key CPU DoS——swagger 仅 dump 不 load，实际不可达；一审核实）——npm 嵌套 override 对直接依赖不生效，且该路径仅解析自产 OpenAPI 文档，非攻击者可控，接受风险挂账至 swagger 发版。
 - **批 2（待做）**：4 个 critical 间接依赖的载体升级——protobufjs←otel 系（sdk-node 0.222）、tar←sqlite3 6.0.1、fast-xml-parser←@types/nodemailer（迁 devDeps 即消）、handlebars←ts-jest；semver-major 逐个过专属冒烟。
