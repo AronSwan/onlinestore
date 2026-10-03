@@ -6,7 +6,7 @@ on:
       - 'backend/**'
       - '.github/workflows/backend-lint.yml'
   push:
-    branches: [ main ]
+    branches: [ master ]
     paths:
       - 'backend/**'
 

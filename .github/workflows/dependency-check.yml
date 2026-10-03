@@ -5,13 +5,14 @@ on:
     # 每周一早上 8 点运行
     - cron: '0 8 * * 1'
   push:
-    branches: [ main, develop ]
+    branches: [ master ]
   pull_request:
-    branches: [ main ]
+    branches: [ master ]
   workflow_dispatch: # 允许手动触发
 
 permissions:
   contents: read
+  issues: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -51,14 +52,12 @@ jobs:
       run: |
         echo "=== 前端安全审计 ==="
         npm audit --audit-level=moderate
-      continue-on-error: true
       
     - name: 后端安全审计
       run: |
         echo "=== 后端安全审计 ==="
         cd backend
         npm audit --audit-level=moderate
-      continue-on-error: true
       
     - name: 检查过时依赖
       run: |

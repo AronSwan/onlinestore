@@ -2,9 +2,9 @@ name: Docker Configuration Validation
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ master ]
   pull_request:
-    branches: [ main ]
+    branches: [ master ]
 
 jobs:
   docker-validation:
