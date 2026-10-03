@@ -29,7 +29,7 @@ jobs:
     
     steps:
     - name: 检出代码
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       
     - name: 设置 Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
@@ -157,7 +157,7 @@ jobs:
     
     steps:
     - name: 检出代码
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       
     - name: 设置 Node.js
       uses: actions/setup-node@v4
@@ -189,7 +189,7 @@ jobs:
     
     steps:
     - name: 检出代码
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       
     - name: 依赖审查
       uses: actions/dependency-review-action@v4

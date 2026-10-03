@@ -28,7 +28,7 @@ jobs:
       matrix:
         node-version: [18.x, 20.x]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -60,7 +60,7 @@ jobs:
     if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Detect docs-related changes
         id: changes
@@ -302,7 +302,7 @@ jobs:
         shell: pwsh
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -335,7 +335,7 @@ jobs:
       matrix:
         node-version: [18.x, 20.x]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
@@ -381,7 +381,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
@@ -409,7 +409,7 @@ jobs:
         shell: pwsh
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -444,7 +444,7 @@ jobs:
     timeout-minutes: 30
     needs: [unit-tests, integration-tests]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -515,7 +515,7 @@ jobs:
     timeout-minutes: 20
     environment: staging
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup kubectl
         uses: azure/setup-kubectl@v3
@@ -539,7 +539,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.RUN_E2E == 'true'
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
@@ -586,7 +586,7 @@ jobs:
         shell: pwsh
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -636,7 +636,7 @@ jobs:
     timeout-minutes: 30
     environment: production
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup kubectl
         uses: azure/setup-kubectl@v3
