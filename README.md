@@ -84,6 +84,7 @@ docker compose up -d frontend backend   # 3) 起服务，入口 http://localhost
 
 ## 安全提示
 
+- **安全规则总账**：[`docs/safety.md`](docs/safety.md)——每条规则的确切代码落点与锁（规则→文件映射，参照 Anthropic commerce-agents 的 safety 文档体例）。
 - 仓库内所有 `.env*` 文件均为消毒后的模板：`.env.example` 与 `.env.test` 类模板使用 `test_password` / `your_*` 类占位符，其余已消毒文件使用 `CHANGE_ME_*` 占位符（键与非敏感配置保留）。**生产部署必须通过环境注入真实密钥**：`JWT_SECRET`（≥32 字符）、`ENCRYPTION_KEY`（32 字节）、数据库 / Redis / 监控密码等。
 - `.gitignore` 已收口：`**/.env.*`（保留 `*.env.example` 类模板例外）、`*.sqlite`、`backend/data/*.db`、`*.sarif`、Jest 运行结果等不再入库。
 - 历史提交中仍可能残留旧的密钥或数据文件；若仓库公开，请另行审计 git 历史（不在本 README 范围内）。
