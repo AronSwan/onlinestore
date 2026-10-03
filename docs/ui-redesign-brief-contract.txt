@@ -1,0 +1,1 @@
+images/products/product-{1..8}.{webp,jpg} + images/hero/hero-main.{webp,jpg} + images/og/og-image.jpg; mainImage 路径格式: /images/products/product-N.jpg

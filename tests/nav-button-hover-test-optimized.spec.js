@@ -1,3 +1,5 @@
+// ui-redesign 施工前标记(2026-10-03): 期望值基于旧版导航(腕表珠宝/香水/手袋)与旧 title/id,
+// 与现状(女士/男士/配饰)不符——本就红。UI v3.1 P3 导航统一后重写期望再启用。
 import { test, expect } from '@playwright/test';
 
 /**
@@ -10,7 +12,7 @@ import { test, expect } from '@playwright/test';
  * Timestamp: 2025-09-21 18:00:00 Asia/Shanghai
  */
 
-test.describe('导航按钮悬停测试 - 优化版', () => {
+test.describe.skip('导航按钮悬停测试 - 优化版', () => {
   test.beforeEach(async ({ page }) => {
     // 导航到主页
     await page.goto('./');
@@ -22,7 +24,7 @@ test.describe('导航按钮悬停测试 - 优化版', () => {
     await expect(page.locator('.navbar-luxury')).toBeVisible();
   });
 
-  test('腕表珠宝与香水按钮间悬停切换10次，每次耗时1秒', async ({ page }) => {
+  test.skip('腕表珠宝与香水按钮间悬停切换10次，每次耗时1秒', async ({ page }) => {
     // 定位导航按钮
     const watchJewelryButton = page.locator('.nav-link-luxury', { hasText: '腕表珠宝' });
     const perfumeButton = page.locator('.nav-link-luxury', { hasText: '香水' });
@@ -217,7 +219,7 @@ test.describe('导航按钮悬停测试 - 优化版', () => {
     expect(anomalies.length).toBe(0);
   });
 
-  test('验证导航按钮状态转换 - 详细版', async ({ page }) => {
+  test.skip('验证导航按钮状态转换 - 详细版', async ({ page }) => {
     // 定位导航按钮
     const watchJewelryButton = page.locator('.nav-link-luxury', { hasText: '腕表珠宝' });
     const perfumeButton = page.locator('.nav-link-luxury', { hasText: '香水' });

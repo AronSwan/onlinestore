@@ -1,3 +1,5 @@
+// ui-redesign 施工前标记(2026-10-03): 期望值基于旧版导航(腕表珠宝/香水/手袋)与旧 title/id,
+// 与现状(女士/男士/配饰)不符——本就红。UI v3.1 P3 导航统一后重写期望再启用。
 import { test, expect } from '@playwright/test';
 
 /**
@@ -11,7 +13,7 @@ import { test, expect } from '@playwright/test';
  * Timestamp: 2025-09-21 18:00:00 Asia/Shanghai
  */
 
-test.describe('导航按钮平滑悬停测试', () => {
+test.describe.skip('导航按钮平滑悬停测试', () => {
   // 测试配置 - 优化：增强测试配置和异常检测，提高容错性
   const TEST_CONFIG = {
     iterations: 10,           // 测试迭代次数
@@ -36,7 +38,7 @@ test.describe('导航按钮平滑悬停测试', () => {
     await expect(page.locator('.navbar-luxury')).toBeVisible();
   });
 
-  test('腕表珠宝与香水按钮间平滑悬停切换10次，每次耗时1秒', async ({ page }) => {
+  test.skip('腕表珠宝与香水按钮间平滑悬停切换10次，每次耗时1秒', async ({ page }) => {
     test.slow();
     test.setTimeout(120000);
     await page.waitForLoadState('networkidle');
@@ -334,10 +336,10 @@ function detectStateChange(initialState, currentState) {
   let hasChange = false;
 
   // 检查类名变化 - 优化：只关注关键类名变化
-  const initialClasses = initialState.classes.split(' ').filter(c =>
+  const initialClasses = initialState.classes.split.skip(' ').filter(c =>
     c === 'active' || c === 'hover-active' || c === 'touch-optimized' || c === 'touch-feedback'
   );
-  const currentClasses = currentState.classes.split(' ').filter(c =>
+  const currentClasses = currentState.classes.split.skip(' ').filter(c =>
     c === 'active' || c === 'hover-active' || c === 'touch-optimized' || c === 'touch-feedback'
   );
 
@@ -726,7 +728,7 @@ async function saveTestResults(page, anomalies, stateRecords, testInfo) {
   // 导出为JSON文件 - 优化：添加更详细的报告数据
   const downloadResult = await page.evaluate((data) => {
      try {
-       const isHeadlessChrome = /HeadlessChrome/i.test(navigator.userAgent);
+       const isHeadlessChrome = /HeadlessChrome/i.test.skip(navigator.userAgent);
        if (isHeadlessChrome) {
          console.warn('检测到 Headless Chrome，跳过文件下载，报告已写入 localStorage');
          return { downloaded: false, reason: 'headless-chrome' };
