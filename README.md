@@ -1,7 +1,3 @@
-[![CI](https://github.com/AronSwan/onlinestore/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/AronSwan/onlinestore/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/AronSwan/onlinestore/actions/workflows/codeql-analysis.yml/badge.svg?branch=master)](https://github.com/AronSwan/onlinestore/actions/workflows/codeql-analysis.yml)
-[![依赖安全检查](https://github.com/AronSwan/onlinestore/actions/workflows/dependency-check.yml/badge.svg?branch=master)](https://github.com/AronSwan/onlinestore/actions/workflows/dependency-check.yml)
-[![SBOM & 签名](https://github.com/AronSwan/onlinestore/actions/workflows/sbom-sign.yml/badge.svg?branch=master)](https://github.com/AronSwan/onlinestore/actions/workflows/sbom-sign.yml)
 
 # Reich 在线商店（电商演示项目）
 
@@ -76,7 +72,7 @@ docker compose up -d frontend backend   # 3) 起服务，入口 http://localhost
 
 ## 测试
 
-- 后端：`cd backend && npm run test:unit`（988 个用例 / 52 个套件，2026-10-02 本机全绿，可复跑）
+- 后端：`cd backend && npm run test:unit`（988 个用例 / 56 个套件，2026-10-03 本机全绿，可复跑
 - 冒烟自测：`bash scripts/smoke.sh`（需后端已在本机运行，默认 3000 端口，`PORT=xxxx` 可指定；覆盖 健康检查 → 注册 → 登录 → 带凭据购物车 → 匿名 401 → 错误密码 401）
 - 后端安全检查：全新 clone 后需先 `cp backend/.env.test.example backend/.env.test`（`npm run security:check:test` 依赖该文件，`.env.test` 不入库）
 - 前端：`npm test`（Playwright，部分用例需要后端在本地运行）

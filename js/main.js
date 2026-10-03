@@ -9,7 +9,7 @@
 // 作者：AI助手
 // 时间：2025-09-25 16:02:15
 // 用途：提供导航栏交互效果，包括悬停、点击、触摸和滚动响应
-// 依赖文件：无（navigation-state-manager.js 已于 2026-10-03 归档至 js/_archive/）
+// 依赖文件：无（navigation-state-manager.js 已移出工作树，见 git 历史）
 // 导入触摸优化模块
 import { cleanupTouchOptimization } from './touch-optimization.js';
 

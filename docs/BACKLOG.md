@@ -6,6 +6,14 @@
 
 ## 不修项
 
+**开放安全项（有缓解、未根治——fork 接手者优先看）**：
+- Casdoor OAuth state 用 Math.random 且回调不验 state（auth-proxy.service.ts）——IdP 未接通属休眠，接通前必须先修
+- user 实体 password 列无 select:false、全局无 ClassSerializerInterceptor（热路径已在 service 层剥离缓解）；js/auth.js 仍有密码框 DOM console.log
+- log-analytics SQL 字符串拼接注入面（已收 admin-only 缓解，参数化未做）
+- Swagger 非生产默认开且 openapi.json 落盘；日志 query 脱敏未做；CSRF 模板占位符原样存活
+- gopay Dockerfile COPY .env* 入镜像层；nginx 安全头/TLS 未做；workflows 全裸 tag 未锁 SHA
+- Tailwind CDN 无 SRI（同页 font-awesome 有，反差自证）
+
 - **支付未接线**：策略层 fail-closed（缺签名/验签失败即拒），无真实网关对接
 - **前端购物车服务端同步**：`js/cart.js` 调 `/api/cart` 根路由（不存在），本地优先模式（见 safety.md 标注）
 - **首页"加入购物袋"按钮无数据源**：购物车内容经订单页"再来一单"或控制台填充
