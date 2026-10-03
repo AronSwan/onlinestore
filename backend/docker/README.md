@@ -5,21 +5,19 @@
 ## 📚 文档导航
 
 ### 总领文档
-- **[Docker 部署指南](../../docs/archive/README-DOCKER.md)** - 完整的Docker部署和使用说明（总领文档，已归档）
+- Docker 部署指南（历史文档已移出工作树，见 git 历史 docs/archive/README-DOCKER.md）
 
 ### 后端Docker配置文档
-- **[Docker配置优化指南](../docs/archive/DOCKER_OPTIMIZATION_GUIDE.md)** - 详细的优化过程和最佳实践
-- **[Docker配置优化总结](../docs/archive/DOCKER_OPTIMIZATION_SUMMARY.md)** - 优化成果和效果总结
+
+
 
 ### 后端Docker快速参考
 - **[当前文档 - Docker使用说明](README.md)** - 简化的使用说明和快速开始
 
 ### 文档关系图
 ```
-../../docs/archive/README-DOCKER.md (总领文档，已归档)
+（历史归档已移出工作树）
     ↓
-    ├── ../docs/archive/DOCKER_OPTIMIZATION_GUIDE.md (详细优化指南)
-    ├── ../docs/archive/DOCKER_OPTIMIZATION_SUMMARY.md (优化总结)
     └── README.md (当前文档 - 快速使用说明)
 ```
 
@@ -194,4 +192,4 @@ docker-compose logs -f service_name
 
 ## 更多信息
 
-详细的优化指南和最佳实践请参考 [`../docs/archive/DOCKER_OPTIMIZATION_GUIDE.md`](../docs/archive/DOCKER_OPTIMIZATION_GUIDE.md)。
+详细的优化指南（历史文档已移出工作树，见 git 历史）。

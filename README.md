@@ -5,9 +5,19 @@
 
 # Reich 在线商店（电商演示项目）
 
-> ⚠️ **演示项目，请勿原样部署**：本仓库为学习/演示用途的电商原型。支付未接线（回调验签 fail-closed）、鉴权为演示级（部分管理接口仅挡匿名）、依赖存在已知未修复漏洞（见 `docs/BACKLOG.md`）、e2e 测试不维护。生产部署前必须完成 BACKLOG 全部 P1 项并轮换全部密钥。
+> ⚠️ **演示项目，无人维护，请勿原样部署**：本仓库为学习/演示用途的电商原型。支付未接线（回调验签 fail-closed）；后端核心链路经多轮审计与 988 项单测验证（见下方"验证"三命令，任何人可复跑）；已知不修事项见 `docs/BACKLOG.md`（已知不修清单，非路线图）。
 
 静态 HTML/JS 前端 + NestJS 后端的电商演示站，用于功能演示与工程实践。不含真实支付通道与商户能力。
+
+## 验证（三条命令，任何人可复跑）
+
+```bash
+cd backend && npx tsc --noEmit -p tsconfig.json && npx tsc --noEmit -p tsconfig.spec.json && npm run test:unit
+cd backend && npm run build && PORT=3000 node dist/src/main.js &   # 另开终端: bash scripts/smoke.sh
+python3 scripts/check-frontend-assets.py
+```
+
+依赖审计：`cd backend && npm audit --package-lock-only --omit=dev`（当前：22 项 / 0 critical / 8 high）。
 
 ## 当前状态
 
@@ -56,9 +66,9 @@ docker compose up -d frontend backend   # 3) 起服务，入口 http://localhost
 ├── index.html / login.html / orders.html / profile.html   # 静态页面
 ├── js/  css/  images/                                     # 前端资源
 ├── backend/                # NestJS 后端（src/ 按模块划分：auth、products、cart、orders、payment、health 等）
-│   ├── docs/               # 后端现行文档；docs/archive/ 为历史报告归档
+│   ├── docs/               # 后端现行文档
 │   └── data/               # SQLite 库文件（仅本地，不入库）
-├── docs/                   # 项目文档；archive/ 为历史归档（含 k8s 清单、17 套 compose 变体与一次性部署脚本）
+├── docs/                   # 项目文档（safety.md 安全规则总账、BACKLOG 已知不修清单）
 ├── docker-compose.yml / docker-compose.local.yml / docker-compose.openobserve.yml   # 现行编排仅此三套（frontend / backend / postgres / redis / nginx-lb 等）
 ├── docker/  scripts/       # 运行配置与运维脚本（冒烟自测：scripts/smoke.sh）
 └── tests/                  # Playwright 前端测试
@@ -78,9 +88,8 @@ docker compose up -d frontend backend   # 3) 起服务，入口 http://localhost
 - 购物车前端同步未打通：后端购物车的 `customerUserId` 键即认证用户 JWT `sub`（有意决策，越权 403）；差距在前端——`js/cart.js` 仍在调用不存在的 `/api/cart` 根路由，失败后静默回退本地存储。接通需按 `/api/cart/items/{sub}` 契约改造前端（携带认证令牌，body 需 `productSkuId` 等 SKU 域字段）。
 - AI 助手是规则式演示代码，与页面未接线，无后端会话支持。
 - 监控栈（Prometheus / Grafana / OpenObserve）只有配置与编排，未部署。
-- 部署残骸已归档：`backend/k8s/`（清单存在 secretKeyRef 键名 / 探针路径 / namespace 三重缺陷，`kubectl apply` 无法运行，修复方案见 `docs/BACKLOG.md`）与 17 套 compose 变体、12 个一次性部署/验证脚本已移至 `docs/archive/k8s/` 与 `docs/archive/deployments/`，仅作历史参考；根目录仅保留 `docker-compose.yml`（主）、`docker-compose.local.yml`、`docker-compose.openobserve.yml` 三套。
-- 大量历史过程文档（优化报告、修复记录、方案稿）已移入 `docs/archive/` 与 `backend/docs/archive/`，仅作历史参考，不代表当前系统行为，其中的相对链接可能失效。
-- 仍保留在原位的专项文档：`README-SEARCH.md`、`README-K8S-SEARCH.md`（历史搜索方案文档，其对应的 k8s 清单已随 `backend/k8s/` 归档至 `docs/archive/k8s/`），以及 `docs/`、`backend/docs/` 下的现行文档。
+- 部署残骸（缺陷 k8s 清单、17 套 compose 变体、一次性部署脚本）与全部历史过程文档已从工作树移除——git 历史（提交 6e55ecc/90a1cd8 及本仓库 log）可完整追溯；根目录仅保留 `docker-compose.yml`（主）、`docker-compose.local.yml`、`docker-compose.openobserve.yml` 三套。
+- 仍保留在原位的专项文档：`README-SEARCH.md`、`README-K8S-SEARCH.md`（历史搜索方案文档），以及 `docs/`、`backend/docs/` 下的现行文档。
 
 ## 安全提示
 
