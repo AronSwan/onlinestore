@@ -1,0 +1,162 @@
+/* ============================================================
+   Reich UI v3.1 · 唯一设计令牌源（ui-redesign P0）
+   合并三套旧令牌（complete-variables / reich-colors / typography）
+   + 清理 131+ 幽灵变量 + 弃用金系 → "大气活泼可爱"方向
+   ============================================================ */
+
+:root {
+  /* ---- 基底 ---- */
+  --bg-base: #FFFFFF;
+  --bg-soft: #FAF9F7;             /* 微暖底（空态/分区底可用） */
+  --ink: #1A202C;                 /* 墨蓝黑（Kate Spade 同源） */
+  --ink-soft: #5A6472;            /* 辅助文字 */
+  --ink-faint: #9CA3AF;           /* 弱化文字 */
+  --line: #E5E2DC;                /* 1px 分隔线 */
+  --line-strong: #D1CCC4;
+
+  /* ---- 糖果一主两备 · 双档制 ---- */
+  --candy-blush-soft: #F9E2EC;    /* 腮红粉淡档 */
+  --candy-blush: #FF6B81;         /* 腮红粉主档（描边/强调） */
+  --candy-blush-ink: #D14D67;     /* 腮红粉文本档 ≥4.5:1 */
+
+  --candy-sun-soft: #FFF3D6;      /* 奶油黄淡档（仅营销区块底） */
+  --candy-sun: #FFD166;           /* 奶油黄主档（禁做白底文本） */
+
+  --candy-mint-soft: #E4F6F0;     /* 薄荷淡档 */
+  --candy-mint: #7BD5C0;          /* 薄荷主档 */
+  --candy-mint-ink: #1F8A70;      /* 薄荷文本档 ≥3:1（大字用） */
+
+  /* ---- 字体 ---- */
+  --font-display: 'Barlow', 'PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei', sans-serif;
+  --font-body: 'Barlow', 'PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei', sans-serif;
+  --font-numeric: 'Barlow Condensed', 'Barlow', 'PingFang SC', sans-serif;
+  /* 旧字体名兼容映射（防止遗漏引用报错） */
+  --font-primary: var(--font-display);
+  --font-secondary: var(--font-body);
+  --font-family-serif: var(--font-display);
+  --font-family-sans-serif: var(--font-body);
+  --font-family-luxury: var(--font-display);
+  --font-luxury: var(--font-display);
+  --font-body-luxury: var(--font-body);
+
+  /* ---- 字号（整体下调一档 + 极端对比） ---- */
+  --text-caption: 0.6875rem;       /* 11px 全大写小标签配字距 */
+  --text-small: 0.8125rem;         /* 13px 辅助 */
+  --text-body: 0.9375rem;          /* 15px 中文正文 */
+  --text-lead: 1.0625rem;          /* 17px 引导 */
+  --text-title: 1.75rem;           /* 28px 区块标题 */
+  --text-hero: clamp(2.25rem, 5vw, 4rem);
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-heavy: 800;
+
+  /* ---- 字距 ---- */
+  --tracking-caps: 0.05em;         /* 全大写小标签（0.4-0.8px ≈ 0.04-0.07em） */
+  --tracking-wide: 0.08em;
+  --tracking-luxury: 0.12em;
+
+  /* ---- 间距（4px 节奏） ---- */
+  --spacing-1: 0.25rem; --spacing-2: 0.5rem; --spacing-3: 0.75rem;
+  --spacing-4: 1rem; --spacing-6: 1.5rem; --spacing-8: 2rem;
+  --spacing-12: 3rem; --spacing-16: 4rem;
+  --space-section: clamp(4rem, 10vw, 9rem);
+  --gutter-grid: 1rem;
+  /* 旧间距名兼容映射 */
+  --spacing-xs: var(--spacing-2); --spacing-sm: var(--spacing-3);
+  --spacing-md: var(--spacing-4); --spacing-lg: var(--spacing-8); --spacing-xl: var(--spacing-12);
+  --spacing-2xl: var(--spacing-16);
+
+  /* ---- 圆角（三档 + pill 单点） ---- */
+  --radius-sm: 4px;                /* 徽章/tag */
+  --radius-md: 12px;               /* 小卡 */
+  --radius-pill: 999px;            /* 全部主 CTA */
+  --radius-full: 50%;
+  /* 旧名兼容映射 */
+  --border-radius-sm: var(--radius-sm);
+  --border-radius-md: var(--radius-md);
+  --border-radius-lg: var(--radius-md);
+  --border-radius-full: var(--radius-full);
+
+  /* ---- 动效（双档 ease-in-out · 禁 overshoot） ---- */
+  --dur-fast: 0.2s;
+  --dur-slow: 0.4s;
+  --ease-lux: ease-in-out;
+  /* 旧名兼容映射 */
+  --transition-fast: 0.2s ease-in-out;
+  --transition-normal: 0.3s ease-in-out;
+  --transition-slow: 0.4s ease-in-out;
+  --transition-standard: 0.2s ease-in-out;
+  --animation-duration-fast: 0.2s;
+  --animation-duration-standard: 0.3s;
+  --animation-duration-slow: 0.4s;
+
+  /* ---- 阴影（低幅度 · 禁金色 glow） ---- */
+  --shadow-sm: 0 1px 3px rgba(26, 32, 44, 0.06);
+  --shadow-md: 0 4px 12px rgba(26, 32, 44, 0.08);
+  --shadow-lg: 0 8px 24px rgba(26, 32, 44, 0.10);
+  --shadow-xl: 0 16px 48px rgba(26, 32, 44, 0.12);
+
+  /* ---- 状态色（细边框标签用 · 禁彩色底块） ---- */
+  --success: #2E7D5B;
+  --warning: #B8860B;
+  --error: #C44B4B;
+  --info: #4A7FB5;
+
+  /* ---- 购物车面板（修复 cart.css 幽灵） ---- */
+  --primary: var(--ink);
+  --primary-dark: #101418;
+  --primary-rgb: 26, 32, 44;
+  --background-primary: #FFFFFF;
+  --background-secondary: var(--bg-soft);
+  --background: var(--bg-base);
+  --background-luxury: var(--bg-soft);
+
+  /* ---- 旧金系 → ink/candy 映射（引用替换后逐步清除） ---- */
+  --gold-standard: var(--ink);
+  --gold-rich: var(--candy-blush-ink);
+  --gold-dark: var(--candy-blush-ink);
+  --gold-pale: var(--candy-blush-soft);
+  --gold-light: var(--candy-blush-soft);
+  --brand-gold: var(--ink);
+  --brand-gold-dark: var(--candy-blush-ink);
+  --brand-gold-light: var(--candy-blush-soft);
+  --gradient-gold: linear-gradient(135deg, var(--ink), var(--ink-soft));
+  --shadow-gold: var(--shadow-md);
+
+  /* ---- 旧暗色系映射（v2 不做暗色模式 · 统一指向亮色） ---- */
+  --dark-elegant: var(--ink);
+  --dark-elegant-soft: var(--ink-soft);
+  --dark-border-medium: var(--line);
+  --dark-bg-primary: var(--bg-base);
+  --dark-bg-secondary: var(--bg-soft);
+
+  /* ---- 杂项兼容映射 ---- */
+  --cream-luxury: var(--bg-soft);
+  --beige-light: var(--bg-soft);
+  --border-default: var(--line);
+  --border-luxury: var(--line);
+  --border-width-1: 1px;
+  --border-width-2: 2px;
+  --text-muted: var(--ink-soft);
+  --text-luxury: var(--ink);
+  --text-primary: var(--ink);
+  --text-secondary: var(--ink-soft);
+  --text-tertiary: var(--ink-faint);
+  --brand-black: var(--ink);
+  --brand-red: var(--candy-blush-ink);
+
+  /* ---- 导航（nav-underline.css fallback 统一） ---- */
+  --nav-text-color: var(--ink);
+  --nav-text-color-hover: var(--candy-blush-ink);
+  --nav-underline-color: var(--candy-blush-ink);
+  --nav-underline-color-hover: var(--candy-blush-ink);
+}
+
+/* ---- 焦点可见性统一（≥3:1 · 2px + 2px offset） ---- */
+:focus-visible {
+  outline: 2px solid var(--candy-blush-ink);
+  outline-offset: 2px;
+}

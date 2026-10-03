@@ -21,60 +21,12 @@ function setupNavigation() {
     hoverClass: 'hover-active',
     scrollOffset: 100,
     scrollThrottle: 100,
-    underline: {
-      delay: 300,      // 下划线延迟调整为300ms
-      duration: 300,   // 下划线动画时长(ms) 
-      color: 'var(--gold-standard)',
-    },
   };
 
   // 职责分离最小修复：如果存在导航状态管理器，则由其唯一负责状态（class/data-state）更新
   // Source: js/navigation-state-manager.js — AI minimal refactor on 2025-09-21 21:40:11 Asia/Shanghai
   // 归档清理(2026-10-03): navigation-state-manager.js 已归档, navStateManager 恒为 undefined
 
-  // 单例样式
-  const NAV_STYLE_ID = 'nav-transition-style';
-  if (!document.getElementById(NAV_STYLE_ID)) {
-    const style = document.createElement('style');
-    style.id = NAV_STYLE_ID;
-    style.textContent = `
-            .nav-link-luxury {
-                transition: all ${config.transitionDuration}ms ease;
-                position: relative;
-                display: inline-block;
-            }
-            .nav-link-luxury.${config.activeClass} {
-                color: var(--gold-standard);
-            }
-            .nav-link-luxury.${config.hoverClass} {
-                color: var(--gold-standard);
-                opacity: 0.8;
-            }
-            .nav-link-luxury::after {
-                content: '';
-                position: absolute;
-                left: 0;
-                bottom: -4px;
-                height: 2px;
-                width: 0;
-                background: var(--gold-standard);
-                transition: 
-                    width 300ms cubic-bezier(0.25, 1, 0.5, 1),
-                    opacity 300ms ease;
-                opacity: 0;
-                z-index: 10;
-                transform-origin: left center;
-                will-change: width, opacity;
-            }
-            .nav-link-luxury.${config.hoverClass}::after,
-            .nav-link-luxury.${config.activeClass}::after {
-                width: 100%;
-                opacity: 1;
-                transition-delay: 0ms; /* 确保下划线动画同步显示 */
-            }
-        `;
-    document.head.appendChild(style);
-  }
 
   // 状态管理 - 统一管理导航状态
   const state = {
@@ -318,12 +270,6 @@ function setupNavigation() {
     navContainer.removeEventListener('touchstart', handleTouchStart, true);
     navContainer.removeEventListener('touchend', handleTouchEnd, true);
     window.removeEventListener('scroll', updateActiveByScroll);
-
-    // 移除样式
-    const style = document.getElementById(NAV_STYLE_ID);
-    if (style) {
-      style.remove();
-    }
 
     // 清除所有状态
     navLinks.forEach((link) => {

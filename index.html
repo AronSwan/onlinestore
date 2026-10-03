@@ -35,7 +35,7 @@
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     
     <!-- 关键资源预加载 -->
-    <link rel="preload" href="css/variables/complete-variables.css" as="style">
+    <link rel="preload" href="css/tokens.css" as="style">
     <link rel="preload" href="css/main.css" as="style">
     <link rel="preload" href="js/navigation.js" as="script">
     <link rel="preload" href="images/hero/hero-main.jpg" as="image" type="image/jpeg">
@@ -48,7 +48,10 @@
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin>
     <!-- CSS变量系统 - 必须在其他样式之前加载 -->
-    <link rel="stylesheet" href="css/variables/complete-variables.css">
+    <link rel="preload" href="fonts/barlow-700.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="fonts/barlow-400.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="fonts/fonts.css">
+    <link rel="stylesheet" href="css/tokens.css">
     <!-- 主样式表 -->
     <link rel="stylesheet" href="css/main.css">
     <!-- 购物车浮层样式（cart.js CartUI 动态创建 .cart-overlay） -->
