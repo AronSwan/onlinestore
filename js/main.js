@@ -9,7 +9,7 @@
 // 作者：AI助手
 // 时间：2025-09-25 16:02:15
 // 用途：提供导航栏交互效果，包括悬停、点击、触摸和滚动响应
-// 依赖文件：navigation-state-manager.js（通过window.navStateManager使用）
+// 依赖文件：无（navigation-state-manager.js 已于 2026-10-03 归档至 js/_archive/）
 // 导入触摸优化模块
 import { cleanupTouchOptimization } from './touch-optimization.js';
 
@@ -30,7 +30,7 @@ function setupNavigation() {
 
   // 职责分离最小修复：如果存在导航状态管理器，则由其唯一负责状态（class/data-state）更新
   // Source: js/navigation-state-manager.js — AI minimal refactor on 2025-09-21 21:40:11 Asia/Shanghai
-  const hasNavManager = typeof window !== 'undefined' && window.navStateManager;
+  // 归档清理(2026-10-03): navigation-state-manager.js 已归档, navStateManager 恒为 undefined
 
   // 单例样式
   const NAV_STYLE_ID = 'nav-transition-style';
@@ -103,16 +103,13 @@ function setupNavigation() {
     };
   };
 
-  // 事件处理（职责分离：存在 navStateManager 时委托给其方法，不直接改动 class）
+  // 事件处理（navigation-state-manager.js 已归档, 全部直接处理）
   const handleClick = (e) => {
     const link = e.target.closest('.nav-link-luxury');
     if (!link) {return;}
     
     // 始终委托给状态管理器处理点击事件
-    if (hasNavManager && window.navStateManager && typeof window.navStateManager.handleClick === 'function') {
-      window.navStateManager.handleClick({ currentTarget: link, preventDefault: () => e.preventDefault() });
-      return;
-    }
+/* 归档清理(2026-10-03): navStateManager 死分支已随 navigation-state-manager.js 归档移除 */
 
     e.preventDefault();
     
@@ -148,10 +145,7 @@ function setupNavigation() {
     if (!link) {return;}
 
     // 始终委托给状态管理器处理悬停事件
-    if (hasNavManager && window.navStateManager && typeof window.navStateManager.handleMouseEnter === 'function') {
-      window.navStateManager.handleMouseEnter({ currentTarget: link });
-      return;
-    }
+/* 归档清理(2026-10-03): navStateManager 死分支已随 navigation-state-manager.js 归档移除 */
 
     // 如果没有状态管理器，使用基本的状态管理逻辑
     // 清除所有延迟
@@ -179,10 +173,7 @@ function setupNavigation() {
     if (!link) {return;}
 
     // 委托给状态管理器处理悬停结束事件
-    if (hasNavManager && window.navStateManager && typeof window.navStateManager.handleMouseLeave === 'function') {
-      window.navStateManager.handleMouseLeave({ currentTarget: link });
-      return;
-    }
+/* 归档清理(2026-10-03): navStateManager 死分支已随 navigation-state-manager.js 归档移除 */
 
     // 如果没有状态管理器，使用基本的状态管理逻辑
     // 立即恢复状态，不使用延迟 - 统一管理状态
@@ -202,10 +193,7 @@ function setupNavigation() {
     const link = e.target.closest('.nav-link-luxury');
     if (!link) {return;}
 
-    if (hasNavManager && window.navStateManager && typeof window.navStateManager.handleTouchStart === 'function') {
-      window.navStateManager.handleTouchStart({ currentTarget: link });
-      return;
-    }
+/* 归档清理(2026-10-03): navStateManager 死分支已随 navigation-state-manager.js 归档移除 */
 
     // 触摸开始时的处理逻辑
     link.classList.add(config.hoverClass);
@@ -216,10 +204,7 @@ function setupNavigation() {
     const link = e.target.closest('.nav-link-luxury');
     if (!link) {return;}
 
-    if (hasNavManager && window.navStateManager && typeof window.navStateManager.handleTouchEnd === 'function') {
-      window.navStateManager.handleTouchEnd({ currentTarget: link });
-      return;
-    }
+/* 归档清理(2026-10-03): navStateManager 死分支已随 navigation-state-manager.js 归档移除 */
 
     // 触摸结束时的处理逻辑
     setTimeout(() => {

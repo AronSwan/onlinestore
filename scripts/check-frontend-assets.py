@@ -188,6 +188,8 @@ def main() -> int:
     css_root = REPO_ROOT / CSS_DIR
     if css_root.exists():
         for css_path in sorted(css_root.rglob("*.css")):
+            if any(part in JS_EXCLUDE_DIRS for part in css_path.relative_to(REPO_ROOT).parts):
+                continue  # css/_archive/ 同为归档死代码
             for ref, target in sorted(collect_css_refs(css_path).items()):
                 checked += 1
                 if not target.exists():
