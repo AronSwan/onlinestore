@@ -165,7 +165,7 @@
 
 ### D2 · 依赖漏洞分批升级 【M-L】
 - **批 1 已完成（2026-10-03）**：8 个直接生产依赖清零公告（axios 1.20.0 / typeorm 0.3.31 / mysql2 3.24.5 / joi 18.2.9 / @nestjs core+common+platform-express 11.1.18→解析为 11.2.7 / swagger 11.2.7→解析为 11.4.7）+ 顶层 js-yaml override ^4.1.1。**遗留**：@nestjs/swagger 内嵌 js-yaml@5.3.0（moderate，GHSA-r3ph-w7gj-g6xm merge-key CPU DoS——swagger 仅 dump 不 load，实际不可达；一审核实）——npm 嵌套 override 对直接依赖不生效，且该路径仅解析自产 OpenAPI 文档，非攻击者可控，接受风险挂账至 swagger 发版。
-- **批 2（待做）**：4 个 critical 间接依赖的载体升级——protobufjs←otel 系（sdk-node 0.222）、tar←sqlite3 6.0.1、fast-xml-parser←@types/nodemailer（迁 devDeps 即消）、handlebars←ts-jest；semver-major 逐个过专属冒烟。
+- **批 2 已完成（2026-10-03）**：otel sdk-node 0.205→0.222 + auto-instr 0.64→0.80 + otlp-http exporter 0.222（三个一起，单独升 sdk-node 会留下旧 grpc exporter 树）；sqlite3 5.1.7→6.0.1（tar 载体）；protobufjs 顶层 overrides ^7.6.5（grpc/proto-loader 载体，7.6.6 实装）。**生产树 critical 4→0、漏洞 127→22**。988/988 维持+启动下单冒烟过。fast-xml-parser/handlebars 已随批 3 前置移出生产树。
 - **批 3（待做）**：dev 树清理+根目录 puppeteer/sharp/mocha/chai 迁 devDependencies。
 ### D2 · 依赖三批次升级 【L】
 - **问题**：backend 107 漏洞（critical 4）、根目录 34（critical 1）。

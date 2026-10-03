@@ -22,3 +22,5 @@
 - 原 `docker-validation-scripts/`（存于 `scripts/docker-validation-scripts/`）：`utils.sh`（引用本归档中的 `docker-validation-scripts/docker-compose.yml`）
 
 注意：`docker-validation-scripts/` 原位仍留有 9 个通用验证脚本（被已失效的 `.github/workflows/docker-validation.yml` 引用，该工作流触发分支 `main` 不存在），处置见 BACKLOG K5。
+
+- `.github/workflows/docker-validation.yml`：2026-10-03 删除——其引用的验证脚本已随 compose 收敛归档至此，触发分支 main→master 修正后成为断链僵尸（跑必红）；如需恢复，连同本目录脚本一起迁回。
