@@ -1,7 +1,9 @@
 import {
   IsNumber,
+  IsInt,
   IsString,
   IsArray,
+  ArrayMinSize,
   IsOptional,
   IsEnum,
   Min,
@@ -14,7 +16,8 @@ export class OrderItemDto {
   @IsNumber()
   productId: number;
 
-  @IsNumber()
+  // 终验整改(2026-10-03 #3): 小数数量会造出分数库存——限定正整数
+  @IsInt()
   @Min(1)
   quantity: number;
 
@@ -32,7 +35,9 @@ export class CreateOrderData {
   @IsNumber()
   userId?: number;
 
+  // 终验整改(2026-10-03 #4): 空 items 会造出零元空订单
   @IsArray()
+  @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => OrderItemDto)
   items: OrderItemDto[];

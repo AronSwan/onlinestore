@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Logger,
   NotFoundException,
+  ConflictException,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { EnhancedBusinessException, ErrorContext } from '../exceptions/enhanced-business.exception';
@@ -43,6 +44,14 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     // 越权审计(2026-10-03): 领域"不存在"异常统一转译为 404（免逐路由 try/catch），
     // 归一化后走下方标准 HttpException 分支构建响应
+    // 终验整改(2026-10-03 #6): 领域"已存在"异常统一转译 409
+    if (
+      exception &&
+      (exception as Error).name === 'UserAlreadyExistsException'
+    ) {
+      exception = new ConflictException((exception as Error).message);
+    }
+
     if (exception instanceof UserNotFoundException) {
       exception = new NotFoundException(exception.message);
     }

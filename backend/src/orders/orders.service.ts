@@ -73,6 +73,9 @@ export class OrdersService {
         });
       }
 
+      // 金额分位取整(Info #7): decimal(10,2) 列不应存浮点尾差
+      serverTotal = Math.round(serverTotal * 100) / 100;
+
       // 创建订单(金额为服务端计算值)
       const order = trx.getRepository(Order).create({
         orderNumber,
@@ -90,11 +93,18 @@ export class OrdersService {
 
       const savedOrder = await trx.getRepository(Order).save(order);
 
-      // 创建订单项并更新库存(复用定价循环的产品对象与乐观锁版本, 单次查询)
+      // 创建订单项并更新库存。终验整改(2026-10-03 #5): 逐行重新查询产品——
+      // 同商品多行时, 前一行的库存更新会推进乐观锁版本, 缓存的旧 version 会令
+      // 第二行 update 命中 0 行而 500; 新鲜查询保证每行拿到当前 version。
       for (let i = 0; i < orderData.items.length; i++) {
         const item = orderData.items[i];
         const priced = itemsWithPrice[i];
-        const product = priced.product;
+        const product = await trx.getRepository(Product).findOne({
+          where: { id: item.productId },
+        });
+        if (!product || product.stock < item.quantity) {
+          throw new Error(`产品 ${item.productId} 库存不足`);
+        }
 
         const orderItem = trx.getRepository(OrderItem).create({
           orderId: savedOrder.id,

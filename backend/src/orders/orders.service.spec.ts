@@ -943,7 +943,8 @@ describe('OrdersService', () => {
       const result = await service.create(createData);
 
       expect(result).toEqual(mockOrder);
-      expect(productRepo.findOne).toHaveBeenCalledTimes(2);
+      // 终验#5 适配(2026-10-03): 定价预读+主循环新鲜读=每行 2 次, 2 行=4
+      expect(productRepo.findOne).toHaveBeenCalledTimes(4);
       expect(orderItemRepo.create).toHaveBeenCalledTimes(2);
     });
   });
@@ -1402,7 +1403,10 @@ describe('OrdersService', () => {
         const product2 = { ...mockProduct, id: 2, price: 200.75, version: 1 };
 
         const productRepo = {
-          findOne: jest.fn().mockResolvedValueOnce(product1).mockResolvedValueOnce(product2),
+          // 终验#5 适配: 两遍查询(定价预读+主循环新鲜读)——按 id 分流而非一次性队列
+          findOne: jest.fn().mockImplementation(({ where }: any) =>
+            where.id === 1 ? product1 : product2,
+          ),
           createQueryBuilder: jest.fn().mockReturnValue({
             update: jest.fn().mockReturnThis(),
             set: jest.fn().mockReturnThis(),

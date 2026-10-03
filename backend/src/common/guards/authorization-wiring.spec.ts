@@ -85,12 +85,16 @@ describe('授权接线锁（装饰器元数据断言）', () => {
   describe('NotificationController', () => {
     const c = NotificationController.prototype;
 
-    it('类级登录 + 列表归属(@OwnerParam(userId)) + 建通知 admin', () => {
+    it('类级登录 + 建通知 admin（列表/单条归属为 handler 内校验——userId 是 query 参数）', () => {
       expect(guardsOf(NotificationController)).toContain(JwtAuthGuard);
-      expect(guardsOf(c, 'getNotifications')).toContain(OwnerOrAdminGuard);
-      expect(ownerParamOf(c, 'getNotifications')).toBe('userId');
       expect(guardsOf(c, 'createNotification')).toContain(RolesGuard);
       expect(rolesOf(c, 'createNotification')).toContain(Role.ADMIN);
+      // handler 归属的静态证据: 控制器源码包含比对逻辑(运行时三态由冒烟覆盖)
+      const src = NotificationController.prototype.getNotification.toString();
+      expect(src).toContain('user?.sub');
+      expect(NotificationController.prototype.getNotifications.toString()).toContain(
+        'user?.sub',
+      );
     });
   });
 
