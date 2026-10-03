@@ -455,7 +455,8 @@ class CartUI {
         <div class="cart-body">
           <div class="cart-items-list"></div>
           <div class="cart-empty">
-            <p>购物车为空</p>
+            <p>袋子还空着哦——去看看新朋友？</p>
+            <a href="index.html" class="continue-shopping-btn">去逛逛</a>
           </div>
         </div>
         

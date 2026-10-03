@@ -73,8 +73,16 @@ class LoginUtils {
         closeButton.type = 'button';
         closeButton.className = 'ml-4 text-white hover:text-gray-200';
         closeButton.setAttribute('aria-label', '关闭通知');
-        const closeIcon = document.createElement('i');
-        closeIcon.className = 'fas fa-times';
+        // P7'：原 Font Awesome <i> 图标内联 SVG 化
+        const closeIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        closeIcon.setAttribute('viewBox', '0 0 24 24');
+        closeIcon.setAttribute('width', '14');
+        closeIcon.setAttribute('height', '14');
+        closeIcon.setAttribute('fill', 'none');
+        closeIcon.setAttribute('stroke', 'currentColor');
+        closeIcon.setAttribute('stroke-width', '2');
+        closeIcon.setAttribute('aria-hidden', 'true');
+        closeIcon.innerHTML = '<path d="M6 6l12 12M18 6L6 18"/>';
         closeButton.appendChild(closeIcon);
         closeButton.addEventListener('click', () => notification.remove());
         inner.appendChild(closeButton);
@@ -175,15 +183,15 @@ class LoginUtils {
             button.addEventListener('click', function() {
                 const targetId = this.id.replace('toggle-', '');
                 const passwordField = document.getElementById(targetId);
-                const icon = this.querySelector('i');
+                const icon = this.querySelector('.pw-eye');
                 
                 if (passwordField.type === 'password') {
                     passwordField.type = 'text';
-                    icon.className = 'fas fa-eye-slash';
+                    if (icon) icon.classList.add('is-hidden');
                     this.setAttribute('aria-label', '隐藏密码');
                 } else {
                     passwordField.type = 'password';
-                    icon.className = 'fas fa-eye';
+                    if (icon) icon.classList.remove('is-hidden');
                     this.setAttribute('aria-label', '显示密码');
                 }
             });

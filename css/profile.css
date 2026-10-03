@@ -366,12 +366,28 @@
         padding: 10px;
         gap: 20px;
     }
-    
+
     .profile-sidebar {
         flex: none;
         width: 100%;
     }
-    
+
+    /* P6：侧栏纵向菜单转横滑 tab（纯 CSS，零 DOM 改动） */
+    .profile-menu {
+        display: flex;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .profile-menu li {
+        margin: 0 0.5rem 0 0;
+        flex-shrink: 0;
+    }
+
+    .profile-menu a {
+        white-space: nowrap;
+    }
+
     .profile-content {
         padding: 20px;
     }

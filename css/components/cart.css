@@ -651,6 +651,8 @@
   .cart-panel,
   .cart-icon,
   .cart-badge,
+  /* P7'：站点头徽章（P2 · B3 加购脉冲）同样静止 */
+  .site-cart-badge,
   .cart-item,
   .quantity-btn,
   .checkout-btn {

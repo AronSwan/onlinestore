@@ -112,9 +112,16 @@ async init() {
     searchInput.spellcheck = 'false';
 
     // 创建搜索图标
-    const searchIcon = document.createElement('i');
-    searchIcon.className = 'fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-[var(--gray-400)]';
+    const searchIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    searchIcon.setAttribute('viewBox', '0 0 24 24');
+    searchIcon.setAttribute('width', '18');
+    searchIcon.setAttribute('height', '18');
+    searchIcon.setAttribute('fill', 'none');
+    searchIcon.setAttribute('stroke', 'currentColor');
+    searchIcon.setAttribute('stroke-width', '2');
+    searchIcon.setAttribute('class', 'absolute left-4 top-1/2 transform -translate-y-1/2 text-[var(--gray-400)]');
     searchIcon.setAttribute('aria-hidden', 'true');
+    searchIcon.innerHTML = '<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>';
 
     // 创建关闭按钮
     const closeButton = document.createElement('button');
@@ -123,9 +130,15 @@ async init() {
     closeButton.className = 'absolute right-4 top-1/2 transform -translate-y-1/2 text-[var(--gray-400)] hover:text-[var(--text-primary)] p-1';
     closeButton.setAttribute('aria-label', '关闭搜索');
     
-    const closeIcon = document.createElement('i');
-    closeIcon.className = 'fas fa-times text-xl';
+    const closeIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    closeIcon.setAttribute('viewBox', '0 0 24 24');
+    closeIcon.setAttribute('width', '20');
+    closeIcon.setAttribute('height', '20');
+    closeIcon.setAttribute('fill', 'none');
+    closeIcon.setAttribute('stroke', 'currentColor');
+    closeIcon.setAttribute('stroke-width', '2');
     closeIcon.setAttribute('aria-hidden', 'true');
+    closeIcon.innerHTML = '<path d="M6 6l12 12M18 6L6 18"/>';
     
     closeButton.appendChild(closeIcon);
 
@@ -784,7 +797,7 @@ async performSearch(query) {
     if (this.state.searchResults.length === 0) {
       const noResults = document.createElement('div');
       noResults.className = 'no-search-results';
-      noResults.textContent = `没有找到与 "${this.state.searchQuery}" 相关的产品`;
+      noResults.textContent = '没找到——换个词试试？';
       this.elements.searchResults.appendChild(noResults);
       return;
     }

@@ -231,13 +231,9 @@ class LoginEnhanced {
                 passwordInput.setAttribute('type', type);
                 
                 // 切换图标或文本
-                const icon = button.querySelector('i');
+                const icon = button.querySelector('.pw-eye');
                 if (icon) {
-                    if (type === 'text') {
-                        icon.className = 'fa fa-eye-slash';
-                    } else {
-                        icon.className = 'fa fa-eye';
-                    }
+                    icon.classList.toggle('is-hidden', type === 'text');
                 }
             });
         });

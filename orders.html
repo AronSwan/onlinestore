@@ -27,11 +27,9 @@
     <link rel="preload" href="js/orders.js" as="script">
     
     <!-- DNS 预解析 -->
-    <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
     <link rel="dns-prefetch" href="//cdn.tailwindcss.com">
     
     <!-- 预连接关键第三方域名 -->
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin>
     
     <!-- CSS变量系统 - 必须在其他样式之前加载 -->
@@ -60,7 +58,6 @@
     <link rel="stylesheet" href="css/orders.css">
     
     <!-- 引入Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer">
     
     <!-- 引入Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -205,10 +202,10 @@
                 <!-- 面包屑导航 -->
                 <nav aria-label="面包屑导航" class="mb-4">
                     <ol class="flex items-center space-x-2 text-sm">
-                        <li><a href="/" class="text-[var(--candy-blush-ink)] hover:underline">首页</a></li>
-                        <li><i class="fas fa-chevron-right text-xs text-[var(--text-muted)]" aria-hidden="true"></i></li>
+                        <li><a href="index.html" class="text-[var(--candy-blush-ink)] hover:underline">首页</a></li>
+                        <li><svg class="text-[var(--text-muted)]" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></li>
                         <li><a href="profile.html" class="text-[var(--candy-blush-ink)] hover:underline">我的账户</a></li>
-                        <li><i class="fas fa-chevron-right text-xs text-[var(--text-muted)]" aria-hidden="true"></i></li>
+                        <li><svg class="text-[var(--text-muted)]" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></li>
                         <li class="text-[var(--text-primary)] font-medium">我的订单</li>
                     </ol>
                 </nav>
@@ -232,13 +229,13 @@
                                    aria-label="搜索订单">
                             <button class="absolute right-2 top-1/2 transform -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--candy-blush-ink)] transition-colors"
                                     aria-label="搜索订单">
-                                <i class="fas fa-search" aria-hidden="true"></i>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
                             </button>
                         </div>
                     </div>
                     
-                    <!-- 状态筛选 -->
-                    <div class="flex gap-2 flex-wrap">
+                    <!-- 状态筛选（P6：窄屏单行横滑，见 orders.css 640px 断点） -->
+                    <div class="order-filter-group">
                         <button class="order-filter-btn active" data-status="all">全部订单</button>
                         <button class="order-filter-btn" data-status="pending">待付款</button>
                         <button class="order-filter-btn" data-status="processing">处理中</button>
@@ -255,7 +252,7 @@
             <div class="container mx-auto px-4">
                 <!-- 演示数据徽标：后端订单API不可用/未登录时回退演示数据，明确告知用户 -->
                 <div id="demoDataBadge" class="hidden mb-6 flex items-center gap-2 text-sm text-[#7a5c12] bg-[#faf3dd] border border-[#e6d48a] rounded px-4 py-3" role="status">
-                    <i class="fas fa-circle-info text-[#b8941f]" aria-hidden="true"></i>
+                    <svg class="text-[#b8941f]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01"/><path d="M12 11v5"/></svg>
                     <span>当前展示的是<b>演示数据</b>，并非您的真实订单（后端订单服务不可用或尚未登录）。</span>
                 </div>
 
@@ -265,12 +262,12 @@
                     <p class="mt-2 text-[var(--text-muted)]">正在加载订单...</p>
                 </div>
                 
-                <!-- 空状态 -->
+                <!-- 空状态（P8b：voice-sheet 三态文案） -->
                 <div id="emptyState" class="text-center py-12 hidden">
-                    <i class="fas fa-shopping-bag text-6xl text-[var(--text-muted)] mb-4" aria-hidden="true"></i>
-                    <h3 class="text-xl font-medium mb-2">暂无订单</h3>
-                    <p class="text-[var(--text-muted)] mb-6">您还没有任何订单，开始购物吧！</p>
-                    <a href="/" class="btn-pill btn-pill-primary">开始购物</a>
+                    <svg class="mx-auto mb-4 h-16 w-16 text-[var(--text-muted)] opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><path d="M6 7h12l-1.5 12h-9L6 7z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>
+                    <h3 class="text-xl font-medium mb-2">还没有订单——总有一只先背</h3>
+                    <p class="text-[var(--text-muted)] mb-6">看中的那只，也许正在架上等你。</p>
+                    <a href="index.html" class="btn-pill btn-pill-primary">去逛逛</a>
                 </div>
                 
                 <!-- 订单列表容器 -->
@@ -304,69 +301,67 @@
                            aria-label="关注我们的Instagram"
                            target="_blank"
                            rel="noopener noreferrer">
-                            <i class="fab fa-instagram text-xl" aria-hidden="true"></i>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M17.5 6.5h.01"/></svg>
                         </a>
                         <a href="https://facebook.com/reich" 
                            class="text-[var(--dark-primary)] hover:text-[var(--candy-blush-ink)] p-2 focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded"
                            aria-label="关注我们的Facebook"
                            target="_blank"
                            rel="noopener noreferrer">
-                            <i class="fab fa-facebook text-xl" aria-hidden="true"></i>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5 21v-7h2.6l.4-3h-3V9.2c0-.9.3-1.5 1.6-1.5H17V5.1c-.3 0-1.2-.1-2.2-.1-2.2 0-3.7 1.3-3.7 3.8V11H8.5v3H11v7h2.5z"/></svg>
                         </a>
                         <a href="https://twitter.com/reich" 
                            class="text-[var(--dark-primary)] hover:text-[var(--candy-blush-ink)] p-2 focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded"
                            aria-label="关注我们的Twitter"
                            target="_blank"
                            rel="noopener noreferrer">
-                            <i class="fab fa-twitter text-xl" aria-hidden="true"></i>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.9 3H21l-6.9 7.9L22.2 21h-6.4l-5-6.1L5 21H1.9l7.4-8.5L1.8 3h6.5l4.5 5.6L17.9 3zm-1.1 16.1h1.7L7.4 4.8H5.6l11.2 14.3z"/></svg>
                         </a>
                         <a href="https://weibo.com/reich" 
                            class="text-[var(--dark-primary)] hover:text-[var(--candy-blush-ink)] p-2 focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded"
                            aria-label="关注我们的微博"
                            target="_blank"
                            rel="noopener noreferrer">
-                            <i class="fab fa-weibo text-xl" aria-hidden="true"></i>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4.5 14c0-2.5 3.2-4.5 7-4.5s6.5 1.8 6.5 4-2.7 4-6.5 4-7-1.5-7-3.5z"/><circle cx="10.8" cy="13.8" r="1.6" fill="currentColor" stroke="none"/><path d="M14.8 7a5 5 0 0 1 3.4 2.4"/><path d="M15.8 4.4a7.4 7.4 0 0 1 5 3.5"/></svg>
                         </a>
                     </div>
                 </div>
                 
-                <!-- 客户服务 -->
+                <!-- 快速导航（P5：只保留真实存在的页面） -->
+                <div>
+                    <h4 class="text-lg font-medium mb-6">快速导航</h4>
+                    <nav aria-label="快速导航链接">
+                        <ul class="space-y-3">
+                            <li><a href="index.html" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">首页</a></li>
+                            <li><a href="orders.html" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">我的订单</a></li>
+                            <li><a href="login.html" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">登录 / 注册</a></li>
+                            <li><a href="profile.html" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">个人中心</a></li>
+                        </ul>
+                    </nav>
+                </div>
+
+                <!-- 客户服务（P5：/contact 等路由演示站未开通，降为纯文字） -->
                 <div>
                     <h4 class="text-lg font-medium mb-6">客户服务</h4>
-                    <nav aria-label="客户服务链接">
-                        <ul class="space-y-3">
-                            <li><a href="/contact" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">联系我们</a></li>
-                            <li><a href="/shipping" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">配送信息</a></li>
-                            <li><a href="/returns" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">退换政策</a></li>
-                            <li><a href="/faq" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">常见问题</a></li>
-                        </ul>
-                    </nav>
+                    <ul class="space-y-3 text-[var(--ink-soft)]" aria-label="客户服务（演示站未开通）">
+                        <li>联系我们</li>
+                        <li>配送信息</li>
+                        <li>退换政策</li>
+                        <li>常见问题</li>
+                    </ul>
+                    <p class="mt-3 text-xs text-[var(--ink-faint)]">演示站未开通，敬请期待</p>
                 </div>
-                
-                <!-- 关于我们 -->
-                <div>
-                    <h4 class="text-lg font-medium mb-6">关于我们</h4>
-                    <nav aria-label="关于我们链接">
-                        <ul class="space-y-3">
-                            <li><a href="/about" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">品牌故事</a></li>
-                            <li><a href="/stores" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">门店查询</a></li>
-                            <li><a href="/sustainability" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">可持续发展</a></li>
-                            <li><a href="/careers" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">招聘信息</a></li>
-                        </ul>
-                    </nav>
-                </div>
-                
-                <!-- 法律信息 -->
+
+                <!-- 法律信息（P5：同上，降为纯文字） -->
                 <div>
                     <h4 class="text-lg font-medium mb-6">法律信息</h4>
-                    <nav aria-label="法律信息链接">
-                        <ul class="space-y-3">
-                            <li><a href="/privacy" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">隐私政策</a></li>
-                            <li><a href="/terms" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">使用条款</a></li>
-                            <li><a href="/cookies" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">Cookie政策</a></li>
-                            <li><a href="/intellectual-property" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">知识产权</a></li>
-                        </ul>
-                    </nav>
+                    <ul class="space-y-3 text-[var(--ink-soft)]" aria-label="法律信息（演示站未开通）">
+                        <li>隐私政策</li>
+                        <li>使用条款</li>
+                        <li>Cookie政策</li>
+                        <li>知识产权</li>
+                    </ul>
+                    <p class="mt-3 text-xs text-[var(--ink-faint)]">演示站未开通，敬请期待</p>
                 </div>
             </div>
             
@@ -383,7 +378,7 @@
                 <div class="sticky top-0 bg-white border-b border-[var(--border-default)] p-6 flex justify-between items-center">
                     <h2 id="modalTitle" class="text-2xl font-bold">订单详情</h2>
                     <button id="closeModal" class="text-[var(--text-muted)] hover:text-[var(--dark-primary)] transition-colors" aria-label="关闭模态框">
-                        <i class="fas fa-times text-xl" aria-hidden="true"></i>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
                     </button>
                 </div>
                 <div id="modalContent" class="p-6">

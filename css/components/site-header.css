@@ -242,6 +242,14 @@
   }
 }
 
+/* P6 · 超窄屏（≤480px）：orders 页工具栏返回钮与图标组合计超宽（375px 溢出约 60px），
+   收进汉堡菜单（个人中心仍可经 登录/注册 → profile 到达） */
+@media (max-width: 480px) {
+  .site-tools .site-tools-back {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .site-header,
   .site-nav a,

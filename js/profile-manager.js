@@ -188,7 +188,7 @@ class ProfileManager {
         }
 
         if (this.addresses.length === 0) {
-            container.innerHTML = '<p class="no-addresses">暂无收货地址，请添加您的收货地址。</p>';
+            container.innerHTML = '<p class="no-addresses">还没有收货地址——先加一个？</p>';
             return;
         }
 

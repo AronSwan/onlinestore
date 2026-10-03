@@ -489,7 +489,7 @@ class OrderManager {
             <li>
                 <button class="pagination-btn" ${this.currentPage === 1 ? 'disabled' : ''} 
                         onclick="orderManager.goToPage(${this.currentPage - 1})">
-                    <i class="fas fa-chevron-left" aria-hidden="true"></i>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>
                 </button>
             </li>
         `;
@@ -528,7 +528,7 @@ class OrderManager {
             <li>
                 <button class="pagination-btn" ${this.currentPage === this.totalPages ? 'disabled' : ''} 
                         onclick="orderManager.goToPage(${this.currentPage + 1})">
-                    <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
                 </button>
             </li>
         `;
@@ -637,7 +637,7 @@ class OrderManager {
                     <div class="order-detail-timeline mt-6">
                         <div class="order-detail-timeline-item">
                             <div class="order-detail-timeline-dot completed">
-                                <i class="fas fa-check order-detail-timeline-icon text-white"></i>
+                                <svg class="order-detail-timeline-icon text-white" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>
                             </div>
                             <div class="order-detail-timeline-content">
                                 <h4 class="order-detail-timeline-title">订单已确认</h4>
@@ -647,7 +647,7 @@ class OrderManager {
                         </div>
                         <div class="order-detail-timeline-item">
                             <div class="order-detail-timeline-dot completed">
-                                <i class="fas fa-box order-detail-timeline-icon text-white"></i>
+                                <svg class="order-detail-timeline-icon text-white" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5l8 4.5 8-4.5"/><path d="M12 12v9"/></svg>
                             </div>
                             <div class="order-detail-timeline-content">
                                 <h4 class="order-detail-timeline-title">商品已发货</h4>
@@ -658,7 +658,7 @@ class OrderManager {
                         ${order.status === 'delivered' ? `
                             <div class="order-detail-timeline-item">
                                 <div class="order-detail-timeline-dot completed">
-                                    <i class="fas fa-home order-detail-timeline-icon text-white"></i>
+                                    <svg class="order-detail-timeline-icon text-white" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
                                 </div>
                                 <div class="order-detail-timeline-content">
                                     <h4 class="order-detail-timeline-title">已送达</h4>

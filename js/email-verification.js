@@ -74,7 +74,7 @@ class EmailVerification {
         container.innerHTML = `
             <div class="bg-white rounded-lg p-8 max-w-md mx-4 text-center">
                 <div class="text-green-500 text-5xl mb-4">
-                    <i class="fas fa-check-circle"></i>
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 5-5"/></svg>
                 </div>
                 <h3 class="text-lg font-semibold mb-2 text-green-600">邮箱验证成功！</h3>
                 <p class="text-gray-600 mb-4">您的邮箱已成功验证，即将跳转到登录页面</p>
@@ -90,7 +90,7 @@ class EmailVerification {
         container.innerHTML = `
             <div class="bg-white rounded-lg p-8 max-w-md mx-4 text-center">
                 <div class="text-red-500 text-5xl mb-4">
-                    <i class="fas fa-times-circle"></i>
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg>
                 </div>
                 <h3 class="text-lg font-semibold mb-2 text-red-600">验证失败</h3>
                 <p class="text-gray-600 mb-4">${message}</p>
@@ -110,7 +110,7 @@ class EmailVerification {
         const notice = document.createElement('div');
         notice.className = 'email-verification-notice';
         notice.innerHTML = `
-            <i class="fas fa-envelope"></i>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
             <div>
                 <p>验证邮件已发送到 <strong>${email}</strong></p>
                 <p>请检查您的邮箱（包括垃圾邮件文件夹）并点击验证链接</p>

@@ -236,6 +236,7 @@
     background: var(--brand-white);
     color: var(--dark-elegant);
     text-decoration: none;
+    cursor: pointer; /* P5：casdoor 按钮由 a 改为 button，补指针样式 */
     font-family: var(--font-family-serif);
     font-size: var(--text-sm);
     font-weight: var(--font-weight-light);
@@ -252,6 +253,39 @@
 
 .social-btn i {
     font-size: 1.1em;
+}
+
+/* P7'：内联 SVG 图标（替代 Font Awesome） */
+.social-btn svg {
+    width: 1.1em;
+    height: 1.1em;
+}
+
+/* 密码可见性切换：默认睁眼，is-hidden 时叠加斜线（闭眼） */
+.pw-eye .pw-eye-slash {
+    display: none;
+}
+
+.pw-eye.is-hidden .pw-eye-slash {
+    display: block;
+}
+
+/* 登录/注册按钮加载旋转（原 fa-spin 内联化） */
+.icon-spin {
+    animation: icon-spin 0.9s linear infinite;
+    vertical-align: middle;
+}
+
+@keyframes icon-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .icon-spin {
+        animation-duration: 2.4s;
+    }
 }
 
 /* ==========================================================================

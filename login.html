@@ -25,7 +25,6 @@
     <link rel="stylesheet" href="css/components/luxury-components.css">
     <link rel="stylesheet" href="css/components/login.css">
     <link rel="stylesheet" href="css/responsive/enhanced-responsive.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -90,7 +89,7 @@
             <div class="max-w-md mx-auto">
                 <!-- 安全提示 -->
                 <div id="security-notice" class="security-notice hidden">
-                    <i class="fas fa-shield-alt"></i>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z"/></svg>
                     <span>为了您的账户安全，请在5次登录失败后等待15分钟</span>
                 </div>
 
@@ -158,7 +157,7 @@
                                         class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
                                         aria-label="显示/隐藏密码"
                                     >
-                                        <i class="fas fa-eye"></i>
+                                        <svg class="pw-eye" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="2.5"/><path class="pw-eye-slash" d="M5 19 19 5"/></svg>
                                     </button>
                                 </div>
                                 <div id="login-password-error" class="invalid-feedback"></div>
@@ -178,12 +177,13 @@
                                     <input type="checkbox" id="remember-me" class="mr-2">
                                     <span class="text-sm text-gray-600">记住我</span>
                                 </label>
-                                <a href="#" class="text-sm text-secondary hover:underline">忘记密码？</a>
+                                <!-- P5：原占位死链（井号空锚），无对应页面，改为纯文字 -->
+                                <span class="text-sm text-secondary">忘记密码？（演示站暂未开通找回）</span>
                             </div>
 
                             <!-- 登录按钮 -->
                             <button type="submit" class="btn-luxury btn-primary w-full">
-                                <i class="fas fa-sign-in-alt mr-2"></i>
+                                <svg class="mr-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 4h5a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-5"/><path d="M3 12h12"/><path d="m11 7 5 5-5 5"/></svg>
                                 登录
                             </button>
                         </form>
@@ -200,10 +200,11 @@
                             </div>
 
                             <div class="mt-6 space-y-3">
-                                <a href="#" id="casdoor-login" class="social-btn w-full">
-                                    <i class="fas fa-shield-alt text-blue-600"></i>
+                                <!-- P5：原井号空锚 a 标签改为 button（.social-btn 由 login-utils.js 按类名绑定点击跳转 OAuth） -->
+                                <button type="button" id="casdoor-login" class="social-btn w-full">
+                                    <svg class="text-blue-600" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z"/></svg>
                                     <span>Casdoor 统一登录</span>
-                                </a>
+                                </button>
                                 <!-- Google/GitHub 社交登录按钮已移除：对应 OAuth 通道未开通，
                                      保留只会产生死入口（F5-min 诚实 UI）。Casdoor 按钮保留。 -->
                             </div>
@@ -269,7 +270,7 @@
                                         class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
                                         aria-label="显示/隐藏密码"
                                     >
-                                        <i class="fas fa-eye"></i>
+                                        <svg class="pw-eye" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="2.5"/><path class="pw-eye-slash" d="M5 19 19 5"/></svg>
                                     </button>
                                 </div>
                                 <div id="register-password-error" class="invalid-feedback"></div>
@@ -306,19 +307,18 @@
                                     <input type="checkbox" id="agree-terms" class="mt-1 mr-2" required 
                                            aria-describedby="terms-description">
                                     <span id="terms-description" class="text-sm text-gray-600">
-                                        我已阅读并同意 
-                                        <a href="/terms" class="text-secondary hover:underline" target="_blank" 
-                                           aria-label="服务条款（在新窗口打开）">服务条款</a> 
-                                        和 
-                                        <a href="/privacy" class="text-secondary hover:underline" target="_blank"
-                                           aria-label="隐私政策（在新窗口打开）">隐私政策</a>
+                                        <!-- P5：/terms /privacy 演示站未开通，链接降为纯文字 -->
+                                        我已阅读并同意
+                                        <span class="text-secondary">服务条款</span>
+                                        和
+                                        <span class="text-secondary">隐私政策</span>
                                     </span>
                                 </label>
                                 <div id="terms-error" class="invalid-feedback" role="alert" aria-live="polite"></div>
                             </div>
 
                             <button type="submit" class="btn-luxury btn-primary w-full">
-                                <i class="fas fa-user-plus mr-2"></i>
+                                <svg class="mr-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="10" cy="8" r="4"/><path d="M3 21c0-3.9 3.1-6 7-6 1.2 0 2.3.2 3.3.7"/><path d="M18 9h4"/><path d="M20 7v4"/></svg>
                                 注册账户
                             </button>
                         </form>
@@ -328,7 +328,7 @@
                 <!-- 返回首页 -->
                 <div class="text-center mt-6">
                     <a href="index.html" class="text-gray-600 hover:text-primary transition-colors">
-                        <i class="fas fa-arrow-left mr-2"></i>
+                        <svg class="mr-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
                         返回首页
                     </a>
                 </div>

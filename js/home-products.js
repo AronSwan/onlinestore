@@ -76,7 +76,7 @@
       '</div>' +
       '<div class="flex gap-2 items-center">' +
       '<a href="#featured-collections" class="inline-block text-[var(--candy-blush-ink)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">' +
-      '来看看 <i class="fas fa-arrow-right-long ml-2" aria-hidden="true"></i>' +
+      '来看看 <svg class="ml-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 12h16"/><path d="m13 5 7 7-7 7"/></svg>' +
       '</a>' +
       '<button class="btn-pill btn-pill-primary" type="button" aria-label="将' + name + '加入购物袋" data-product-id="' + id8 + '">' +
       '加入购物袋' +
@@ -127,7 +127,7 @@
         '</div>' +
         '<div class="flex gap-2 items-center">' +
         '<a href="#featured-collections" class="inline-block text-[var(--candy-blush-ink)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">' +
-        '来看看 <i class="fas fa-arrow-right-long ml-2" aria-hidden="true"></i>' +
+        '来看看 <svg class="ml-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 12h16"/><path d="m13 5 7 7-7 7"/></svg>' +
         '</a>' +
         '<button class="btn-pill btn-pill-primary" type="button" aria-label="将' + name + '加入购物袋" data-product-id="' + id8 + '">加入购物袋</button>' +
         '</div>' +

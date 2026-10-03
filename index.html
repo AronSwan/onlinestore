@@ -42,11 +42,9 @@
     <link rel="preload" href="images/hero/hero-main.webp" as="image" type="image/webp" fetchpriority="high">
     
     <!-- DNS 预解析 -->
-    <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
     <link rel="dns-prefetch" href="//cdn.tailwindcss.com">
     
     <!-- 预连接关键第三方域名 -->
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin>
     <!-- CSS变量系统 - 必须在其他样式之前加载 -->
     <link rel="preload" href="fonts/barlow-700.woff2" as="font" type="font/woff2" crossorigin>
@@ -74,7 +72,6 @@
     <!-- 增强搜索组件样式 -->
     <link rel="stylesheet" href="css/product-search-enhanced.css">
     <!-- 引入Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer">
     <!-- 引入Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 配置Tailwind自定义样式 -->
@@ -147,9 +144,10 @@
     <header class="site-header" id="siteHeader">
       <nav aria-label="主导航">
         <ul class="site-nav">
-          <li><a href="#women" aria-current="page">女士</a></li>
-          <li><a href="#men">男士</a></li>
-          <li><a href="#accessories">配饰</a></li>
+          <!-- P5：原 #women/#men/#accessories 锚点无对应 section，死链改指首页 -->
+          <li><a href="index.html" aria-current="page">女士</a></li>
+          <li><a href="index.html">男士</a></li>
+          <li><a href="index.html">配饰</a></li>
         </ul>
       </nav>
 
@@ -275,7 +273,7 @@
                         <h2 id="brand-story-heading" class="text-3xl md:text-4xl font-bold mb-8">不赶时间的东西</h2>
                         <p class="text-lg mb-6">Reich 创立于 1920 年。一百多年来我们只做一件事：把一只袋子做扎实，让它陪你久一点。</p>
                         <p class="text-lg mb-8">每一只都由工匠慢慢做完——不赶时间的东西，才经得起每天背。</p>
-                        <a href="/about" class="btn-pill btn-pill-outline focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] focus:ring-offset-2">来听听故事</a>
+                        <!-- P5：原 /about 死路由按钮已删（品牌故事就在本区，诚实 UI） -->
                     </div>
                 </div>
             </div>
@@ -317,69 +315,67 @@
                            aria-label="关注我们的Instagram"
                            target="_blank"
                            rel="noopener noreferrer">
-                            <i class="fab fa-instagram text-xl" aria-hidden="true"></i>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M17.5 6.5h.01"/></svg>
                         </a>
                         <a href="https://facebook.com/reich" 
                            class="text-[var(--dark-primary)] hover:text-[var(--candy-blush-ink)] p-2 focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded"
                            aria-label="关注我们的Facebook"
                            target="_blank"
                            rel="noopener noreferrer">
-                            <i class="fab fa-facebook text-xl" aria-hidden="true"></i>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5 21v-7h2.6l.4-3h-3V9.2c0-.9.3-1.5 1.6-1.5H17V5.1c-.3 0-1.2-.1-2.2-.1-2.2 0-3.7 1.3-3.7 3.8V11H8.5v3H11v7h2.5z"/></svg>
                         </a>
                         <a href="https://twitter.com/reich" 
                            class="text-[var(--dark-primary)] hover:text-[var(--candy-blush-ink)] p-2 focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded"
                            aria-label="关注我们的Twitter"
                            target="_blank"
                            rel="noopener noreferrer">
-                            <i class="fab fa-twitter text-xl" aria-hidden="true"></i>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.9 3H21l-6.9 7.9L22.2 21h-6.4l-5-6.1L5 21H1.9l7.4-8.5L1.8 3h6.5l4.5 5.6L17.9 3zm-1.1 16.1h1.7L7.4 4.8H5.6l11.2 14.3z"/></svg>
                         </a>
                         <a href="https://weibo.com/reich" 
                            class="text-[var(--dark-primary)] hover:text-[var(--candy-blush-ink)] p-2 focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded"
                            aria-label="关注我们的微博"
                            target="_blank"
                            rel="noopener noreferrer">
-                            <i class="fab fa-weibo text-xl" aria-hidden="true"></i>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4.5 14c0-2.5 3.2-4.5 7-4.5s6.5 1.8 6.5 4-2.7 4-6.5 4-7-1.5-7-3.5z"/><circle cx="10.8" cy="13.8" r="1.6" fill="currentColor" stroke="none"/><path d="M14.8 7a5 5 0 0 1 3.4 2.4"/><path d="M15.8 4.4a7.4 7.4 0 0 1 5 3.5"/></svg>
                         </a>
                     </div>
                 </div>
                 
-                <!-- 客户服务 -->
+                <!-- 快速导航（P5：只保留真实存在的页面） -->
+                <div>
+                    <h4 class="text-lg font-medium mb-6">快速导航</h4>
+                    <nav aria-label="快速导航链接">
+                        <ul class="space-y-3">
+                            <li><a href="index.html" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">首页</a></li>
+                            <li><a href="orders.html" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">我的订单</a></li>
+                            <li><a href="login.html" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">登录 / 注册</a></li>
+                            <li><a href="profile.html" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">个人中心</a></li>
+                        </ul>
+                    </nav>
+                </div>
+
+                <!-- 客户服务（P5：/contact 等路由演示站未开通，降为纯文字） -->
                 <div>
                     <h4 class="text-lg font-medium mb-6">客户服务</h4>
-                    <nav aria-label="客户服务链接">
-                        <ul class="space-y-3">
-                            <li><a href="/contact" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">联系我们</a></li>
-                            <li><a href="/shipping" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">配送信息</a></li>
-                            <li><a href="/returns" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">退换政策</a></li>
-                            <li><a href="/faq" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">常见问题</a></li>
-                        </ul>
-                    </nav>
+                    <ul class="space-y-3 text-[var(--ink-soft)]" aria-label="客户服务（演示站未开通）">
+                        <li>联系我们</li>
+                        <li>配送信息</li>
+                        <li>退换政策</li>
+                        <li>常见问题</li>
+                    </ul>
+                    <p class="mt-3 text-xs text-[var(--ink-faint)]">演示站未开通，敬请期待</p>
                 </div>
-                
-                <!-- 关于我们 -->
-                <div>
-                    <h4 class="text-lg font-medium mb-6">关于我们</h4>
-                    <nav aria-label="关于我们链接">
-                        <ul class="space-y-3">
-                            <li><a href="/about" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">品牌故事</a></li>
-                            <li><a href="/stores" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">门店查询</a></li>
-                            <li><a href="/sustainability" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">可持续发展</a></li>
-                            <li><a href="/careers" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">招聘信息</a></li>
-                        </ul>
-                    </nav>
-                </div>
-                
-                <!-- 法律信息 -->
+
+                <!-- 法律信息（P5：同上，降为纯文字） -->
                 <div>
                     <h4 class="text-lg font-medium mb-6">法律信息</h4>
-                    <nav aria-label="法律信息链接">
-                        <ul class="space-y-3">
-                            <li><a href="/privacy" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">隐私政策</a></li>
-                            <li><a href="/terms" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">使用条款</a></li>
-                            <li><a href="/cookies" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">Cookie政策</a></li>
-                            <li><a href="/intellectual-property" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">知识产权</a></li>
-                        </ul>
-                    </nav>
+                    <ul class="space-y-3 text-[var(--ink-soft)]" aria-label="法律信息（演示站未开通）">
+                        <li>隐私政策</li>
+                        <li>使用条款</li>
+                        <li>Cookie政策</li>
+                        <li>知识产权</li>
+                    </ul>
+                    <p class="mt-3 text-xs text-[var(--ink-faint)]">演示站未开通，敬请期待</p>
                 </div>
             </div>
             

@@ -304,6 +304,35 @@ body {
     }
 }
 
+/* ==========================================================================
+   P6 · 超窄屏（≤380px）修补：hero 文案不溢出、大写标签可断词、跑马灯不撑宽页面
+   ========================================================================== */
+@media (max-width: 380px) {
+    /* hero 主标题降一号（Tailwind text-4xl=36px 在 375px 略挤），副标同步收缩 */
+    #hero-heading {
+        font-size: 1.75rem;
+    }
+
+    #hero-heading + p {
+        font-size: 0.95rem;
+    }
+
+    /* 长大写标签（IT'S TOTE SEASON 等）允许断词换行，不横向撑破容器 */
+    h1, h2, h3, p {
+        overflow-wrap: break-word;
+    }
+
+    /* 胶囊按钮收窄内边距，两个并排不出视口 */
+    .btn-pill {
+        padding: 0.65rem 1.25rem;
+    }
+
+    /* 跑马灯：自身已 overflow:hidden，这里双保险锁定视口宽，防止撑出横向滚动 */
+    .marquee {
+        max-width: 100vw;
+    }
+}
+
 /* 表单样式 */
 .form-group {
     margin-bottom: var(--spacing-6);

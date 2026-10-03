@@ -7,19 +7,16 @@ class OAuthHandler {
         this.providers = {
             google: {
                 name: 'Google',
-                icon: 'fab fa-google',
                 color: 'text-red-500',
                 authUrl: '/api/auth/oauth/google'
             },
             github: {
                 name: 'GitHub', 
-                icon: 'fab fa-github',
                 color: 'text-gray-800',
                 authUrl: '/api/auth/oauth/github'
             },
             casdoor: {
                 name: 'Casdoor',
-                icon: 'fas fa-shield-alt',
                 color: 'text-blue-600',
                 authUrl: '/api/auth/oauth/casdoor'
             }
@@ -110,7 +107,7 @@ class OAuthHandler {
                 <h3 class="text-lg font-semibold mb-2">正在处理${providerInfo.name}登录</h3>
                 <p class="text-gray-600">请稍候，我们正在验证您的身份...</p>
                 <div class="mt-4 text-sm text-gray-500">
-                    <i class="fas fa-shield-alt mr-1"></i>
+                    <svg class="mr-1" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z"/></svg>
                     安全连接已建立
                 </div>
             </div>

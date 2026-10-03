@@ -387,7 +387,7 @@ async function login(email, password, rememberMe) {
   
   const originalButtonText = loginButton.innerHTML;
   loginButton.disabled = true;
-  loginButton.innerHTML = "<i class=\"fas fa-circle-notch fa-spin mr-2\"></i> 登录中...";
+  loginButton.innerHTML = '<svg class="icon-spin mr-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9"/></svg> 登录中...';
     
   try {
     // 调用后端登录API
@@ -478,7 +478,7 @@ async function register(username, email, password) {
   
   const originalButtonText = registerButton.innerHTML;
   registerButton.disabled = true;
-  registerButton.innerHTML = "<i class=\"fas fa-circle-notch fa-spin mr-2\"></i> 注册中...";
+  registerButton.innerHTML = '<svg class="icon-spin mr-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9"/></svg> 注册中...';
     
   try {
     // 调用后端注册API
@@ -556,7 +556,7 @@ function showSuccessMessage(message) {
     // 创建成功消息元素
     messageElement = document.createElement("div");
     messageElement.className = "success-message fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-50 text-green-700 px-6 py-3 rounded-lg shadow-lg z-50 fade-in flex items-center";
-    messageElement.innerHTML = "<i class=\"fas fa-circle-check mr-2\"></i> <span></span>";
+    messageElement.innerHTML = '<svg class="mr-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 5-5"/></svg> <span></span>';
     document.body.appendChild(messageElement);
   }
     
