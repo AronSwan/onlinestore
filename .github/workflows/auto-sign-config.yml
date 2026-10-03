@@ -71,13 +71,13 @@ jobs:
         node ci/auto-sign-config.js
         
     - name: Upload signature report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v7
       with:
         name: signature-report-${{ github.run_number }}
         path: backend/scripts/reports/signature-report-${{ github.run_number }}.json
         
     - name: Upload signature files
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v7
       with:
         name: signature-files-${{ github.run_number }}
         path: |
