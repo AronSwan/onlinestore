@@ -48,6 +48,13 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 5173,
       open: true,
+      // P4：dev server 代理 /api 到本地 Nest 后端（backend/.env PORT=3777）
+      proxy: {
+        '/api': {
+          target: 'http://localhost:3777',
+          changeOrigin: true,
+        },
+      },
       headers: {
         'X-Content-Type-Options': 'nosniff',
         'X-Frame-Options': 'DENY',

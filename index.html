@@ -18,7 +18,7 @@
     <meta property="og:url" content="https://reich.com/">
     <meta property="og:title" content="Reich — 2025 秋冬系列，到货了">
     <meta property="og:description" content="总有一只先背。女士手袋、男士西装、小配饰——慢慢挑，不着急。">
-    <meta property="og:image" content="https://reich.com/images/hero/hero-main.jpg">
+    <meta property="og:image" content="https://reich.com/images/og/og-image.jpg">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:site_name" content="Reich">
@@ -29,7 +29,7 @@
     <meta property="twitter:url" content="https://reich.com/">
     <meta property="twitter:title" content="Reich — 2025 秋冬系列，到货了">
     <meta property="twitter:description" content="总有一只先背。女士手袋、男士西装、小配饰——慢慢挑，不着急。">
-    <meta property="twitter:image" content="https://reich.com/images/hero/hero-main.jpg">
+    <meta property="twitter:image" content="https://reich.com/images/og/og-image.jpg">
     
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -38,7 +38,8 @@
     <link rel="preload" href="css/tokens.css" as="style">
     <link rel="preload" href="css/main.css" as="style">
     <link rel="preload" href="js/navigation.js" as="script">
-    <link rel="preload" href="images/hero/hero-main.jpg" as="image" type="image/jpeg">
+    <!-- P1：hero 预加载 webp（<picture> 首选源；不支持 webp 的浏览器自动回落 jpg） -->
+    <link rel="preload" href="images/hero/hero-main.webp" as="image" type="image/webp" fetchpriority="high">
     
     <!-- DNS 预解析 -->
     <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
@@ -215,12 +216,18 @@
 
         <!-- 英雄区 -->
         <section class="relative h-[90vh] overflow-hidden" aria-labelledby="hero-heading">
-            <img
-                src="images/hero/hero-main.jpg"
-                alt="Reich 2025秋冬系列"
-                class="absolute inset-0 w-full h-full object-cover"
-                loading="eager"
-                fetchpriority="high">
+            <!-- P1：真图 hero（Unsplash，见 images/CREDITS.md）——webp 优先 + jpg 回退，LCP 高优先不 lazy -->
+            <picture>
+                <source srcset="images/hero/hero-main.webp" type="image/webp">
+                <img
+                    src="images/hero/hero-main.jpg"
+                    alt="Reich 2025秋冬系列——彩色墙绘前的手袋"
+                    class="absolute inset-0 w-full h-full object-cover"
+                    loading="eager"
+                    fetchpriority="high"
+                    width="2400"
+                    height="1600">
+            </picture>
             <div class="absolute inset-0 bg-gradient-to-b from-transparent to-[rgba(250,248,243,0.9)]"></div>
             <div class="relative container mx-auto px-4 h-full flex flex-col justify-end pb-20">
                 <h2 id="hero-heading" class="text-4xl md:text-6xl font-bold tracking-tight mb-4">总有一只先背。</h2>
@@ -237,143 +244,12 @@
             <div class="container mx-auto px-4">
                 <p class="text-center text-[var(--text-caption)] font-semibold uppercase tracking-[var(--tracking-caps)] text-[var(--ink-soft)] mb-3">IT'S TOTE SEASON</p>
                 <h2 id="featured-heading" class="text-3xl md:text-4xl font-bold text-center mb-16">包包们的季节到了</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <!-- 精选项目1（P2：黑遮罩已拆；金圆钮改底部滑出 pill；.reich-product-action 类名冻结） -->
-                    <article class="group reich-product-card stagger-item" data-product-id="00000001" itemscope itemtype="https://schema.org/Product">
-                        <div class="relative overflow-hidden mb-6">
-                            <img
-                                src="images/products/product-1.jpg"
-                                alt="Reich女士手袋系列 - 黑色真皮手袋，经典设计"
-                                class="w-full h-[600px] object-cover reich-product-image"
-                                loading="lazy"
-                                itemprop="image">
-                            <!-- 加入购物袋 pill：卡片底部滑出 -->
-                            <button class="reich-product-action" type="button"
-                                    aria-label="将女士手袋系列加入购物袋"
-                                    data-product-id="00000001">
-                                加入购物袋
-                            </button>
-                            <!-- 心愿单小 pill（wishlist.js 冻结选择器：.reich-product-action 内 img[src*="heart-icon"]） -->
-                            <button class="reich-product-action reich-heart-pill" type="button"
-                                    aria-label="收藏女士手袋系列"
-                                    data-product-id="00000001">
-                                <img src="heart-icon.svg" alt="" width="14" height="14">
-                            </button>
-                        </div>
-                        <h3 class="text-xl font-medium mb-2 reich-product-name" itemprop="name">女士手袋系列</h3>
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="reich-product-price text-lg font-semibold text-[var(--dark-primary)]" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
-                                <span itemprop="price" content="8800">¥8,800</span>
-                                <meta itemprop="priceCurrency" content="CNY">
-                                <meta itemprop="availability" content="https://schema.org/InStock">
-                            </span>
-                            <span class="text-sm text-[var(--text-muted)]">新到</span>
-                        </div>
-                        <div class="flex gap-2 items-center">
-                            <a href="/collections/women-bags" class="inline-block text-[var(--candy-blush-ink)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">
-                                来看看 <i class="fas fa-arrow-right-long ml-2" aria-hidden="true"></i>
-                            </a>
-                            <button class="btn-pill btn-pill-primary" type="button"
-                                    aria-label="将女士手袋系列加入购物袋"
-                                    data-product-id="00000001">
-                                加入购物袋
-                            </button>
-                        </div>
-                        <meta itemprop="description" content="Reich女士手袋系列，头层真皮制作，经典设计，本季上新">
-                        <meta itemprop="brand" content="Reich">
-                        <meta itemprop="category" content="女士手袋">
-                    </article>
-                    <!-- 精选项目2（P2：黑遮罩已拆；金圆钮改底部滑出 pill） -->
-                    <article class="group reich-product-card stagger-item" data-product-id="00000002" itemscope itemtype="https://schema.org/Product">
-                        <div class="relative overflow-hidden mb-6">
-                            <img
-                                src="images/products/product-2.jpg"
-                                alt="Reich男士西装系列 - 深蓝色羊毛西装，经典剪裁，商务正装"
-                                class="w-full h-[600px] object-cover reich-product-image"
-                                loading="lazy"
-                                itemprop="image">
-                            <!-- 加入购物袋 pill：卡片底部滑出 -->
-                            <button class="reich-product-action" type="button"
-                                    aria-label="将男士西装系列加入购物袋"
-                                    data-product-id="00000002">
-                                加入购物袋
-                            </button>
-                            <!-- 心愿单小 pill（wishlist.js 冻结选择器：.reich-product-action 内 img[src*="heart-icon"]） -->
-                            <button class="reich-product-action reich-heart-pill" type="button"
-                                    aria-label="收藏男士西装系列"
-                                    data-product-id="00000002">
-                                <img src="heart-icon.svg" alt="" width="14" height="14">
-                            </button>
-                        </div>
-                        <h3 class="text-xl font-medium mb-2 reich-product-name" itemprop="name">男士西装系列</h3>
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="reich-product-price text-lg font-semibold text-[var(--dark-primary)]" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
-                                <span itemprop="price" content="12500">¥12,500</span>
-                                <meta itemprop="priceCurrency" content="CNY">
-                                <meta itemprop="availability" content="https://schema.org/InStock">
-                            </span>
-                            <span class="text-sm text-[var(--text-muted)]">经典款</span>
-                        </div>
-                        <div class="flex gap-2 items-center">
-                            <a href="/collections/men-suits" class="inline-block text-[var(--candy-blush-ink)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">
-                                来看看 <i class="fas fa-arrow-right-long ml-2" aria-hidden="true"></i>
-                            </a>
-                            <button class="btn-pill btn-pill-primary" type="button"
-                                    aria-label="将男士西装系列加入购物袋"
-                                    data-product-id="00000002">
-                                加入购物袋
-                            </button>
-                        </div>
-                        <meta itemprop="description" content="Reich男士西装系列，采用优质羊毛面料，经典剪裁，适合商务场合">
-                        <meta itemprop="brand" content="Reich">
-                        <meta itemprop="category" content="男士西装">
-                    </article>
-                    <!-- 精选项目3（P2：黑遮罩已拆；金圆钮改底部滑出 pill） -->
-                    <article class="group reich-product-card stagger-item" data-product-id="00000003" itemscope itemtype="https://schema.org/Product">
-                        <div class="relative overflow-hidden mb-6">
-                            <img
-                                src="images/products/product-3.jpg"
-                                alt="Reich配饰系列 - 金色项链和手镯套装，精致工艺"
-                                class="w-full h-[600px] object-cover reich-product-image"
-                                loading="lazy"
-                                itemprop="image">
-                            <!-- 加入购物袋 pill：卡片底部滑出 -->
-                            <button class="reich-product-action" type="button"
-                                    aria-label="将配饰系列加入购物袋"
-                                    data-product-id="00000003">
-                                加入购物袋
-                            </button>
-                            <!-- 心愿单小 pill（wishlist.js 冻结选择器：.reich-product-action 内 img[src*="heart-icon"]） -->
-                            <button class="reich-product-action reich-heart-pill" type="button"
-                                    aria-label="收藏配饰系列"
-                                    data-product-id="00000003">
-                                <img src="heart-icon.svg" alt="" width="14" height="14">
-                            </button>
-                        </div>
-                        <h3 class="text-xl font-medium mb-2 reich-product-name" itemprop="name">配饰系列</h3>
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="reich-product-price text-lg font-semibold text-[var(--dark-primary)]" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
-                                <span itemprop="price" content="5200">¥5,200</span>
-                                <meta itemprop="priceCurrency" content="CNY">
-                                <meta itemprop="availability" content="https://schema.org/InStock">
-                            </span>
-                            <span class="text-sm text-[var(--text-muted)]">心头好</span>
-                        </div>
-                        <div class="flex gap-2 items-center">
-                            <a href="/collections/accessories" class="inline-block text-[var(--candy-blush-ink)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">
-                                来看看 <i class="fas fa-arrow-right-long ml-2" aria-hidden="true"></i>
-                            </a>
-                            <button class="btn-pill btn-pill-primary" type="button"
-                                    aria-label="将配饰系列加入购物袋"
-                                    data-product-id="00000003">
-                                加入购物袋
-                            </button>
-                        </div>
-                        <meta itemprop="description" content="Reich配饰系列，精选金属材质，精致工艺，本季上新">
-                        <meta itemprop="brand" content="Reich">
-                        <meta itemprop="category" content="配饰">
-                    </article>
-                </div>
+                <!-- P4：精选商品改由 /api/products 渲染（js/home-products.js）。
+                     卡片结构/类名为冻结契约（.reich-product-card/.reich-product-action/.reich-product-name/
+                     -price/-image/[data-product-id]/.reich-heart-pill/.stagger-item）；
+                     API 不可用时脚本内置硬编码 3 卡回退。 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8" id="home-product-grid"
+                     aria-busy="true" aria-live="polite"></div>
             </div>
         </section>
 
@@ -382,11 +258,18 @@
             <div class="container mx-auto px-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                     <div>
-                        <img
-                            src="images/banners/banner-promo.jpg"
-                            alt="Reich品牌故事 - 1920年创立的工坊场景，工匠正在制作皮具"
-                            class="w-full h-auto rounded-lg shadow-lg"
-                            loading="lazy">
+                        <!-- P1：品牌故事区真图（Unsplash，见 images/CREDITS.md） -->
+                        <picture>
+                            <source srcset="images/banners/banner-promo.webp" type="image/webp">
+                            <img
+                                src="images/banners/banner-promo.jpg"
+                                alt="Reich品牌故事 - 三只本季皮具，明亮影棚里的新品们"
+                                class="w-full h-auto rounded-lg shadow-lg"
+                                loading="lazy"
+                                decoding="async"
+                                width="1200"
+                                height="800">
+                        </picture>
                     </div>
                     <div>
                         <h2 id="brand-story-heading" class="text-3xl md:text-4xl font-bold mb-8">不赶时间的东西</h2>
@@ -518,6 +401,8 @@
     <script type="module" defer src="js/product-search/index.js"></script>
     <script type="module" defer src="js/product-search/enhanced-search-component.js"></script>
     <script type="module" defer src="js/navigation-icons.js"></script>
+    <!-- P4：首页精选商品从 /api/products 渲染（失败回退硬编码 3 卡） -->
+    <script defer src="js/home-products.js"></script>
     
     <!-- 性能监控 -->
     <script>

@@ -2308,8 +2308,11 @@ body {
 }
 
 .reich-product-image {
+    /* P1：商品图 3:4（与 /images/products/*.(jpg|webp) 800×1067 一致），
+       aspect-ratio 替代旧固定高度（300px / h-[600px]），随卡片宽度自适应 */
     width: 100%;
-    height: 300px;
+    aspect-ratio: 3 / 4;
+    height: auto;
     object-fit: cover;
     transition: transform var(--transition-standard);
 }
