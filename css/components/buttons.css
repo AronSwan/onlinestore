@@ -72,9 +72,9 @@
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(139, 69, 19, 0.3);
-  background-color: var(--gold-rich);
-  color: var(--dark-elegant);
+  box-shadow: 0 8px 25px rgba(26, 32, 44, 0.25);
+  background-color: var(--candy-blush-ink);
+  color: var(--bg-base);
 }
 
 .btn-primary:hover:not(:disabled)::before {
@@ -104,24 +104,7 @@
   box-shadow: 0 8px 25px rgba(245, 245, 220, 0.2);
 }
 
-/* 3. 金色按钮 - Gucci奢华风格 */
-.btn-gold {
-  background-color: var(--gold-rich);
-  color: var(--dark-elegant);
-  border: none;
-  font-family: var(--font-family-luxury);
-  font-weight: var(--font-weight-light);
-  letter-spacing: var(--letter-spacing-wide);
-  border-radius: 2px;
-  transition: all 0.4s ease;
-}
-
-.btn-gold:hover:not(:disabled) {
-  background-color: var(--gold-pale);
-  color: var(--dark-elegant);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(212, 175, 55, 0.3);
-}
+/* 3. 金色按钮 .btn-gold 已删除（P2：HTML/JS 零引用，金系促销感清理） */
 
 /* 4. 危险按钮 - 红色样式 */
 .btn-danger {
@@ -156,183 +139,11 @@
 }
 
 /* ==========================================================================
-   按钮特殊效果
+   按钮特殊效果（P2 清理：以下 8 组动效库存类 HTML/JS 零引用，整块删除——
+   .btn-gold / .btn-pulse-glow / .btn-glow / .btn-ripple / .btn-borderGradient
+   （btn-gradient-border） / .btn-3d-hover / .btn-bounce（btn-icon-bounce）
+   / .btn-icon-animate）
    ========================================================================== */
-
-/* 渐变边框效果 - Gucci奢华风格 - 移除脉动动画
-.btn-gradient-border {
-  position: relative;
-  z-index: 1;
-  background: var(--cream-luxury);
-  transition: all 0.4s ease;
-  font-family: var(--font-family-luxury);
-  font-weight: var(--font-weight-light);
-  letter-spacing: var(--letter-spacing-wide);
-}
-
-.btn-gradient-border::before {
-  content: '';
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
-  background: linear-gradient(45deg, var(--gold-rich), var(--gold-standard), var(--gold-pale), var(--gold-rich));
-  border-radius: 4px;
-  z-index: -1;
-  animation: borderGradient 4s linear infinite;
-  background-size: 400% 400%;
-}
-
-@keyframes borderGradient {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-*/
-
-/* 3D悬浮效果 - 增强视觉层次 */
-.btn-3d-hover {
-  position: relative;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
-
-.btn-3d-hover::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  border-radius: inherit;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  z-index: 1;
-}
-
-.btn-3d-hover:hover:not(:disabled) {
-  transform: translateY(-3px) scale(1.02);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.btn-3d-hover:hover:not(:disabled)::after {
-  opacity: 1;
-}
-
-.btn-3d-hover:active:not(:disabled) {
-  transform: translateY(-1px) scale(1.01);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-/* 悬停发光效果 - Gucci奢华风格 */
-.btn-glow {
-  transition: all 0.4s ease;
-}
-
-.btn-glow:hover:not(:disabled) {
-  box-shadow: 0 0 20px rgba(184, 134, 11, 0.4);
-}
-
-/* 脉冲光效 - 吸引注意力 - 移除
-.btn-pulse-glow {
-  position: relative;
-  overflow: hidden;
-}
-
-.btn-pulse-glow::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(212, 175, 55, 0.6) 0%, transparent 70%);
-  opacity: 0;
-  transform: scale(0.5);
-  transition: all 0.6s ease;
-  animation: pulseGlow 2s infinite;
-}
-*/
-
-/* 脉冲光效 - 替代效果 */
-.btn-pulse-glow {
-  position: relative;
-  overflow: hidden;
-}
-
-.btn-pulse-glow::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(212, 175, 55, 0.6) 0%, transparent 70%);
-  opacity: 0;
-  transform: scale(0.5);
-  transition: all 0.6s ease;
-}
-
-/* pulseGlow关键帧动画 - 已移除 */
-/*
-@keyframes pulseGlow {
-  0% {
-    transform: scale(0.5);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(0.5);
-    opacity: 0;
-  }
-}
-*/
-
-.btn-pulse-glow:hover:not(:disabled)::before {
-  animation-play-state: paused;
-  opacity: 1;
-  transform: scale(1.2);
-}
-
-/* 涟漪效果 */
-.btn-ripple {
-  position: relative;
-  overflow: hidden;
-}
-
-.btn-ripple::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 5px;
-  height: 5px;
-  background: rgba(255, 255, 255, 0.5);
-  opacity: 0;
-  border-radius: 100%;
-  transform: scale(1, 1) translate(-50%, -50%);
-  transform-origin: 50% 50%;
-}
-
-@keyframes ripple {
-  0% {
-    transform: scale(0, 0);
-    opacity: 0.5;
-  }
-  100% {
-    transform: scale(100, 100);
-    opacity: 0;
-  }
-}
-
-.btn-ripple:focus:not(:disabled)::after {
-  animation: ripple 0.6s ease-out;
-}
 
 /* ==========================================================================
    按钮图标组合
@@ -349,23 +160,6 @@
   height: 16px;
   fill: currentColor;
 }
-
-/* 图标动画效果 */
-.btn-icon-animate .icon {
-  transition: transform 0.3s ease;
-}
-
-.btn-icon-animate:hover .icon {
-  transform: translateX(4px) scale(1.1);
-}
-
-.btn-icon-bounce .icon {
-  transition: transform 0.3s ease;
-}
-
-/* 移除弹跳动画效果 */
-
-/* 移除iconBounce关键帧动画 */
 
 /* ==========================================================================
    响应式按钮

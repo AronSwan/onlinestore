@@ -239,7 +239,7 @@
     }
     
     .form-input:focus {
-        border-color: var(--brand-gold);
+        border-color: var(--candy-blush-ink);
     }
     
     .form-label {
@@ -257,6 +257,6 @@
     }
     
     .auth-tab.active {
-        color: var(--brand-gold);
+        color: var(--candy-blush-ink);
     }
 }

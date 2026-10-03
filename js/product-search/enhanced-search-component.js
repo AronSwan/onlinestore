@@ -107,7 +107,7 @@ async init() {
     searchInput.id = this.options.searchInputId;
     searchInput.name = 'q';
     searchInput.placeholder = '搜索产品、系列或关键词';
-    searchInput.className = 'w-full py-3 pl-12 pr-4 border border-[var(--border-default)] rounded-none focus:outline-none focus:border-[var(--gold-standard)] focus:ring-2 focus:ring-[var(--gold-standard)] focus:ring-opacity-20 text-lg';
+    searchInput.className = 'w-full py-3 pl-12 pr-4 border border-[var(--border-default)] rounded-none focus:outline-none focus:border-[var(--candy-blush-ink)] focus:ring-2 focus:ring-[var(--gold-standard)] focus:ring-opacity-20 text-lg';
     searchInput.autocomplete = 'off';
     searchInput.spellcheck = 'false';
 

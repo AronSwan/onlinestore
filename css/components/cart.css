@@ -60,6 +60,24 @@
   transform: scale(1);
 }
 
+/* P2 · B3 加购脉冲：徽章数量变化时的单次脉冲。
+   cart.js（冻结）只改 textContent 与 display——徽章由 display:none 重现为
+   block/flex 时 animation 简写会重新触发，即得到一次 0.3s 脉冲；
+   需要更强效果时可手动追加 .pulse 类（同名同效）。 */
+@keyframes pulse {
+  0% { scale: 1; }
+  50% { scale: 1.15; }
+  100% { scale: 1; }
+}
+
+.site-cart-badge {
+  animation: pulse 0.3s var(--ease-lux);
+}
+
+.site-cart-badge.pulse {
+  animation: pulse 0.3s var(--ease-lux);
+}
+
 /* 购物车浮层 */
 .cart-overlay {
   position: fixed;

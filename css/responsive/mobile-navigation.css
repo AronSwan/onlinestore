@@ -60,7 +60,7 @@
   font-family: var(--brand-font-primary);
   font-size: 1.5rem;
   font-weight: var(--font-weight-bold);
-  color: var(--brand-gold);
+  color: var(--ink);
   text-decoration: none;
 }
 
@@ -82,7 +82,7 @@
 
 .mobile-nav-close:hover {
   background: var(--bg-tertiary);
-  color: var(--brand-gold);
+  color: var(--candy-blush-ink);
 }
 
 .mobile-nav-close:active {
@@ -127,13 +127,13 @@
 
 .mobile-nav-link:hover {
   background: var(--bg-tertiary);
-  color: var(--brand-gold);
+  color: var(--candy-blush-ink);
   padding-left: var(--spacing-6);
 }
 
 .mobile-nav-link.active {
   background: var(--bg-tertiary);
-  color: var(--brand-gold);
+  color: var(--candy-blush-ink);
   font-weight: var(--font-weight-semibold);
 }
 
@@ -144,7 +144,7 @@
   top: 0;
   bottom: 0;
   width: 3px;
-  background: var(--brand-gold);
+  background: var(--candy-blush-ink);
 }
 
 /* 移动端导航图标 */
@@ -152,7 +152,7 @@
   margin-right: var(--spacing-3);
   width: 20px;
   text-align: center;
-  color: var(--brand-gold);
+  color: var(--candy-blush-ink);
 }
 
 /* ==========================================================================

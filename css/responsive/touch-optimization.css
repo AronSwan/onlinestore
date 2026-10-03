@@ -42,7 +42,7 @@ textarea,
   -webkit-user-select: none;
   user-select: none;
   /* 添加触摸反馈 */
-  -webkit-tap-highlight-color: rgba(212, 175, 55, 0.5);
+  -webkit-tap-highlight-color: rgba(209, 77, 103, 0.3);
   /* 确保元素在触摸时不会半透明 */
   -webkit-opacity: 1;
   opacity: 1;
@@ -101,8 +101,8 @@ textarea,
 
 /* 主按钮触摸优化 */
 .btn-luxury-primary:active {
-  background-color: var(--gold-dark);
-  border-color: var(--gold-dark);
+  background-color: var(--candy-blush-ink);
+  border-color: var(--candy-blush-ink);
 }
 
 /* 次要按钮触摸优化 */
@@ -113,7 +113,7 @@ textarea,
 
 /* 轮廓按钮触摸优化 */
 .btn-luxury-outline:active {
-  background-color: rgba(212, 175, 55, 0.1);
+  background-color: rgba(209, 77, 103, 0.1);
 }
 
 /* 小按钮触摸优化 */
@@ -151,9 +151,8 @@ textarea,
 }
 
 .reich-product-action {
-  /* 扩大触摸区域 */
-  width: 48px;
-  height: 48px;
+  /* P2：金圆钮已改 pill 滑出——触摸目标保高度，去固定宽高 */
+  min-height: 44px;
   /* 添加触摸反馈 */
   transition: all 0.2s ease;
   /* 确保按钮在触摸时不会移动 */
@@ -162,9 +161,9 @@ textarea,
 
 /* 产品操作按钮触摸状态 */
 .reich-product-action:active {
-  transform: scale(0.95);
-  background-color: var(--gold-standard);
-  color: var(--white);
+  transform: translate(-50%, 0) scale(0.96);
+  background-color: var(--candy-blush-ink);
+  color: var(--bg-base);
 }
 
 /* 产品卡片悬停效果在触摸设备上的优化 */
@@ -175,7 +174,17 @@ textarea,
   }
 
   .reich-product-card:hover .reich-product-image {
-    transform: scale(1.05);
+    transform: scale(1.03);
+  }
+
+  /* P2：无 hover 的触摸设备上，pill 常显可直接点按 */
+  .reich-product-action {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+
+  .reich-product-action.reich-heart-pill {
+    transform: none;
   }
 }
 
@@ -194,7 +203,7 @@ textarea,
 
 /* 导航链接触摸状态 */
 .nav-link-luxury:active {
-  color: var(--gold-standard);
+  color: var(--candy-blush-ink);
 }
 
 /* 用户图标按钮触摸优化 */
@@ -208,9 +217,9 @@ textarea,
 
 /* 用户图标按钮触摸状态 */
 .user-icon-btn:active {
-  background-color: rgba(212, 175, 55, 0.1);
-  border-color: var(--gold-standard);
-  color: var(--gold-standard);
+  background-color: rgba(209, 77, 103, 0.1);
+  border-color: var(--candy-blush-ink);
+  color: var(--candy-blush-ink);
 }
 
 /* 购物车计数触摸优化 */
@@ -227,7 +236,7 @@ textarea,
 /* 购物车按钮触摸状态 */
 .cart-button:active .cart-count {
   transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.7);
+  box-shadow: 0 4px 12px rgba(209, 77, 103, 0.7);
 }
 
 /* ========================================================================== 
@@ -251,7 +260,7 @@ textarea,
 /* 输入框触摸状态 */
 .input-luxury:focus,
 .newsletter-input:focus {
-  border-color: var(--gold-standard);
+  border-color: var(--candy-blush-ink);
   outline: 2px solid var(--focus-ring-color);
   outline-offset: var(--focus-ring-offset);
   box-shadow: var(--focus-shadow);
@@ -279,7 +288,7 @@ textarea,
   -webkit-overflow-scrolling: touch;
   /* 显示滚动条提示 */
   scrollbar-width: thin;
-  scrollbar-color: var(--gold-standard) var(--gray-200);
+  scrollbar-color: var(--ink-soft) var(--gray-200);
 }
 
 /* 水平滑动区域滚动条样式 */
@@ -293,7 +302,7 @@ textarea,
 }
 
 .horizontal-scroll::-webkit-scrollbar-thumb {
-  background-color: var(--gold-standard);
+  background-color: var(--ink-soft);
   border-radius: 3px;
 }
 
@@ -338,7 +347,7 @@ textarea,
   right: 0;
   bottom: 0;
   border-radius: inherit;
-  border: 2px solid var(--gold-standard);
+  border: 2px solid var(--candy-blush-ink);
   opacity: 0;
   transform: scale(0.9);
   transition: all 0.3s ease;
@@ -473,7 +482,7 @@ textarea,
 
   .reich-product-price {
     font-size: 1rem;
-    color: var(--brand-gold);
+    color: var(--ink);
     font-weight: 600;
   }
 
@@ -494,23 +503,37 @@ textarea,
   }
 
   .reich-product-action {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.95);
-    border: 1px solid rgba(212, 175, 55, 0.2);
-    display: flex;
+    min-height: 44px;
+    border-radius: var(--radius-pill);
+    background: var(--ink);
+    color: var(--bg-base);
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     transition: all 0.3s ease;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
   }
 
   .reich-product-action:hover {
-    background: var(--brand-gold);
+    background: var(--candy-blush);
     color: var(--brand-white);
-    transform: scale(1.1);
+    transform: translate(-50%, 0) scale(1.03);
+  }
+
+  .reich-product-action.reich-heart-pill {
+    background: var(--bg-base);
+    color: var(--candy-blush-ink);
+    border: 1px solid var(--line);
+    transform: none;
+  }
+
+  .reich-product-action.reich-heart-pill:hover {
+    background: var(--candy-blush-soft);
+    color: var(--candy-blush-ink);
+    transform: none;
+  }
+
+  .reich-product-action.reich-heart-pill:active {
+    transform: scale(0.96);
   }
 }
 
@@ -556,7 +579,7 @@ textarea,
 }
 
 .touch-feedback:active {
-  background-color: rgba(212, 175, 55, 0.2);
+  background-color: rgba(209, 77, 103, 0.2);
 }
 
 /* 确保触摸目标之间有足够的间距 */
@@ -612,8 +635,8 @@ textarea,
   }
 
   .main-nav .nav-link:hover {
-    background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(212, 175, 55, 0.05) 100%);
-    color: var(--brand-gold);
+    background: linear-gradient(135deg, rgba(209, 77, 103, 0.1) 0%, rgba(209, 77, 103, 0.05) 100%);
+    color: var(--candy-blush-ink);
     transform: translateX(8px);
   }
 
@@ -686,7 +709,7 @@ textarea,
     border-radius: 20px;
     padding: 2rem;
     text-align: center;
-    border: 1px solid rgba(212, 175, 55, 0.1);
+    border: 1px solid var(--line);
     transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     position: relative;
     overflow: hidden;
@@ -699,7 +722,7 @@ textarea,
     left: 0;
     right: 0;
     height: 3px;
-    background: linear-gradient(90deg, var(--brand-gold), var(--brand-gold-light));
+    background: linear-gradient(90deg, var(--candy-blush), var(--candy-sun));
     transform: scaleX(0);
     transition: transform 0.4s ease;
   }
@@ -717,7 +740,7 @@ textarea,
     width: 60px;
     height: 60px;
     margin: 0 auto 1.5rem;
-    background: linear-gradient(135deg, var(--brand-gold), var(--brand-gold-light));
+    background: linear-gradient(135deg, var(--candy-blush), var(--candy-sun));
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -767,7 +790,7 @@ textarea,
     min-height: 48px;
     padding: 14px 18px;
     border-radius: 12px;
-    border: 1px solid rgba(212, 175, 55, 0.2);
+    border: 1px solid var(--line);
     background: var(--bg-primary);
     font-size: 1rem;
     transition: all 0.3s ease;
@@ -776,7 +799,7 @@ textarea,
   .newsletter-input:focus {
     outline: 2px solid var(--focus-ring-color);
     outline-offset: var(--focus-ring-offset);
-    border-color: var(--brand-gold);
+    border-color: var(--candy-blush-ink);
     box-shadow: var(--focus-shadow);
   }
 
@@ -791,7 +814,7 @@ textarea,
 
   .newsletter-button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(212, 175, 55, 0.3);
+    box-shadow: 0 8px 20px rgba(209, 77, 103, 0.3);
   }
 
   .newsletter-privacy {
@@ -842,7 +865,7 @@ textarea,
   }
 
   .footer-column a:hover {
-    color: var(--brand-gold);
+    color: var(--candy-blush-ink);
     transform: translateX(4px);
   }
 

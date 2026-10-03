@@ -53,12 +53,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--gold-standard);
+    background: var(--ink-soft);
     border-radius: var(--radius-full);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--gold-dark);
+    background: var(--ink);
 }
 
 /* ==========================================================================
@@ -117,7 +117,7 @@ body {
 
 .hover-button.hover-active,
 .hover-button[data-state="hover-active"] {
-    background-color: var(--gold-standard);
+    background-color: var(--ink);
     color: var(--button-primary-color);
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
@@ -132,9 +132,9 @@ body {
 }
 
 .btn-primary {
-    background: var(--gradient-gold);
+    background: var(--ink);
     color: var(--button-primary-color);
-    box-shadow: var(--shadow-gold);
+    box-shadow: var(--shadow-md);
 }
 
 .btn-primary:hover {
@@ -179,20 +179,129 @@ body {
     font-size: var(--text-lg);
 }
 
-/* 按钮悬停效果 */
-.btn-luxury::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left var(--transition-duration-normal) var(--transition-timing-ease);
+/* ==========================================================================
+   Pill CTA（P2 · 全站主 CTA 形制：胶囊按钮替代金色块状按钮）
+   ========================================================================== */
+.btn-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-2);
+    border-radius: var(--radius-pill);
+    padding: 0.75rem 2rem;
+    font-family: var(--font-secondary);
+    font-size: var(--text-caption);
+    font-weight: 600;
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+    text-decoration: none;
+    text-align: center;
+    cursor: pointer;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    transition:
+        background var(--dur-fast) var(--ease-lux),
+        color var(--dur-fast) var(--ease-lux),
+        border-color var(--dur-fast) var(--ease-lux),
+        transform var(--dur-fast) var(--ease-lux);
 }
 
-.btn-luxury:hover::before {
-    left: 100%;
+.btn-pill:active {
+    transform: scale(0.98);
+}
+
+/* 主色版：ink 底白字，hover candy-blush 底白字（0.2s） */
+.btn-pill-primary {
+    background: var(--ink);
+    color: var(--bg-base);
+}
+
+.btn-pill-primary:hover {
+    background: var(--candy-blush);
+    color: #FFFFFF;
+}
+
+/* 描边版：ink 1px 边框透明底，hover ink 底白字 */
+.btn-pill-outline {
+    background: transparent;
+    color: var(--ink);
+    border-color: var(--ink);
+}
+
+.btn-pill-outline:hover {
+    background: var(--ink);
+    color: #FFFFFF;
+}
+
+/* ==========================================================================
+   跑马灯公告条（P2 · B1：CSS-only 无限横向滚动）
+   ========================================================================== */
+.marquee {
+    background: var(--candy-sun-soft);
+    color: var(--ink);
+    overflow: hidden;
+    white-space: nowrap;
+    font-size: var(--text-caption);
+    font-weight: 600;
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--line);
+    user-select: none;
+}
+
+.marquee-track {
+    display: flex;
+    width: max-content;
+}
+
+/* 双份内容各自 -100%，衔接为无缝循环 */
+.marquee-copy {
+    flex-shrink: 0;
+    min-width: 100%;
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-2) 0;
+    animation: marquee 24s linear infinite;
+}
+
+@keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-100%); }
+}
+
+/* ==========================================================================
+   stagger 入场（P2 · B2：商品网格依次浮现，≤6 项递增 50ms）
+   ========================================================================== */
+.stagger-item {
+    opacity: 0;
+    transform: translateY(12px);
+    animation: fadeUp 0.4s ease-in-out forwards;
+}
+
+.stagger-item:nth-child(1) { animation-delay: 0ms; }
+.stagger-item:nth-child(2) { animation-delay: 50ms; }
+.stagger-item:nth-child(3) { animation-delay: 100ms; }
+.stagger-item:nth-child(4) { animation-delay: 150ms; }
+.stagger-item:nth-child(5) { animation-delay: 200ms; }
+.stagger-item:nth-child(6) { animation-delay: 250ms; }
+
+@keyframes fadeUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .stagger-item {
+        opacity: 1;
+        transform: none;
+        animation: none;
+    }
+
+    .marquee-copy {
+        animation: none;
+    }
 }
 
 /* 表单样式 */
@@ -351,7 +460,7 @@ body {
 }
 
 .badge-primary {
-    background-color: var(--gold-standard);
+    background-color: var(--ink);
     color: var(--badge-primary-color);
 }
 
@@ -420,62 +529,8 @@ body {
     gap: var(--spacing-6);
 }
 
-.nav-link {
-    color: var(--navbar-link-color);
-    text-decoration: none;
-    font-family: var(--font-secondary);
-    font-size: var(--text-base);
-    font-weight: var(--font-weight-medium);
-    transition: var(--nav-highlight-transition);
-    position: relative;
-    padding: var(--nav-link-padding);
-    margin: var(--nav-link-margin);
-    border-radius: var(--nav-highlight-border-radius);
-}
-
-.nav-link::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 0;
-    height: var(--nav-underline-height);
-    background: linear-gradient(90deg, var(--gold-pale), var(--gold-standard));
-    transform-origin: left center;
-    transition: var(--nav-underline-transition);
-    transform: scaleX(0);
-}
-
-.nav-link:hover {
-    color: var(--navbar-link-hover-color);
-    background-color: rgba(212, 175, 55, 0.1);
-}
-
-.nav-link:hover::after {
-    width: 100%;
-    transform: scaleX(1);
-    box-shadow: 0 0 var(--nav-underline-glow-size) rgba(212, 175, 55, 0.4);
-}
-
-.nav-link.active {
-    color: var(--navbar-link-active-color);
-    background-color: rgba(212, 175, 55, 0.15);
-    font-weight: 600;
-}
-
-.nav-link.active::after {
-    width: 100%;
-    transform: scaleX(1);
-    background: var(--gold-standard);
-    box-shadow: 0 0 var(--nav-underline-glow-size) rgba(212, 175, 55, 0.4);
-}
-
-/* 焦点状态（边框效果已移除） */
-.nav-link:focus-visible {
-    background-color: rgba(212, 175, 55, 0.1);
-    outline: 2px solid var(--focus-ring-color);
-    outline-offset: var(--focus-ring-offset);
-}
+/* P2：.nav-link 系列已随旧导航移除（四页均未使用；金渐变下划线一并删除，
+   现行导航为 site-header.css 的 .site-nav） */
 
 /* 触摸设备优化 */
 @media (hover: none) {
@@ -2248,8 +2303,8 @@ body {
 }
 
 .reich-product-card:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--shadow-xl);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
 }
 
 .reich-product-image {
@@ -2260,7 +2315,7 @@ body {
 }
 
 .reich-product-card:hover .reich-product-image {
-    transform: scale(1.05);
+    transform: scale(1.03);
 }
 
 .reich-product-name {
@@ -2275,38 +2330,78 @@ body {
     font-family: var(--font-secondary);
     font-size: var(--text-xl);
     font-weight: var(--font-weight-bold);
-    color: var(--gold-standard);
+    color: var(--ink);
     margin-bottom: var(--spacing-4);
 }
 
-/* 悬浮添加购物车按钮 */
+/* 悬浮添加购物袋按钮（P2：金圆钮 → 卡片底部滑出的 pill；
+   类名 .reich-product-action 为冻结契约，wishlist.js 依赖） */
 .reich-product-action {
     position: absolute;
-    top: var(--spacing-4);
-    right: var(--spacing-4);
-    width: 40px;
-    height: 40px;
-    background: var(--gold-standard);
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    left: 50%;
+    bottom: var(--spacing-4);
+    transform: translate(-50%, 120%);
+    background: var(--ink);
+    color: var(--bg-base);
+    border: none;
+    border-radius: var(--radius-pill);
+    padding: 0.6rem 1.5rem;
+    font-family: var(--font-secondary);
+    font-size: var(--text-caption);
+    font-weight: 600;
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+    white-space: nowrap;
     cursor: pointer;
     opacity: 0;
-    transform: translateY(10px);
-    transition: all var(--transition-standard);
+    transition:
+        transform var(--dur-slow) var(--ease-lux),
+        opacity var(--dur-slow) var(--ease-lux),
+        background var(--dur-fast) var(--ease-lux);
     z-index: 10;
 }
 
-.reich-product-card:hover .reich-product-action {
+.reich-product-card:hover .reich-product-action,
+.reich-product-action:focus-visible {
     opacity: 1;
-    transform: translateY(0);
+    transform: translate(-50%, 0);
 }
 
 .reich-product-action:hover {
-    background: var(--gold-dark);
-    transform: scale(1.1);
+    background: var(--candy-blush);
+    color: #FFFFFF;
+}
+
+/* 心愿单小 pill（P2：金圆爱心 → hover 显示的小 pill；
+   内部 img[src*="heart-icon"] 为 wishlist.js 冻结选择器） */
+.reich-product-action.reich-heart-pill {
+    left: auto;
+    top: var(--spacing-3);
+    right: var(--spacing-3);
+    bottom: auto;
+    transform: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.75rem;
+    background: var(--bg-base);
+    color: var(--candy-blush-ink);
+    box-shadow: var(--shadow-sm);
+}
+
+.reich-product-card:hover .reich-heart-pill,
+.reich-heart-pill:focus-visible {
+    opacity: 1;
+    transform: none;
+}
+
+.reich-heart-pill:hover {
+    background: var(--candy-blush-soft);
+    color: var(--candy-blush-ink);
+}
+
+.reich-heart-pill img {
+    display: block;
 }
 
 /* 购物车数量徽章 */
@@ -2426,7 +2521,7 @@ body {
     font-family: var(--font-secondary);
     font-size: var(--text-lg);
     font-weight: var(--font-weight-bold);
-    color: var(--gold-standard);
+    color: var(--ink);
     margin-bottom: var(--spacing-3);
 }
 
@@ -2499,7 +2594,7 @@ body {
 .cart-checkout-btn {
     width: 100%;
     padding: var(--spacing-4);
-    background: var(--gold-standard);
+    background: var(--ink);
     color: white;
     border: none;
     border-radius: var(--radius-lg);
@@ -2511,7 +2606,7 @@ body {
 }
 
 .cart-checkout-btn:hover {
-    background: var(--gold-dark);
+    background: var(--candy-blush-ink);
     transform: translateY(-2px);
 }
 
