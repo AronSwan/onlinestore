@@ -18,7 +18,7 @@ class OAuthHandler {
             casdoor: {
                 name: 'Casdoor',
                 color: 'text-blue-600',
-                authUrl: '/api/auth/oauth/casdoor'
+                authUrl: '/api/auth/casdoor/login'  // 修(2026-10-03): 走后端重定向路由, 非不存在的 /oauth/
             }
         };
         

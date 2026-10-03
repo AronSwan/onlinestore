@@ -129,7 +129,9 @@
   right: 0;
   min-width: 16px;
   height: 16px;
-  display: flex;
+  /* B-5 修复(2026-10-03): cart.js updateCartBadge 用 display:none/block 切换,
+     CSS 必须不设 display——否则 JS 的 display:block 被覆盖或 flex 失效 */
+  display: none;
   align-items: center;
   justify-content: center;
   font-size: 10px;

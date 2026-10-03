@@ -275,7 +275,7 @@ body {
 .stagger-item {
     opacity: 0;
     transform: translateY(12px);
-    animation: fadeUp 0.4s ease-in-out forwards;
+    animation: fadeUp 0.4s ease-in-out backwards; /* backwards: 不锁终态, hover 可改 transform */
 }
 
 .stagger-item:nth-child(1) { animation-delay: 0ms; }

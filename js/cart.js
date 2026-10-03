@@ -85,10 +85,9 @@ class CartManager {
     // 更新SVG图标中的数字显示
     await this.updateSvgCartIcons(total);
     
-    // 新增：初始化CartUI组件（如果页面需要）
-    // !this.cartUI 守卫：showCart() 可能已按需懒创建过 CartUI，
-    // 这里再建会出现第二个浮层 DOM
-    if (!this.cartUI && this.shouldInitCartUI()) {
+    // 用户视觉审查修复(2026-10-03): 加购后如果页面有购物车图标(即任何页面
+    // 都可能有购物车交互), 也懒建 CartUI——否则徽章永远不亮
+    if (!this.cartUI && document.querySelector('[data-cart-icon], .site-cart-btn, .cart-button')) {
       this.cartUI = new CartUI(this);
     }
   }
@@ -391,15 +390,31 @@ class CartManager {
 
   // 保留现有方法：从元素获取商品数据
   getProductDataFromElement(element) {
-    // 保留现有逻辑
+    // 用户视觉审查修复(2026-10-03): 元素缺 data-* 时从最近商品卡上下文补全,
+    // 否则 addToCart throw '商品信息不完整' → 加购死钮
+    var productId = element.dataset.productId;
+    var productSkuId = element.dataset.productSkuId;
+    var productName = element.dataset.productName;
+    var productPrice = element.dataset.productPrice;
+    var productPic = element.dataset.productPic;
+    if (!productSkuId || !productName || !productPrice) {
+      var card = element.closest('.reich-product-card');
+      if (card) {
+        productSkuId = productSkuId || card.dataset.productId || '';
+        productName = productName || (card.querySelector('.reich-product-name') || {}).textContent || '';
+        productPrice = productPrice || (card.querySelector('.reich-product-price [itemprop=price], .reich-product-price') || {}).textContent || '';
+        productPrice = parseFloat(String(productPrice).replace(/[^\d.]/g, '')) || 0;
+        productPic = productPic || ((card.querySelector('.reich-product-image') || {}).src || '');
+      }
+    }
     return {
-      productId: element.dataset.productId,
-      productSkuId: element.dataset.productSkuId,
-      productName: element.dataset.productName,
-      productBrand: element.dataset.productBrand,
-      productPrice: element.dataset.productPrice,
+      productId: productId,
+      productSkuId: productSkuId,
+      productName: productName,
+      productBrand: 'Reich',
+      productPrice: productPrice,
       productQuantity: parseInt(element.dataset.productQuantity) || 1,
-      productPic: element.dataset.productPic,
+      productPic: productPic,
       productAttribute: element.dataset.productAttribute || '{}'
     };
   }
@@ -701,11 +716,14 @@ class CartUI {
    */
   updateCartBadge() {
     const total = this.cartManager.getTotalItems();
-    const badgeEls = document.querySelectorAll('.cart-badge, .cart-count, #cart-badge, #cart-count');
+    const badgeEls = document.querySelectorAll('.cart-badge, .cart-count, #cart-badge, #cart-count, .site-cart-badge');
     
     badgeEls.forEach(el => {
       el.textContent = total;
-      el.style.display = total > 0 ? 'block' : 'none';
+      // B-5 修复(2026-10-03): .site-cart-badge 初始 display:none(CSS 控制),
+      // JS 切换时按 flex 恢复(否则 display:block 覆盖 flex 布局)
+      var display = total > 0 ? (el.classList.contains('site-cart-badge') ? 'flex' : 'block') : 'none';
+      el.style.display = display;
     });
   }
 
