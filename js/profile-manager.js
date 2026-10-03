@@ -1,5 +1,5 @@
 // 用途：用户个人资料管理器，处理用户信息的加载、编辑、地址管理等功能
-// 依赖文件：navigation-state-manager.js (通过window.navStateManager使用)
+// 依赖文件：无（navigation-state-manager.js 已移出工作树，见 git 历史）
 // 作者：系统开发团队
 // 时间：2025-10-01 19:05:51
 

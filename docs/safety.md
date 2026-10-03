@@ -14,7 +14,7 @@
 | **角色以数据库为准。** JWT 载荷里的 `role` 不被信任，`validate()` 回读用户表的 `role`；令牌签名密钥丢失不等于拿到管理员。 | `auth/strategies/jwt.strategy.ts` | `jwt.strategy.spec.ts`；伪造 admin 令牌实测 403（台账 2026-10-03） |
 | **刷新令牌不能当访问令牌。** refresh 签发时打 `typ:'refresh'` 标，策略层见到即拒。 | `auth/auth.service.ts`（签发）、`auth/strategies/jwt.strategy.ts`（拒绝） | `auth.service.spec.ts`；实测 401 |
 | **金额、单价、快照、归属全由服务端决定。** 下单时 `userId` 一律取令牌主体，`unitPrice/totalAmount` 按商品现价×数量服务端重算，商品快照服务端落库；请求体里的金额字段被忽略。 | `orders/orders.controller.ts` `create`（归属绑定）、`orders/orders.service.ts` `create`（定价循环）、`orders/dto/order.dto.ts`（DTO：数量 `@IsInt @Min(1)`、items `@ArrayMinSize(1)`） | `orders.service.spec.ts`（55 用例）；实测：篡价 0.01→落库 100、劫持 userId→归属令牌主体 |
-| **收不了钱也改不了价。** 支付模块不接线；回调无 `x-signature` 头直接 400，验签失败拒绝；网关密钥缺失 fail-closed 拒签，不拼 `&secret=undefined`。 | `payment/payment.controller.ts`、`payment/gateways/crypto-gateway.service.ts`、`gopay-gateway.service.ts` | `payment/gateways/payment-gateways.spec.ts`（5 用例）；不接线由 `app.module.ts` 结构保证（PaymentModule 无 import，BACKLOG A11 声明接线前须先补认证设计） |
+| **收不了钱也改不了价。** 支付模块不接线；回调无 `x-signature` 头直接 400，验签失败拒绝；网关密钥缺失 fail-closed 拒签，不拼 `&secret=undefined`。 | `payment/payment.controller.ts`、`payment/gateways/crypto-gateway.service.ts`、`gopay-gateway.service.ts` | `payment/gateways/payment-gateways.spec.ts`（5 用例）；不接线由 `app.module.ts` 结构保证（PaymentModule 无 import；**孤儿模块 aggregation/performance/circuit-breaker/security-monitoring 同样未接线且无守卫——接线前必须先挂 Guard**） |
 | **密码只存一次哈希、不出现在任何响应里。** `users.service` 的 create/update 各自哈希一次（rounds 12，调用方传明文）；订单 findById/findByUserId/findAll 三处全部剥离 `user.password`（一审发现 findAll 漏剥已补）。 | `users/users.service.ts`、`orders/orders.service.ts` 三方法 | `auth.service.spec.ts`；实测 admin 列表/详情响应零 password |
 | **暴破会被闸。** 全局 `ThrottlerModule`（300/分/IP）+ 登录 5/分、注册 3/分、验证码 3/分。 | `app.module.ts`（全局 Guard）、`auth/auth.controller.ts`、`auth/verify-code/verify-code.controller.ts` 的 `@Throttle` | 实测登录第 6 发 429（台账多轮复验） |
 | **报错不泄内构。** 非 HttpException 一律固定文案"服务器内部错误"，堆栈只留服务端日志；领域"不存在"异常统一 404、"已存在"统一 409。 | `common/filters/global-exception.filter.ts`（全 app 兜底固定文案+404/409 转译；一审修正主落点）、`logging/filters/logging-exception.filter.ts`（仅 logging 面） | `logging-exception.filter.spec.ts`；实测匿名 500 响应 230 字节零堆栈 |
@@ -43,5 +43,5 @@
 
 ## 一个部署上线前必须先做的事
 
-对照 `docs/BACKLOG.md` 清完全部 P1，轮换全部密钥（JWT/ENCRYPTION/DB/Redis），
+对照 `docs/BACKLOG.md` 清完全部**开放安全项**区块，轮换全部密钥（JWT/ENCRYPTION/DB/Redis），
 给 MySQL 生产库补 `synchronize:false` + 迁移对齐，再重读本页。

@@ -25,7 +25,7 @@ python3 scripts/check-frontend-assets.py
 | 购物车 | 后端路由可用 / 前端同步未打通 | 后端购物车路由已挂 `JwtAuthGuard` + `CartOwnerGuard`（见 `backend/src/cart/interfaces/cart.controller.ts`）：`customerUserId` 必须等于认证用户 JWT `sub`，不一致一律 403（越权拦截）；前端 gap 是 `js/cart.js` 仍在调用不存在的 `/api/cart` 根路由，失败后静默回退本地购物车。接通需按 `/api/cart/items/{sub}` 契约改造前端（携带认证令牌，body 需 `productSkuId` 等 SKU 域字段） |
 | 订单 | 可用 | `/api/orders`；前端带演示回退（后端不可用时使用本地演示数据） |
 | 支付 | 演示 / 未完成 | `backend/src/payment` 各策略（alipay / wechat-pay / credit-card）实现为 TODO；回调验签 fail-closed（校验失败即拒绝） |
-| AI 助手 | 演示 / 未接线 | 仓库内是规则式（非大模型）演示代码（如 `js/nextchat-advanced-unified.js`），未挂载到任何页面；旧版 README 宣称的"NextChat 多模态 AI 助手"与现实不符 |
+| AI 助手 | 演示 / 未接线 | 仓库内是规则式（非大模型）演示代码（如 js/nextchat-advanced-unified.js（已移出工作树，见 git 历史）），未挂载到任何页面；旧版 README 宣称的"NextChat 多模态 AI 助手"与现实不符 |
 | OpenObserve 监控 | 未部署 | compose 片段与 example 模板齐全（`docker-compose.openobserve.yml`、`backend/.env.openobserve.example`），仓库内无实际部署 |
 
 ## 快速开始
@@ -53,7 +53,7 @@ cp .env.example .env      # 1) 生成环境配置
 # 2) 在 .env 中填入真实密钥：JWT_SECRET 与 ENCRYPTION_KEY 用 `openssl rand -hex 32` 生成
 #    （ENCRYPTION_KEY 需恰好 64 个十六进制字符）；POSTGRES_PASSWORD、REDIS_PASSWORD 亦为必填
 #    （redis 已启用 --requirepass，REDIS_PASSWORD 缺失时 compose 直接拒启）
-docker compose up -d frontend backend   # 3) 起服务，入口 http://localhost（80/443 对外，数据面端口仅绑 127.0.0.1）
+docker compose up -d frontend backend   # 3) 起服务，入口 http://localhost（80/443 对外，数据存储端口（postgres/redis/meilisearch/zinc）绑 127.0.0.1（backend 3000 与 email-verifier 8080 对外））
 ```
 
 ## 目录结构
@@ -72,7 +72,7 @@ docker compose up -d frontend backend   # 3) 起服务，入口 http://localhost
 
 ## 测试
 
-- 后端：`cd backend && npm run test:unit`（988 个用例 / 56 个套件，2026-10-03 本机全绿，可复跑
+- 后端：`cd backend && npm run test:unit`（988 个用例 / 56 个套件，2026-10-03 本机全绿，可复跑）
 - 冒烟自测：`bash scripts/smoke.sh`（需后端已在本机运行，默认 3000 端口，`PORT=xxxx` 可指定；覆盖 健康检查 → 注册 → 登录 → 带凭据购物车 → 匿名 401 → 错误密码 401）
 - 后端安全检查：全新 clone 后需先 `cp backend/.env.test.example backend/.env.test`（`npm run security:check:test` 依赖该文件，`.env.test` 不入库）
 - 前端：`npm test`（Playwright，部分用例需要后端在本地运行）
