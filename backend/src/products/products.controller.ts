@@ -54,6 +54,10 @@ import {
   ApiGetResource,
 } from '../common/decorators/api-docs.decorator';
 import { Product } from './entities/product.entity';
+import {
+  enforceProductIntegrityGate,
+  hasFactCard,
+} from './product-integrity.gate';
 
 // ================================
 // M2-B5(2026-10-04) 商品图上传安全常量与工具
@@ -194,6 +198,9 @@ export class ProductsController {
   @Roles(Role.ADMIN)
   @ApiCreateResource(Product, CreateProductDto, '创建产品')
   async create(@Body() createProductDto: CreateProductDto, @Req() req?: any) {
+    // M4(2026-10-04) 第二闸服务端侧：DTO 带 factCard 即复检（fail-closed），
+    // 结构冲突/禁用词 → 400 带明细；黄警放行（发布预览已人工确认）。
+    await enforceProductIntegrityGate(createProductDto);
     const created = await this.productsService.create(createProductDto);
     await this.auditProductWrite(req, '创建', created.id, {
       id: created.id,
@@ -481,6 +488,21 @@ export class ProductsController {
     @Body() updateProductDto: UpdateProductDto,
     @Req() req?: any,
   ) {
+    // M4(2026-10-04) 第二闸服务端侧（update 分支）：DTO 带 factCard 即复检。
+    // PATCH 可只传部分字段——name/description 缺省时合并存量商品值再检，
+    // 避免"只改价格却被 BAG_TYPE_MISSING 空文案红拦"的误伤；无 factCard 跳过（存量兼容）。
+    if (hasFactCard(updateProductDto.specifications)) {
+      let gateView: any = updateProductDto;
+      if (updateProductDto.name === undefined || updateProductDto.description === undefined) {
+        const existing = await this.productsService.findById(id).catch(() => null);
+        gateView = {
+          ...updateProductDto,
+          name: updateProductDto.name ?? existing?.name,
+          description: updateProductDto.description ?? existing?.description,
+        };
+      }
+      await enforceProductIntegrityGate(gateView);
+    }
     const updated = await this.productsService.update(id, updateProductDto);
     // diff 摘要：本次提交的变更载荷（before 态由 service 内快照可查，此处记录请求侧 patch）
     await this.auditProductWrite(req, '更新', id, { id, changes: updateProductDto });

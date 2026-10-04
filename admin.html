@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- M3(2026-10-04)：管理页不进索引 -->
+    <meta name="robots" content="noindex, nofollow">
+    <title>商品管理 · REICH</title>
+    <!-- 复用站点令牌唯一源（糖果体系/白底黑 ink 骨架/12px 圆角），不引 Tailwind CDN、不等构建链 -->
+    <link rel="stylesheet" href="css/tokens.css">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <!--
+      admin 样式全部内嵌本页（禁令：不新建主站 css 文件、不污染 css/ 目录）。
+      页面逻辑在 /js/admin/admin.js（module），三闸计算层在 /js/admin/gates.js，
+      规则引擎直接 import /js/shared/integrity-rules.js（同源 ESM，无构建依赖）。
+    -->
+    <style>
+      /* ── 基底：白底黑 ink，同站点宪法 ─────────────────────── */
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        background: var(--bg-base);
+        color: var(--ink);
+        font-family: var(--font-body);
+        font-size: var(--text-body);
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+      .hidden { display: none !important; }
+      a { color: inherit; }
+
+      /* ── 顶栏 ───────────────────────────────────────────── */
+      .admin-topbar {
+        position: sticky; top: 0; z-index: 40;
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 0 24px; height: 60px;
+        background: var(--bg-base); border-bottom: 1px solid var(--line);
+      }
+      .brand { display: flex; align-items: baseline; gap: 10px; }
+      .brand .logo {
+        font-family: var(--font-display); font-weight: 800; font-size: var(--text-lg);
+        letter-spacing: var(--tracking-wide);
+      }
+      .brand .crumb {
+        font-size: var(--text-caption); text-transform: uppercase;
+        letter-spacing: var(--tracking-caps); color: var(--ink-soft);
+      }
+      .session { display: flex; align-items: center; gap: 14px; font-size: var(--text-small); color: var(--ink-soft); }
+      .session .email { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .session a { text-decoration: none; }
+      .session a:hover { color: var(--ink); text-decoration: underline; }
+
+      /* ── 布局容器 ────────────────────────────────────────── */
+      .admin-main { max-width: 1240px; margin: 0 auto; padding: 28px 24px 80px; }
+      .view-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+      .view-head h1 { font-family: var(--font-display); font-size: var(--text-title); font-weight: 800; margin: 0; letter-spacing: 0.01em; }
+      .view-head .sub { color: var(--ink-soft); font-size: var(--text-small); margin-top: 4px; }
+
+      /* ── 按钮（pill 主 CTA，与站点一致） ─────────────────── */
+      .btn {
+        font-family: var(--font-body); font-size: var(--text-small); font-weight: 600;
+        border: 1px solid var(--line-strong); background: var(--bg-base); color: var(--ink);
+        border-radius: var(--radius-pill); padding: 8px 18px; cursor: pointer;
+        transition: background var(--dur-fast) var(--ease-lux), color var(--dur-fast) var(--ease-lux), border-color var(--dur-fast) var(--ease-lux);
+      }
+      .btn:hover { background: var(--bg-soft); }
+      .btn-primary {
+        background: var(--ink); border-color: var(--ink); color: #fff;
+      }
+      .btn-primary:hover { background: var(--primary-dark); border-color: var(--primary-dark); color: #fff; }
+      .btn-danger-outline { color: var(--error); border-color: var(--error); background: transparent; }
+      .btn-danger-outline:hover { background: #FBF1F1; }
+      .btn-ghost { border-color: transparent; padding-left: 8px; color: var(--ink-soft); }
+      .btn-ghost:hover { color: var(--ink); background: transparent; text-decoration: underline; }
+      .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+      .btn:disabled:hover { background: var(--bg-base); }
+      .btn-primary:disabled:hover { background: var(--ink); }
+      .link-btn {
+        background: none; border: none; padding: 0; font: inherit; cursor: pointer;
+        color: var(--ink); text-decoration: underline; text-underline-offset: 3px;
+      }
+      .link-btn:hover { color: var(--candy-blush-ink); }
+      .link-btn.off { color: var(--success); text-decoration: none; }
+
+      /* ── 列表表格 ────────────────────────────────────────── */
+      .product-table { width: 100%; border-collapse: collapse; background: var(--bg-base); }
+      .product-table th {
+        font-size: var(--text-caption); text-transform: uppercase; letter-spacing: var(--tracking-caps);
+        color: var(--ink-faint); font-weight: 600; text-align: left;
+        padding: 10px 12px; border-bottom: 2px solid var(--line-strong); white-space: nowrap;
+      }
+      .product-table td { padding: 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+      .product-table tbody tr { transition: background var(--dur-fast) var(--ease-lux); }
+      .product-table tbody tr:hover { background: var(--bg-soft); }
+      tr.row-off td { color: var(--ink-faint); }
+      tr.row-off .thumb { filter: grayscale(1); opacity: 0.55; }
+      .thumb { width: 48px; height: 48px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--line); display: block; background: var(--bg-soft); }
+      .cell-name { font-weight: 600; max-width: 260px; }
+      .cell-price { font-family: var(--font-numeric); font-size: var(--text-body); }
+      .cell-tags { max-width: 200px; font-size: var(--text-small); color: var(--ink-soft); }
+      .badge {
+        display: inline-block; padding: 2px 10px; border-radius: var(--radius-pill);
+        font-size: var(--text-caption); font-weight: 600; letter-spacing: 0.02em; border: 1px solid transparent;
+      }
+      .badge-on { color: var(--candy-mint-ink); background: var(--candy-mint-soft); }
+      .badge-off { color: var(--ink-faint); background: var(--bg-soft); border-color: var(--line); }
+      .cell-actions { white-space: nowrap; display: flex; gap: 12px; align-items: center; }
+      .empty-state { padding: 60px 0; text-align: center; color: var(--ink-soft); }
+
+      /* ── 编辑视图骨架 ────────────────────────────────────── */
+      .editor-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 24px; margin-top: 20px; }
+      @media (max-width: 960px) { .editor-grid { grid-template-columns: 1fr; } }
+      .card {
+        background: var(--bg-base); border: 1px solid var(--line);
+        border-radius: var(--radius-md); padding: 20px;
+      }
+      .card + .card { margin-top: 20px; }
+      .card h2 {
+        font-size: var(--text-small); font-weight: 700; margin: 0 0 14px;
+        text-transform: uppercase; letter-spacing: var(--tracking-caps); color: var(--ink-soft);
+      }
+      .field { margin-bottom: 16px; }
+      .field label { display: block; font-size: var(--text-small); font-weight: 600; margin-bottom: 6px; }
+      .field .hint { font-size: var(--text-caption); color: var(--ink-faint); margin-top: 4px; }
+      .field-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+      input[type="text"], input[type="number"], textarea, select {
+        width: 100%; font: inherit; color: var(--ink);
+        background: var(--bg-base); border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm); padding: 9px 12px; outline: none;
+        transition: border-color var(--dur-fast) var(--ease-lux);
+      }
+      input:focus, textarea:focus, select:focus { border-color: var(--ink); }
+      textarea { min-height: 120px; resize: vertical; }
+      .switch-row { display: flex; align-items: center; gap: 10px; }
+      .switch-row input { width: auto; }
+
+      /* ── 第二闸红下划线背板（lint 镜像层） ──────────────── */
+      .lint-wrap { position: relative; }
+      .lint-backdrop {
+        position: absolute; inset: 0; z-index: 0; pointer-events: none;
+        padding: 9px 12px; font: inherit; line-height: inherit; letter-spacing: inherit;
+        color: transparent; overflow: hidden; white-space: pre-wrap; word-break: break-word;
+        border: 1px solid transparent;
+      }
+      .lint-wrap.lint-single .lint-backdrop { white-space: pre; }
+      .lint-target { position: relative; z-index: 1; background: transparent; }
+      .lint-hit {
+        background: transparent; color: transparent;
+        text-decoration: underline wavy var(--error); text-decoration-skip-ink: none;
+      }
+      /* 禁用词浮层：替代建议 */
+      .lint-popover {
+        position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 30;
+        background: var(--bg-base); border: 1px solid var(--error); border-radius: var(--radius-sm);
+        box-shadow: var(--shadow-md); padding: 6px 10px; font-size: var(--text-small);
+      }
+      .lint-popover .lint-row { display: flex; align-items: baseline; gap: 8px; padding: 3px 0; flex-wrap: wrap; }
+      .lint-popover .w { color: var(--error); font-weight: 700; }
+      .lint-popover .s { color: var(--ink-soft); }
+      .lint-popover .fix { margin-left: auto; }
+
+      /* ── 三闸反馈条 ──────────────────────────────────────── */
+      .gate-bar {
+        border-radius: var(--radius-md); padding: 12px 16px; font-size: var(--text-small);
+        margin-top: 12px; border: 1px solid;
+      }
+      .gate-bar ul { margin: 6px 0 0; padding-left: 18px; }
+      .gate-bar li { margin: 2px 0; }
+      .gate-warn { background: var(--candy-sun-soft); border-color: var(--candy-sun); color: #6B5312; }
+      .gate-block {
+        background: #FBF1F1; border-color: var(--error); color: var(--error);
+      }
+      .gate-block .why { font-weight: 600; }
+      .image-alert { margin-top: 8px; font-size: var(--text-small); color: var(--error); font-weight: 600; }
+
+      /* ── 主图上传 ────────────────────────────────────────── */
+      .dropzone {
+        border: 2px dashed var(--line-strong); border-radius: var(--radius-md);
+        padding: 28px 16px; text-align: center; color: var(--ink-soft); cursor: pointer;
+        transition: border-color var(--dur-fast) var(--ease-lux), background var(--dur-fast) var(--ease-lux);
+        font-size: var(--text-small);
+      }
+      .dropzone:hover, .dropzone.dragover { border-color: var(--ink); background: var(--bg-soft); }
+      .dropzone .dz-title { font-weight: 700; color: var(--ink); display: block; margin-bottom: 4px; }
+      .image-preview {
+        margin-top: 12px; border-radius: var(--radius-md); overflow: hidden;
+        border: 1px solid var(--line); background: var(--bg-soft);
+        max-width: 320px; position: relative;
+      }
+      .image-preview img { display: block; width: 100%; height: auto; }
+      .image-path { font-size: var(--text-caption); color: var(--ink-faint); margin-top: 6px; word-break: break-all; }
+
+      /* ── 事实卡 ──────────────────────────────────────────── */
+      .factcard-summary { display: flex; flex-wrap: wrap; gap: 8px; }
+      .fc-chip {
+        border: 1px solid var(--line-strong); border-radius: var(--radius-pill);
+        padding: 3px 12px; font-size: var(--text-small); background: var(--bg-base);
+      }
+      .fc-chip b { font-weight: 600; color: var(--ink-soft); margin-right: 4px; font-size: var(--text-caption); }
+      .fc-missing { color: var(--warning); font-size: var(--text-small); margin-top: 8px; }
+
+      /* ── 规格键值编辑器 ──────────────────────────────────── */
+      .spec-row { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr) auto; gap: 8px; margin-bottom: 8px; }
+      .spec-row .del { border: none; background: none; color: var(--ink-faint); cursor: pointer; font-size: var(--text-body); padding: 0 6px; }
+      .spec-row .del:hover { color: var(--error); }
+
+      /* ── featured 占位（接口预留） ───────────────────────── */
+      .featured-slot { display: flex; align-items: center; gap: 10px; color: var(--ink-faint); font-size: var(--text-small); }
+
+      /* ── 保存条 ──────────────────────────────────────────── */
+      .save-bar {
+        position: sticky; bottom: 0; z-index: 20; margin-top: 24px;
+        background: var(--bg-base); border: 1px solid var(--line); border-radius: var(--radius-md);
+        padding: 14px 20px; display: flex; align-items: center; gap: 16px;
+        box-shadow: var(--shadow-lg);
+      }
+      .save-bar .gate-hint { flex: 1; font-size: var(--text-small); color: var(--ink-soft); }
+      .save-bar .gate-hint.ok { color: var(--success); }
+
+      /* ── 模态（事实卡四选 / 对图朗读预览） ────────────────── */
+      .modal-mask {
+        position: fixed; inset: 0; z-index: 90; background: rgba(26, 32, 44, 0.4);
+        display: flex; align-items: center; justify-content: center; padding: 24px;
+      }
+      .modal-card {
+        background: var(--bg-base); border-radius: var(--radius-md); box-shadow: var(--shadow-xl);
+        max-width: 560px; width: 100%; max-height: 90vh; overflow: auto; padding: 24px;
+      }
+      .modal-card.wide { max-width: 900px; }
+      .modal-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+      .modal-head h2 { font-family: var(--font-display); font-size: var(--text-xl); font-weight: 800; margin: 0; }
+      .modal-head .close { background: none; border: none; font-size: var(--text-lg); cursor: pointer; color: var(--ink-faint); line-height: 1; }
+      .modal-sub { color: var(--ink-soft); font-size: var(--text-small); margin-bottom: 16px; }
+      .fc-group { margin-bottom: 18px; }
+      .fc-group .fc-label { font-size: var(--text-small); font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+      .fc-group .fc-label .need { color: var(--error); font-weight: 700; }
+      .fc-options { display: flex; flex-wrap: wrap; gap: 8px; }
+      .fc-opt {
+        border: 1px solid var(--line-strong); background: var(--bg-base); color: var(--ink);
+        border-radius: var(--radius-pill); padding: 5px 14px; font-size: var(--text-small); cursor: pointer;
+        transition: all var(--dur-fast) var(--ease-lux);
+      }
+      .fc-opt:hover { border-color: var(--ink); }
+      .fc-opt.sel { background: var(--ink); border-color: var(--ink); color: #fff; }
+      .modal-foot { display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px; align-items: center; }
+
+      /* 对图朗读预览 */
+      .pv-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 24px; }
+      @media (max-width: 800px) { .pv-grid { grid-template-columns: 1fr; } }
+      .pv-image { border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--line); background: var(--bg-soft); }
+      .pv-image img { display: block; width: 100%; height: auto; }
+      .pv-name { font-family: var(--font-display); font-size: var(--text-2xl); font-weight: 800; margin: 0 0 8px; }
+      .pv-desc { color: var(--ink-soft); font-size: var(--text-body); margin: 0 0 12px; white-space: pre-wrap; }
+      .pv-price { font-family: var(--font-numeric); font-size: var(--text-xl); font-weight: 700; }
+      .pv-price .orig { color: var(--ink-faint); text-decoration: line-through; font-size: var(--text-body); font-weight: 400; margin-left: 8px; }
+      .pv-meta { margin-top: 12px; color: var(--ink-soft); font-size: var(--text-small); }
+      .pv-confirm {
+        margin-top: 18px; padding: 12px 14px; border: 1px solid var(--line-strong);
+        border-radius: var(--radius-md); background: var(--bg-soft);
+        display: flex; gap: 10px; align-items: flex-start; font-size: var(--text-small);
+      }
+      .pv-confirm input { width: auto; margin-top: 3px; }
+
+      /* ── toast ───────────────────────────────────────────── */
+      .toast {
+        position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%); z-index: 120;
+        background: var(--ink); color: #fff; border-radius: var(--radius-pill);
+        padding: 10px 22px; font-size: var(--text-small); box-shadow: var(--shadow-lg);
+        max-width: 80vw;
+      }
+      .toast.err { background: var(--error); }
+      .toast a { color: #fff; text-decoration: underline; }
+    </style>
+</head>
+
+<body>
+  <header class="admin-topbar">
+    <div class="brand">
+      <span class="logo">REICH</span>
+      <span class="crumb">商品管理 · 后台</span>
+    </div>
+    <div class="session">
+      <span class="email" id="admin-email"></span>
+      <a href="/" id="back-home">回首页</a>
+      <button type="button" class="btn" id="logout-btn">退出</button>
+    </div>
+  </header>
+
+  <!-- ══ 列表视图 ════════════════════════════════════════ -->
+  <main class="admin-main" id="view-list">
+    <div class="view-head">
+      <div>
+        <h1>在售与下架</h1>
+        <div class="sub" id="list-count">读取中…</div>
+      </div>
+      <button type="button" class="btn btn-primary" id="btn-new">新包入住</button>
+    </div>
+    <table class="product-table">
+      <thead>
+        <tr>
+          <th style="width:64px">图</th>
+          <th>名称</th>
+          <th>价格</th>
+          <th>库存</th>
+          <th>分类</th>
+          <th>tags</th>
+          <th>状态</th>
+          <th style="width:170px">操作</th>
+        </tr>
+      </thead>
+      <tbody id="product-rows"></tbody>
+    </table>
+    <div class="empty-state hidden" id="list-empty">还没有包。点「新包入住」，接第一只进来。</div>
+  </main>
+
+  <!-- ══ 编辑视图（同页切换） ════════════════════════════ -->
+  <main class="admin-main hidden" id="view-editor">
+    <button type="button" class="btn btn-ghost" id="btn-back">← 回列表</button>
+    <div class="view-head">
+      <div>
+        <h1 id="editor-title">新包入住</h1>
+        <div class="sub" id="editor-sub">三闸全过才发得出去——看图四选、词表比对、对图朗读。</div>
+      </div>
+    </div>
+
+    <form id="product-form" novalidate>
+      <div class="editor-grid">
+        <!-- 左列：基本信息 -->
+        <div>
+          <div class="card">
+            <h2>基本信息</h2>
+            <div class="field">
+              <label for="f-name">名称</label>
+              <div class="lint-wrap lint-single" id="wrap-name">
+                <div class="lint-backdrop" id="backdrop-name" aria-hidden="true"></div>
+                <input type="text" id="f-name" class="lint-target" autocomplete="off" placeholder="黑色小圆筒包" maxlength="120">
+              </div>
+            </div>
+            <div class="field">
+              <label for="f-desc">描述</label>
+              <div class="lint-wrap" id="wrap-desc">
+                <div class="lint-backdrop" id="backdrop-desc" aria-hidden="true"></div>
+                <textarea id="f-desc" class="lint-target" placeholder="黑色小圆筒，通勤也拿得出手。"></textarea>
+              </div>
+            </div>
+            <div class="field field-row">
+              <div class="field" style="margin-bottom:0">
+                <label for="f-price">价格（现价）</label>
+                <input type="number" id="f-price" min="0" step="0.01">
+              </div>
+              <div class="field" style="margin-bottom:0">
+                <label for="f-original">划线原价（可不填）</label>
+                <input type="number" id="f-original" min="0" step="0.01">
+              </div>
+              <div class="field" style="margin-bottom:0">
+                <label for="f-stock">库存</label>
+                <input type="number" id="f-stock" min="0" step="1">
+              </div>
+            </div>
+            <!-- 后端无 GET /api/categories 路由（2026-10-04 核实）：本地硬编码 4 类目，
+                 与 backend/scripts/seed-categories.sql 种子一致（id 1-4） -->
+            <div class="field field-row">
+              <div class="field" style="margin-bottom:0">
+                <label for="f-category">分类</label>
+                <select id="f-category">
+                  <option value="">（不设分类）</option>
+                  <option value="1">手袋</option>
+                  <option value="2">斜挎包</option>
+                  <option value="3">手提包</option>
+                  <option value="4">链条包</option>
+                </select>
+              </div>
+              <div class="field" style="margin-bottom:0">
+                <label for="f-tags">tags（逗号分隔）</label>
+                <input type="text" id="f-tags" placeholder="新到, 手袋" autocomplete="off">
+              </div>
+              <div class="field" style="margin-bottom:0">
+                <label>上架状态</label>
+                <div class="switch-row">
+                  <input type="checkbox" id="f-active" checked>
+                  <span>在售</span>
+                </div>
+              </div>
+            </div>
+            <!-- featured 勾选位：UI 预留占位（接口预留，后端暂无此字段，不做强做） -->
+            <div class="field featured-slot" style="margin-bottom:0">
+              <button type="button" class="btn" disabled title="接口预留">♡ 选品标记（接口预留）</button>
+              <span>首页主打位勾选——等 featured 字量落地后点亮。</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右列：主图 + 事实卡 + 规格 -->
+        <div>
+          <div class="card">
+            <h2>主图</h2>
+            <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="上传主图">
+              <span class="dz-title">拖一张图进来</span>
+              或点这里选文件 · jpg / png / webp · ≤5MB
+            </div>
+            <input type="file" id="f-file" accept=".jpg,.jpeg,.png,.webp" class="hidden">
+            <div class="image-preview hidden" id="image-preview"><img id="image-preview-img" alt="主图预览"></div>
+            <div class="image-path hidden" id="image-path"></div>
+            <div class="image-alert hidden" id="image-alert">图片路径不存在——路径填对了吗？</div>
+          </div>
+
+          <div class="card">
+            <h2>事实卡（第一闸 · 看图四选）</h2>
+            <div class="factcard-summary" id="factcard-summary"></div>
+            <div class="fc-missing hidden" id="fc-missing">还没填齐——上传主图后会弹四选卡，也可以现在就打开。</div>
+            <div style="margin-top:12px">
+              <button type="button" class="btn" id="btn-factcard">打开四选卡</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>规格（specifications）</h2>
+            <div id="spec-rows"></div>
+            <button type="button" class="btn btn-ghost" id="btn-spec-add">＋ 加一行规格</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 三闸反馈 + 保存条 -->
+      <div class="gate-bar gate-warn hidden" id="gate-warn"></div>
+      <div class="gate-bar gate-block hidden" id="gate-block"></div>
+      <div class="save-bar">
+        <span class="gate-hint" id="save-hint">…</span>
+        <button type="button" class="btn" id="btn-cancel">取消</button>
+        <button type="button" class="btn btn-primary" id="btn-save" disabled>过闸 → 对图朗读</button>
+      </div>
+    </form>
+  </main>
+
+  <!-- ══ 第一闸：事实卡四选模态 ═══════════════════════════ -->
+  <div class="modal-mask hidden" id="factcard-modal">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-label="事实卡四选">
+      <div class="modal-head">
+        <h2>看图四选</h2>
+        <button type="button" class="close" id="fc-close" aria-label="关闭">×</button>
+      </div>
+      <div class="modal-sub">对着这张图说话——主色、包型、五金、场合，四样都选好才算数。</div>
+      <div class="image-preview hidden" id="fc-image-wrap" style="max-width:280px;margin-bottom:16px">
+        <img id="fc-image" alt="事实卡对图">
+      </div>
+      <div class="fc-group" data-group="colorGroup">
+        <div class="fc-label">主色 <span class="need">*</span></div>
+        <div class="fc-options" id="fc-color"></div>
+      </div>
+      <div class="fc-group" data-group="bagType">
+        <div class="fc-label">包型 <span class="need">*</span></div>
+        <div class="fc-options" id="fc-bagtype"></div>
+      </div>
+      <div class="fc-group" data-group="hardware">
+        <div class="fc-label">五金 <span class="need">*</span></div>
+        <div class="fc-options" id="fc-hardware"></div>
+      </div>
+      <div class="fc-group" data-group="occasion">
+        <div class="fc-label">场合 <span class="need">*</span></div>
+        <div class="fc-options" id="fc-occasion"></div>
+      </div>
+      <div class="modal-foot">
+        <span style="flex:1;font-size:var(--text-caption);color:var(--ink-faint)" id="fc-progress"></span>
+        <button type="button" class="btn" id="fc-cancel">先不选</button>
+        <button type="button" class="btn btn-primary" id="fc-done" disabled>记下了</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 第三闸：对图朗读预览模态 ═════════════════════════ -->
+  <div class="modal-mask hidden" id="preview-modal">
+    <div class="modal-card wide" role="dialog" aria-modal="true" aria-label="发布前对图朗读预览">
+      <div class="modal-head">
+        <h2>发布前，对图读一遍</h2>
+        <button type="button" class="close" id="pv-close" aria-label="关闭">×</button>
+      </div>
+      <div class="modal-sub">左边是买家将看到的图，右边是你写的字——一句一句对过去。</div>
+      <div class="pv-grid">
+        <div class="pv-image"><img id="pv-image" alt="待核对主图"></div>
+        <div>
+          <p class="pv-name" id="pv-name"></p>
+          <p class="pv-desc" id="pv-desc"></p>
+          <div class="pv-price" id="pv-price"></div>
+          <div class="pv-meta" id="pv-factcard"></div>
+          <div class="gate-bar gate-warn hidden" id="pv-warn" style="margin-top:14px"></div>
+          <label class="pv-confirm">
+            <input type="checkbox" id="pv-confirm-box">
+            <span>我已对照图片核对名称与描述——颜色、包型、五金都对得上。</span>
+          </label>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn" id="pv-cancel">再改改</button>
+        <button type="button" class="btn btn-primary" id="pv-publish" disabled>发布</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast hidden" id="toast"></div>
+
+  <script type="module" src="js/admin/admin.js"></script>
+</body>
+
+</html>

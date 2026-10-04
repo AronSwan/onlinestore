@@ -439,9 +439,17 @@ async function login(email, password, rememberMe) {
       // 登录成功
       showSuccessMessage("登录成功，即将跳转...");
       
-      // 确保使用绝对路径跳转，避免相对路径问题
+      // 确保使用绝对路径跳转，避免相对路径问题。
+      // M3(2026-10-04) 管理页登录分流守卫：登录页带 ?returnUrl= 时回到来处
+      // （如 admin.html）；仅接受站内相对路径，防开放重定向。默认行为不变（回首页）。
+      const returnParam = new URLSearchParams(window.location.search).get("returnUrl");
+      const isSafeReturn =
+        returnParam &&
+        !/^([a-z][a-z0-9+.-]*:)?\/\//i.test(returnParam) &&
+        !returnParam.startsWith("//") &&
+        !returnParam.includes("\\");
       setTimeout(() => {
-        window.location.href = "/";
+        window.location.href = isSafeReturn ? returnParam : "/";
       }, 1500);
     } else {
       // 登录失败
