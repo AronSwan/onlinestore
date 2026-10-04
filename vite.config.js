@@ -1,12 +1,38 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
+import { readFileSync } from 'fs';
+
+// F4 · 经典脚本原样落盘插件：vite build 对无 type="module" 的 <script src> 只告警
+// 不打包也不拷贝（switch-plan 坑 7 原记"原样拷贝"有误——实测 v7 dist 里缺失，
+// 部署后 404）。清单从五个入口 HTML 现场解析（非手写维护——页面加经典脚本时
+// 自动跟进，漏项会在 dist 里显式 404 而非静默缺失；文件不存在则 readFileSync
+// 抛错、构建明确失败）。
+function copyClassicScripts() {
+  const pages = ['index.html', 'login.html', 'orders.html', 'profile.html', 'admin.html'];
+  return {
+    name: 'copy-classic-scripts',
+    generateBundle() {
+      const classic = new Set();
+      for (const page of pages) {
+        const html = readFileSync(resolve(__dirname, page), 'utf8');
+        for (const m of html.matchAll(/<script(?![^>]*type="module")[^>]*\ssrc="(js\/[^"]+)"[^>]*>/g)) {
+          classic.add(m[1]);
+        }
+      }
+      for (const file of classic) {
+        this.emitFile({ type: 'asset', fileName: file, source: readFileSync(resolve(__dirname, file), 'utf8') });
+      }
+      this.info?.(`copy-classic-scripts: ${[...classic].join(', ')}`);
+    },
+  };
+}
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const isProduction = mode === 'production';
   
   return {
-    plugins: [],
+    plugins: [copyClassicScripts()],
     root: './',
     build: {
       outDir: 'dist',
@@ -34,6 +60,7 @@ export default defineConfig(({ mode }) => {
           login: resolve(__dirname, 'login.html'),
           orders: resolve(__dirname, 'orders.html'),
           profile: resolve(__dirname, 'profile.html'),
+          admin: resolve(__dirname, 'admin.html'), // M3/M4 管理后台正式入库（a4f0775），F3 纳入 MPA 构建
         },
         output: {
           chunkFileNames: 'assets/js/[name]-[hash].js',

@@ -493,3 +493,53 @@
     height: 32px;
     border-radius: 50%;
 }
+/* ============================================================
+ * F4 · preflight 补偿（tailwind-entry.css 纳入后的还原账）
+ * 本页原无 Tailwind，纳入统一构建入口后 preflight 改了四处 UA 默认
+ * （逐条依据 .tmp-f3-shots/style-diff-profile.cjs 的 computed 对比）：
+ *   1. html 行高 normal → 1.5：label 21→24px、输入框 42→47px、
+ *      菜单项 45→48px，全页 +51px（桌面）/ +56px（移动）；
+ *   2. h3/h4 字重 → inherit(400)：账户安全/地址列表的标题去粗；
+ *   3. 表单控件 color → inherit：rgb(0,0,0) → var(--ink)；
+ *   4. button 字号 13.33px → 100%(16px)（头部按钮，图标固定尺寸不可见）。
+ * 还原策略：body 归 normal、标题归粗、表单字色归黑——头部
+ * （.site-header/.site-mobile-menu）保持与另三页一致的 1.5 行高不还原。
+ * 注：body/h3/h4 特意加 html>/body 前缀抬特异度——本文件在 tailwind-entry.css
+ * 之前加载，preflight 的 body{line-height:inherit}/h3,h4{font-weight:inherit}
+ * 同特异度且靠后，普通写法会被反杀。
+ * ============================================================ */
+html > body {
+    line-height: normal;
+}
+
+.site-header,
+.site-mobile-menu {
+    line-height: 1.5;
+}
+
+body h3,
+body h4 {
+    font-weight: 700;
+}
+
+html > body .form-group input,
+html > body .form-group select,
+html > body .form-group textarea {
+    color: #000;
+    /* 输入框字体还原 UA 默认（Arial）：preflight 的 font-family:inherit 会让
+       14px 行盒比 Arial 高 1px（42→43px），全页累计 +6px */
+    font-family: Arial, sans-serif;
+}
+
+/* 按钮同理：preflight font-family:inherit 令 .btn-primary/.btn-secondary 文字
+   从 UA Arial 变为正文字体（字形宽度差异，截图 diff 0.04% 残留），还原 */
+html > body .btn-primary,
+html > body .btn-secondary {
+    font-family: Arial, sans-serif;
+}
+
+/* date 输入框：UA 对 input[type=date] 特例用 monospace（截图基线即如此），
+   上面统一还原 Arial 时把它带偏了，单独归位 */
+html > body .form-group input[type="date"] {
+    font-family: monospace;
+}

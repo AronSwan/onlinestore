@@ -12,62 +12,34 @@
     <link rel="stylesheet" href="css/components/site-header.css">
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/profile.css">
+    <!-- Tailwind 本地构建入口（F4 纳入统一管线：content 已扫描本页，头部模块与全站类同源；
+         本页主体仍为自研类，不动） -->
+    <link rel="stylesheet" href="css/tailwind-entry.css">
     <!-- escapeHtml 全局工具：经典脚本按序执行，必须先于 profile-manager.js（其渲染依赖它） -->
     <script src="js/utils/escape-html.js"></script>
     <script src="js/profile-manager.js"></script>
 </head>
 <body style="padding-top: 72px">
-    <!-- 统一站点导航（P3：模板 _header-template.html，替换旧 .navbar/.nav-container 自研导航） -->
-    <header class="site-header" id="siteHeader">
-      <nav aria-label="主导航">
-        <ul class="site-nav">
-          <li><a href="index.html">女士</a></li>
-          <li><a href="index.html">男士</a></li>
-          <li><a href="index.html">配饰</a></li>
-        </ul>
-      </nav>
-
-      <a href="index.html" class="site-brand">REICH</a>
-
-      <div class="site-tools">
-        <!-- 搜索 -->
-        <button type="button" id="searchBtn" aria-label="搜索">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
-        </button>
-
-        <!-- 心愿单 -->
-        <a href="index.html" aria-label="心愿单" class="site-wishlist-btn">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.8-9.8-9.2C.6 8.8 2.5 5 6.1 5c2 0 3.4 1 4.4 2.5h3C14.5 6 15.9 5 17.9 5c3.6 0 5.5 3.8 3.9 6.8C19.5 16.2 12 21 12 21z" fill="none"/></svg>
-        </a>
-
-        <!-- 用户（当前页=个人中心） -->
-        <a href="profile.html" aria-label="账户" class="site-user-btn" aria-current="page">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-4 3.6-6 7-6s7 2 7 6"/></svg>
-        </a>
-
-        <!-- 购物车（cart.js 绑定 data-cart-icon） -->
-        <button type="button" data-cart-icon="true" aria-label="购物车" class="site-cart-btn">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12l-1.5 12h-9L6 7z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>
-          <span class="site-cart-badge" id="cart-badge" style="display: none;">0</span>
-        </button>
-
-        <!-- 汉堡（移动端） -->
-        <button type="button" class="site-burger" id="mobileMenuBtn" aria-label="菜单" aria-expanded="false" aria-controls="mobileMenu">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-        </button>
-      </div>
-    </header>
-
-    <!-- 移动菜单（与 id=mobileMenu 冻结契约一致） -->
-    <nav class="site-mobile-menu" id="mobileMenu" aria-label="移动导航">
-      <ul>
-        <li><a href="index.html">女士</a></li>
-        <li><a href="index.html">男士</a></li>
-        <li><a href="index.html">配饰</a></li>
-        <li><a href="orders.html">订单</a></li>
-        <li><a href="login.html">登录 / 注册</a></li>
-      </ul>
-    </nav>
+    <!-- 统一站点导航（P3 → F4 归一：js/site-header.js 单一 ES module 按 PAGE_CONFIG=profile
+         渲染+移动菜单，行为（开合/滚动阴影）也归一于该模块；noscript 静态头部兜底） -->
+    <noscript>
+      <header class="site-header" id="siteHeader">
+        <nav aria-label="主导航">
+          <ul class="site-nav">
+            <li><a href="index.html">女士</a></li>
+            <li><a href="index.html">男士</a></li>
+            <li><a href="index.html">配饰</a></li>
+          </ul>
+        </nav>
+        <a href="index.html" class="site-brand">REICH</a>
+        <div class="site-tools">
+          <a href="login.html" aria-label="登录">登录</a>
+        </div>
+      </header>
+    </noscript>
+    <template data-site-header data-page="profile"></template>
+    <script type="module" src="js/site-header.js"></script>
+    <!-- 移动菜单（id=mobileMenu 冻结契约；F4 归一由 site-header.js 紧跟 header 插入） -->
 
     <!-- 主要内容区域 -->
     <main class="profile-container">
@@ -287,34 +259,7 @@
             });
         });
     </script>
-    <!-- 统一导航交互（P3）：移动菜单开关 + header 滚动阴影。
-         旧 .navbar 为静态文档流无移动菜单，此脚本随新模板引入 -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-            const mobileMenu = document.getElementById('mobileMenu');
-
-            if (mobileMenuBtn && mobileMenu) {
-                mobileMenuBtn.addEventListener('click', function() {
-                    const isOpen = mobileMenu.classList.toggle('open');
-                    mobileMenuBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-                });
-            }
-
-            const header = document.getElementById('siteHeader');
-            if (header) {
-                let ticking = false;
-                window.addEventListener('scroll', function() {
-                    if (!ticking) {
-                        requestAnimationFrame(function() {
-                            header.classList.toggle('scrolled', window.scrollY > 50);
-                            ticking = false;
-                        });
-                        ticking = true;
-                    }
-                });
-            }
-        });
-    </script>
+    <!-- 统一导航交互（P3 → F4 归一）：移动菜单开关 + header 滚动阴影
+         已迁入 js/site-header.js，原内联块删除 -->
 </body>
 </html>

@@ -41,11 +41,6 @@
     <!-- P1：hero 预加载 webp（<picture> 首选源；不支持 webp 的浏览器自动回落 jpg） -->
     <link rel="preload" href="images/hero/hero-main.webp" as="image" type="image/webp" fetchpriority="high">
     
-    <!-- DNS 预解析 -->
-    <link rel="dns-prefetch" href="//cdn.tailwindcss.com">
-    
-    <!-- 预连接关键第三方域名 -->
-    <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin>
     <!-- CSS变量系统 - 必须在其他样式之前加载 -->
     <link rel="preload" href="fonts/barlow-variable.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="fonts/fonts.css">
@@ -70,42 +65,8 @@
     <link rel="stylesheet" href="css/product-search.css">
     <!-- 增强搜索组件样式 -->
     <link rel="stylesheet" href="css/product-search-enhanced.css">
-    <!-- 引入Font Awesome -->
-    <!-- 引入Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 配置Tailwind自定义样式 -->
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: 'var(--brand-black)',
-                        secondary: 'var(--brand-gold)',
-                        accent: 'var(--brand-red)',
-                        dark: 'var(--ink)',
-                    },
-                    fontFamily: {
-                        sans: ['var(--font-body)', 'Arial', 'sans-serif'],
-                        serif: ['var(--font-display)', 'serif'],
-                    },
-                },
-            }
-        }
-    </script>
-    <!-- 自定义工具类 -->
-    <style type="text/tailwindcss">
-        @layer utilities {
-            .content-auto {
-                content-visibility: auto;
-            }
-            .text-shadow {
-                text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
-            }
-            .transition-custom {
-                transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            }
-        }
-    </style>
+    <!-- Tailwind CSS（F3：CDN 摘除，本地构建入口——位置保持原 CDN script 行位，层叠顺序不变） -->
+    <link rel="stylesheet" href="css/tailwind-entry.css">
     <!-- 结构化数据 -->
     <script type="application/ld+json">
     {
@@ -139,47 +100,27 @@
     <!-- 跳转到主内容链接 (无障碍性) -->
     <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-[var(--ink)] text-white px-4 py-2 rounded z-50">跳转到主内容</a>
 
-    <!-- 统一站点导航（P3：模板 _header-template.html） -->
-    <header class="site-header" id="siteHeader">
-      <nav aria-label="主导航">
-        <ul class="site-nav">
-          <!-- P5：原 #women/#men/#accessories 锚点无对应 section，死链改指首页 -->
-          <li><a href="index.html" aria-current="page">女士</a></li>
-          <li><a href="index.html">男士</a></li>
-          <li><a href="index.html">配饰</a></li>
-        </ul>
-      </nav>
-
-      <a href="index.html" class="site-brand">REICH</a>
-
-      <div class="site-tools">
-        <!-- 搜索 -->
-        <button type="button" id="searchBtn" aria-label="打开搜索" aria-expanded="false" aria-controls="searchBar">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
-        </button>
-
-        <!-- 心愿单（点击打开收藏弹层，绑定见页尾内联脚本） -->
-        <a href="index.html" aria-label="心愿单" class="site-wishlist-btn">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.8-9.8-9.2C.6 8.8 2.5 5 6.1 5c2 0 3.4 1 4.4 2.5h3C14.5 6 15.9 5 17.9 5c3.6 0 5.5 3.8 3.9 6.8C19.5 16.2 12 21 12 21z" fill="none"/></svg>
-        </a>
-
-        <!-- 用户（id=userProfileBtn：页尾内联脚本按此 id 绑定 Casdoor 状态跳转） -->
-        <a href="login.html" id="userProfileBtn" aria-label="用户登录" class="site-user-btn">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-4 3.6-6 7-6s7 2 7 6"/></svg>
-        </a>
-
-        <!-- 购物车（cart.js 绑定 data-cart-icon；浮层打开绑定见页尾内联脚本） -->
-        <button type="button" data-cart-icon="true" aria-label="购物车" class="site-cart-btn">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12l-1.5 12h-9L6 7z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>
-          <span class="site-cart-badge" id="cart-badge" style="display: none;">0</span>
-        </button>
-
-        <!-- 汉堡（移动端） -->
-        <button type="button" class="site-burger" id="mobileMenuBtn" aria-label="菜单" aria-expanded="false" aria-controls="mobileMenu">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-        </button>
-      </div>
-    </header>
+    <!-- 统一站点导航（P3 → F4 归一：js/site-header.js 单一 ES module 按 PAGE_CONFIG=index
+         渲染 header+移动菜单，类名/id 与原静态拷贝逐字一致；模块按文档序先于页尾
+         defer 模块执行。JS 关闭时下方 <noscript> 静态头部兜底） -->
+    <noscript>
+      <header class="site-header" id="siteHeader">
+        <nav aria-label="主导航">
+          <ul class="site-nav">
+            <li><a href="index.html" aria-current="page">女士</a></li>
+            <li><a href="index.html">男士</a></li>
+            <li><a href="index.html">配饰</a></li>
+          </ul>
+        </nav>
+        <a href="index.html" class="site-brand">REICH</a>
+        <div class="site-tools">
+          <a href="login.html" id="userProfileBtn" aria-label="用户登录" class="site-user-btn">登录</a>
+          <a href="orders.html" aria-label="我的订单">订单</a>
+        </div>
+      </header>
+    </noscript>
+    <template data-site-header data-page="index"></template>
+    <script type="module" src="js/site-header.js"></script>
 
     <!-- 搜索栏（冻结契约 #searchBar/#enhanced-search-container：原为旧 header 内部子节点，
          P3 换 header 后独立为兄弟节点，固定定位锚定在 header 下方，见 site-header.css） -->
@@ -189,17 +130,7 @@
             <div id="enhanced-search-container"></div>
         </div>
     </div>
-
-    <!-- 移动菜单（与 id=mobileMenu 冻结契约一致） -->
-    <nav class="site-mobile-menu" id="mobileMenu" aria-label="移动导航">
-      <ul>
-        <li><a href="index.html">女士</a></li>
-        <li><a href="index.html">男士</a></li>
-        <li><a href="index.html">配饰</a></li>
-        <li><a href="orders.html">订单</a></li>
-        <li><a href="login.html">登录 / 注册</a></li>
-      </ul>
-    </nav>
+    <!-- 移动菜单（id=mobileMenu 冻结契约；F4 归一由 site-header.js 插到 #searchBar 之后） -->
 
     <!-- 主内容区 -->
     <main id="main-content" role="main">
@@ -422,298 +353,9 @@
         });
     </script>
     
-    <!-- 搜索栏交互 -->
-    <script>
-        // 全局变量
-        let enhancedSearchComponent = null;
-        
-        // 全局函数
-        window.toggleSearch = async function(show) {
-            const searchBtn = document.getElementById('searchBtn');
-            const searchBar = document.getElementById('searchBar');
-            
-            if (!searchBtn || !searchBar) {
-                console.error('搜索按钮或搜索栏元素未找到');
-                return;
-            }
-            
-            const isHidden = searchBar.classList.contains('hidden');
-            if (show === undefined) show = isHidden;
-            
-            if (show) {
-                searchBar.classList.remove('hidden');
-                searchBtn.setAttribute('aria-expanded', 'true');
-                
-                // 如果增强搜索组件已初始化，则显示热门搜索
-                if (enhancedSearchComponent) {
-                    try {
-                        await enhancedSearchComponent.showPopularSearches();
-                    } catch (error) {
-                        console.error('显示热门搜索失败:', error);
-                    }
-                }
-                
-                setTimeout(() => {
-                    // 尝试通过增强搜索组件获取搜索输入框
-                    let searchInputElement = null;
-                    if (enhancedSearchComponent && enhancedSearchComponent.elements && enhancedSearchComponent.elements.searchInput) {
-                        searchInputElement = enhancedSearchComponent.elements.searchInput;
-                    } else {
-                        // 如果通过组件获取失败，则尝试直接通过ID获取
-                        searchInputElement = document.getElementById('search-input');
-                    }
-                    
-                    if (searchInputElement) {
-                        searchInputElement.focus();
-                    }
-                }, 100);
-            } else {
-                searchBar.classList.add('hidden');
-                searchBtn.setAttribute('aria-expanded', 'false');
-                
-                // 如果增强搜索组件已初始化，则隐藏热门搜索
-                if (enhancedSearchComponent) {
-                    try {
-                        enhancedSearchComponent.hidePopularSearches();
-                    } catch (error) {
-                        console.error('隐藏热门搜索失败:', error);
-                    }
-                }
-            }
-        };
-        
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchBtn = document.getElementById('searchBtn');
-            const searchBar = document.getElementById('searchBar');
-            const searchInput = document.getElementById('search-input');
-            const enhancedSearchContainer = document.getElementById('enhanced-search-container');
-            
-            // 动态导入增强搜索组件
-            import('./js/product-search/enhanced-search-component.js').then(async module => {
-                const EnhancedSearchComponent = module.EnhancedSearchComponent;
-                
-                try {
-                    // 创建增强搜索组件实例
-                    // API 失败时组件内部会自动回退到本地模拟数据（getMockSearchResults 等）
-                    enhancedSearchComponent = new EnhancedSearchComponent({
-                        containerId: 'enhanced-search-container',
-                        searchApiEndpoint: '/api/products/search',
-                        suggestionsApiEndpoint: '/api/products/suggestions',
-                        popularSearchesApiEndpoint: '/api/products/popular-searches',
-                        cacheTTL: 300000, // 5分钟缓存
-                        maxSuggestions: 8,
-                        maxPopularSearches: 10,
-                        maxSearchHistory: 5
-                    });
-                    
-                    // 初始化增强搜索组件（异步）
-                    await enhancedSearchComponent.init();
-                    
-                    // 监听搜索事件
-                    enhancedSearchComponent.on('search', (results) => {
-                        console.log('搜索结果:', results);
-                    });
-                    
-                    // 监听产品点击事件
-                    enhancedSearchComponent.on('productClick', (product) => {
-                        console.log('点击产品:', product);
-                        // 这里可以添加产品详情页面跳转逻辑
-                    });
-                    
-                    // 监听添加到购物车事件
-                    enhancedSearchComponent.on('addToCart', (product) => {
-                        console.log('添加到购物车:', product);
-                        // 这里可以添加购物车逻辑
-                        if (typeof updateCartCount === 'function') {
-                            // 假设购物车中有5件商品
-                            updateCartCount(5);
-                        }
-                    });
-                    
-                    // 监听添加到收藏夹事件
-                    enhancedSearchComponent.on('addToWishlist', (product) => {
-                        console.log('添加到收藏夹:', product);
-                        // 这里可以添加收藏夹逻辑
-                    });
-                    
-                    console.log('增强搜索组件初始化成功');
-                } catch (error) {
-                    console.error('增强搜索组件初始化失败:', error);
-                }
-            }).catch(error => {
-                console.error('加载增强搜索组件失败:', error);
-            });
-            
-            searchBtn.addEventListener('click', () => window.toggleSearch());
-            
-            // ESC键关闭搜索
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && searchBar && !searchBar.classList.contains('hidden')) {
-                    window.toggleSearch(false);
-                }
-            });
-            
-            // 移动端菜单交互（P3：新模板 .site-mobile-menu 用 .open 开关，旧 .hidden 已随旧 header 移除）
-            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-            const mobileMenu = document.getElementById('mobileMenu');
-            
-            function toggleMobileMenu() {
-                const isOpen = mobileMenu.classList.toggle('open');
-                mobileMenuBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-            }
-            
-            mobileMenuBtn.addEventListener('click', toggleMobileMenu);
-            
-            // 导航栏滚动效果（P3：.navbar-luxury → #siteHeader，.scrolled 阴影在 site-header.css）
-            const navbar = document.getElementById('siteHeader');
-            let ticking = false;
-            
-            function updateNavbar() {
-                if (window.scrollY > 50) {
-                    navbar.classList.add('scrolled');
-                } else {
-                    navbar.classList.remove('scrolled');
-                }
-                ticking = false;
-            }
-            
-            window.addEventListener('scroll', function() {
-                if (!ticking) {
-                    requestAnimationFrame(updateNavbar);
-                    ticking = true;
-                }
-            });
-            
-            // 购物车数量更新（P3：新模板徽章为内联 style="display:none"，与 cart.js 的
-            // style.display 管理方式对齐；旧 'hidden' class 切换对内联样式无效）
-            function updateCartCount(count) {
-                const cartBadge = document.getElementById('cart-badge');
-                
-                if (cartBadge) {
-                    if (count > 0) {
-                        cartBadge.textContent = count > 99 ? '99+' : count;
-                        cartBadge.style.display = 'flex';
-                    } else {
-                        cartBadge.style.display = 'none';
-                    }
-                }
-            }
-
-            // 购物车/心愿单图标点击绑定（原由 navigation-icons.js 经 img 选择器绑定；
-            // 新模板为内联 SVG 无 img，改在此直接绑定）
-            const cartBtn = document.querySelector('.site-tools [data-cart-icon]');
-            if (cartBtn) {
-                cartBtn.addEventListener('click', function() {
-                    if (window.cartManager && typeof window.cartManager.showCart === 'function') {
-                        window.cartManager.showCart();
-                    } else {
-                        window.location.href = '/';
-                    }
-                });
-            }
-
-            const wishlistBtn = document.querySelector('.site-wishlist-btn');
-            if (wishlistBtn) {
-                wishlistBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    if (window.wishlistManager && typeof window.wishlistManager.showWishlistModal === 'function') {
-                        window.wishlistManager.showWishlistModal();
-                        return;
-                    }
-                    // wishlistManager 未就绪时短暂等待（模块 defer 加载）
-                    let attempts = 0;
-                    const checkInterval = setInterval(() => {
-                        attempts++;
-                        if (window.wishlistManager && typeof window.wishlistManager.showWishlistModal === 'function') {
-                            clearInterval(checkInterval);
-                            window.wishlistManager.showWishlistModal();
-                        } else if (attempts >= 10) {
-                            clearInterval(checkInterval);
-                            window.location.href = '/';
-                        }
-                    }, 100);
-                });
-            }
-
-            // 全局变量存储Casdoor可用性状态
-            let casdoorAvailable = false;
-            let casdoorCheckCompleted = false;
-            
-            // 异步检测Casdoor可用性
-            async function checkCasdoorAvailability() {
-                // 求真修复(2026-10-04): fetch door.casdoor.com 跨域 CORS 拒绝 → console 红错
-                // 改走后端同源探测(后端 GET /api/auth/casdoor/login 302→Casdoor, 存在即真)
-                try {
-                    const response = await fetch('/api/auth/casdoor/login', {
-                        method: 'HEAD',
-                        redirect: 'manual'
-                    });
-                    casdoorAvailable = response.status >= 200 && response.status < 400;
-                } catch (error) {
-                    console.log('Casdoor服务不可用:', error.message);
-                    casdoorAvailable = false;
-                }
-                
-                // 存储Casdoor可用性状态
-                sessionStorage.setItem('casdoorAvailable', casdoorAvailable.toString());
-                casdoorCheckCompleted = true;
-                
-                console.log('Casdoor可用性检测完成:', casdoorAvailable);
-            }
-            
-            // 设置用户资料按钮
-            function setupUserProfileButton() {
-                const userProfileBtn = document.getElementById('userProfileBtn');
-                if (!userProfileBtn) return;
-                
-                // 设置用户资料按钮点击事件
-                userProfileBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-
-                    // 实战检验修复(2026-10-04): 已登录用户点击交给
-                    // navigation-icons.js 的用户菜单(个人资料/订单/退出),
-                    // 仅未登录才跳登录页——此前无条件跳转, 登录用户点头像也去登录页
-                    const isLoggedIn = localStorage.getItem('userLoggedIn') === 'true'
-                        || sessionStorage.getItem('userLoggedIn') === 'true';
-                    if (isLoggedIn) return;
-
-                    // 构建登录页面URL，包含Casdoor状态信息
-                    const loginUrl = new URL('login.html', window.location.origin);
-                    
-                    // 如果Casdoor检测已完成，使用检测结果；否则使用sessionStorage中的缓存值
-                    let casdoorStatus = 'unavailable';
-                    if (casdoorCheckCompleted) {
-                        casdoorStatus = casdoorAvailable ? 'available' : 'unavailable';
-                    } else {
-                        // 从sessionStorage获取之前的检测结果
-                        const cachedStatus = sessionStorage.getItem('casdoorAvailable');
-                        casdoorStatus = (cachedStatus === 'true') ? 'available' : 'unavailable';
-                    }
-                    
-                    loginUrl.searchParams.set('casdoor', casdoorStatus);
-                    
-                    // 跳转到登录页面（不传递returnUrl避免信息泄露）
-                    window.location.href = loginUrl.toString();
-                });
-                
-                console.log('用户资料按钮设置完成');
-            }
-            
-            // 初始化导航
-            if (typeof setupNavigation === 'function') {
-                setupNavigation();
-            }
-            
-            // 初始化购物车数量
-            updateCartCount(0);
-            
-            // 设置用户资料按钮（同步）
-            setupUserProfileButton();
-            
-            // 异步检测Casdoor可用性（不阻塞页面加载）
-            checkCasdoorAvailability();
-        });
-    </script>
+    <!-- index 页尾页内脚本（F4 外联为 ES module：vite 对模块的动态 import 解析是
+         原生路径——内联时代的路径改写缺陷从根上消失；内容除搬运的头部两段外不变） -->
+    <script type="module" src="js/home-page.js"></script>
 </body>
 
 </html>

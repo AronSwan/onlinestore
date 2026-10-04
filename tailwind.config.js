@@ -30,7 +30,9 @@ export default {
     './index.html',
     './login.html',
     './orders.html',
-    './profile.html', // profile 现完全不用 Tailwind，圈入为 F4 纳管铺路（当前为空贡献）
+    './profile.html', // F4：profile 已纳入入口 CSS 管线（头部归一后与四页同链）
+    './admin.html', // F3 纳入：admin 页为纯 CSS 内嵌（零 Tailwind 类），圈入扫描
+    //   仅为统一 content 口径——贡献为空，防未来加类时静默丢失
     './js/**/*.js',
   ],
 
