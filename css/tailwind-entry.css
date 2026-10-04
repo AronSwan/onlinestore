@@ -8,10 +8,9 @@
  * 注意：
  * - `@tailwind base` 不能跳：Play CDN 默认注入 preflight（margin 归零/
  *   border-style:solid 等），跳过 base = 全站视觉漂移（switch-plan 坑 2）。
- * - 三个自定义工具类原为 index/orders 页内 `<style type="text/tailwindcss">`
- *   块的 @layer utilities，迁移至此保持与 CDN 源码同形（坑 7）。
- *   用量：content-auto（index/orders 各 1）、text-shadow（index 2/orders 2）、
- *   transition-custom（index 1/orders 1）。
+ * - 原 <style type="text/tailwindcss"> 块的三个自定义类（content-auto/
+ *   text-shadow/transition-custom）经审计证实自 CDN 时代起全站零引用，
+ *   属死代码，已删除不再搬运（质量纲领第4条：注释与事实一致）。
  * - 不在此 `@import './tokens.css'`：各页 HTML 已 <link> tokens.css，
  *   重复引入会改变层叠顺序（switch-plan 步骤 1 注）。
  */
@@ -19,15 +18,3 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@layer utilities {
-  .content-auto {
-    content-visibility: auto;
-  }
-  .text-shadow {
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
-  }
-  .transition-custom {
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  }
-}

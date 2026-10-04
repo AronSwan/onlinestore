@@ -741,7 +741,7 @@ class CartUI {
    * 轻量提示 toast（对齐 F5-min 诚实 UI 语义）
    * 说明：cart.js 页面（index/orders）未加载 login-utils.js，
    * LoginUtils.showNotification 不可用，故自写内联样式 toast；
-   * z-index 取 11000，确保盖在 .cart-overlay（z-index:1000）之上
+   * z-index 取 11000，确保盖在 .cart-overlay（var(--z-overlay)=400）之上
    */
   showNotification(message, type = 'info') {
     const notification = document.createElement('div');

@@ -442,11 +442,16 @@ async function login(email, password, rememberMe) {
       // 确保使用绝对路径跳转，避免相对路径问题。
       // M3(2026-10-04) 管理页登录分流守卫：登录页带 ?returnUrl= 时回到来处
       // （如 admin.html）；仅接受站内相对路径，防开放重定向。默认行为不变（回首页）。
+      // 审计P1修复(2026-10-04): 黑名单式过滤可被 javascript:（无//）与单斜杠
+      // https:/evil.com（浏览器规范化为 https://）绕过——改为白名单: 必须以单/
+      // 开头、第二个字符不是/（防协议相对），且首段（到?/#前）不含冒号（防 scheme）。
       const returnParam = new URLSearchParams(window.location.search).get("returnUrl");
+      const firstSegment = (returnParam || "").split(/[?#]/)[0];
       const isSafeReturn =
         returnParam &&
-        !/^([a-z][a-z0-9+.-]*:)?\/\//i.test(returnParam) &&
+        returnParam.startsWith("/") &&
         !returnParam.startsWith("//") &&
+        !firstSegment.includes(":") &&
         !returnParam.includes("\\");
       setTimeout(() => {
         window.location.href = isSafeReturn ? returnParam : "/";
