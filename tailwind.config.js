@@ -96,9 +96,8 @@ export default {
     'focus:ring-[var(--gold-standard)]', // :110 任意值类（--gold-standard 现存于 tokens.css:138）
     'left-4', 'top-1/2', '-translate-y-1/2', // :122,130（搜索框图标/清除按钮）
     'right-4', 'p-1', // :130
-    'text-[var(--gray-400)]', // :122,130 ⚠ 幽灵变量（tokens.css 只有 --gray-100/200/300，
-    //   无 --gray-400）——照实编译保持与 CDN 一致的行为（解析失败即继承色），
-    //   修复归 F1，见 switch-plan 坑 3
+    'text-[var(--gray-400)]', // :122,130 —— --gray-400 已由 F1 补定义（var(--ink-faint)），
+    //   切换日将编译出真实弱化灰（恢复设计意图），非构建 bug，见 switch-plan 坑 3
     'hover:text-[var(--text-primary)]', // :130（--text-primary 真实存在）
     'top-full', 'left-0', 'right-0', 'mt-1', 'z-10', // :153,158（建议/历史浮层）
     'mt-4', // :163,168
