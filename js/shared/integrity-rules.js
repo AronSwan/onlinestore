@@ -258,23 +258,41 @@ function findBagGroup(factBag) {
 const FIELD_LABEL = { name: '标题', description: '描述' };
 
 /**
- * 匹配用规范化（R3·二次修复 2026-10-05，X1/X2 各实锤不同码位）：
+ * 匹配用规范化（R3·二次修复 2026-10-05 → P1·三修重构，fix2 §三 2）：
  *  ① NFKC 归一化——全角英文（ＢＯＳＴＯＮ→BOSTON，全角包型词规避）、CJK
  *    兼容变体（U+F900-FaFF 族，如 U+F90A→金）、全角标点（！→!）等兼容
  *    形态全部折回规范形；
- *  ② 再剥残余不可见码位（NFKC 不消的兜底）：零宽族 U+200B-200D/
- *    BOM U+FEFF/词连接 U+2060、隐形操作符族 U+2061-2064、软连字符
- *    U+00AD、组合字连接符 U+034F、变体选择符 U+FE00-FE0F。
- * 仅用于匹配：不改变存库原文；violations 的 index/word 指向规范化文本
- * （NFKC 可改变长度，如全角对称 1:1、兼容汉字折并——管理界面高亮按
- * 规范化文本对齐，属既有契约的延伸）。
- * 已知限制：不做繁简归一（NFKC 不做简繁转换，"限時搶購"仍会过——
- * 需专门映射表，挂账产品决策，见二次修复汇报）。
+ *  ② 剥 \p{Cf} Unicode 属性类（三修主修）：Y1 系统枚举的 160 个 Cf 码位
+ *    （零宽族 200B-200F、双定向控制 202A-202E、LRI/PDI 族 2066-2069、
+ *    阿拉伯记号 061C、词连接 2060-2064、BOM FEFF、行内注记 FFF9-FFFB、
+ *    语言标签族 E0000-…）一条属性类全覆盖——替代二次修复的逐段枚举
+ *    （打地鼠升级版）；另保留 NFKC 不消的两处 Mn 残余（组合字连接符
+ *    U+034F、变体选择符 U+FE00-FE0F）显式剥离；
+ *  ③ \p{White_Space} 折叠为单空格后去空格比对（三修）：解决"托 特"式
+ *    可见分隔符拆词——比对视图无空格，原文不动。二次修复仅枚举了隐形
+ *    拆词（X1/X2 各实锤不同码位），可见空格类拆词是 Y2 指出的无法枚举面，
+ *    本条按属性类一次收口。
+ * 仅用于匹配：不改变存库原文；violations/warnings/blockers 的 index/word
+ * 均指向规范化+去空格后的比对视图——word 报文可能脱离原文（原文"限 时"，
+ * 报文"限时"；原文 ＢＯＳＴＯＮ，报文 BOSTON），管理界面高亮按比对视图
+ * 对齐，属既有契约的延伸（如实声明，见三修汇报已知限制段）。
+ * 已知限制（三修显式挂账）：
+ *   - 可见分隔符盲区未全消——中点 U+00B7（·，Po 类）不在 \p{Cf} 也不在
+ *     \p{White_Space}，"限·时" 仍拆词过关；同族可见标点分隔（顿号等）同理；
+ *   - 跨书写系统同形字（西里尔 о ↔ 拉丁 o、希腊 Β ↔ 拉丁 B）NFKC 不折——
+ *     需 confusable 映射表（Unicode confusables.txt），挂账不引库；
+ *   - 不做繁简归一（NFKC 不做简繁转换，"限時搶購"仍会过——需专门映射表，
+ *     挂账产品决策，承二次修复汇报）。
  * @private
  */
-const INVISIBLE = /[\u00AD\u034F\u200B-\u200D\uFEFF\u2060-\u2064\uFE00-\uFE0F]/g;
+const FORMAT_AND_MARK = /[\p{Cf}\u034F\uFE00-\uFE0F]/gu;
+const ANY_WHITESPACE = /\p{White_Space}+/gu;
 function normalizeForMatch(text) {
-  return text.normalize('NFKC').replace(INVISIBLE, '');
+  return text
+    .normalize('NFKC')
+    .replace(FORMAT_AND_MARK, '')
+    .replace(ANY_WHITESPACE, ' ')
+    .replace(/ /g, '');
 }
 
 // ═════════════════════════════════════════════════════════════

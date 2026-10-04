@@ -8,6 +8,7 @@
 // 若有人移动 js/shared、破坏 ESM 导出或改坏词表，本 spec 直接红灯（fail-fast 防漂移）。
 
 import * as fs from 'fs';
+import * as path from 'path';
 import { BadRequestException } from '@nestjs/common';
 import {
   loadIntegrityRules,
@@ -19,9 +20,13 @@ import {
 describe('M4 第二闸服务端侧：integrity 同源复检', () => {
   describe('同源加载（src/dist 双布局路径解析）', () => {
     it('resolveIntegrityRulesPath 指向仓库根 js/shared/integrity-rules.js 且文件存在', () => {
-      const p = resolveIntegrityRulesPath();
-      expect(p.replace(/\\/g, '/')).toMatch(/onlinestore_remediation\/js\/shared\/integrity-rules\.js$/);
-      expect(fs.existsSync(p)).toBe(true);
+      // P3（三修，fix2 §三 9）：断言改为 __dirname 相对推导——原断言硬编码
+      // 仓库名 onlinestore_remediation，仓外克隆/改名即假红。本 spec 位于
+      // <repo>/backend/src/products，上溯三级即仓库根（spec 仅自 src 运行，
+      // 不存在 dist 布局，无需 src/dist 双分支）。
+      const expected = path.resolve(__dirname, '..', '..', '..', 'js', 'shared', 'integrity-rules.js');
+      expect(path.resolve(resolveIntegrityRulesPath())).toBe(path.resolve(expected));
+      expect(fs.existsSync(expected)).toBe(true);
     });
 
     it('loadIntegrityRules 能加载并暴露 lintCopy/checkNameImage/sanityCheck', async () => {
@@ -226,6 +231,104 @@ describe('M4 第二闸服务端侧：integrity 同源复检', () => {
       });
       expect(r).not.toBeNull();
       expect(r!.warnings.some((w: any) => w.code === 'COLOR_MISMATCH')).toBe(true);
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────
+  // 三修（fix2 §三 4/8）：factCard 字段类型校验 / tags 逐项 lint
+  // ─────────────────────────────────────────────────────────────
+  describe('三修 P2-4 factCard 字段类型（bagType/colorGroup 非字符串 → 400 带字段名）', () => {
+    it('colorGroup 传数字 → 400 报文含 specifications.factCard.colorGroup', async () => {
+      let caught: any;
+      try {
+        await enforceProductIntegrityGate({
+          name: '托特包',
+          description: '',
+          specifications: { factCard: { colorGroup: 1, bagType: '托特' } as any },
+        });
+        throw new Error('应当被 400 拦下');
+      } catch (e: any) {
+        caught = e;
+      }
+      expect(caught).toBeInstanceOf(BadRequestException);
+      expect(String((caught.getResponse() as any).message)).toContain('colorGroup');
+    });
+
+    it('bagType 传数组 → 400 报文含 specifications.factCard.bagType（不接受数组）', async () => {
+      let caught: any;
+      try {
+        await enforceProductIntegrityGate({
+          name: '托特包',
+          description: '',
+          specifications: { factCard: { colorGroup: '黑', bagType: ['托特'] } as any },
+        });
+        throw new Error('应当被 400 拦下');
+      } catch (e: any) {
+        caught = e;
+      }
+      expect(caught).toBeInstanceOf(BadRequestException);
+      const msg = String((caught.getResponse() as any).message);
+      expect(msg).toContain('bagType');
+      expect(msg).toContain('数组');
+    });
+
+    it('字段值为 null 视为未填（合法空四选），不误伤 400', async () => {
+      // colorGroup null + 文案颜色词 → 走 FACT_CARD_COLOR_MISSING 黄警路径（非形状 400）
+      const r = await enforceProductIntegrityGate({
+        name: '柠檬黄小圆筒',
+        description: '',
+        specifications: { factCard: { colorGroup: null, bagType: '小圆筒' } as any },
+      });
+      expect(r!.warnings.some((w: any) => w.code === 'FACT_CARD_COLOR_MISSING')).toBe(true);
+    });
+  });
+
+  describe('三修 P2-8 tags 逐项禁用词 lint（首页徽章渲染面）', () => {
+    it('tags 携带禁用词（"限时"）→ 400 带 details.integrity.bannedWords（含 tagIndex 定位）', async () => {
+      let caught: any;
+      try {
+        await enforceProductIntegrityGate({
+          name: '黑色小圆筒包',
+          description: '头层牛皮',
+          tags: ['新品', '限时', '热销'],
+        });
+        throw new Error('应当被 400 拦下');
+      } catch (e: any) {
+        caught = e;
+      }
+      expect(caught).toBeInstanceOf(BadRequestException);
+      const violations = (caught.getResponse() as any).details.integrity.bannedWords;
+      const hit = violations.find((v: any) => v.word === '限时');
+      expect(hit).toBeDefined();
+      expect(hit.tagIndex).toBe(1);
+      expect(hit.tag).toBe('限时');
+    });
+
+    it('tags 干净 → 放行（不因新增 lint 面误伤）', async () => {
+      const r = await enforceProductIntegrityGate({
+        name: '黑色小圆筒包',
+        description: '头层牛皮',
+        tags: ['新品', '通勤'],
+      });
+      expect(r).toEqual({ warnings: [] });
+    });
+
+    it('tags 缺省/非数组 → 不 lint 不报错（PATCH 未提交 tags 的既有语义）', async () => {
+      await expect(
+        enforceProductIntegrityGate({ name: '黑色小圆筒包', description: '' }),
+      ).resolves.toBeDefined();
+      await expect(
+        enforceProductIntegrityGate({ name: '黑色小圆筒包', description: '', tags: '限时' as any }),
+      ).resolves.toBeDefined();
+    });
+
+    it('tags 内隐形拆词（Cf/空格）同受规则引擎归一收口', async () => {
+      await expect(
+        enforceProductIntegrityGate({ name: '牛皮手袋', description: '', tags: ['限 时'] }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      await expect(
+        enforceProductIntegrityGate({ name: '牛皮手袋', description: '', tags: ['秒\u200B杀'] }),
+      ).rejects.toBeInstanceOf(BadRequestException);
     });
   });
 });

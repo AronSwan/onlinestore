@@ -3,7 +3,12 @@
 // 作者：后端开发团队
 // 时间：2025-09-26 18:23:30
 
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like, Between, In, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
@@ -20,6 +25,11 @@ import { Category } from './entities/category.entity';
 import { ProductImage } from './entities/product-image.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import {
+  mergePriceView,
+  mergeSpecifications,
+  toNumberOrNull,
+} from './product-merge.helper';
 
 export interface CreateProductData {
   name: string;
@@ -472,66 +482,146 @@ export class ProductsService {
       updateData = { ...restData, category } as any;
     }
 
-    // R1（P1·二次修复 2026-10-05，双盲审总报告清单 1）：PATCH 跨字段合并校验。
+    // R1（P1·二次修复 2026-10-05，清单 1）+ 三修 P1-1/P1-3：PATCH 跨字段合并校验。
     // 根因：DTO 的 ValidatorConstraint 只能看到请求自带字段——PATCH 只传
     // originalPrice 或只传 price 时跨字段约束被跳过，originalPrice<price
     // 倒挂落库（席 X1 实锤 DB）。服务层是唯一同时看得见"存量+增量"的层：
-    // repository.update 前构造合并视图（dto ?? 存量）复检不变式
-    // originalPrice>=price（双方均非 null 的数字时）。
+    // 写库前构造合并视图（dto ?? 存量）复检不变式 originalPrice>=price。
+    // 三修升级（fix2 §三 1/3）：①合并视图收敛到 product-merge.helper 单点实现
+    // （控制器闸视图与写路径同构，Y2 双份同构 P2）；②存量值 Number() 归一——
+    // PG decimal 列经 node-postgres 返回字符串（'100.00'），原 typeof==='number'
+    // 守卫在 PG 部署形态静默失效（Y1 P1）；③显式 null 的 price 直接 400（fail-clean，
+    // 不再走到 DB NOT NULL 500——DTO 层已把 HTTP 面的 null 归一为 undefined，
+    // 此处兜直接调用面）。
     // originalPrice 显式传 null = 清除划线价（合法语义，清除后无不变式可言）；
     // 未传 = 沿用存量值参与比对。
-    const submittedOriginalPrice = Object.prototype.hasOwnProperty.call(
-      updateData,
-      'originalPrice',
-    );
-    const mergedPrice = typeof updateData.price === 'number' ? updateData.price : product.price;
-    const mergedOriginalPrice = submittedOriginalPrice
-      ? typeof updateData.originalPrice === 'number'
-        ? updateData.originalPrice
-        : null
-      : typeof product.originalPrice === 'number'
-        ? product.originalPrice
-        : null;
+    if (updateData.price === null) {
+      throw new BadRequestException({
+        message: 'price 不能为 null（要改价请提交正数；不修改则不传该字段）',
+        details: { field: 'price', submitted: null },
+      });
+    }
+    const priceView = mergePriceView(updateData as Record<string, unknown>, product as unknown as Record<string, unknown>);
+    if (priceView.invalidPrice || priceView.invalidOriginalPrice) {
+      const field = priceView.invalidPrice ? 'price' : 'originalPrice';
+      throw new BadRequestException({
+        message: `${field} 必须是数字（收到无法归一的形状：${JSON.stringify(
+          field === 'price' ? updateData.price : updateData.originalPrice,
+        )}）`,
+        details: { field, submitted: field === 'price' ? updateData.price : updateData.originalPrice },
+      });
+    }
     if (
-      typeof mergedPrice === 'number' &&
-      typeof mergedOriginalPrice === 'number' &&
-      mergedOriginalPrice < mergedPrice
+      priceView.price !== null &&
+      priceView.originalPrice !== null &&
+      priceView.originalPrice < priceView.price
     ) {
       throw new BadRequestException({
         message: '划线原价不能低于现价（PATCH 单值提交按「存量+增量」合并视图校验）',
         details: {
-          price: { stored: product.price, submitted: updateData.price, effective: mergedPrice },
+          price: { stored: product.price, submitted: updateData.price, effective: priceView.price },
           originalPrice: {
             stored: product.originalPrice,
             submitted: updateData.originalPrice,
-            effective: mergedOriginalPrice,
+            effective: priceView.originalPrice,
           },
         },
       });
     }
 
-    // R2（P2·二次修复 2026-10-05，清单 2）：specifications 浅合并。
+    // R2（P2·二次修复 2026-10-05，清单 2）+ 三修 P2-7：specifications 浅合并。
     // 根因：repository.update 直写整体替换——PATCH {specifications:{}} 把存量
     // factCard 静默清空，之后闸/复检的合并视图再也取不到，两步废掉词表冲突
-    // 检查（席 X1 实锤）。浅合并语义：dto 键覆盖存量同名键、未提及键保留
-    // （factCard 因此天然保留，与控制器复检闸的合并视图同构）；显式传 null
-    // 是合法的"整体清空"语义，原样透传由 repository.update 写 NULL。
-    if (
-      updateData.specifications !== null &&
-      updateData.specifications !== undefined &&
-      typeof updateData.specifications === 'object'
-    ) {
+    // 检查（席 X1 实锤）。浅合并语义收敛到 product-merge.helper.mergeSpecifications
+    // 单点（dto 键覆盖存量同名键、未提及键保留，factCard 因此天然保留）；
+    // 显式传 null 是合法的"整体清空"语义，原样透传由 repository.update 写 NULL。
+    if (Object.prototype.hasOwnProperty.call(updateData, 'specifications')) {
       updateData = {
         ...updateData,
-        specifications: {
-          ...((product.specifications as Record<string, unknown>) ?? {}),
-          ...updateData.specifications,
-        },
+        specifications: mergeSpecifications(updateData.specifications, product.specifications),
       } as UpdateProductData;
     }
 
-    const oldProduct = await this.findById(id);
-    await this.productRepository.update(id, updateData);
+    // P1-1（三修 2026-10-05，fix2 §三 1）：并发 TOCTOU 修复——价格写入改单条
+    // 条件 UPDATE（check-then-act 无事务，X1 4/5、X2 10/10 并发实锤 DB 倒挂）。
+    // 语句级原子性：守卫与写入同一条 UPDATE，affected=0 即另一并发写已先行
+    // 落库使本次提交不再合法 → 重读复检后 409 带明细（与顺序面 400 区分）。
+    // 双方言兼容：where 串用属性名（TypeORM 按方言转义为 "originalPrice"），
+    // 参数占位由 QueryBuilder 按驱动翻译（SQLite ? / PG $n），零方言函数。
+    const priceWritten = priceView.priceSubmitted;
+    const originalPriceWritten = priceView.originalPriceSubmitted; // 数字值（显式 null 清除语义另行处理）
+    if (priceWritten || originalPriceWritten) {
+      const qb = this.productRepository.createQueryBuilder().update(Product);
+      if (priceWritten && originalPriceWritten) {
+        // 双字段同请求：合并校验已过，条件 UPDATE 兜底复检新值配对
+        // （两值同语句原子落库，语句内不变式即终态不变式）。
+        qb.set({ price: priceView.price!, originalPrice: priceView.originalPrice! })
+          .where('id = :id AND (:pairOriginalPrice IS NULL OR :pairPrice IS NULL OR :pairOriginalPrice >= :pairPrice)', {
+            id,
+            pairOriginalPrice: priceView.originalPrice,
+            pairPrice: priceView.price,
+          });
+      } else if (priceWritten && priceView.originalPriceExplicitNull) {
+        // 抬价 + 显式清除划线价：终态 (新价, null) 不变式空集，两值同语句原子落库，
+        // 无需对存量值设守卫（存量划线价即将被清除，守它反而误伤 409）。
+        // （实体类型把 originalPrice 声明为 number，DB 列实际 nullable——显式写
+        // null 是 TypeORM 认可的合法清列值，此处断言收窄类型面。）
+        qb.set({ price: priceView.price!, originalPrice: null as unknown as number }).where('id = :id', { id });
+      } else if (priceWritten) {
+        // 单抬价：存量划线价为空或仍 ≥ 新价才允许落库
+        qb.set({ price: priceView.price! })
+          .where('id = :id AND (originalPrice IS NULL OR originalPrice >= :guardPrice)', {
+            id,
+            guardPrice: priceView.price,
+          });
+      } else {
+        // 单调划线价：存量现价为空或 ≤ 新划线价才允许落库
+        qb.set({ originalPrice: priceView.originalPrice! })
+          .where('id = :id AND (price IS NULL OR price <= :guardOriginalPrice)', {
+            id,
+            guardOriginalPrice: priceView.originalPrice,
+          });
+      }
+      const result = await qb.execute();
+      if (!result || !result.affected) {
+        // affected=0：并发交错（或行已消失）。绕过缓存直读库，按当前真值复检给冲突原因。
+        const current = await this.productRepository.findOne({ where: { id } });
+        if (!current) {
+          throw new NotFoundException();
+        }
+        const currentView = mergePriceView({}, current as unknown as Record<string, unknown>);
+        throw new ConflictException({
+          message:
+            '价格不变式并发冲突：另一并发写已先行落库，本次提交按最新库值复检不再合法（条件 UPDATE affected=0）',
+          details: {
+            price: { stored: current.price, submitted: updateData.price, effective: currentView.price },
+            originalPrice: {
+              stored: current.originalPrice,
+              submitted: updateData.originalPrice,
+              effective: currentView.originalPrice,
+            },
+          },
+        });
+      }
+      // 价格字段已由条件 UPDATE 落库——从普通写载荷中剥离，防二次无守卫写入
+      // （仅剥离 QB 实际写过的键；纯 originalPrice:null 清除若未走 QB 仍保留在载荷）。
+      const rest = { ...(updateData as Record<string, unknown>) };
+      if (priceWritten) delete rest.price;
+      if (originalPriceWritten || (priceWritten && priceView.originalPriceExplicitNull)) {
+        delete rest.originalPrice;
+      }
+      updateData = rest as UpdateProductData;
+    }
+
+    // P1-1 剥离前留事件载荷快照——发布事件按"本次提交意图"报文（价格剥离只影响二次写）
+    const updateDataForEvent = updateData;
+
+    // P3（三修，fix2 §三 9）：三 findById 收敛——oldProduct 复用方法开头的存量读
+    // （缓存失效前后的两次读对"旧值快照"语义等价），删除紧贴 update 前的冗余重读。
+    const oldProduct = product;
+    if (Object.keys(updateData as Record<string, unknown>).length > 0) {
+      await this.productRepository.update(id, updateData);
+    }
 
     // 清除缓存（统一前缀与热门键集合）
     const keyPrefix = this.configService.get<string>('redis.keyPrefix') || 'caddy_shopping';
@@ -549,7 +639,7 @@ export class ProductsService {
 
     // 异步发布产品更新事件
     if (oldProduct && updatedProduct) {
-      this.publishProductUpdatedEvent(oldProduct, updatedProduct, updateData).catch(error => {
+      this.publishProductUpdatedEvent(oldProduct, updatedProduct, updateDataForEvent).catch(error => {
         console.error('发布产品更新事件失败:', error);
       });
     }

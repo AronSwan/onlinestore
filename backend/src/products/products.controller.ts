@@ -55,6 +55,7 @@ import {
 } from '../common/decorators/api-docs.decorator';
 import { Product } from './entities/product.entity';
 import { enforceProductIntegrityGate } from './product-integrity.gate';
+import { mergeSpecifications } from './product-merge.helper';
 
 // ================================
 // M2-B5(2026-10-04) 商品图上传安全常量与工具
@@ -495,14 +496,18 @@ export class ProductsController {
     // R2（二次修复 2026-10-05）：dto.specifications === null 时视图也是 null——
     // 与 service 写入语义对齐（null=整体清空，闸走 lint-only），防"闸按合并
     // 视图放行、库却被清空"的视图/写入错位。
+    // 三修 P2-7（fix2 §三 7）：合并语义收敛到 product-merge.helper 单点——
+    // 闸视图与 service 写路径引用同一份 mergeSpecifications，消灭双份同构漂移面。
     const existing = await this.productsService.findById(id).catch(() => null);
-    const existingSpecs = (existing?.specifications ?? {}) as Record<string, unknown>;
-    const dtoSpecs = updateProductDto.specifications as Record<string, unknown> | null | undefined;
     const gateView: any = {
       ...updateProductDto,
       name: updateProductDto.name ?? existing?.name,
       description: updateProductDto.description ?? existing?.description,
-      specifications: dtoSpecs === null ? null : { ...existingSpecs, ...(dtoSpecs ?? {}) },
+      specifications: Object.prototype.hasOwnProperty.call(updateProductDto, 'specifications')
+        ? mergeSpecifications(updateProductDto.specifications, existing?.specifications)
+        : (existing?.specifications ?? {}),
+      // P2-8（三修，fix2 §三 8）：tags 携带时逐项过禁用词 lint（详见闸实现）
+      tags: updateProductDto.tags ?? undefined,
     };
     await enforceProductIntegrityGate(gateView);
     const updated = await this.productsService.update(id, updateProductDto);

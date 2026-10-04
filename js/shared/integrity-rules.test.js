@@ -520,3 +520,62 @@ test('R5 与 R3 组合：全角冲突词+name 命中也不稀释（ＴＯＴＥ 
     '全角 ＴＯＴＥ 归一命中托特，结构冲突红拦且不被 name 命中稀释',
   );
 });
+
+// ─────────────────────────────────────────────
+// 五、三修 P1（fix2 §三 2）：Cf 属性类剥离 + White_Space 折叠去空格比对
+// ─────────────────────────────────────────────
+test('三修 P1：Cf 属性类抽样 10 码位（覆盖零宽/双定向/隔离/记号/语言标签各子族）拆词全拦', () => {
+  // 从 Cf 全族（本 Unicode 版共 170 码位，Y1 枚举 160+）按子族抽 10 个：
+  const samples = [
+    ['U+00AD', '软连字符'], ['U+061C', '阿拉伯记号'], ['U+200B', '零宽空格'],
+    ['U+200E', '从左到右记号'], ['U+202A', '双向嵌入 LRE'], ['U+202E', '反向覆盖 RLO'],
+    ['U+2060', '词连接符'], ['U+2066', '从左隔离 LRI'], ['U+FEFF', 'BOM/零宽不换行'],
+    ['U+E0001', '语言标签启动符'],
+  ];
+  for (const [cp, label] of samples) {
+    const r = lintCopy(`限${String.fromCodePoint(parseInt(cp.slice(2), 16))}时`);
+    assert.ok(
+      r.violations.some((v) => v.word === '限时'),
+      `${cp}（${label}）拆词应被剥离后命中「限时」`,
+    );
+  }
+});
+
+test('三修 P1：Mn 残余（U+034F 组合字连接符 / U+FE0F 变体选择符）仍显式剥离', () => {
+  assert.ok(lintCopy('限\u034F时').violations.some((v) => v.word === '限时'));
+  assert.ok(lintCopy('抢\uFE0F购').violations.some((v) => v.word === '抢购'));
+});
+
+test('三修 P1：可见分隔符拆词收口——空格/全角空格/NBSP/制表符折叠后比对视图无空格', () => {
+  for (const sep of [' ', '\u3000', '\u00A0', '\t', '\r\n']) {
+    const r = lintCopy(`限${sep}时${sep}抢${sep}购`);
+    const words = r.violations.map((v) => v.word);
+    assert.ok(words.includes('限时') && words.includes('抢购'), `分隔符 ${JSON.stringify(sep)} 拆词应被折叠收口`);
+  }
+  // word 报文脱离原文（如实声明）：原文带空格，报文是去空格比对视图的词面
+  const r = lintCopy('限 时');
+  assert.equal(r.violations[0].word, '限时');
+});
+
+test('三修 P1：checkNameImage 同源收口——「托 特包」按去空格视图命中托特红拦', () => {
+  const r = checkNameImage({
+    name: '托 特包',
+    description: '',
+    factCard: { mainColor: '黑', bagType: '凯莉' },
+  });
+  assert.ok(
+    r.blockers.some((b) => b.code === 'BAG_SILHOUETTE_MISMATCH' && b.word === '托特'),
+    '空格拆词的托特在去空格比对视图下结构冲突红拦',
+  );
+});
+
+test('三修 P1：去空格后例外词仍生效（「亲 切」不因折叠误报「亲」）', () => {
+  const r = lintCopy('亲 切自然的描述');
+  assert.equal(r.violations.filter((v) => v.word === '亲').length, 0, '去空格后例外词按比对视图探测');
+});
+
+test('三修已知限制（如实锁定）：中点 U+00B7（Po 类）不在 Cf/White_Space，拆词仍过——挂账待裁', () => {
+  // 本用例锁定的是【当前声明的盲区现状】，修复（可见标点分隔符治理）后应删改本断言
+  const r = lintCopy('限\u00B7时');
+  assert.equal(r.violations.length, 0, 'U+00B7 中点拆词仍属声明盲区（fix2 §三 2 已知限制）');
+});

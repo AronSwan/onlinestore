@@ -10,7 +10,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Inject } from '@nestjs/common';
 import { Cache } from 'cache-manager';
 import { ConfigService } from '@nestjs/config';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 
 import { ProductsService } from './products.service';
 import { createMockedFunction } from '../../test/utils/typed-mock-factory';
@@ -146,6 +146,18 @@ const mockSearchManagerService = {
 
 // Mock QueryBuilder（类型化封装，保留链式调用）
 const mockQueryBuilder = createMockQueryBuilder<Product>();
+
+/**
+ * 三修 P1-1：update 路径现在消费 QueryBuilder 更新链（update().set().where().execute()）。
+ * 外层 beforeEach 的 mockReset() 会剥掉 createMockQueryBuilder 预置的 mockReturnThis，
+ * 链式方法回归 undefined 返回——凡走 QB 链的用例须先恢复链式自返回。
+ */
+const restoreQbChain = () => {
+  for (const method of ['update', 'set', 'where', 'andWhere', 'leftJoinAndSelect', 'orderBy', 'skip', 'take']) {
+    const m = (mockQueryBuilder as any)[method];
+    if (typeof m?.mockReturnThis === 'function') m.mockReturnThis();
+  }
+};
 
 describe('ProductsService', () => {
   let service: ProductsService;
@@ -649,6 +661,9 @@ describe('ProductsService', () => {
       mockCacheManager.del.mockResolvedValue(true);
       mockProductEventsService.publishProductUpdated.mockResolvedValue(undefined);
       mockSearchManagerService.indexProduct.mockResolvedValue(undefined);
+      // 三修 P1-1：价格字段（price:120 ≤ 存量划线价 120 合法）走条件 UPDATE
+      restoreQbChain();
+      mockQueryBuilder.execute.mockResolvedValue({ affected: 1 });
 
       // Mock findById calls
       let callCount = 0;
@@ -662,9 +677,16 @@ describe('ProductsService', () => {
       const result = await service.update(1, updateProductData);
 
       expect(result).toEqual({ ...mockProduct, name: '更新后的产品' });
+      // 条件 UPDATE 写价格（守卫随语句原子生效）
+      expect(mockQueryBuilder.update).toHaveBeenCalled();
+      expect(mockQueryBuilder.set).toHaveBeenCalledWith({ price: 120 });
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        'id = :id AND (originalPrice IS NULL OR originalPrice >= :guardPrice)',
+        { id: 1, guardPrice: 120 },
+      );
+      // 其余字段经普通 update（价格已剥离，防二次无守卫写入）
       expect(mockProductRepository.update).toHaveBeenCalledWith(1, {
         name: '更新后的产品',
-        price: 120,
         stock: 40,
         category: mockCategory,
       });
@@ -711,6 +733,9 @@ describe('ProductsService', () => {
       mockCacheManager.del.mockResolvedValue(true);
       mockProductEventsService.publishProductUpdated.mockResolvedValue(undefined);
       mockSearchManagerService.indexProduct.mockResolvedValue(undefined);
+      // 三修 P1-1：合法价格路径走条件 UPDATE，默认放行（affected=1）
+      restoreQbChain();
+      mockQueryBuilder.execute.mockResolvedValue({ affected: 1 });
     });
 
     it('R1：单传 originalPrice=50（低于存量 price=100）→ 400，不落库', async () => {
@@ -718,6 +743,7 @@ describe('ProductsService', () => {
         BadRequestException,
       );
       expect(mockProductRepository.update).not.toHaveBeenCalled();
+      expect(mockQueryBuilder.execute).not.toHaveBeenCalled();
     });
 
     it('R1：单抬 price=150（高于存量 originalPrice=120）→ 400，不落库', async () => {
@@ -725,6 +751,7 @@ describe('ProductsService', () => {
         BadRequestException,
       );
       expect(mockProductRepository.update).not.toHaveBeenCalled();
+      expect(mockQueryBuilder.execute).not.toHaveBeenCalled();
     });
 
     it('R1：违例报文带字段明细（存量/提交/合并后三态）', async () => {
@@ -746,28 +773,55 @@ describe('ProductsService', () => {
       });
     });
 
-    it('R1：双向合法——originalPrice=130（≥存量价）与 price=90（≤存量划线价）均放行', async () => {
+    it('R1：双向合法——originalPrice=130 走条件 UPDATE（守卫存量现价），不再经普通 update', async () => {
       await expect(service.update(1, { originalPrice: 130 } as any)).resolves.toBeDefined();
-      expect(mockProductRepository.update).toHaveBeenCalledWith(1, { originalPrice: 130 });
-      await expect(service.update(1, { price: 90 } as any)).resolves.toBeDefined();
-      expect(mockProductRepository.update).toHaveBeenCalledWith(1, { price: 90 });
+      expect(mockQueryBuilder.set).toHaveBeenCalledWith({ originalPrice: 130 });
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        'id = :id AND (price IS NULL OR price <= :guardOriginalPrice)',
+        { id: 1, guardOriginalPrice: 130 },
+      );
+      expect(mockProductRepository.update).not.toHaveBeenCalled();
     });
 
-    it('R1：originalPrice 显式传 null=清除划线价 → 合法透传（清除后无不变式）', async () => {
+    it('R1：单抬 price=90（≤存量划线价）走条件 UPDATE（守卫存量划线价）', async () => {
+      await expect(service.update(1, { price: 90 } as any)).resolves.toBeDefined();
+      expect(mockQueryBuilder.set).toHaveBeenCalledWith({ price: 90 });
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        'id = :id AND (originalPrice IS NULL OR originalPrice >= :guardPrice)',
+        { id: 1, guardPrice: 90 },
+      );
+      expect(mockProductRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('R1：originalPrice 显式传 null=清除划线价 → 合法透传（清除后无不变式，不经条件 UPDATE）', async () => {
       await expect(service.update(1, { originalPrice: null } as any)).resolves.toBeDefined();
+      expect(mockQueryBuilder.execute).not.toHaveBeenCalled();
       expect(mockProductRepository.update).toHaveBeenCalledWith(1, { originalPrice: null });
     });
 
-    it('R1：price 抬到恰等于存量 originalPrice（=120）放行；同传双值合法亦放行', async () => {
+    it('R1：price 抬到恰等于存量 originalPrice（=120）走条件 UPDATE；同传双值合法走配对守卫', async () => {
       await expect(service.update(1, { price: 120 } as any)).resolves.toBeDefined();
+      expect(mockQueryBuilder.set).toHaveBeenCalledWith({ price: 120 });
       await expect(
         service.update(1, { price: 150, originalPrice: 150 } as any),
       ).resolves.toBeDefined();
-      expect(mockProductRepository.update).toHaveBeenCalledWith(1, { price: 150, originalPrice: 150 });
+      expect(mockQueryBuilder.set).toHaveBeenCalledWith({ price: 150, originalPrice: 150 });
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        'id = :id AND (:pairOriginalPrice IS NULL OR :pairPrice IS NULL OR :pairOriginalPrice >= :pairPrice)',
+        { id: 1, pairOriginalPrice: 150, pairPrice: 150 },
+      );
+      expect(mockProductRepository.update).not.toHaveBeenCalled();
     });
 
-    it('R1：不涉价格字段的 PATCH 不受影响', async () => {
+    it('R1：抬价 + 显式清除划线价 → 单语句原子落库（无存量守卫，防误伤 409）', async () => {
+      await expect(service.update(1, { price: 150, originalPrice: null } as any)).resolves.toBeDefined();
+      expect(mockQueryBuilder.set).toHaveBeenCalledWith({ price: 150, originalPrice: null });
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith('id = :id', { id: 1 });
+    });
+
+    it('R1：不涉价格字段的 PATCH 不受影响（仍走普通 update）', async () => {
       await expect(service.update(1, { name: '新名字' } as any)).resolves.toBeDefined();
+      expect(mockQueryBuilder.execute).not.toHaveBeenCalled();
       expect(mockProductRepository.update).toHaveBeenCalledWith(1, { name: '新名字' });
     });
   });
@@ -786,6 +840,9 @@ describe('ProductsService', () => {
       mockCacheManager.del.mockResolvedValue(true);
       mockProductEventsService.publishProductUpdated.mockResolvedValue(undefined);
       mockSearchManagerService.indexProduct.mockResolvedValue(undefined);
+      // 三修 P1-1：涉价格载荷走条件 UPDATE
+      restoreQbChain();
+      mockQueryBuilder.execute.mockResolvedValue({ affected: 1 });
     });
 
     it('R2：PATCH {specifications:{}} → 存量键全保留（factCard 不再被静默清空）', async () => {
@@ -811,11 +868,12 @@ describe('ProductsService', () => {
       expect(mockProductRepository.update).toHaveBeenCalledWith(1, { specifications: null });
     });
 
-    it('R2：不传 specifications（undefined）→ 不合并不动库内值', async () => {
+    it('R2：不传 specifications（undefined）→ 不合并不动库内值（价格载荷走条件 UPDATE，set 面无 specifications）', async () => {
       await service.update(1, { price: 88 } as any);
-      const [, payload] = (mockProductRepository.update as any).mock.calls[0];
-      expect(payload).toEqual({ price: 88 });
-      expect('specifications' in payload).toBe(false);
+      expect(mockQueryBuilder.set).toHaveBeenCalledWith({ price: 88 });
+      expect(mockProductRepository.update).not.toHaveBeenCalled();
+      const setPayload = (mockQueryBuilder.set as any).mock.calls[0][0];
+      expect('specifications' in setPayload).toBe(false);
     });
 
     it('R2：存量 specifications 为 null（旧数据）时浅合并从空对象起步', async () => {
@@ -824,6 +882,142 @@ describe('ProductsService', () => {
       expect(mockProductRepository.update).toHaveBeenCalledWith(1, {
         specifications: { factCard: { bagType: '托特' } },
       });
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────
+  // P1-1（三修 2026-10-05，fix2 §三 1）：并发 TOCTOU——条件 UPDATE 兜底。
+  // check-then-act 无事务，两个各自合法的单字段 PATCH 并发交错可 DB 倒挂
+  // （X1 4/5、X2 10/10 实锤）。价格写入改单条条件 UPDATE：守卫与写入同语句
+  // 原子，affected=0 → 重读复检 → 409 带明细（与顺序面 400 区分）。
+  // ─────────────────────────────────────────────────────────────
+  describe('Update Product P1-1 条件 UPDATE 兜底（TOCTOU）', () => {
+    beforeEach(() => {
+      mockCacheManager.get.mockResolvedValue(null);
+      mockProductRepository.findOne.mockResolvedValue(mockProduct); // 存量 100/120
+      mockProductRepository.update.mockResolvedValue({ affected: 1 });
+      mockCacheManager.del.mockResolvedValue(true);
+      mockProductEventsService.publishProductUpdated.mockResolvedValue(undefined);
+      mockSearchManagerService.indexProduct.mockResolvedValue(undefined);
+      restoreQbChain();
+      mockQueryBuilder.execute.mockResolvedValue({ affected: 1 }); // 默认放行，affected=0 用例内覆写
+    });
+
+    it('affected=0（并发写先行落库）→ 409 ConflictException，普通 update 不再执行', async () => {
+      mockQueryBuilder.execute.mockResolvedValue({ affected: 0 });
+      // 首读（合并视图依据）：存量 100/120，price=115 合法；
+      // 复检重读：另一并发写已把 originalPrice 降到 110（< 本次提交 115）→ 409 明细给真值
+      mockProductRepository.findOne
+        .mockResolvedValueOnce(mockProduct)
+        .mockResolvedValue({ ...mockProduct, price: 100, originalPrice: 110 } as any);
+
+      let caught: any;
+      try {
+        await service.update(1, { price: 115 } as any);
+      } catch (e) {
+        caught = e;
+      }
+      expect(caught).toBeInstanceOf(ConflictException);
+      expect(caught.getStatus()).toBe(409);
+      expect(caught.getResponse().message).toContain('并发冲突');
+      expect(caught.getResponse().details.originalPrice).toEqual({
+        stored: 110,
+        submitted: undefined,
+        effective: 110,
+      });
+      expect(mockProductRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('affected=0 且行已消失（并发删除）→ 404 NotFoundException', async () => {
+      mockQueryBuilder.execute.mockResolvedValue({ affected: 0 });
+      mockProductRepository.findOne
+        .mockResolvedValueOnce(mockProduct) // 首读存在
+        .mockResolvedValue(null); // 复检重读：已删
+      await expect(service.update(1, { price: 115 } as any)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+    });
+
+    it('affected=1 → 价格落库走条件 UPDATE，其余字段普通 update，两者载荷互斥', async () => {
+      mockQueryBuilder.execute.mockResolvedValue({ affected: 1 });
+      await service.update(1, { price: 110, name: '并发安全' } as any);
+      expect(mockQueryBuilder.set).toHaveBeenCalledWith({ price: 110 });
+      expect(mockProductRepository.update).toHaveBeenCalledWith(1, { name: '并发安全' });
+      const updatePayload = (mockProductRepository.update as any).mock.calls[0][1];
+      expect('price' in updatePayload).toBe(false);
+    });
+
+    it('纯价格单字段 PATCH（无其余字段）→ 普通 update 整体跳过（空载荷不写）', async () => {
+      mockQueryBuilder.execute.mockResolvedValue({ affected: 1 });
+      await expect(service.update(1, { price: 110 } as any)).resolves.toBeDefined();
+      expect(mockProductRepository.update).not.toHaveBeenCalled();
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────
+  // P1-3（三修 2026-10-05，fix2 §三 3）：postgres 可移植——
+  // PG decimal 列经 node-postgres 返回字符串，原 typeof==='number' 守卫
+  // 在 PG 部署形态静默失效（Y1 P1）。合并视图 Number() 强转归一后两种
+  // 部署形态等值（本块用字符串型存量/提交 mock 锁定）。
+  // ─────────────────────────────────────────────────────────────
+  describe('Update Product P1-3 PG 可移植（价格守卫 Number 归一）', () => {
+    beforeEach(() => {
+      mockCacheManager.get.mockResolvedValue(null);
+      // PG 形态存量：decimal 列读出为字符串
+      mockProductRepository.findOne.mockResolvedValue({
+        ...mockProduct,
+        price: '100.00',
+        originalPrice: '120.00',
+      } as any);
+      mockProductRepository.update.mockResolvedValue({ affected: 1 });
+      mockCacheManager.del.mockResolvedValue(true);
+      mockProductEventsService.publishProductUpdated.mockResolvedValue(undefined);
+      mockSearchManagerService.indexProduct.mockResolvedValue(undefined);
+      restoreQbChain();
+      mockQueryBuilder.execute.mockResolvedValue({ affected: 1 });
+    });
+
+    it('字符串型存量 + 单传 originalPrice=50 → 合并视图归一后照常 400（PG 下不再静默失效）', async () => {
+      await expect(service.update(1, { originalPrice: 50 } as any)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+      expect(mockQueryBuilder.execute).not.toHaveBeenCalled();
+    });
+
+    it('字符串型存量 + 单抬 price=150 → 归一后照常 400', async () => {
+      await expect(service.update(1, { price: 150 } as any)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+      expect(mockQueryBuilder.execute).not.toHaveBeenCalled();
+    });
+
+    it('合法路径在字符串存量下照常走条件 UPDATE（守卫参数为归一后的数字）', async () => {
+      await expect(service.update(1, { originalPrice: 130 } as any)).resolves.toBeDefined();
+      expect(mockQueryBuilder.set).toHaveBeenCalledWith({ originalPrice: 130 });
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        'id = :id AND (price IS NULL OR price <= :guardOriginalPrice)',
+        { id: 1, guardOriginalPrice: 130 },
+      );
+    });
+
+    it('提交非法形状（非数字串/对象）→ 400 fail-clean（不落库不 500）', async () => {
+      let caught: any;
+      try {
+        await service.update(1, { price: 'abc' } as any);
+      } catch (e) {
+        caught = e;
+      }
+      expect(caught).toBeInstanceOf(BadRequestException);
+      expect(caught.getResponse().message).toContain('price');
+      await expect(service.update(1, { originalPrice: {} } as any)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+    });
+
+    it('提交 price=null → 400 fail-clean（直调面兜底，防 NOT NULL 列 500）', async () => {
+      await expect(service.update(1, { price: null } as any)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
     });
   });
 

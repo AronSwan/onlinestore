@@ -168,3 +168,69 @@ describe('P1-4 UpdateProductDto（PartialType 继承）', () => {
     expect(dto.name).toBe('凯莉包');
   });
 });
+
+// ─────────────────────────────────────────────────────────────
+// 三修（fix2 §三 5/6/9）：视觉空名 / null→undefined / U+2028/2029
+// ─────────────────────────────────────────────────────────────
+describe('三修 P2-5：视觉空名（Cf+White_Space 剥离后空 → IsNotEmpty 400）', () => {
+  it('纯零宽字符名（U+200B×3）→ 400（trim 不剥 Cf，旧实现放行落库空名）', async () => {
+    const errs = await errorsOf(CreateProductDto, { ...validBody, name: '\u200B\u200B\u200B' });
+    expect(errs.join(' ')).toContain('产品名称不能为空');
+  });
+
+  it('Cf+空格混合名（BOM+空格+软连字符）→ 400', async () => {
+    const errs = await errorsOf(CreateProductDto, { ...validBody, name: '\uFEFF \u00AD' });
+    expect(errs.join(' ')).toContain('产品名称不能为空');
+  });
+
+  it('含可见内容的名字不被误伤：内部空格保留、仅剥首尾空白', async () => {
+    const dto = plainToInstance(CreateProductDto, { ...validBody, name: ' 托 特包 ' });
+    expect(dto.name).toBe('托 特包');
+    expect(await errorsOf(CreateProductDto, { ...validBody, name: ' 托 特包 ' })).toHaveLength(0);
+  });
+
+  it('PartialType 继承：PATCH 纯 Cf 名同样 400', async () => {
+    const errs = await errorsOf(UpdateProductDto, { name: '\u200B' });
+    expect(errs.join(' ')).toContain('产品名称不能为空');
+  });
+});
+
+describe('三修 P2-6：标量 null → undefined 归一（不再穿透到 DB NOT NULL 500）', () => {
+  it('PATCH {price:null} → 归一为 undefined（@IsOptional 放行，值不进 update 集）', async () => {
+    const dto = plainToInstance(UpdateProductDto, { price: null, name: 'x' });
+    expect(dto.price).toBeUndefined();
+    expect(await errorsOf(UpdateProductDto, { price: null, name: 'x' })).toHaveLength(0);
+  });
+
+  it('PATCH {stock:null} / {originalPrice:null} 同样归一 undefined', async () => {
+    const dto = plainToInstance(UpdateProductDto, { stock: null, originalPrice: null });
+    expect(dto.stock).toBeUndefined();
+    expect(dto.originalPrice).toBeUndefined();
+  });
+
+  it('CREATE {name:null} → undefined → 必填校验 400（fail-clean，非 500）', async () => {
+    const dto = plainToInstance(CreateProductDto, { ...validBody, name: null });
+    expect(dto.name).toBeUndefined();
+    const errs = await validate(dto, { whitelist: false });
+    expect(errs.some((e: ValidationError) => e.property === 'name')).toBe(true);
+  });
+
+  it('CREATE {price:null} → undefined → @IsNumber 400（fail-clean）', async () => {
+    const errs = await errorsOf(CreateProductDto, { ...validBody, price: null });
+    expect(errs.join(' ')).toContain('price');
+  });
+});
+
+describe('三修 P3：@Matches 补 U+2028/2029 行终止符', () => {
+  it('name 含 U+2028 / U+2029 → 400「名称不能包含换行」（[^n r] 不拦的 JS 合法换行符）', async () => {
+    expect((await errorsOf(CreateProductDto, { ...validBody, name: '黑\u2028色' })).join(' ')).toContain(
+      '名称不能包含换行',
+    );
+    expect((await errorsOf(CreateProductDto, { ...validBody, name: '黑\u2029色' })).join(' ')).toContain(
+      '名称不能包含换行',
+    );
+    expect((await errorsOf(UpdateProductDto, { name: '黑\u2028色' })).join(' ')).toContain(
+      '名称不能包含换行',
+    );
+  });
+});

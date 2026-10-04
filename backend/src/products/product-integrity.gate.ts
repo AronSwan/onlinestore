@@ -24,6 +24,8 @@ export interface IntegrityGateInput {
   name?: unknown;
   description?: unknown;
   specifications?: Record<string, unknown> | null;
+  /** P2-8（三修，fix2 §三 8）：tags 数组逐项过禁用词 lint（首页徽章渲染面） */
+  tags?: unknown;
 }
 
 /** js/shared/integrity-rules.js 的最小契约面（只声明本闸消费的函数） */
@@ -129,6 +131,9 @@ export function hasFactCard(specifications: unknown): specifications is Record<s
  * 提取并校验 specifications.factCard（P1-2 ③）：
  *   - specifications 缺省/无 factCard 键 → undefined（lint-only 路径，存量兼容）；
  *   - factCard 为数组或标量 → 400（形状非法，防"缺字段即静默跳过"式绕过）；
+ *   - factCard.colorGroup / factCard.bagType 键存在但非字符串（且非 null）→ 400
+ *     带字段名（P2-4·三修，fix2 §三 4：X 组共中——数字/数组形状静默按"缺字段"
+ *     处理，事实卡比对被无声跳过）；null 视为未填（合法的空四选结果）；
  *   - plain object → 原样返回。
  */
 function extractFactCard(specifications: unknown): Record<string, unknown> | undefined {
@@ -145,6 +150,14 @@ function extractFactCard(specifications: unknown): Record<string, unknown> | und
     throw new BadRequestException(
       'specifications.factCard 必须是对象（看图四选结果 {colorGroup,bagType,hardware,occasion}），不接受数组或标量',
     );
+  }
+  for (const field of ['colorGroup', 'bagType'] as const) {
+    const v = (fc as Record<string, unknown>)[field];
+    if (v !== undefined && v !== null && typeof v !== 'string') {
+      throw new BadRequestException(
+        `specifications.factCard.${field} 必须是字符串（看图四选结果），不接受 ${Array.isArray(v) ? '数组' : typeof v}`,
+      );
+    }
   }
   return fc as Record<string, unknown>;
 }
@@ -181,6 +194,20 @@ export async function enforceProductIntegrityGate(
     ...rules.lintCopy(name).violations,
     ...rules.lintCopy(description).violations,
   ];
+
+  // P2-8（三修，fix2 §三 8）：tags 逐项过禁用词 lint——tags 渲染首页徽章，
+  // 是与 name/description 同面的展示文案（X1：'限时' 徽章走私）。命中即 400，
+  // 明细带 tagIndex/tag 定位到具体数组项；非字符串项不 lint（DTO @IsString({each})
+  // 已在 HTTP 面拦形状，非字符串项不可能携带词面）。已知限制：PATCH 未提交 tags
+  // 时不回扫存量 tags（存量脏数据治理另列，见三修汇报）。
+  if (Array.isArray(input.tags)) {
+    input.tags.forEach((tag, tagIndex) => {
+      if (typeof tag !== 'string') return;
+      for (const v of rules.lintCopy(tag).violations) {
+        violations.push({ ...v, field: 'tags', tagIndex, tag });
+      }
+    });
+  }
 
   // 词表冲突复检：合并视图带 factCard 即生效（P1-2 ②③）
   const gate = { warnings: [] as Array<Record<string, unknown>>, blockers: [] as Array<Record<string, unknown>> };
