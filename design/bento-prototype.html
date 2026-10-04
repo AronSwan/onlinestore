@@ -1,0 +1,614 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<!-- 阻止浏览器自动请求 /favicon.ico 造成控制台 404 -->
+<link rel="icon" href="data:,">
+<title>F7 bento 商品区原型 · Reich（非正式页面）</title>
+<!--
+  ============================================================================
+  F7 bento 原型 · 单文件可视化验证页（非正式页面，不进任何导航/构建入口）
+  ----------------------------------------------------------------------------
+  目的：验证 docs/modernization-discussion.md v1.1 §1.1 条款 3 的设计参数——
+    · 商品区 3 列均格 → bento：1 个 2×1 横版主打条 + 5 个单格
+    · 6 张商品图全是 800×1067 竖版 3:4 → 主打条内嵌 3:4 锁比例，图不裁不变形
+    · 选品规则（本期）= publishedAt 最新 → id=1 渐变褶皱手袋（2026-10-03 10:06）
+    · 卡片 12px 圆角（宪法禁 >16px）、白底黑 ink 骨架、hairline 1px 边框、无大阴影
+    · container queries 自适应卡片内部排版（单格 ≥280px 横排 / <280px 竖排）
+    · :has() 整卡 hover / 键盘焦点联动（纯 CSS）
+  数据真值来源：scripts/seed-products.sql（名称/价格/徽章/文案/图路径逐字一致）
+  色彩/圆角/动效令牌：值照抄 css/tokens.css（Reich UI v3.1 唯一令牌源），本页内联自带
+  字体：Barlow 未加载（本页不引用站内任何资源），以系统字体近似——
+    差异标注：Barlow 字宽略窄、900/400 字重阶梯更陡；本页系统字体（雅黑等）字重
+    上限 700，主打条大标题的"重"感会打折扣，正式实施以自托管 BarlowGX 为准（F5）。
+  图片路径用 ../images/products/ 相对路径：双击 file:// 直接打开与
+    http://localhost:5173/design/bento-prototype.html 两种方式均可加载。
+  ============================================================================
+-->
+<style>
+  /* ---- 令牌（值照抄 css/tokens.css，保证与正式站同源） ---- */
+  :root {
+    --bg-base: #FFFFFF;
+    --bg-soft: #FAF9F7;
+    --ink: #1A202C;
+    --ink-soft: #5A6472;
+    --ink-faint: #9CA3AF;
+    --line: #E5E2DC;
+    --line-strong: #D1CCC4;
+
+    --candy-blush-soft: #F9E2EC;
+    --candy-blush: #FF6B81;
+    --candy-blush-ink: #D14D67;
+
+    --candy-sun-soft: #FFF3D6;
+    --candy-sun: #FFD166;
+
+    --candy-mint-soft: #E4F6F0;
+    --candy-mint: #7BD5C0;
+    --candy-mint-ink: #1F8A70;
+
+    --font-display: 'Barlow', 'PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei', sans-serif;
+    --text-caption: 0.6875rem;
+    --text-small: 0.8125rem;
+    --text-body: 0.9375rem;
+    --radius-sm: 4px;
+    --radius-md: 12px;
+    --radius-pill: 999px;
+    --gutter-grid: 1rem;
+    --dur-fast: 0.2s;
+    --ease-lux: ease-in-out;
+    --tracking-caps: 0.05em;
+  }
+
+  /* ---- 基础 ---- */
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg-base);
+    color: var(--ink);
+    font-family: var(--font-display);
+    font-size: var(--text-body);
+    line-height: 1.65;
+  }
+  img { display: block; max-width: 100%; }
+  button { font: inherit; }
+  h1, h2, h3, p, figure { margin: 0; }
+  :focus-visible { outline: 2px solid var(--candy-blush-ink); outline-offset: 2px; }
+
+  /* ---- 顶部说明条（原型注记，非正式页面元素） ---- */
+  .proto-note {
+    background: var(--candy-blush-soft);
+    border-bottom: 1px solid var(--line);
+    color: var(--ink);
+    font-size: var(--text-small);
+    text-align: center;
+    padding: 8px 16px;
+  }
+  .proto-note strong { font-weight: 700; }
+  .proto-note span { color: var(--ink-soft); }
+
+  /* ---- 页面骨架 ---- */
+  .page { max-width: 1200px; margin: 0 auto; padding: 48px 16px 24px; }
+  .section-head { text-align: center; margin-bottom: 40px; }
+  .section-head .eyebrow {
+    font-size: var(--text-caption);
+    font-weight: 700;
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 12px;
+  }
+  .section-head h1 { font-size: 1.875rem; font-weight: 700; }
+  .section-head .lede { color: var(--ink-soft); margin-top: 12px; }
+
+  /* ============================================================
+     bento 网格：外层断点用媒体查询定列数，卡片内部排版交给
+     container queries（容器即卡片，列数变化→卡宽变化→内部自适应）
+     ============================================================ */
+  .bento-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--gutter-grid);
+    align-items: stretch;
+  }
+  /* 平板 2 列 */
+  @media (max-width: 1023px) {
+    .bento-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  /* 手机 1 列 */
+  @media (max-width: 639px) {
+    .bento-grid { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  /* ---- 卡片公共：白底 + hairline 1px 边框 + 12px 圆角，无阴影 ---- */
+  .bento-card {
+    background: var(--bg-base);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    display: flex;
+    min-width: 0;
+    transition: border-color var(--dur-fast) var(--ease-lux);
+  }
+  .card-fig {
+    margin: 0;
+    position: relative;
+    background: var(--bg-soft);
+    flex: none;
+    min-width: 0;
+  }
+  .card-fig img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* 容器与原图同为 3:4，cover 不产生裁切，只锁比例 */
+  }
+
+  /* 徽章：糖果 soft 底 + ink 字（§1.1 一主两备：blush 主 / sun、mint 备） */
+  .badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 1;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    color: var(--ink);
+    border: 1px solid rgba(26, 32, 44, 0.08);
+  }
+  .badge-blush { background: var(--candy-blush-soft); }
+  .badge-sun   { background: var(--candy-sun-soft); }
+  .badge-mint  { background: var(--candy-mint-soft); }
+
+  /* 价格 */
+  .price { font-weight: 700; letter-spacing: 0.01em; white-space: nowrap; }
+  .price em { font-style: normal; font-size: 0.72em; font-weight: 600; margin-right: 2px; }
+  .price-lg { font-size: 1.5rem; }
+
+  /* ---- 加入购物袋 pill：静置半透明，整卡 hover/聚焦时变实底（见下方 :has() 联动） ---- */
+  .btn-bag {
+    border: 1px solid transparent;
+    border-radius: var(--radius-pill);
+    padding: 9px 18px;
+    font-size: var(--text-small);
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    color: var(--candy-blush-ink);
+    background: color-mix(in srgb, var(--candy-blush-soft) 68%, transparent);
+    transition: background var(--dur-fast) var(--ease-lux),
+                color var(--dur-fast) var(--ease-lux);
+  }
+
+  /* ============================================================
+     :has() 整卡联动（纯 CSS）——
+     hover 落在卡内任意处（含图片/文字空白）提升整卡；
+     键盘 Tab 焦点进入卡内按钮时，经 :has(:focus-visible) 同样联动整卡。
+     ============================================================ */
+  .bento-card:hover,
+  .bento-card:has(:focus-visible) {
+    border-color: var(--candy-blush);
+  }
+  .bento-card:hover .btn-bag,
+  .bento-card:has(:focus-visible) .btn-bag,
+  .btn-bag:hover,
+  .btn-bag:focus-visible {
+    background: var(--candy-blush-ink); /* 实底；#D14D67×白字 ≈ 4.6:1 */
+    color: #FFFFFF;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .card-fig img {
+      transition: transform var(--dur-fast) var(--ease-lux);
+    }
+    /* 图微升 2px + 轻微缩放 1.02 */
+    .bento-card:hover .card-fig img,
+    .bento-card:has(:focus-visible) .card-fig img {
+      transform: translateY(-2px) scale(1.02);
+    }
+  }
+  /* 降级：不支持 :has() 的浏览器用 :focus-within 兜底（Chrome 105+ 原生支持，此为保险） */
+  @supports not selector(:has(*)) {
+    .bento-card:focus-within { border-color: var(--candy-blush); }
+    .bento-card:focus-within .btn-bag { background: var(--candy-blush-ink); color: #fff; }
+    .bento-card:focus-within .card-fig img { transform: translateY(-2px) scale(1.02); }
+  }
+
+  /* ============================================================
+     2×1 横版主打条（首行跨 2 列，高约 420px，左图右文）
+     容器查询：容器宽 ≥560px 横排（左图右文）；<560px 竖排（图上文下）
+     —— 手机 1 列（约 343px 容器）自动落到图上文下，无需再写媒体查询
+     ============================================================ */
+  .bento-featured {
+    grid-column: span 2;
+    min-height: 420px; /* 手机竖排时内容由 3:4 图撑高，420px 不构成约束 */
+    container: featured / inline-size;
+  }
+  @media (max-width: 639px) {
+    .bento-featured { grid-column: span 1; }
+  }
+  .featured-inner {
+    flex: 1;
+    display: flex;
+    flex-direction: column; /* 竖排默认：图上文下 */
+    min-width: 0;
+  }
+  .featured-fig { width: 100%; aspect-ratio: 3 / 4; }
+  .featured-body {
+    flex: 1;
+    min-width: 0;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 12px;
+  }
+  .featured-kicker {
+    font-size: var(--text-caption);
+    font-weight: 700;
+    letter-spacing: var(--tracking-caps);
+    color: var(--candy-blush-ink);
+    text-transform: uppercase;
+  }
+  .featured-name {
+    font-size: clamp(1.75rem, 3.2vw, 2.375rem);
+    font-weight: 700; /* 系统雅黑上限 700；BarlowGX 可到 900，正式实施字重更陡 */
+    line-height: 1.2;
+    letter-spacing: 0.01em;
+  }
+  .featured-desc {
+    color: var(--ink-soft);
+    max-width: 44ch;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .featured-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  @container featured (min-width: 560px) {
+    .featured-inner { flex-direction: row; } /* 横排：左图右文 */
+    .featured-fig {
+      /* 宽驱动而非高驱动：卡高来自 min-height（不定高，height:% 解析失败会回退自然尺寸）。
+         width × 3:4 派生高；下限 314px 保证派生高 ≥ 卡内高（418px），恰好撑满 420px 卡。
+         align-self 必须 flex-start——默认 stretch 会把图拉出 3:4（实测 768 宽下图被裁约 4%） */
+      width: clamp(314px, 42%, 340px);
+      aspect-ratio: 3 / 4;
+      align-self: flex-start;
+    }
+    .featured-body { padding: 32px 36px; }
+  }
+
+  /* ============================================================
+     单格卡 —— 容器查询：容器宽 ≥280px 横排（图左文右），<280px 竖排
+     ============================================================ */
+  .bento-cell { container: cell / inline-size; }
+  .cell-inner {
+    flex: 1;
+    display: flex;
+    flex-direction: column; /* 竖排默认：图上文下 */
+    min-width: 0;
+  }
+  .cell-fig { width: 100%; aspect-ratio: 3 / 4; }
+  .cell-body {
+    flex: 1;
+    min-width: 0;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .cell-name {
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+  .cell-desc {
+    color: var(--ink-soft);
+    font-size: var(--text-small);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .cell-meta {
+    margin-top: auto;
+    padding-top: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  @container cell (min-width: 280px) {
+    .cell-inner { flex-direction: row; } /* 横排：图左文右 */
+    .cell-fig { width: 42%; aspect-ratio: 3 / 4; align-self: flex-start; }
+    .cell-name { font-size: 1rem; }
+  }
+
+  /* ============================================================
+     参数演示区：拖动右下角把手改变容器宽，实测 280px 翻转点
+     ============================================================ */
+  .cq-demo { margin-top: 48px; }
+  .cq-demo-title {
+    font-size: var(--text-caption);
+    font-weight: 700;
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 12px;
+  }
+  .cq-demo-stage {
+    resize: horizontal;
+    overflow: hidden; /* 生成拖拽把手的前提 */
+    direction: ltr;
+    border: 1px dashed var(--line-strong);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    max-width: 100%;
+    min-width: 180px;
+    width: 100%;
+    background: var(--bg-soft);
+  }
+  .cq-readout {
+    margin-top: 8px;
+    font-size: var(--text-small);
+    color: var(--ink-soft);
+  }
+  .cq-readout output {
+    font-weight: 700;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    padding: 0 2px;
+  }
+
+  /* ---- 页脚注记（原型说明，正式实施时删除） ---- */
+  .proto-foot {
+    margin-top: 48px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+    font-size: var(--text-small);
+    color: var(--ink-soft);
+  }
+  .proto-foot ul { margin: 8px 0 0; padding-left: 18px; }
+  .proto-foot li { margin: 2px 0; }
+</style>
+</head>
+<body>
+
+<!-- 原型说明条：正式实施时删除 -->
+<div class="proto-note" role="note">
+  <strong>F7 bento 原型 · 非正式页面 · 设计参数验证</strong>
+  <span>　主打条 2×1＋5 单格｜卡内排版 container queries｜整卡联动 :has()｜12px 圆角｜Barlow 未加载，系统字体近似（字重阶梯差异见页脚）</span>
+</div>
+
+<main class="page">
+  <header class="section-head">
+    <p class="eyebrow">It's Tote Season</p>
+    <h1>包包们的季节到了</h1>
+    <p class="lede">商品区 bento 陈列：一条主打 + 五个单格（数据真值照抄 scripts/seed-products.sql）</p>
+  </header>
+
+  <section class="bento-grid" aria-label="本季精选商品">
+
+    <!-- 主打位 2×1：publishedAt 最新（2026-10-03 10:06）→ id=1 -->
+    <article class="bento-card bento-featured" data-product-id="00000001" aria-label="本期主打：渐变褶皱手袋">
+      <div class="featured-inner">
+        <figure class="card-fig featured-fig">
+          <span class="badge badge-blush">新到</span>
+          <picture>
+            <source srcset="../images/products/product-1.webp" type="image/webp">
+            <img src="../images/products/product-1.jpg" alt="Reich 渐变褶皱手袋"
+                 width="800" height="1067" decoding="async">
+          </picture>
+        </figure>
+        <div class="featured-body">
+          <p class="featured-kicker">本期主打 · 按 publishedAt 最新选出（2026-10-03 10:06）</p>
+          <h2 class="featured-name">渐变褶皱手袋</h2>
+          <p class="featured-desc">绿到橙再到紫，渐变在褶皱上慢慢晕开，紫红提手一拎就走。像把傍晚的天色收进包里，慢慢挑。</p>
+          <div class="featured-meta">
+            <p class="price price-lg"><em>¥</em>299</p>
+            <button class="btn-bag" type="button" aria-label="将渐变褶皱手袋加入购物袋">加入购物袋</button>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- 5 单格：id=2..6，按 publishedAt 倒序 -->
+    <article class="bento-card bento-cell" data-product-id="00000002">
+      <div class="cell-inner">
+        <figure class="card-fig cell-fig">
+          <span class="badge badge-sun">心头好</span>
+          <picture>
+            <source srcset="../images/products/product-2.webp" type="image/webp">
+            <img src="../images/products/product-2.jpg" alt="Reich 黑皮波士顿包"
+                 width="800" height="1067" loading="lazy" decoding="async">
+          </picture>
+        </figure>
+        <div class="cell-body">
+          <h3 class="cell-name">黑皮波士顿包</h3>
+          <p class="cell-desc">黑色粒面皮革，双提手加一道皮带扣，精神又稳当。装得下手机、口红和一句俏皮话，通勤路上的老搭档。</p>
+          <div class="cell-meta">
+            <p class="price"><em>¥</em>259</p>
+            <button class="btn-bag" type="button" aria-label="将黑皮波士顿包加入购物袋">加入购物袋</button>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="bento-card bento-cell" data-product-id="00000003">
+      <div class="cell-inner">
+        <figure class="card-fig cell-fig">
+          <span class="badge badge-mint">经典款</span>
+          <picture>
+            <source srcset="../images/products/product-3.webp" type="image/webp">
+            <img src="../images/products/product-3.jpg" alt="Reich 湖蓝凯莉手提包"
+                 width="800" height="1067" loading="lazy" decoding="async">
+          </picture>
+        </figure>
+        <div class="cell-body">
+          <h3 class="cell-name">湖蓝凯莉手提包</h3>
+          <p class="cell-desc">湖蓝色光面皮革，白色矩形锁扣配一点金色五金。拎在手上，像拎着一小片晴天。</p>
+          <div class="cell-meta">
+            <p class="price"><em>¥</em>189</p>
+            <button class="btn-bag" type="button" aria-label="将湖蓝凯莉手提包加入购物袋">加入购物袋</button>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="bento-card bento-cell" data-product-id="00000004">
+      <div class="cell-inner">
+        <figure class="card-fig cell-fig">
+          <span class="badge badge-blush">新到</span>
+          <picture>
+            <source srcset="../images/products/product-4.webp" type="image/webp">
+            <img src="../images/products/product-4.jpg" alt="Reich 双色糖果链条包"
+                 width="800" height="1067" loading="lazy" decoding="async">
+          </picture>
+        </figure>
+        <div class="cell-body">
+          <h3 class="cell-name">双色糖果链条包</h3>
+          <p class="cell-desc">薄荷绿与樱花粉各一只，挂在银色链条上晒太阳。出门前选颜色，是每天的小快乐。</p>
+          <div class="cell-meta">
+            <p class="price"><em>¥</em>168</p>
+            <button class="btn-bag" type="button" aria-label="将双色糖果链条包加入购物袋">加入购物袋</button>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="bento-card bento-cell" data-product-id="00000005">
+      <div class="cell-inner">
+        <figure class="card-fig cell-fig">
+          <span class="badge badge-sun">心头好</span>
+          <picture>
+            <source srcset="../images/products/product-5.webp" type="image/webp">
+            <img src="../images/products/product-5.jpg" alt="Reich 花语皮革手提包"
+                 width="800" height="1067" loading="lazy" decoding="async">
+          </picture>
+        </figure>
+        <div class="cell-body">
+          <h3 class="cell-name">花语皮革手提包</h3>
+          <p class="cell-desc">棕榈叶与粉花朵开在蓝波浪纹上，银色大圆环一拎就走。热闹得刚刚好的一只。</p>
+          <div class="cell-meta">
+            <p class="price"><em>¥</em>229</p>
+            <button class="btn-bag" type="button" aria-label="将花语皮革手提包加入购物袋">加入购物袋</button>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="bento-card bento-cell" data-product-id="00000006">
+      <div class="cell-inner">
+        <figure class="card-fig cell-fig">
+          <span class="badge badge-blush">新到</span>
+          <picture>
+            <source srcset="../images/products/product-6.webp" type="image/webp">
+            <img src="../images/products/product-6.jpg" alt="Reich 粉色 V 纹链条包"
+                 width="800" height="1067" loading="lazy" decoding="async">
+          </picture>
+        </figure>
+        <div class="cell-body">
+          <h3 class="cell-name">粉色 V 纹链条包</h3>
+          <p class="cell-desc">粉色翻盖压着黄白 V 纹，银色链条斜挎刚好。小小一只，装下出门的必备和一点点心动。</p>
+          <div class="cell-meta">
+            <p class="price"><em>¥</em>88</p>
+            <button class="btn-bag" type="button" aria-label="将粉色 V 纹链条包加入购物袋">加入购物袋</button>
+          </div>
+        </div>
+      </div>
+    </article>
+
+  </section>
+
+  <!-- 参数演示：拖右下角把手，观察单格卡在容器宽 280px 处横竖翻转 -->
+  <section class="cq-demo" aria-label="container query 280px 翻转点演示">
+    <h2 class="cq-demo-title">参数演示 · 单格卡 280px 翻转点（拖动下框右下角把手）</h2>
+    <div class="cq-demo-stage" id="cqStage">
+      <article class="bento-card bento-cell" id="cqProbe" data-product-id="00000006" aria-label="演示卡：粉色 V 纹链条包">
+        <div class="cell-inner">
+          <figure class="card-fig cell-fig">
+            <span class="badge badge-blush">新到</span>
+            <picture>
+              <source srcset="../images/products/product-6.webp" type="image/webp">
+              <img src="../images/products/product-6.jpg" alt="Reich 粉色 V 纹链条包"
+                   width="800" height="1067" loading="lazy" decoding="async">
+            </picture>
+          </figure>
+          <div class="cell-body">
+            <h3 class="cell-name">粉色 V 纹链条包</h3>
+            <p class="cell-desc">粉色翻盖压着黄白 V 纹，银色链条斜挎刚好。小小一只，装下出门的必备和一点点心动。</p>
+            <div class="cell-meta">
+              <p class="price"><em>¥</em>88</p>
+              <button class="btn-bag" type="button" aria-label="将粉色 V 纹链条包加入购物袋">加入购物袋</button>
+            </div>
+          </div>
+        </div>
+      </article>
+    </div>
+    <p class="cq-readout">
+      演示卡容器宽：<output id="cqWidth" for="cqStage">（测量中）</output> px
+      ｜当前排版：<output id="cqMode">（测量中）</output>（阈值 280px：≥ 横排图左文右 / ＜ 竖排图上文下）
+    </p>
+  </section>
+
+  <!-- 页脚注记：正式实施时删除 -->
+  <footer class="proto-foot">
+    <p><strong>原型参数注记（F7 拍板用）</strong></p>
+    <ul>
+      <li>布局：桌面 3 列（主打条跨 2 列＋首行 1 单格 → 第二行 3 单格 → 第三行 1 单格＋2 空位）；平板 2 列；手机 1 列（主打条图上文下）。</li>
+      <li>主打条高 420px（min-height）：容器 ≥560px 左图右文，3:4 锁比例由高派生宽（420px 高 → 图宽约 315px），800×1067 原图零裁切。</li>
+      <li>单格卡：容器 ≥280px 图左文右（图列 42%）；＜280px 图上文下。当前三档断点下手机 1 列卡宽约 343px，仍走横排——竖排分支仅在更窄容器（如分栏嵌套）触发。</li>
+      <li>交互：卡片 hover / 焦点进入（:has(:focus-visible)）→ 边框转腮红粉、图升 2px＋缩放 1.02、pill 由半透明 blush-soft 变实底 blush-ink 白字（对比约 4.6:1）。</li>
+      <li>字体差异：本页系统字体（雅黑/苹方），字重上限 700；Barlow 正式上线后主打条大标题为 900 字重、整体字宽略窄，视觉比本页更"陡"。</li>
+      <li>本页不引用站内任何样式/脚本，双击或经 5173 均可打开；商品数据与 scripts/seed-products.sql 逐字一致。</li>
+    </ul>
+  </footer>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  /* 1) 280px 翻转点实测读数（ResizeObserver 观察演示卡的容器宽） */
+  var probe = document.getElementById('cqProbe');
+  var widthOut = document.getElementById('cqWidth');
+  var modeOut = document.getElementById('cqMode');
+  if (probe && widthOut && modeOut && 'ResizeObserver' in window) {
+    var report = function (w) {
+      widthOut.textContent = String(Math.round(w));
+      modeOut.textContent = w >= 280 ? '横排（图左文右）' : '竖排（图上文下）';
+    };
+    new ResizeObserver(function (entries) {
+      report(entries[0].contentRect.width);
+    }).observe(probe);
+  } else if (widthOut && modeOut) {
+    widthOut.textContent = '不支持';
+    modeOut.textContent = '不支持 ResizeObserver';
+  }
+
+  /* 2) 加入购物袋 pill 点击反馈（原型演示，不接购物车） */
+  document.addEventListener('click', function (e) {
+    var btn = e.target && e.target.closest ? e.target.closest('.btn-bag') : null;
+    if (!btn || btn.dataset.busy) { return; }
+    btn.dataset.busy = '1';
+    var original = btn.textContent;
+    btn.textContent = '已加入（原型演示）';
+    window.setTimeout(function () {
+      btn.textContent = original;
+      delete btn.dataset.busy;
+    }, 1200);
+  });
+})();
+</script>
+</body>
+</html>
