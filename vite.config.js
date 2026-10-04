@@ -27,8 +27,13 @@ export default defineConfig(({ mode }) => {
         }
       } : undefined,
       rollupOptions: {
+        // F3：四页 MPA。原先只配 index 一页，login/orders/profile 会被构建
+        // 静默丢弃（不报错）——MPA 每页必须是显式入口。
         input: {
           main: resolve(__dirname, 'index.html'),
+          login: resolve(__dirname, 'login.html'),
+          orders: resolve(__dirname, 'orders.html'),
+          profile: resolve(__dirname, 'profile.html'),
         },
         output: {
           chunkFileNames: 'assets/js/[name]-[hash].js',
