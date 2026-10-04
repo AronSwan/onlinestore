@@ -27,7 +27,7 @@ export interface CreateProductData {
   price: number;
   originalPrice?: number;
   stock: number;
-  categoryId: number;
+  categoryId?: number;
   mainImage?: string;
   tags?: string[];
   specifications?: Record<string, any>;
@@ -137,12 +137,18 @@ export class ProductsService {
    * 创建产品
    */
   async create(productData: CreateProductData): Promise<Product> {
-    const category = await this.categoryRepository.findOne({
-      where: { id: productData.categoryId },
-    });
+    // M1-B2(2026-10-04)：categoryId 可选——未传不校验直接建；
+    // "传了但不存在" 仍抛 404（原行为保留给该情形）。
+    let category: Category | undefined;
+    if (productData.categoryId !== undefined && productData.categoryId !== null) {
+      const found = await this.categoryRepository.findOne({
+        where: { id: productData.categoryId },
+      });
 
-    if (!category) {
-      throw new NotFoundException();
+      if (!found) {
+        throw new NotFoundException();
+      }
+      category = found;
     }
 
     const product = this.productRepository.create({
@@ -354,8 +360,21 @@ export class ProductsService {
     }
 
     if (tags && tags.length > 0) {
+      // M1-B7(2026-10-04)：tags 双方言。tags 为 simple-array 逗号串存储；
+      // FIND_IN_SET 是 MySQL/TiDB 方言，SQLite/Postgres 下直接语法错误。
+      // 非 MySQL 族用 (',' || tags || ',') LIKE '%,tag,%' 做等值匹配（首尾包逗号防子串误配）。
+      const dbType = (
+        this.configService.get<string>('master.database.type') || 'sqlite'
+      ).toLowerCase();
+      const isMysqlFamily = dbType === 'mysql' || dbType === 'tidb';
       tags.forEach((tag, index) => {
-        query.andWhere(`FIND_IN_SET(:tag${index}, product.tags)`, { [`tag${index}`]: tag });
+        if (isMysqlFamily) {
+          query.andWhere(`FIND_IN_SET(:tag${index}, product.tags)`, { [`tag${index}`]: tag });
+        } else {
+          query.andWhere(`(',' || product.tags || ',') LIKE :tag${index}`, {
+            [`tag${index}`]: `%,${tag},%`,
+          });
+        }
       });
     }
 
@@ -473,7 +492,10 @@ export class ProductsService {
   }
 
   /**
-   * 删除产品
+   * 删除产品（软删）
+   * M2-B6(2026-10-04)：硬删改下架——order_items→products 外键为 ON DELETE NO ACTION，
+   * 物理 DELETE 只要存在订单引用即 FK 报错必败；置 isActive=false 即"下架=删除"语义。
+   * 后续商品 status 列落地后，本操作映射为 archived。
    */
   async delete(id: number): Promise<void> {
     const product = await this.findById(id);
@@ -481,7 +503,7 @@ export class ProductsService {
       throw new NotFoundException();
     }
 
-    await this.productRepository.delete(id);
+    await this.productRepository.update(id, { isActive: false });
 
     // 清除缓存（统一前缀与热门键集合）
     const keyPrefix = this.configService.get<string>('redis.keyPrefix') || 'caddy_shopping';
@@ -494,6 +516,11 @@ export class ProductsService {
       } catch (e) {}
     }
     await this.invalidateListCache();
+
+    // 异步移除搜索索引，下架品不应再出现在搜索结果
+    this.deleteProductFromSearch(id).catch((error: Error) => {
+      console.error('产品搜索索引删除失败:', error);
+    });
   }
 
   /**
@@ -569,13 +596,16 @@ export class ProductsService {
 
   /**
    * 获取所有产品（分页）
+   * M1-B3(2026-10-04)：公开列表默认只返回在售（isActive=true）——下架品不得漏给前台；
+   * 管理端（GET /products/admin/all）传 includeInactive:true 查看全部。
    */
   async findAll(
-    options: { page?: number; limit?: number; search?: string } = {},
+    options: { page?: number; limit?: number; search?: string; includeInactive?: boolean } = {},
   ): Promise<{ products: Product[]; total: number }> {
-    const { page = 1, limit = 20, search } = options;
+    const { page = 1, limit = 20, search, includeInactive = false } = options;
     const keyPrefix = this.configService.get<string>('redis.keyPrefix') || 'caddy_shopping';
-    const cacheKey = `${keyPrefix}:products:list:${page}:${limit}:${search || ''}`;
+    // 管理端变体用独立键段，避免与公开列表互相污染（失效模式 products:list:* 两者都覆盖）
+    const cacheKey = `${keyPrefix}:products:list:${includeInactive ? 'admin:' : ''}${page}:${limit}:${search || ''}`;
     const startGet = process.hrtime.bigint();
     const cached = await this.cacheManager.get<{ products: Product[]; total: number }>(cacheKey);
     const endGet = process.hrtime.bigint();
@@ -598,10 +628,18 @@ export class ProductsService {
       .leftJoinAndSelect('product.category', 'category')
       .leftJoinAndSelect('product.images', 'images');
 
+    if (!includeInactive) {
+      query.where('product.isActive = :isActive', { isActive: true });
+    }
+
     if (search) {
-      query.where('(product.name LIKE :search OR product.description LIKE :search)', {
-        search: `%${search}%`,
-      });
+      const searchCondition = '(product.name LIKE :search OR product.description LIKE :search)';
+      const searchParams = { search: `%${search}%` };
+      if (includeInactive) {
+        query.where(searchCondition, searchParams);
+      } else {
+        query.andWhere(searchCondition, searchParams);
+      }
     }
 
     const startDb = process.hrtime.bigint();
@@ -630,11 +668,13 @@ export class ProductsService {
   }
 
   /**
-   * 根据ID查找单个产品
+   * 根据ID查找单个产品（公开面）
+   * M1-B3(2026-10-04)：下架品（isActive=false）对公开访问返回 404——与列表过滤同一语义；
+   * 管理路由不受限：update/delete 内部走 findById，不经过本方法。
    */
   async findOne(id: number): Promise<Product> {
     const product = await this.findById(id);
-    if (!product) {
+    if (!product || !product.isActive) {
       throw new NotFoundException();
     }
     return product;

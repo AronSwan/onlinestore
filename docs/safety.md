@@ -34,6 +34,7 @@
 | **库存乐观锁防超卖。** 订单项库存按 `version` 条件更新，竞态命中 0 行即回滚。 | `orders/orders.service.ts` create（updateResult.affected 检查） | `orders.service.spec.ts`（并发用例） |
 | **安全响应头。** helmet 全局挂载（生产 CSP 开启）。 | `main.ts` | 构建产物检查 |
 | **登录失败计数第二轨。** Redis 就绪时按邮箱计数，5 次/10 分钟触发验证码门槛。 | `auth/auth.service.ts` login（Redis 就绪守卫） | `auth.service.spec.ts`（失败计数用例） |
+| **上传只收真图片且名字由服务端起。** 商品图上传按 magic bytes 裁决（jpeg=FF D8 FF / png=89 50 4E 47 / webp=RIFF....WEBP，不信 mimetype 不信扩展名）+扩展名白名单 .jpg/.jpeg/.png/.webp+5MB 双闸（Multer limits+handler 复查）；文件名服务端时间戳+随机生成，绝不使用客户端文件名，落盘经 path.resolve 锁定在仓库根 `images/products/`（防路径穿越；`.env UPLOAD_DEST` 是无关残留不使用）。路由 admin-only。 | `products/products.controller.ts` `uploadImage`（FileInterceptor+detectImageExt） | `products/products-upload.spec.ts`（伪装/超限/无文件/落盘目录用例）+ 接线锁 |
 
 ## 靠流程/文档约束的（非代码强制）
 

@@ -18,7 +18,15 @@ import {
   forwardRef,
   DefaultValuePipe,
   ParseIntPipe,
+  Req,
+  UploadedFile,
+  BadRequestException,
+  PayloadTooLargeException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as crypto from 'crypto';
 import { ApiTags, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { ProductsService } from './products.service';
 import { SearchManagerService } from './search/search-manager.service';
@@ -32,6 +40,12 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../auth/enums/role.enum';
 import { RouteLabelInterceptor } from '../monitoring/route-label.interceptor';
 import {
+  AuditService,
+  AuditAction,
+  AuditResult,
+  AuditSeverity,
+} from '../common/audit/audit.service';
+import {
   ApiDocs,
   ApiPaginatedQuery,
   ApiCreateResource,
@@ -40,6 +54,59 @@ import {
   ApiGetResource,
 } from '../common/decorators/api-docs.decorator';
 import { Product } from './entities/product.entity';
+
+// ================================
+// M2-B5(2026-10-04) 商品图上传安全常量与工具
+// 纪律详见 docs/safety.md「上传只收真图片」行：
+// ① magic bytes 校验（不信 mimetype/扩展名）②扩展名白名单 ③≤5MB 双闸
+// ④文件名服务端生成，绝不用客户端文件名 ⑤落盘锁定仓库根 images/products/
+// （.env 的 UPLOAD_DEST=./uploads 是无关残留配置，不使用）
+// ================================
+const UPLOAD_MAX_BYTES = 5 * 1024 * 1024;
+const UPLOAD_EXT_WHITELIST = ['.jpg', '.jpeg', '.png', '.webp'];
+
+/** Multer 内存存储下的上传文件最小形状（仓内无 @types/multer，沿用 file-upload.interceptor 的显式声明风格） */
+interface UploadedImageFile {
+  originalname: string;
+  buffer: Buffer;
+  size: number;
+  mimetype?: string;
+}
+
+/** 按 magic bytes 识别真实图片类型：jpeg=FF D8 FF / png=89 50 4E 47… / webp=RIFF....WEBP */
+export function detectImageExt(buffer: Buffer): '.jpg' | '.png' | '.webp' | null {
+  if (!buffer || buffer.length < 12) return null;
+  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return '.jpg';
+  if (
+    buffer[0] === 0x89 &&
+    buffer[1] === 0x50 &&
+    buffer[2] === 0x4e &&
+    buffer[3] === 0x47 &&
+    buffer[4] === 0x0d &&
+    buffer[5] === 0x0a &&
+    buffer[6] === 0x1a &&
+    buffer[7] === 0x0a
+  ) {
+    return '.png';
+  }
+  if (buffer.toString('ascii', 0, 4) === 'RIFF' && buffer.toString('ascii', 8, 12) === 'WEBP') {
+    return '.webp';
+  }
+  return null;
+}
+
+/**
+ * 落盘目录：仓库根 images/products（前端 vite 直接服务该目录）。
+ * 运行布局有两种——源码 <backend>/src/products、构建产物 <backend>/dist/src/products，
+ * 据此定位 backend 根后再上溯一级；path.resolve 锁定，杜绝 cwd 漂移。
+ */
+export function resolveUploadDir(): string {
+  const backendRoot = path.resolve(
+    __dirname,
+    __dirname.split(path.sep).includes('dist') ? '../../..' : '../..',
+  );
+  return path.resolve(backendRoot, '..', 'images', 'products');
+}
 
 @ApiTags('产品管理')
 @Controller('products')
@@ -53,21 +120,105 @@ export class ProductsController {
     private readonly searchSuggestionService: SearchSuggestionService,
     @Inject(forwardRef(() => PopularSearchService))
     private readonly popularSearchService: PopularSearchService,
+    private readonly auditService: AuditService,
   ) {}
+
+  /**
+   * M1-B4(2026-10-04)：商品写操作审计——记 actor/action/productId/diff 摘要入 audit_logs。
+   * 用 AuditService 现有 log() 形状（ADMIN_PRODUCT_MANAGE 枚举），不发明新接口；
+   * 审计失败只告警不阻断主流程。
+   */
+  private async auditProductWrite(
+    req: any,
+    actionLabel: '创建' | '更新' | '删除',
+    productId: number | string,
+    newValues?: Record<string, any>,
+  ): Promise<void> {
+    try {
+      await this.auditService.log(
+        AuditAction.ADMIN_PRODUCT_MANAGE,
+        AuditResult.SUCCESS,
+        {
+          userId: req?.user?.sub != null ? String(req.user.sub) : undefined,
+          userEmail: req?.user?.email,
+          userRole: req?.user?.role,
+          httpMethod: req?.method,
+          endpoint: req ? `${req.method} ${req.originalUrl || req.url || ''}` : undefined,
+          resourceType: 'products',
+          resourceId: String(productId),
+        },
+        `商品${actionLabel}: productId=${productId}`,
+        AuditSeverity.LOW,
+        undefined,
+        newValues,
+      );
+    } catch (error) {
+      console.warn('商品审计日志写入失败:', (error as Error).message);
+    }
+  }
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @ApiCreateResource(Product, CreateProductDto, '创建产品')
-  async create(@Body() createProductDto: CreateProductDto) {
-    return this.productsService.create(createProductDto);
+  async create(@Body() createProductDto: CreateProductDto, @Req() req?: any) {
+    const created = await this.productsService.create(createProductDto);
+    await this.auditProductWrite(req, '创建', created.id, {
+      id: created.id,
+      name: created.name,
+      price: created.price,
+      stock: created.stock,
+      isActive: created.isActive,
+      mainImage: created.mainImage,
+      tags: createProductDto.tags,
+    });
+    return created;
+  }
+
+  /**
+   * M2-B5(2026-10-04)：商品图上传（admin）。
+   * Multer 内存存储（limits 5MB 为第一闸），buffer 到手后 magic bytes 校验再落盘——
+   * 校验前没有任何字节写入磁盘。
+   */
+  @Post('upload')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: UPLOAD_MAX_BYTES } }))
+  @ApiBearerAuth()
+  async uploadImage(@UploadedFile() file?: UploadedImageFile) {
+    if (!file || !file.buffer || file.buffer.length === 0) {
+      throw new BadRequestException('未接收到上传文件');
+    }
+    // 第二闸（Multer 限额之外的防御性复查，伪造 size 头场景兜底）
+    if (file.size > UPLOAD_MAX_BYTES) {
+      throw new PayloadTooLargeException('图片大小超过 5MB 上限');
+    }
+    const clientExt = path.extname(file.originalname || '').toLowerCase();
+    if (!UPLOAD_EXT_WHITELIST.includes(clientExt)) {
+      throw new BadRequestException('不支持的图片扩展名（仅 .jpg/.jpeg/.png/.webp）');
+    }
+    // magic bytes 为最终裁决：不信 mimetype，不信扩展名
+    const detectedExt = detectImageExt(file.buffer);
+    if (!detectedExt) {
+      throw new BadRequestException('文件内容不是有效的 jpeg/png/webp 图片');
+    }
+    // 文件名服务端生成（时间戳+随机），扩展名以内容检测为准；绝不使用客户端文件名
+    const filename = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}${detectedExt}`;
+    const uploadDir = resolveUploadDir();
+    fs.mkdirSync(uploadDir, { recursive: true });
+    const target = path.resolve(uploadDir, filename);
+    // 双保险防路径穿越：解析结果必须仍在锁定目录内
+    if (!target.startsWith(uploadDir + path.sep)) {
+      throw new BadRequestException('非法文件名');
+    }
+    fs.writeFileSync(target, file.buffer);
+    return { path: `/images/products/${filename}` };
   }
 
   @Get()
   @ApiPaginatedQuery(Product, '获取产品列表', '分页获取产品列表，支持搜索和排序')
   @ApiQuery({ name: 'search', required: false, description: '搜索关键词', example: 'iPhone' })
   @ApiQuery({ name: 'categoryId', required: false, description: '分类ID', example: 1 })
-  @ApiQuery({ name: 'brand', required: false, description: '品牌', example: 'Apple' })
   @ApiQuery({ name: 'minPrice', required: false, description: '最低价格', example: 100 })
   @ApiQuery({ name: 'maxPrice', required: false, description: '最高价格', example: 1000 })
   findAll(
@@ -223,6 +374,32 @@ export class ProductsController {
     return this.productsService.findPopular(limit);
   }
 
+  /**
+   * M1-B3(2026-10-04)：管理端全量列表（含下架品），公开列表只看在售。
+   * 声明位置必须早于 @Get(':id')，保证 /products/admin/all 不被 :id 路由吞掉。
+   */
+  @Get('admin/all')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiDocs({
+    summary: '获取全部产品（含下架）',
+    description: '管理员查看全部产品列表，不按 isActive 过滤',
+    auth: true,
+  })
+  findAllAdmin(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
+    @Query('search') search?: string,
+  ) {
+    return this.productsService.findAll({
+      page,
+      limit,
+      search,
+      includeInactive: true,
+    });
+  }
+
   @Get(':id')
   @ApiGetResource(Product, '获取产品详情')
   @ApiDocs({
@@ -263,8 +440,15 @@ export class ProductsController {
       },
     ],
   })
-  async update(@Param('id', ParseIntPipe) id: number, @Body() updateProductDto: UpdateProductDto) {
-    return this.productsService.update(id, updateProductDto);
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateProductDto: UpdateProductDto,
+    @Req() req?: any,
+  ) {
+    const updated = await this.productsService.update(id, updateProductDto);
+    // diff 摘要：本次提交的变更载荷（before 态由 service 内快照可查，此处记录请求侧 patch）
+    await this.auditProductWrite(req, '更新', id, { id, changes: updateProductDto });
+    return updated;
   }
 
   @Delete(':id')
@@ -273,7 +457,7 @@ export class ProductsController {
   @ApiDeleteResource('删除产品')
   @ApiDocs({
     summary: '删除产品',
-    description: '管理员删除指定产品，同时清理相关数据',
+    description: '管理员删除指定产品（软删=下架，isActive=false；order_items FK NO ACTION 硬删必败）',
     auth: true,
     params: [
       {
@@ -283,8 +467,9 @@ export class ProductsController {
       },
     ],
   })
-  async remove(@Param('id', ParseIntPipe) id: number) {
-    return this.productsService.remove(id);
+  async remove(@Param('id', ParseIntPipe) id: number, @Req() req?: any) {
+    await this.productsService.remove(id);
+    await this.auditProductWrite(req, '删除', id, { id, isActive: false });
   }
 
   @Post(':id/view')

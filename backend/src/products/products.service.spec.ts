@@ -307,6 +307,27 @@ describe('ProductsService', () => {
       });
     });
 
+    // M1-B2(2026-10-04)：categoryId 可选——未传时不校验分类直接创建；
+    // "传了但不存在" 的 404 行为由上一用例保留。
+    it('should create product without categoryId (category optional)', async () => {
+      const dataWithoutCategory = { ...createProductData, categoryId: undefined };
+      mockProductRepository.create.mockReturnValue(mockProduct);
+      mockProductRepository.save.mockResolvedValue(mockProduct);
+      mockCacheManager.del.mockResolvedValue(true);
+      mockProductEventsService.publishProductCreated.mockResolvedValue(undefined);
+      mockSearchManagerService.indexProduct.mockResolvedValue(undefined);
+
+      const result = await service.create(dataWithoutCategory);
+
+      expect(result).toEqual(mockProduct);
+      expect(mockCategoryRepository.findOne).not.toHaveBeenCalled();
+      expect(mockProductRepository.create).toHaveBeenCalledWith({
+        ...dataWithoutCategory,
+        category: undefined,
+        publishedAt: expect.any(Date),
+      });
+    });
+
     it('should handle cache deletion errors gracefully', async () => {
       mockCategoryRepository.findOne.mockResolvedValue(mockCategory);
       mockProductRepository.create.mockReturnValue(mockProduct);
@@ -478,6 +499,75 @@ describe('ProductsService', () => {
         total: 0,
       });
     });
+
+    // M1-B7(2026-10-04)：databaseSearch 的 tags 过滤双方言——
+    // SQLite/Postgres 用 (',' || tags || ',') LIKE '%,tag,%'，MySQL/TiDB 保留 FIND_IN_SET。
+    describe('tags 过滤方言（B7）', () => {
+      const tagOptions = { tags: ['真皮', '手提'], page: 1, limit: 10 };
+
+      it('SQLite（默认/未知类型）走 LIKE 等值匹配，不用 FIND_IN_SET', async () => {
+        // mockConfigService 默认对 master.database.type 返回 null → service 按 sqlite 分支
+        const qb = createMockQueryBuilder<Product>();
+        qb.getManyAndCount.mockResolvedValue([[mockProduct], 1]);
+        mockProductRepository.createQueryBuilder.mockReturnValue(qb);
+
+        const result = await service.search(tagOptions);
+
+        expect(result.total).toBe(1);
+        expect(qb.andWhere).toHaveBeenCalledWith("(',' || product.tags || ',') LIKE :tag0", {
+          tag0: '%,真皮,%',
+        });
+        expect(qb.andWhere).toHaveBeenCalledWith("(',' || product.tags || ',') LIKE :tag1", {
+          tag1: '%,手提,%',
+        });
+        const findInSetCalls = qb.andWhere.mock.calls.filter(([sql]: [string]) =>
+          String(sql).includes('FIND_IN_SET'),
+        );
+        expect(findInSetCalls).toHaveLength(0);
+      });
+
+      it('MySQL/TiDB 保留 FIND_IN_SET 方言', async () => {
+        mockConfigService.get.mockImplementation((key: string) =>
+          key === 'master.database.type' ? 'mysql' : null,
+        );
+        const qb = createMockQueryBuilder<Product>();
+        qb.getManyAndCount.mockResolvedValue([[mockProduct], 1]);
+        mockProductRepository.createQueryBuilder.mockReturnValue(qb);
+
+        await service.search(tagOptions);
+
+        expect(qb.andWhere).toHaveBeenCalledWith('FIND_IN_SET(:tag0, product.tags)', {
+          tag0: '真皮',
+        });
+        expect(qb.andWhere).toHaveBeenCalledWith('FIND_IN_SET(:tag1, product.tags)', {
+          tag1: '手提',
+        });
+      });
+    });
+  });
+
+  // M1-B3(2026-10-04)：公开 findOne 对下架品 404——与列表 isActive 过滤同一语义。
+  describe('Find One (public)', () => {
+    it('should return active product', async () => {
+      mockCacheManager.get.mockResolvedValue(mockProduct);
+
+      const result = await service.findOne(1);
+
+      expect(result).toEqual(mockProduct);
+    });
+
+    it('should throw NotFoundException for inactive product', async () => {
+      mockCacheManager.get.mockResolvedValue({ ...mockProduct, isActive: false });
+
+      await expect(service.findOne(1)).rejects.toThrow(new NotFoundException());
+    });
+
+    it('should throw NotFoundException for missing product', async () => {
+      mockCacheManager.get.mockResolvedValue(null);
+      mockProductRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.findOne(999)).rejects.toThrow(new NotFoundException());
+    });
   });
 
   describe('Get Popular Products', () => {
@@ -584,10 +674,13 @@ describe('ProductsService', () => {
   });
 
   describe('Delete Product', () => {
-    it('should successfully delete product', async () => {
+    // M2-B6(2026-10-04)：DELETE 改软删——order_items→products FK NO ACTION 硬删必败，
+    // 下架（isActive=false）即删除语义；repository.delete 不应再被调用。
+    it('should soft-delete product by setting isActive=false', async () => {
       mockProductRepository.findOne.mockResolvedValue(mockProduct);
-      mockProductRepository.delete.mockResolvedValue({ affected: 1 });
+      mockProductRepository.update.mockResolvedValue({ affected: 1 });
       mockCacheManager.del.mockResolvedValue(true);
+      mockSearchManagerService.deleteProduct.mockResolvedValue(undefined);
 
       await service.delete(1);
 
@@ -595,7 +688,8 @@ describe('ProductsService', () => {
         where: { id: 1 },
         relations: ['category', 'images'],
       });
-      expect(mockProductRepository.delete).toHaveBeenCalledWith(1);
+      expect(mockProductRepository.update).toHaveBeenCalledWith(1, { isActive: false });
+      expect(mockProductRepository.delete).not.toHaveBeenCalled();
       expect(mockCacheManager.del).toHaveBeenCalledWith('caddy_shopping:product:1');
     });
 
@@ -715,6 +809,65 @@ describe('ProductsService', () => {
       );
       expect(mockMonitoringService.recordCacheMiss).toHaveBeenCalledWith(
         'caddy_shopping:products:list:1:20:测试',
+      );
+    });
+
+    // M1-B3(2026-10-04)：公开列表必须过滤 isActive=true（下架品不得漏给前台）；
+    // 管理端 includeInactive:true 不过滤，且走独立缓存键段防互相污染。
+    it('should filter isActive=true by default (public list)', async () => {
+      mockCacheManager.get.mockResolvedValue(null);
+      const qb = createMockQueryBuilder<Product>();
+      qb.getManyAndCount.mockResolvedValue([[mockProduct], 1]);
+      mockProductRepository.createQueryBuilder.mockReturnValue(qb);
+      mockCacheManager.set.mockResolvedValue(true);
+
+      await service.findAll({ page: 1, limit: 20 });
+
+      expect(qb.where).toHaveBeenCalledWith('product.isActive = :isActive', { isActive: true });
+      expect(qb.andWhere).not.toHaveBeenCalled();
+      expect(mockCacheManager.set).toHaveBeenCalledWith(
+        'caddy_shopping:products:list:1:20:',
+        { products: [mockProduct], total: 1 },
+        30,
+      );
+    });
+
+    it('should append search with andWhere on top of isActive filter', async () => {
+      mockCacheManager.get.mockResolvedValue(null);
+      const qb = createMockQueryBuilder<Product>();
+      qb.getManyAndCount.mockResolvedValue([[mockProduct], 1]);
+      mockProductRepository.createQueryBuilder.mockReturnValue(qb);
+      mockCacheManager.set.mockResolvedValue(true);
+
+      await service.findAll(findAllOptions);
+
+      expect(qb.where).toHaveBeenCalledWith('product.isActive = :isActive', { isActive: true });
+      expect(qb.andWhere).toHaveBeenCalledWith(
+        '(product.name LIKE :search OR product.description LIKE :search)',
+        { search: '%测试%' },
+      );
+    });
+
+    it('should not filter isActive when includeInactive=true (admin list)', async () => {
+      mockCacheManager.get.mockResolvedValue(null);
+      const qb = createMockQueryBuilder<Product>();
+      qb.getManyAndCount.mockResolvedValue([[mockProduct], 1]);
+      mockProductRepository.createQueryBuilder.mockReturnValue(qb);
+      mockCacheManager.set.mockResolvedValue(true);
+
+      const result = await service.findAll({ page: 1, limit: 50, includeInactive: true });
+
+      expect(result.total).toBe(1);
+      const isActiveCalls = qb.where.mock.calls.filter(([sql]: [string]) =>
+        String(sql).includes('isActive'),
+      );
+      expect(isActiveCalls).toHaveLength(0);
+      // 管理端变体使用独立缓存键段
+      expect(mockCacheManager.get).toHaveBeenCalledWith('caddy_shopping:products:list:admin:1:50:');
+      expect(mockCacheManager.set).toHaveBeenCalledWith(
+        'caddy_shopping:products:list:admin:1:50:',
+        { products: [mockProduct], total: 1 },
+        30,
       );
     });
   });

@@ -80,4 +80,13 @@ describe('JwtStrategy', () => {
     await expect(strategy.validate(payload as any)).rejects.toThrow('无效的JWT载荷');
     expect(usersService.findById).not.toHaveBeenCalled();
   });
+
+  // M2-B8(2026-10-04)：刷新令牌与访问令牌同密钥，策略层见 typ:'refresh' 即拒——
+  // 防止 refresh token 被当 access token 直接访问接口（越权审计 2026-10-03 的防线入锁）。
+  it("typ='refresh' 的载荷 → 抛 UnauthorizedException（刷新令牌不能用于接口访问）", async () => {
+    await expect(strategy.validate({ ...validPayload, typ: 'refresh' } as any)).rejects.toThrow(
+      '刷新令牌不能用于接口访问',
+    );
+    expect(usersService.findById).not.toHaveBeenCalled();
+  });
 });

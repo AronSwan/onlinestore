@@ -22,6 +22,8 @@ import { CacheController } from '../../cache/cache.controller';
 import { CartOwnerGuard } from '../../cart/interfaces/cart-owner.guard';
 import { NotificationController } from '../../notification/notification.controller';
 import { SearchController } from '../../products/search/search.controller';
+import { ProductsController } from '../../products/products.controller';
+import { AuditController } from '../audit/audit.controller';
 
 // 注意：方法级 @UseGuards 的元数据挂在方法函数自身(Nest 约定)，类级挂在构造函数上
 const guardsOf = (target: object, prop?: string): any[] => {
@@ -147,15 +149,39 @@ describe('授权接线锁（装饰器元数据断言）', () => {
     });
   });
 
-  describe('监控面三个控制器类级 admin 上锁', () => {
+  describe('监控/审计面控制器类级 admin 上锁', () => {
     it.each([
       ['LoggingController', LoggingController],
       ['MonitoringController', MonitoringController],
       ['AlertController', AlertController],
+      // M1-B4(2026-10-04)：AuditController 随 AuditModule 接线挂上同规类级锁
+      ['AuditController', AuditController],
     ])('%s 类级挂 JwtAuthGuard+RolesGuard+ADMIN', (_name, ctrl) => {
       expect(guardsOf(ctrl)).toContain(JwtAuthGuard);
       expect(guardsOf(ctrl)).toContain(RolesGuard);
       expect(rolesOf(ctrl)).toContain(Role.ADMIN);
+    });
+  });
+
+  // M1/M2(2026-10-04)：商品写面授权锁——无 token 401（JwtAuthGuard）、
+  // user token 403（RolesGuard+ADMIN）、admin 放行，三者由本锁兜底；
+  // 删任何一行装饰器即红。公开读面（findAll/findOne/search/popular）不挂锁为预期。
+  describe('ProductsController 写面（M1-B3/B4、M2-B5/B6）', () => {
+    const c = ProductsController.prototype;
+
+    it('create/update/remove/uploadImage/findAllAdmin 全挂 JwtAuthGuard+RolesGuard+ADMIN', () => {
+      for (const m of ['create', 'update', 'remove', 'uploadImage', 'findAllAdmin']) {
+        expect(guardsOf(c, m)).toContain(JwtAuthGuard);
+        expect(guardsOf(c, m)).toContain(RolesGuard);
+        expect(rolesOf(c, m)).toContain(Role.ADMIN);
+      }
+    });
+
+    it('公开读面不挂守卫（匿名可读）', () => {
+      for (const m of ['findAll', 'findOne', 'searchProducts', 'findPopular']) {
+        expect(guardsOf(c, m)).not.toContain(JwtAuthGuard);
+        expect(rolesOf(c, m)).toEqual([]);
+      }
     });
   });
 });

@@ -4,6 +4,7 @@ import { ProductsService } from './products.service';
 import { SearchManagerService } from './search/search-manager.service';
 import { SearchSuggestionService } from './search/search-suggestion.service';
 import { PopularSearchService } from './search/popular-search.service';
+import { AuditService } from '../common/audit/audit.service';
 import { ConfigService } from '@nestjs/config';
 import { createMockedFunction } from '../../test/utils/typed-mock-factory';
 
@@ -60,6 +61,13 @@ describe('ProductsController', () => {
           },
         },
         {
+          // M1-B4(2026-10-04)：控制器注入 AuditService 记录商品写操作审计，测试环境 mock
+          provide: AuditService,
+          useValue: {
+            log: createMockedFunction<() => Promise<any>>(),
+          },
+        },
+        {
           provide: ConfigService,
           useValue: mockConfigService,
         },
@@ -78,7 +86,6 @@ describe('ProductsController', () => {
         price: 29.99,
         categoryId: 1,
         stock: 100,
-        brand: 'Test Brand',
       };
 
       const createdProduct = {
@@ -130,7 +137,6 @@ describe('ProductsController', () => {
         price: -10,
         categoryId: 1,
         stock: 100,
-        brand: 'Test Brand',
       };
 
       jest.spyOn(productsService, 'create').mockRejectedValue(new Error('Validation failed'));
@@ -144,7 +150,6 @@ describe('ProductsController', () => {
         price: 29.99,
         categoryId: 1,
         stock: -10,
-        brand: 'Test Brand',
       };
 
       jest.spyOn(productsService, 'create').mockRejectedValue(new Error('Validation failed'));
@@ -158,7 +163,6 @@ describe('ProductsController', () => {
         price: 29.99,
         categoryId: 999,
         stock: 100,
-        brand: 'Test Brand',
       };
 
       jest.spyOn(productsService, 'create').mockRejectedValue(new Error('Validation failed'));
@@ -172,7 +176,6 @@ describe('ProductsController', () => {
         price: 29.99,
         categoryId: 1,
         stock: 100,
-        brand: '',
       };
 
       jest.spyOn(productsService, 'create').mockRejectedValue(new Error('Validation failed'));
@@ -186,7 +189,6 @@ describe('ProductsController', () => {
         price: 29.99,
         categoryId: 1,
         stock: 100,
-        brand: 'Test Brand',
       };
 
       jest.spyOn(productsService, 'create').mockRejectedValue(new Error('Product name too long'));
@@ -201,7 +203,6 @@ describe('ProductsController', () => {
         price: 29.99,
         categoryId: 1,
         stock: 100,
-        brand: 'Test Brand',
       };
 
       jest
@@ -220,7 +221,6 @@ describe('ProductsController', () => {
         price: 29.99,
         categoryId: 1,
         stock: 100,
-        brand: 'Test Brand',
       };
 
       const createdProduct = {
@@ -521,6 +521,26 @@ describe('ProductsController', () => {
         page: 0,
         limit: 0,
         search: undefined,
+      });
+    });
+  });
+
+  // M1-B3(2026-10-04)：管理端全量列表——必须带 includeInactive:true 转调 service；
+  // 授权面（无 token 401 / user 403 / admin 放行）由 authorization-wiring.spec.ts 元数据锁兜底。
+  describe('GET /products/admin/all', () => {
+    it('should call findAll with includeInactive:true', async () => {
+      jest
+        .spyOn(productsService, 'findAll')
+        .mockResolvedValue({ products: [], total: 0 } as any);
+
+      const result = await controller.findAllAdmin(1 as any, 50 as any);
+
+      expect(result).toEqual({ products: [], total: 0 });
+      expect(productsService.findAll).toHaveBeenCalledWith({
+        page: 1,
+        limit: 50,
+        search: undefined,
+        includeInactive: true,
       });
     });
   });
@@ -1650,7 +1670,6 @@ describe('ProductsController', () => {
         stock: 100,
         sku: 'CONCURRENT-001',
         isActive: true,
-        brand: 'Test Brand',
       };
 
       const createdProduct = {
@@ -1705,7 +1724,6 @@ describe('ProductsController', () => {
         stock: 100,
         sku: 'RATE-001',
         isActive: true,
-        brand: 'Test Brand',
       };
 
       jest.spyOn(productsService, 'create').mockRejectedValue(new Error('Rate limit exceeded'));
@@ -1720,7 +1738,6 @@ describe('ProductsController', () => {
         price: -1, // Invalid price value
         categoryId: -1, // Invalid category value
         stock: -1, // Negative stock
-        brand: '', // Empty brand
       };
 
       jest.spyOn(productsService, 'create').mockRejectedValue(new Error('Validation failed'));
@@ -1737,7 +1754,6 @@ describe('ProductsController', () => {
         stock: 100,
         sku: 'TIMEOUT-001',
         isActive: true,
-        brand: 'Test Brand',
       };
 
       jest.spyOn(productsService, 'create').mockRejectedValue(new Error('Request timeout'));

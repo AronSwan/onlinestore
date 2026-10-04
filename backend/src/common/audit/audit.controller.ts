@@ -22,11 +22,19 @@ import {
   AuditStatistics,
 } from './audit.service';
 import { AuditLogEntity } from './entities/audit-log.entity';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../auth/guards/roles.guard';
+import { Roles } from '../../auth/decorators/roles.decorator';
+import { Role } from '../../auth/enums/role.enum';
 
 /**
  * 审计日志控制器
  * 提供审计日志的查询、统计和管理功能
+ * M1-B4(2026-10-04)：随 AuditModule 接线补上授权面——审计数据全面仅管理员可读可清，
+ * 与 logging.controller 同规（类级 JwtAuthGuard+RolesGuard+ADMIN，接线锁见 authorization-wiring.spec.ts）。
  */
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.ADMIN)
 @ApiTags('审计日志')
 @Controller('audit')
 @ApiBearerAuth()

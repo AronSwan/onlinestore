@@ -13,6 +13,7 @@ import { UsersModule } from './users/users.module';
 import { ProductsModule } from './products/products.module';
 import { OrdersModule } from './orders/orders.module';
 import { CartModule } from './cart/cart.module';
+import { AuditModule } from './common/audit/audit.module';
 
 @Module({
   imports: [
@@ -111,6 +112,11 @@ import { CartModule } from './cart/cart.module';
     ProductsModule,
     OrdersModule,
     CartModule,
+
+    // 审计模块(M1-B4, 2026-10-04)：实体/服务/控制器/表早已齐备但从未接线（audit_logs 0 行）；
+    // @Global 模块，接线后 AuditService 全局可注入（products 写操作审计即消费方）。
+    // 其控制器查询面按 logging.controller 同规挂类级 admin 守卫（见 audit.controller.ts）。
+    AuditModule,
   ],
   controllers: [AppController],
   providers: [
