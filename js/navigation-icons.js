@@ -37,7 +37,9 @@ class NavigationIconManager {
     
     if (userIcon) {
       console.log('NavigationIconManager: 找到用户图标，绑定点击事件');
-      const userButton = userIcon.parentElement;
+      // 实战检验修复(2026-10-04): .site-user-btn 本身就是 <a> 按钮,
+      // 绑 parentElement(=.site-tools 四图标容器)会冒泡劫持搜索/购物车/心愿单点击
+      const userButton = userIcon;
       userButton.addEventListener('click', (e) => {
         e.preventDefault();
         this.handleUserIconClick();
@@ -87,7 +89,8 @@ class NavigationIconManager {
       const userIcon = document.querySelector('.site-user-btn') ||
                        document.querySelector('button img[src="gucci-style-user-icon.svg"]');
       if (userIcon) {
-        const userButton = userIcon.parentElement;
+        // 与 bindUserIconClick 同修: 菜单挂载到按钮自身而非四图标容器
+        const userButton = userIcon;
         userButton.style.position = 'relative';
         userButton.appendChild(userMenu);
       }

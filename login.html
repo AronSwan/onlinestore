@@ -9,9 +9,9 @@
     <!-- 安全防护 -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:;">
-    <meta http-equiv="X-Content-Type-Options" content="nosniff">
-    <meta http-equiv="X-Frame-Options" content="DENY">
-    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <!-- X-Content-Type-Options/X-Frame-Options/X-XSS-Protection 三个安全 meta 已删:
+         经 meta http-equiv 无效(浏览器只认 HTTP 响应头, X-XSS-Protection 且已废弃),
+         真实响应头随 F4 login CSP 收紧一并做, 见 docs/BACKLOG.md -->
     
     <!-- 样式表 -->
     <link rel="preload" href="fonts/barlow-variable.woff2" as="font" type="font/woff2" crossorigin>

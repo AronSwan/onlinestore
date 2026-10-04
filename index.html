@@ -669,7 +669,14 @@
                 // 设置用户资料按钮点击事件
                 userProfileBtn.addEventListener('click', function(e) {
                     e.preventDefault();
-                    
+
+                    // 实战检验修复(2026-10-04): 已登录用户点击交给
+                    // navigation-icons.js 的用户菜单(个人资料/订单/退出),
+                    // 仅未登录才跳登录页——此前无条件跳转, 登录用户点头像也去登录页
+                    const isLoggedIn = localStorage.getItem('userLoggedIn') === 'true'
+                        || sessionStorage.getItem('userLoggedIn') === 'true';
+                    if (isLoggedIn) return;
+
                     // 构建登录页面URL，包含Casdoor状态信息
                     const loginUrl = new URL('login.html', window.location.origin);
                     

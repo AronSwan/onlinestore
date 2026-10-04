@@ -635,18 +635,23 @@ async performSearch(query) {
     // 显示容器
     this.elements.searchSuggestions.style.display = 'block';
     
-    // 创建建议项
+    // 创建建议项（实战检验修复: 后端建议形如 {text,highlight,popularity},
+    // 兼容字符串与对象两种形状, 此前直接赋值对象渲染成 [object Object]）
     this.state.searchSuggestions.slice(0, this.options.maxSuggestions).forEach(suggestion => {
+      const suggestionText = typeof suggestion === 'string'
+        ? suggestion
+        : (suggestion && suggestion.text) || '';
+      if (!suggestionText) return;
       const item = document.createElement('div');
       item.className = 'search-suggestion-item';
-      item.textContent = suggestion;
-      
+      item.textContent = suggestionText;
+
       // 添加点击事件
       item.addEventListener('click', () => {
         if (this.elements.searchInput) {
-          this.elements.searchInput.value = suggestion;
+          this.elements.searchInput.value = suggestionText;
         }
-        this.performSearch(suggestion);
+        this.performSearch(suggestionText);
       });
       
       this.elements.searchSuggestions.appendChild(item);
