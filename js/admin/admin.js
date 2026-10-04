@@ -3,7 +3,7 @@
  * 页面：/admin.html（仓库根，纯 CSS 自研，复用 css/tokens.css）
  * 三闸（M4）：js/admin/gates.js 承担计算层，本文件负责编排与 DOM。
  *
- * 登录分流守卫：无有效 token 自动跳 /login.html?returnUrl=admin.html；
+ * 登录分流守卫：无有效 token 自动跳 /login.html?returnUrl=/admin.html；
  * JWT 15min 过期由 fetch 包装器静默续期（POST /api/auth/refresh）后重放原请求，
  * 续期失败清 storage 踢回登录页。令牌键名与 js/auth.js 登录流一致：
  * localStorage（记住我）或 sessionStorage 的 token / refreshToken / userEmail。
@@ -56,7 +56,9 @@ function kickToLogin() {
   for (const k of ['token', 'refreshToken', 'userId', 'userEmail', 'userLoggedIn']) {
     target.removeItem(k);
   }
-  window.location.replace('/login.html?returnUrl=admin.html');
+  // returnUrl 必须带前导斜杠（/admin.html）——1515d84 白名单只收站内绝对路径,
+  // 无斜杠相对值会被拒致登录后落首页(双盲审挂账的静默降级, 此处根治)
+  window.location.replace('/login.html?returnUrl=/admin.html');
 }
 
 let refreshing = null; // 并发 401 共享同一次续期

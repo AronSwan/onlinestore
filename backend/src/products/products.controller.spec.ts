@@ -26,6 +26,9 @@ describe('ProductsController', () => {
             create: createMockedFunction<(dto: any) => Promise<any>>(),
             findAll: createMockedFunction<(page?: number, size?: number) => Promise<any[]>>(),
             findOne: createMockedFunction<(id: number | string) => Promise<any>>(),
+            // P1-2(双盲审)：update 复检闸改为合并视图（dto ?? 存量），控制器
+            // update 现恒调 findById 取存量——默认返回 null（=商品不存在/无存量）。
+            findById: createMockedFunction<(id: number | string) => Promise<any>>(async () => null),
             update: createMockedFunction<(id: number | string, dto: any) => Promise<any>>(),
             remove: createMockedFunction<(id: number | string) => Promise<{ affected?: number }>>(),
             search:
@@ -992,6 +995,43 @@ describe('ProductsController', () => {
 
       expect(result.name).toBe('Updated Name Only');
       expect(result.description).toBe('Original description'); // Unchanged
+    });
+
+    it('P1-2(双盲审)：update 不带 specifications 的禁用词 → 400，闸不可整体跳过', async () => {
+      const bannedDto = { name: '限时抢购水桶包', price: 19.9 };
+      await expect(controller.update(1 as any, bannedDto as any)).rejects.toMatchObject({
+        status: 400,
+      });
+      expect(productsService.update).not.toHaveBeenCalled();
+    });
+
+    it('P1-2(双盲审)：update 只改价格 + 存量 factCard 的复检生效（合并视图词表冲突 → 400）', async () => {
+      // 存量商品：事实卡=凯莉（水桶字段冲突面），update 只传 price——
+      // 合并视图带存量 factCard + 存量 name（含结构包型词）→ 红拦
+      jest.spyOn(productsService, 'findById').mockResolvedValue({
+        id: 2,
+        name: '蓝白织纹托特',
+        description: '蓝白织纹托特包，通勤也拿得出手',
+        specifications: { factCard: { colorGroup: '蓝白', bagType: '凯莉' } },
+      } as any);
+      const priceOnlyDto = { price: 39.9 };
+      await expect(controller.update(2 as any, priceOnlyDto as any)).rejects.toMatchObject({
+        status: 400,
+      });
+      expect(productsService.update).not.toHaveBeenCalled();
+    });
+
+    it('P1-2(双盲审)：update 只改价格 + 存量干净（无 factCard、无禁用词）→ 放行', async () => {
+      jest.spyOn(productsService, 'findById').mockResolvedValue({
+        id: 3,
+        name: '牛皮手提包',
+        description: '头层牛皮',
+        specifications: { 材质: '头层牛皮' },
+      } as any);
+      jest.spyOn(productsService, 'update').mockResolvedValue({ id: 3, price: 29.9 } as any);
+      const result = await controller.update(3 as any, { price: 29.9 } as any);
+      expect(result).toEqual({ id: 3, price: 29.9 });
+      expect(productsService.update).toHaveBeenCalledWith(3, { price: 29.9 });
     });
 
     it('should track update history', async () => {

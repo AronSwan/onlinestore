@@ -2,7 +2,9 @@
 // 前端同源规则引擎"这一事实：
 //   1. loadIntegrityRules() 能加载仓库根 js/shared/integrity-rules.js（src/dist 双布局路径均可达）；
 //   2. checkNameImage 对三个标准用例（上午三事故回归）行为正确；
-//   3. 复检闸本体：无 factCard 跳过（存量兼容）/ 结构冲突 400 / 禁用词 400 / 合规放行。
+//   3. 复检闸本体（P1-2 双盲审修复后契约）：禁用词对所有 create/update 无条件
+//      生效（不依赖 factCard）/ 词表冲突按"合并视图有 factCard 即生效" /
+//      factCard 形状校验（数组 400）/ 旧拼法 mainColor 识别 / 合规放行。
 // 若有人移动 js/shared、破坏 ESM 导出或改坏词表，本 spec 直接红灯（fail-fast 防漂移）。
 
 import * as fs from 'fs';
@@ -71,15 +73,88 @@ describe('M4 第二闸服务端侧：integrity 同源复检', () => {
     });
   });
 
-  describe('复检闸本体 enforceProductIntegrityGate', () => {
-    it('无 factCard（存量商品）→ 跳过复检返回 null，不触发规则加载', async () => {
+  describe('复检闸本体 enforceProductIntegrityGate（P1-2 修复后契约）', () => {
+    it('无 factCard 但文案干净 → lint-only 放行，返回空 warnings（不再返回 null）', async () => {
+      const r = await enforceProductIntegrityGate({
+        name: '牛皮手提包',
+        description: '头层牛皮，通勤也拿得出手',
+        specifications: { 材质: '头层牛皮' },
+      });
+      expect(r).toEqual({ warnings: [] });
+    });
+
+    it('P1-2 主案例：不带 specifications 的禁用词（"限时抢购"）→ 400 带明细，闸不可整体跳过', async () => {
+      try {
+        await enforceProductIntegrityGate({
+          name: '限时抢购水桶包',
+          description: '手慢无',
+        });
+        throw new Error('应当被 400 拦下');
+      } catch (e: any) {
+        expect(e).toBeInstanceOf(BadRequestException);
+        const words = (e.getResponse() as any).details.integrity.bannedWords.map((v: any) => v.word);
+        expect(words).toEqual(expect.arrayContaining(['限时', '抢购']));
+      }
+    });
+
+    it('P3 零宽走私："限␈时"（ZWSP 拆词）→ 400，命中明细为剥离后的词面', async () => {
+      try {
+        await enforceProductIntegrityGate({
+          name: '限\u200B时特惠水桶包',
+          description: '',
+          specifications: { factCard: { colorGroup: '黑', bagType: '水桶' } },
+        });
+        throw new Error('应当被 400 拦下');
+      } catch (e: any) {
+        expect(e).toBeInstanceOf(BadRequestException);
+        const words = (e.getResponse() as any).details.integrity.bannedWords.map((v: any) => v.word);
+        expect(words).toEqual(expect.arrayContaining(['限时', '特惠']));
+      }
+    });
+
+    it('factCard 形状非法（数组/标量）→ 400，不静默跳过词表冲突复检（席X P3）', async () => {
       await expect(
         enforceProductIntegrityGate({
-          name: '随便什么名字',
-          description: '无事实卡不强制',
-          specifications: { 材质: '头层牛皮' },
+          name: '蓝白织纹托特',
+          description: '',
+          specifications: { factCard: ['黑', '水桶'] as any },
         }),
-      ).resolves.toBeNull();
+      ).rejects.toBeInstanceOf(BadRequestException);
+      await expect(
+        enforceProductIntegrityGate({
+          name: '随便',
+          description: '',
+          specifications: { factCard: '黑' as any },
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('旧拼法 mainColor：与 colorGroup 同效参与颜色比对（旧数据不静默失去复检）', async () => {
+      // 名字写黄、事实卡（旧拼法）是黑 → 颜色黄警生效（若旧拼法被忽略，此处将无 COLOR_MISMATCH）
+      const r = await enforceProductIntegrityGate({
+        name: '柠檬黄小圆筒',
+        description: '黑色小圆筒包非常上镜',
+        specifications: { factCard: { mainColor: '黑', bagType: '小圆筒' } as any },
+      });
+      expect(r!.warnings.some((w: any) => w.code === 'COLOR_MISMATCH')).toBe(true);
+    });
+
+    it('factCard 缺字段（2/4）不静默：空卡+无包型词 → BAG_TYPE_MISSING 红拦；只有主色+文案有包型词 → 黄警补卡', async () => {
+      // 空 factCard：文案与卡都无包型词 → 缺包型红拦（不是静默放行）
+      await expect(
+        enforceProductIntegrityGate({
+          name: '牛皮手袋',
+          description: '头层牛皮',
+          specifications: { factCard: {} as any },
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      // 只有 colorGroup：文案有包型词 → FACT_CARD_BAG_MISSING 黄警（信号在，不拦保存）
+      const r = await enforceProductIntegrityGate({
+        name: '托特包',
+        description: '大容量',
+        specifications: { factCard: { colorGroup: '黑' } as any },
+      });
+      expect(r!.warnings.some((w: any) => w.code === 'FACT_CARD_BAG_MISSING')).toBe(true);
     });
 
     it('hasFactCard 判定：specifications 缺省/数组/无 factCard 均 false', () => {

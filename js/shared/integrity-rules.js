@@ -257,6 +257,18 @@ function findBagGroup(factBag) {
 
 const FIELD_LABEL = { name: '标题', description: '描述' };
 
+/**
+ * 匹配用规范化：剥离零宽/不可见字符（ZWSP \u200B、ZWNJ \u200C、ZWJ \u200D、
+ * BOM \uFEFF、词连接符 \u2060）——防"限␈时"式零宽走私绕过词表匹配
+ * （双盲审 P3，2026-10-05，随 P1-2 一并修）。
+ * 仅用于匹配：不改变存库原文；violations 的 index 指向规范化（剥离后）文本。
+ * @private
+ */
+const ZERO_WIDTH = /[\u200B-\u200D\uFEFF\u2060]/g;
+function normalizeForMatch(text) {
+  return text.replace(ZERO_WIDTH, '');
+}
+
 // ═════════════════════════════════════════════════════════════
 // 闸门一（机器部分）：lintCopy —— 禁用词扫描
 // ═════════════════════════════════════════════════════════════
@@ -274,6 +286,11 @@ const FIELD_LABEL = { name: '标题', description: '描述' };
  */
 export function lintCopy(text, rules) {
   if (typeof text !== 'string' || text.length === 0) return { violations: [] };
+  // 匹配前剥离零宽字符（防"限␈时"走私；存库原文不动，index 指规范化文本）
+  text = normalizeForMatch(text);
+  if (text.length === 0) {
+    return { violations: [] };
+  }
   const entries = normalizeRules(rules);
 
   const literalMatches = [];
@@ -357,11 +374,13 @@ export function lintCopy(text, rules) {
 export function checkNameImage({ name, description, factCard } = {}) {
   const warnings = [];
   const blockers = [];
-  const nameText = typeof name === 'string' ? name : '';
-  const descText = typeof description === 'string' ? description : '';
+  // 匹配前剥离零宽字符（与 lintCopy 同源防线——"托␈特包"不得借零宽逃过
+  // 包型冲突红拦；存库原文不动，warnings/blockers 定位词取自规范化文本）
+  const nameText = normalizeForMatch(typeof name === 'string' ? name : '');
+  const descText = normalizeForMatch(typeof description === 'string' ? description : '');
   const fc = factCard && typeof factCard === 'object' ? factCard : {};
-  const factColor = typeof fc.mainColor === 'string' ? fc.mainColor.trim() : '';
-  const factBag = typeof fc.bagType === 'string' ? fc.bagType.trim() : '';
+  const factColor = normalizeForMatch(typeof fc.mainColor === 'string' ? fc.mainColor.trim() : '');
+  const factBag = normalizeForMatch(typeof fc.bagType === 'string' ? fc.bagType.trim() : '');
 
   // R1 颜色比对
   const allowed = detectColorFamilies(factColor);

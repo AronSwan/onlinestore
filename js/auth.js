@@ -3,9 +3,14 @@
  * 处理表单切换、表单验证和提交等功能
  */
 // 用途：用户认证功能（登录/注册）
-// 依赖文件：无（通过DOM操作）
+// 依赖文件：js/shared/return-url-guard.js（returnUrl 安全校验纯函数，node --test 覆盖）
 // 作者：AI Assistant
 // 时间：2025-01-26 15:30:00
+
+// returnUrl 安全校验抽到共享纯函数模块（双盲审 P1-1 修复，2026-10-05）：
+// 拒绝一切控制字符（C0/DEL/C1，浏览器剥 TAB/LF/CR 可使 /\t//host 变协议相对
+// 跨源），并对规范化视图做白名单复检——对抗用例见 js/shared/return-url.test.js
+import { isSafeReturnUrl } from './shared/return-url-guard.js';
 
 // DOM元素引用
 const loginTab = document.getElementById("login-tab");
@@ -445,14 +450,12 @@ async function login(email, password, rememberMe) {
       // 审计P1修复(2026-10-04): 黑名单式过滤可被 javascript:（无//）与单斜杠
       // https:/evil.com（浏览器规范化为 https://）绕过——改为白名单: 必须以单/
       // 开头、第二个字符不是/（防协议相对），且首段（到?/#前）不含冒号（防 scheme）。
+      // 双盲审P1-1修复(2026-10-05): 白名单可被控制字符走私（/\t//host 四族——
+      // 浏览器 URL 解析剥 TAB/LF/CR 后变 ///host 跨源）。校验抽到
+      // js/shared/return-url-guard.js：拒绝一切控制字符（C0/DEL/C1）+
+      // 规范化视图白名单复检，双保险；不安全一律回首页。
       const returnParam = new URLSearchParams(window.location.search).get("returnUrl");
-      const firstSegment = (returnParam || "").split(/[?#]/)[0];
-      const isSafeReturn =
-        returnParam &&
-        returnParam.startsWith("/") &&
-        !returnParam.startsWith("//") &&
-        !firstSegment.includes(":") &&
-        !returnParam.includes("\\");
+      const isSafeReturn = isSafeReturnUrl(returnParam);
       setTimeout(() => {
         window.location.href = isSafeReturn ? returnParam : "/";
       }, 1500);
@@ -611,5 +614,6 @@ if (document.readyState === "loading") {
   initAuthPage();
 }
 
-// 注意：不要使用export语句，因为这个文件是作为普通脚本引入的
-// 如果需要在其他地方复用这些函数，请考虑使用模块化方案如webpack或Rollup
+// 注意：本文件在 login.html 以 <script type="module"> 引入（vite 构建入口），
+// 允许使用 import（如 return-url-guard）；但不要加 export——登录页按副作用脚本执行，
+// 没有其他模块 import 本文件的函数。

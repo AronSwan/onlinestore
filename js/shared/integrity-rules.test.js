@@ -139,6 +139,56 @@ test('lintCopy：非字符串与空串不抛异常', () => {
   assert.deepEqual(lintCopy(123), { violations: [] });
 });
 
+// ─────────────────────────────────────────────
+// 零宽字符走私（双盲审 P3，随 P1-2 修）：ZWSP/ZWNJ/ZWJ/BOM/词连接符
+// 剥离仅用于匹配——不改变存库原文，violations.word/index 取规范化文本
+// ─────────────────────────────────────────────
+test('lintCopy 零宽走私：「限␈时」「特␈惠」等各类零宽字符插入仍全命中', () => {
+  const r = lintCopy('限\u200B时特\u2060惠');
+  assert.deepEqual(r.violations.map((v) => v.word), ['限时', '特惠']);
+  assert.deepEqual(lintCopy('轻\u200C奢\u200D托特').violations.map((v) => v.word), ['轻奢']);
+  assert.deepEqual(lintCopy('亲\uFEFF，看看这只').violations.map((v) => v.word), ['亲']);
+  assert.deepEqual(lintCopy('秒\u200B\u200C杀').violations.map((v) => v.word), ['秒杀']);
+});
+
+test('lintCopy 零宽走私：感叹号正则条目同样不可逃（!!中插零宽）', () => {
+  // 「!␈!」剥离后为「!!」→ 命中 [!！]{2,}
+  const r = lintCopy('速来!\u200B!');
+  assert.equal(r.violations.length, 1);
+  assert.equal(r.violations[0].word, '!!');
+});
+
+test('lintCopy 零宽：纯零宽字符串与合法文案不受影响（正控）', () => {
+  assert.deepEqual(lintCopy('\u200B\u200C\u200D\uFEFF\u2060').violations, [], '纯零宽剥离后为空');
+  assert.deepEqual(lintCopy('总有一只先背。——2025 秋冬，到货了').violations, []);
+});
+
+test('checkNameImage 零宽走私：「托␈特包」不得借零宽逃过包型冲突红拦', () => {
+  const r = checkNameImage({
+    name: '托\u200B特包',
+    description: '',
+    factCard: { mainColor: '黑', bagType: '凯莉' },
+  });
+  assert.ok(r.blockers.some((b) => b.code === 'BAG_SILHOUETTE_MISMATCH'));
+  // 反向：零宽不制造假冲突——名实相符仍放行
+  const ok = checkNameImage({
+    name: '托\u200B特包',
+    description: '',
+    factCard: { mainColor: '黑', bagType: '托特' },
+  });
+  assert.equal(ok.blockers.length, 0);
+});
+
+test('checkNameImage 零宽：事实卡主色含零宽仍正确归入色系比对', () => {
+  const r = checkNameImage({
+    name: '黑色小圆筒',
+    description: '',
+    factCard: { mainColor: '黑\u200B', bagType: '小圆筒' },
+  });
+  assert.equal(r.blockers.length, 0);
+  assert.ok(!r.warnings.some((w) => w.code === 'COLOR_MISMATCH'), '事实卡黑系零宽不误报');
+});
+
 test('lintCopy：自定义词表完全替换默认（后端闸可传同源 JSON）', () => {
   const custom = [{ word: '香草', reason: '测试', suggestion: '原香' }];
   const r = lintCopy('限时香草味', custom);

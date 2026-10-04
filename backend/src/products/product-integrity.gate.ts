@@ -3,8 +3,16 @@
 // 背景：docs/modernization-discussion.md v1.1 §2.4 M4「lint 双闸」裁决——
 //   词表冲突/禁用词逻辑不在后端重复实现（两份实现必然漂移），改为动态 import
 //   前端同源模块；规则文件加载失败 = fail-closed 500 记日志，绝不静默放行。
-//   存量兼容：已有商品 specifications 无 factCard——DTO 不带 factCard 即跳过复检
-//   （新保存由前端强制：无 factCard 保存按钮禁用）。
+//
+// P1-2 修复（双盲审 2026-10-05）：原实现把闸的存在性绑在"请求带 factCard"上，
+//   POST/PATCH 不带 specifications 即整体跳过（"限时抢购"实测落库）。新契约：
+//   ① 禁用词 lintCopy 对所有 create/update 无条件生效（不依赖事实卡）；
+//   ② 词表冲突 checkNameImage 按"合并视图有 factCard 即生效"（update 合并
+//      存量 specifications，调用方 products.controller.update 负责构造合并视图）；
+//   ③ factCard 形状校验：数组/标量 → 400（席X P3：factCard 数组不得静默跳过）；
+//      旧拼法 mainColor 与存储拼法 colorGroup 均识别（防旧数据静默失去颜色比对）；
+//   ④ factCard 存在但缺 colorGroup/bagType 字段时不再静默——交由引擎 R4/R5
+//      给出 FACT_CARD_*/BAG_TYPE_MISSING 黄警或红拦信号。
 
 import * as fs from 'fs';
 import * as path from 'path';
@@ -33,7 +41,6 @@ export interface IntegrityRulesModule {
     blockers: Array<Record<string, unknown>>;
   };
 }
-
 /**
  * 前端规则引擎定位：仓库根 js/shared/integrity-rules.js。
  * 运行布局两种——源码 <backend>/src/products、构建产物 <backend>/dist/src/products，
@@ -109,7 +116,7 @@ export async function loadIntegrityRules(): Promise<IntegrityRulesModule> {
   return integrityRulesPromise;
 }
 
-/** specifications 是否带事实卡（存量商品无 → 跳过复检） */
+/** specifications 是否带事实卡（存量商品无 → 复检走 lint-only 路径） */
 export function hasFactCard(specifications: unknown): specifications is Record<string, unknown> {
   if (typeof specifications !== 'object' || specifications === null || Array.isArray(specifications)) {
     return false;
@@ -119,20 +126,42 @@ export function hasFactCard(specifications: unknown): specifications is Record<s
 }
 
 /**
- * 复检闸本体：
- *   - DTO 带 specifications.factCard 时执行，否则返回 null（存量兼容跳过）；
- *   - 结构冲突（checkNameImage blockers）或禁用词命中（lintCopy violations）
- *     → 400，明细挂 details.integrity（全局过滤器透传 details 字段）；
+ * 提取并校验 specifications.factCard（P1-2 ③）：
+ *   - specifications 缺省/无 factCard 键 → undefined（lint-only 路径，存量兼容）；
+ *   - factCard 为数组或标量 → 400（形状非法，防"缺字段即静默跳过"式绕过）；
+ *   - plain object → 原样返回。
+ */
+function extractFactCard(specifications: unknown): Record<string, unknown> | undefined {
+  if (
+    typeof specifications !== 'object' ||
+    specifications === null ||
+    Array.isArray(specifications) ||
+    !('factCard' in specifications)
+  ) {
+    return undefined;
+  }
+  const fc = (specifications as Record<string, unknown>).factCard;
+  if (typeof fc !== 'object' || fc === null || Array.isArray(fc)) {
+    throw new BadRequestException(
+      'specifications.factCard 必须是对象（看图四选结果 {colorGroup,bagType,hardware,occasion}），不接受数组或标量',
+    );
+  }
+  return fc as Record<string, unknown>;
+}
+
+/**
+ * 复检闸本体（P1-2 新契约：对所有 create/update 无条件生效）：
+ *   - 禁用词 lintCopy 扫描 name/description——命中即 400，与有无 factCard 无关；
+ *   - 合并视图带 factCard 时叠加 checkNameImage 词表冲突复检（含形状校验与
+ *     旧拼法 mainColor 识别），结构冲突 → 400；
  *   - 黄警（warnings）不拦——前端发布预览已逐条人工确认；
  *   - 规则引擎加载失败 → 500 fail-closed 记日志。
- * @param input DTO（或合并了存量商品 name/description 的合并视图）
- * @returns { warnings } 供调用方透传（当前仅日志用途），或 null 表示跳过
+ * @param input DTO（或合并了存量商品 name/description/specifications 的合并视图）
+ * @returns { warnings } 供调用方透传（当前仅日志用途）
  */
 export async function enforceProductIntegrityGate(
   input: IntegrityGateInput,
-): Promise<{ warnings: Array<Record<string, unknown>> } | null> {
-  if (!hasFactCard(input.specifications)) return null;
-
+): Promise<{ warnings: Array<Record<string, unknown>> }> {
   let rules: IntegrityRulesModule;
   try {
     rules = await loadIntegrityRules();
@@ -146,20 +175,30 @@ export async function enforceProductIntegrityGate(
 
   const name = typeof input.name === 'string' ? input.name : '';
   const description = typeof input.description === 'string' ? input.description : '';
-  const fc = (input.specifications as Record<string, unknown>).factCard as Record<string, unknown>;
 
-  // 存储形状 {colorGroup,bagType,hardware,occasion} → 引擎消费形状 {mainColor,bagType}
-  // （字段名对齐 js/shared/integrity-rules.js 的 checkNameImage JSDoc）
-  const factCard = {
-    mainColor: typeof fc.colorGroup === 'string' ? fc.colorGroup : undefined,
-    bagType: typeof fc.bagType === 'string' ? fc.bagType : undefined,
-  };
-
+  // 禁用词对所有写入无条件生效（P1-2 ①——原实现无 factCard 即整体跳过）
   const violations = [
     ...rules.lintCopy(name).violations,
     ...rules.lintCopy(description).violations,
   ];
-  const gate = rules.checkNameImage({ name, description, factCard });
+
+  // 词表冲突复检：合并视图带 factCard 即生效（P1-2 ②③）
+  const gate = { warnings: [] as Array<Record<string, unknown>>, blockers: [] as Array<Record<string, unknown>> };
+  const fc = extractFactCard(input.specifications);
+  if (fc) {
+    // 存储形状 {colorGroup,bagType,hardware,occasion} → 引擎消费形状 {mainColor,bagType}；
+    // colorGroup 优先，旧拼法 mainColor 兜底（旧数据不得静默失去颜色比对）。
+    const mainColor =
+      typeof fc.colorGroup === 'string'
+        ? fc.colorGroup
+        : typeof fc.mainColor === 'string'
+          ? fc.mainColor
+          : undefined;
+    const bagType = typeof fc.bagType === 'string' ? fc.bagType : undefined;
+    const result = rules.checkNameImage({ name, description, factCard: { mainColor, bagType } });
+    gate.warnings = result.warnings;
+    gate.blockers = result.blockers;
+  }
 
   if (gate.blockers.length > 0 || violations.length > 0) {
     throw new BadRequestException({
