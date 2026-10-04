@@ -10,7 +10,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Inject } from '@nestjs/common';
 import { Cache } from 'cache-manager';
 import { ConfigService } from '@nestjs/config';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 import { ProductsService } from './products.service';
 import { createMockedFunction } from '../../test/utils/typed-mock-factory';
@@ -693,6 +693,137 @@ describe('ProductsService', () => {
       } catch (error) {
         expect(error).toBeInstanceOf(NotFoundException);
       }
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────
+  // R1（P1·二次修复 2026-10-05）：PATCH 跨字段合并校验——
+  // DTO 的 ValidatorConstraint 只看请求自带字段，单值 PATCH 跳过跨字段约束，
+  // originalPrice<price 倒挂落库（X1 实锤 DB）。service 在 repository.update
+  // 前构造「存量+增量」合并视图复检 originalPrice>=price（双方均非 null 时）。
+  // 存量基线：mockProduct.price=100 / originalPrice=120。
+  // ─────────────────────────────────────────────────────────────
+  describe('Update Product R1 价格不变式（合并视图）', () => {
+    beforeEach(() => {
+      mockCacheManager.get.mockResolvedValue(null); // 缓存未命中，走 DB
+      mockProductRepository.findOne.mockResolvedValue(mockProduct); // 存量价 100/120
+      mockProductRepository.update.mockResolvedValue({ affected: 1 });
+      mockCacheManager.del.mockResolvedValue(true);
+      mockProductEventsService.publishProductUpdated.mockResolvedValue(undefined);
+      mockSearchManagerService.indexProduct.mockResolvedValue(undefined);
+    });
+
+    it('R1：单传 originalPrice=50（低于存量 price=100）→ 400，不落库', async () => {
+      await expect(service.update(1, { originalPrice: 50 } as any)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+      expect(mockProductRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('R1：单抬 price=150（高于存量 originalPrice=120）→ 400，不落库', async () => {
+      await expect(service.update(1, { price: 150 } as any)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+      expect(mockProductRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('R1：违例报文带字段明细（存量/提交/合并后三态）', async () => {
+      let caught: any;
+      try {
+        await service.update(1, { originalPrice: 99.5 } as any);
+      } catch (e) {
+        caught = e;
+      }
+      expect(caught).toBeInstanceOf(BadRequestException);
+      expect(caught.getStatus()).toBe(400);
+      const body = caught.getResponse();
+      expect(body.message).toContain('划线原价不能低于现价');
+      expect(body.details.price).toEqual({ stored: 100, submitted: undefined, effective: 100 });
+      expect(body.details.originalPrice).toEqual({
+        stored: 120,
+        submitted: 99.5,
+        effective: 99.5,
+      });
+    });
+
+    it('R1：双向合法——originalPrice=130（≥存量价）与 price=90（≤存量划线价）均放行', async () => {
+      await expect(service.update(1, { originalPrice: 130 } as any)).resolves.toBeDefined();
+      expect(mockProductRepository.update).toHaveBeenCalledWith(1, { originalPrice: 130 });
+      await expect(service.update(1, { price: 90 } as any)).resolves.toBeDefined();
+      expect(mockProductRepository.update).toHaveBeenCalledWith(1, { price: 90 });
+    });
+
+    it('R1：originalPrice 显式传 null=清除划线价 → 合法透传（清除后无不变式）', async () => {
+      await expect(service.update(1, { originalPrice: null } as any)).resolves.toBeDefined();
+      expect(mockProductRepository.update).toHaveBeenCalledWith(1, { originalPrice: null });
+    });
+
+    it('R1：price 抬到恰等于存量 originalPrice（=120）放行；同传双值合法亦放行', async () => {
+      await expect(service.update(1, { price: 120 } as any)).resolves.toBeDefined();
+      await expect(
+        service.update(1, { price: 150, originalPrice: 150 } as any),
+      ).resolves.toBeDefined();
+      expect(mockProductRepository.update).toHaveBeenCalledWith(1, { price: 150, originalPrice: 150 });
+    });
+
+    it('R1：不涉价格字段的 PATCH 不受影响', async () => {
+      await expect(service.update(1, { name: '新名字' } as any)).resolves.toBeDefined();
+      expect(mockProductRepository.update).toHaveBeenCalledWith(1, { name: '新名字' });
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────
+  // R2（P2·二次修复 2026-10-05）：specifications 浅合并——
+  // 原实现整体替换，PATCH {specifications:{}} 把存量 factCard 静默清空，
+  // 闸的合并视图随之后续取不到（两步废掉词表冲突检查，X1 实锤）。
+  // 存量基线：mockProduct.specifications={color:'红色', size:'M'}。
+  // ─────────────────────────────────────────────────────────────
+  describe('Update Product R2 specifications 浅合并', () => {
+    beforeEach(() => {
+      mockCacheManager.get.mockResolvedValue(null);
+      mockProductRepository.findOne.mockResolvedValue(mockProduct);
+      mockProductRepository.update.mockResolvedValue({ affected: 1 });
+      mockCacheManager.del.mockResolvedValue(true);
+      mockProductEventsService.publishProductUpdated.mockResolvedValue(undefined);
+      mockSearchManagerService.indexProduct.mockResolvedValue(undefined);
+    });
+
+    it('R2：PATCH {specifications:{}} → 存量键全保留（factCard 不再被静默清空）', async () => {
+      await service.update(1, { specifications: {} } as any);
+      expect(mockProductRepository.update).toHaveBeenCalledWith(1, {
+        specifications: { color: '红色', size: 'M' },
+      });
+    });
+
+    it('R2：dto 键覆盖存量同名键、未提及键保留（浅合并语义）', async () => {
+      await service.update(1, { specifications: { color: '蓝色', factCard: { bagType: '凯莉' } } } as any);
+      expect(mockProductRepository.update).toHaveBeenCalledWith(1, {
+        specifications: {
+          color: '蓝色', // 覆盖
+          size: 'M', // 保留
+          factCard: { bagType: '凯莉' }, // 新增
+        },
+      });
+    });
+
+    it('R2：显式传 null=整体清空（合法语义原样透传）', async () => {
+      await service.update(1, { specifications: null } as any);
+      expect(mockProductRepository.update).toHaveBeenCalledWith(1, { specifications: null });
+    });
+
+    it('R2：不传 specifications（undefined）→ 不合并不动库内值', async () => {
+      await service.update(1, { price: 88 } as any);
+      const [, payload] = (mockProductRepository.update as any).mock.calls[0];
+      expect(payload).toEqual({ price: 88 });
+      expect('specifications' in payload).toBe(false);
+    });
+
+    it('R2：存量 specifications 为 null（旧数据）时浅合并从空对象起步', async () => {
+      mockProductRepository.findOne.mockResolvedValue({ ...mockProduct, specifications: null } as any);
+      await service.update(1, { specifications: { factCard: { bagType: '托特' } } } as any);
+      expect(mockProductRepository.update).toHaveBeenCalledWith(1, {
+        specifications: { factCard: { bagType: '托特' } },
+      });
     });
   });
 

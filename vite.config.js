@@ -59,9 +59,13 @@ function restoreStylesheetOrder() {
   };
   return {
     name: 'restore-stylesheet-order',
-    // 挂 transformIndexHtml(post)：vite 注入产物 CSS <link> 之后、HTML minify
-    // 之前——generateBundle 时序上 vite:build-html 会再重写 HTML，直接改
-    // bundle asset source 会被覆盖（实测）。ctx.bundle 提供产物反查面。
+    // 时序事实（Y2 席对 vite 7 源码逐行核对，2026-10-05 双盲审二次修复修正）：
+    // transformIndexHtml(order:'post') 在 vite:build-html 注入产物 CSS <link>
+    // 之后执行——这是本插件能重排 <link> 的唯一窗口；vite 7 没有 HTML minify
+    // 阶段（旧注释"minify 之前"失实，产物 HTML 不做压缩），post 处理器返回的
+    // HTML 即最终落盘内容。不改在 generateBundle 里直接改 bundle 的 HTML asset
+    // source——vite:build-html（post 插件，晚于本插件）会再重写 HTML 把改动
+    // 覆盖掉（实测）；ctx.bundle 提供产物反查面。
     transformIndexHtml: {
       order: 'post',
       handler(html, ctx) {

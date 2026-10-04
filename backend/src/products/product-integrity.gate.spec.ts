@@ -53,8 +53,11 @@ describe('M4 第二闸服务端侧：integrity 同源复检', () => {
         factCard: { mainColor: '蓝白', bagType: '凯莉' },
       });
       const blockers = r.blockers.filter((b: any) => b.code === 'BAG_SILHOUETTE_MISMATCH');
-      expect(blockers).toHaveLength(1);
-      expect((blockers[0] as any).word).toBe('托特');
+      // R5（二次修复 2026-10-05）：裁决按 canonical×字段 独立聚合——托特在标题
+      // 与描述两处冲突，各红拦一条（field 定位到具体输入框）。与 js/shared 同判。
+      expect(blockers).toHaveLength(2);
+      expect(blockers.map((b: any) => b.field).sort()).toEqual(['description', 'name']);
+      expect(blockers.every((b: any) => b.word === '托特')).toBe(true);
     });
 
     it('事故 3：绿橙紫渐变描述写「粉到金」→ 黄警 COLOR_MISMATCH ×2（粉、金）', async () => {

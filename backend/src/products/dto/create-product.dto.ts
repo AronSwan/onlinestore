@@ -5,8 +5,11 @@
 // P1-4(双盲审 2026-10-05)：服务端 sanity 补齐——原实现仅前端 gates sanityCheck
 // 把关（信任边界错位：空名/price=0/stock=1.5/originalPrice<price 全 201 入库）。
 // UpdateProductDto 经 PartialType 全量继承（含跨字段约束与各项长度/类型装饰器）。
+// R4(二次修复 2026-10-05)：name 整形（trim+全空格拒+换行拒）与 description
+// 上限 2000——PATCH 单值倒挂的跨字段缺口由 service 层合并视图补（R1）。
 
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import {
   IsString,
   IsNotEmpty,
@@ -17,6 +20,7 @@ import {
   IsInt,
   IsArray,
   IsObject,
+  Matches,
   Validate,
   ValidatorConstraint,
   ValidatorConstraintInterface,
@@ -42,14 +46,28 @@ class OriginalPriceNotBelowPriceConstraint implements ValidatorConstraintInterfa
 }
 
 export class CreateProductDto {
+  // R4（P2·二次修复 2026-10-05，清单 4）：name/description 服务端整形。
+  // name：@Transform 先 trim 再校验——全空格名在 IsNotEmpty 处拒绝（此前
+  // "     " 非空串直通入库）；trim 由全局 ValidationPipe(transform:true)
+  // 的 plainToInstance 落形，controller/service 拿到的即整形后值。
+  // 换行评估结论=拒绝：商品名含换行不合理（列表/卡片渲染错位、搜索串污染），
+  // trim 不除内部 \n，故加 @Matches 排除 \n/\r。UpdateProductDto 经
+  // PartialType 全量继承（含 @Transform 与全部校验器）。
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @ApiProperty({ description: '产品名称', example: '高端智能手机' })
   @IsString()
   @IsNotEmpty({ message: '产品名称不能为空' })
   @MaxLength(200, { message: '产品名称不能超过 200 字符' })
+  @Matches(/^[^\n\r]*$/, { message: '名称不能包含换行' })
   name: string;
 
+  // R4：description 上限 2000——关掉 Y1 实测的 CPU 放大面（64KB 描述使闸的
+  // 词表匹配耗时 33.5ms，超长载荷线性放大）。仍必填：products.description
+  // 列 NOT NULL 无默认值，缺省放行会把失败面从 400 挪到 DB 500（与
+  // @IsOptional 的任务书字面写法有偏差，见二次修复汇报的已知限制段）。
   @ApiProperty({ description: '产品描述', example: '最新款高端智能手机' })
   @IsString()
+  @MaxLength(2000, { message: '产品描述不能超过 2000 字符' })
   description: string;
 
   @ApiProperty({ description: '产品价格', example: 2999.99 })

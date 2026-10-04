@@ -1034,6 +1034,51 @@ describe('ProductsController', () => {
       expect(productsService.update).toHaveBeenCalledWith(3, { price: 29.9 });
     });
 
+    // ─────────────────────────────────────────────────────────────
+    // R2（P2·二次修复 2026-10-05）：specifications:{} 不再静默清空存量
+    // factCard——闸的合并视图与 service 浅合并同构；null=整体清空（合法）时
+    // 闸视图同步为 null（走 lint-only），不得再按存量 factCard 红拦。
+    // ─────────────────────────────────────────────────────────────
+    it('R2：update {specifications:{}} + 存量 factCard 与存量文案冲突 → 闸仍红拦 400（两步废闸被堵死）', async () => {
+      jest.spyOn(productsService, 'findById').mockResolvedValue({
+        id: 4,
+        name: '蓝白织纹托特',
+        description: '蓝白织纹托特包，通勤也拿得出手',
+        specifications: { factCard: { colorGroup: '蓝白', bagType: '凯莉' } },
+      } as any);
+      // X1 场景变体：空对象试图洗掉事实卡——合并视图保留 factCard，词表冲突红拦
+      await expect(
+        controller.update(4 as any, { specifications: {} } as any),
+      ).rejects.toMatchObject({ status: 400 });
+      expect(productsService.update).not.toHaveBeenCalled();
+    });
+
+    it('R2：update {specifications:null}（显式清空）+ 存量 factCard → 闸视图同步为 null 走 lint-only，干净文案放行且 null 透传 service', async () => {
+      jest.spyOn(productsService, 'findById').mockResolvedValue({
+        id: 5,
+        name: '牛皮手提包',
+        description: '头层牛皮，通勤也拿得出手',
+        specifications: { factCard: { colorGroup: '棕', bagType: '手提' } },
+      } as any);
+      jest.spyOn(productsService, 'update').mockResolvedValue({ id: 5, specifications: null } as any);
+      const result = await controller.update(5 as any, { specifications: null } as any);
+      expect(result).toEqual({ id: 5, specifications: null });
+      expect(productsService.update).toHaveBeenCalledWith(5, { specifications: null });
+    });
+
+    it('R5(二次修复)：update 合并视图下描述结构冲突不被标题命中稀释 → 400（name=凯莉包+描述含托特+存量卡凯莉）', async () => {
+      jest.spyOn(productsService, 'findById').mockResolvedValue({
+        id: 6,
+        name: '凯莉包',
+        description: '老描述：一只经典托特，通勤也拿得出手',
+        specifications: { factCard: { colorGroup: '黑', bagType: '凯莉' } },
+      } as any);
+      await expect(controller.update(6 as any, { price: 59.9 } as any)).rejects.toMatchObject({
+        status: 400,
+      });
+      expect(productsService.update).not.toHaveBeenCalled();
+    });
+
     it('should track update history', async () => {
       const existingProduct = {
         id: 1,

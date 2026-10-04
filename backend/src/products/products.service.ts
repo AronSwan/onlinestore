@@ -3,7 +3,7 @@
 // 作者：后端开发团队
 // 时间：2025-09-26 18:23:30
 
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like, Between, In, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
@@ -470,6 +470,64 @@ export class ProductsService {
       // 创建新的updateData对象，避免修改原对象
       const { categoryId, ...restData } = updateData;
       updateData = { ...restData, category } as any;
+    }
+
+    // R1（P1·二次修复 2026-10-05，双盲审总报告清单 1）：PATCH 跨字段合并校验。
+    // 根因：DTO 的 ValidatorConstraint 只能看到请求自带字段——PATCH 只传
+    // originalPrice 或只传 price 时跨字段约束被跳过，originalPrice<price
+    // 倒挂落库（席 X1 实锤 DB）。服务层是唯一同时看得见"存量+增量"的层：
+    // repository.update 前构造合并视图（dto ?? 存量）复检不变式
+    // originalPrice>=price（双方均非 null 的数字时）。
+    // originalPrice 显式传 null = 清除划线价（合法语义，清除后无不变式可言）；
+    // 未传 = 沿用存量值参与比对。
+    const submittedOriginalPrice = Object.prototype.hasOwnProperty.call(
+      updateData,
+      'originalPrice',
+    );
+    const mergedPrice = typeof updateData.price === 'number' ? updateData.price : product.price;
+    const mergedOriginalPrice = submittedOriginalPrice
+      ? typeof updateData.originalPrice === 'number'
+        ? updateData.originalPrice
+        : null
+      : typeof product.originalPrice === 'number'
+        ? product.originalPrice
+        : null;
+    if (
+      typeof mergedPrice === 'number' &&
+      typeof mergedOriginalPrice === 'number' &&
+      mergedOriginalPrice < mergedPrice
+    ) {
+      throw new BadRequestException({
+        message: '划线原价不能低于现价（PATCH 单值提交按「存量+增量」合并视图校验）',
+        details: {
+          price: { stored: product.price, submitted: updateData.price, effective: mergedPrice },
+          originalPrice: {
+            stored: product.originalPrice,
+            submitted: updateData.originalPrice,
+            effective: mergedOriginalPrice,
+          },
+        },
+      });
+    }
+
+    // R2（P2·二次修复 2026-10-05，清单 2）：specifications 浅合并。
+    // 根因：repository.update 直写整体替换——PATCH {specifications:{}} 把存量
+    // factCard 静默清空，之后闸/复检的合并视图再也取不到，两步废掉词表冲突
+    // 检查（席 X1 实锤）。浅合并语义：dto 键覆盖存量同名键、未提及键保留
+    // （factCard 因此天然保留，与控制器复检闸的合并视图同构）；显式传 null
+    // 是合法的"整体清空"语义，原样透传由 repository.update 写 NULL。
+    if (
+      updateData.specifications !== null &&
+      updateData.specifications !== undefined &&
+      typeof updateData.specifications === 'object'
+    ) {
+      updateData = {
+        ...updateData,
+        specifications: {
+          ...((product.specifications as Record<string, unknown>) ?? {}),
+          ...updateData.specifications,
+        },
+      } as UpdateProductData;
     }
 
     const oldProduct = await this.findById(id);

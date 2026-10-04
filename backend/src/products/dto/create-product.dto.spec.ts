@@ -110,4 +110,61 @@ describe('P1-4 UpdateProductDto（PartialType 继承）', () => {
     ).toContain('划线原价 originalPrice 不能低于现价 price');
     expect(await errorsOf(UpdateProductDto, { originalPrice: 299 })).toHaveLength(0);
   });
+
+  // ─────────────────────────────────────────────────────────────
+  // R4（P2·二次修复 2026-10-05）：name/description 服务端整形。
+  // name：@Transform trim（全空格→空→IsNotEmpty 拒）+ 换行拒；
+  // description：MaxLength(2000)（关 Y1 实测 CPU 放大面：64KB=33.5ms）。
+  // 单值 PATCH 的跨字段倒挂由 service 合并视图校验（R1，另见 service spec）。
+  // ─────────────────────────────────────────────────────────────
+  it('R4：name 全空格（5 空格）trim 后为空 → IsNotEmpty 400', async () => {
+    const errs = await errorsOf(CreateProductDto, { ...validBody, name: '     ' });
+    expect(errs.join(' ')).toContain('产品名称不能为空');
+  });
+
+  it('R4：@Transform 落形——前后空白被剥掉，controller/service 拿到整形后值', async () => {
+    const dto = plainToInstance(CreateProductDto, { ...validBody, name: '  黑色小圆筒包  ' });
+    expect(dto.name).toBe('黑色小圆筒包');
+    const errs = await validate(dto, { whitelist: false });
+    expect(errs).toHaveLength(0);
+    // 非字符串值不经 trim 原样放行给类型校验器裁决
+    const dto2 = plainToInstance(CreateProductDto, { ...validBody, name: 123 });
+    expect(dto2.name).toBe(123);
+  });
+
+  it('R4：name 含换行（\\n / \\r）→ Matches 400「名称不能包含换行」', async () => {
+    const errs = await errorsOf(CreateProductDto, { ...validBody, name: '黑色\n小圆筒包' });
+    expect(errs.join(' ')).toContain('名称不能包含换行');
+    expect((await errorsOf(CreateProductDto, { ...validBody, name: '黑色\r小圆筒包' })).join(' ')).toContain(
+      '名称不能包含换行',
+    );
+  });
+
+  it('R4：description 2001 字 → MaxLength 400；恰好 2000 字放行（边界）', async () => {
+    expect(
+      (await errorsOf(CreateProductDto, { ...validBody, description: '好'.repeat(2001) })).join(' '),
+    ).toContain('产品描述不能超过 2000 字符');
+    expect(
+      await errorsOf(CreateProductDto, { ...validBody, description: '好'.repeat(2000) }),
+    ).toHaveLength(0);
+  });
+
+  it('R4：description 仍必填（缺省 400）——products.description 列 NOT NULL，缺省放行会把失败面挪到 DB 500（@IsOptional 偏差见汇报已知限制段）', async () => {
+    const { name, price, stock } = validBody;
+    const errs = await errorsOf(CreateProductDto, { name, price, stock });
+    expect(errs).toContain('description');
+  });
+
+  it('R4：PartialType 继承整形面——PATCH 全空格 name 400 / 超长 description 400 / 带换行 name 400', async () => {
+    expect((await errorsOf(UpdateProductDto, { name: '   ' })).join(' ')).toContain('产品名称不能为空');
+    expect((await errorsOf(UpdateProductDto, { description: '长'.repeat(2001) })).join(' ')).toContain(
+      '产品描述不能超过 2000 字符',
+    );
+    expect((await errorsOf(UpdateProductDto, { name: '凯莉\n包' })).join(' ')).toContain(
+      '名称不能包含换行',
+    );
+    // PATCH 侧 trim 落形同样继承
+    const dto = plainToInstance(UpdateProductDto, { name: '  凯莉包  ' });
+    expect(dto.name).toBe('凯莉包');
+  });
 });

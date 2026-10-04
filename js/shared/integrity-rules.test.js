@@ -62,8 +62,11 @@ test('事故 2：凯莉包名「蓝白织纹托特」（不织纹不托特）→
   });
   assert.equal(r.warnings.length, 0, '蓝、白都在事实卡色系内，无颜色黄警');
   const blockers = r.blockers.filter((b) => b.code === 'BAG_SILHOUETTE_MISMATCH');
-  assert.equal(blockers.length, 1, '结构包型冲突恰好一条');
-  assert.equal(blockers[0].word, '托特');
+  // R5（二次修复）：裁决按 canonical×字段 独立聚合——托特在标题与描述两处
+  // 冲突，各红拦一条（field 定位到具体输入框），断言从 1 条更新为 2 条
+  assert.equal(blockers.length, 2, '标题与描述的托特各一条结构冲突红拦');
+  assert.deepEqual(blockers.map((b) => b.word).sort(), ['托特', '托特']);
+  assert.deepEqual(blockers.map((b) => b.field).sort(), ['description', 'name']);
   assert.equal(blockers[0].factBagType, '凯莉');
 });
 
@@ -126,7 +129,9 @@ test('lintCopy：客服腔本体仍命中——孤立的 亲 / 宝 / 宝贝', ()
 test('lintCopy：多个感叹号命中（全角/半角/混合），单个感叹号放行', () => {
   const r = lintCopy('上新了！！！');
   assert.equal(r.violations.length, 1);
-  assert.equal(r.violations[0].word, '！！！');
+  // R3（二次修复）：NFKC 归一化后全角 ！→!，word 取规范化文本（与 index
+  // 同一契约）——断言从 '！！！' 更新为 '!!!'，属有意行为变化，非迁就实现
+  assert.equal(r.violations[0].word, '!!!');
   assert.equal(r.violations[0].index, 3);
   assert.equal(lintCopy('速来!！').violations.length, 1, '半角+全角混合也算');
   assert.deepEqual(lintCopy('来！真的值！').violations, [], '单个感叹号不违反「从容」');
@@ -375,4 +380,143 @@ test('sanityCheck：划线价虚高（≥现价 3 倍）→ 黄警', () => {
   assert.equal(r.errors.length, 0);
   assert.equal(SANITY_THRESHOLDS.ORIGINAL_INFLATE_WARN_RATIO, 3);
   assert.equal(SANITY_THRESHOLDS.PEER_DEVIATION_WARN_RATIO, 0.5);
+});
+
+// ─────────────────────────────────────────────
+// R3（二次修复 2026-10-05）：隐形字符家族扩展 + NFKC。
+// X1/X2 各实锤不同码位逃逸：U+00AD 软连字符、U+034F 组合字连接符、
+// U+2061-2064 隐形操作符族、U+FE00-FE0F 变体选择符、全角英文、CJK 兼容变体。
+// 修法 = NFKC 归一化 + 剥残余不可见码位（NFKC 不消的兜底）。
+// ─────────────────────────────────────────────
+test('R3 隐形码位：软连字符 U+00AD / CGJ U+034F / 隐形操作符 U+2061-2064 / VS U+FE00 逐码位走私全命中', () => {
+  // 禁用词面「限时」被各码位拆开 → 剥离后仍命中
+  assert.deepEqual(lintCopy('限\u00AD时秒杀').violations.map((v) => v.word), ['限时', '秒杀']);
+  assert.deepEqual(lintCopy('限\u034F时秒杀').violations.map((v) => v.word), ['限时', '秒杀']);
+  assert.deepEqual(lintCopy('限\u2061时秒杀').violations.map((v) => v.word), ['限时', '秒杀']);
+  assert.deepEqual(lintCopy('限\u2062时秒杀').violations.map((v) => v.word), ['限时', '秒杀']);
+  assert.deepEqual(lintCopy('限\u2063时秒杀').violations.map((v) => v.word), ['限时', '秒杀']);
+  assert.deepEqual(lintCopy('限\u2064时秒杀').violations.map((v) => v.word), ['限时', '秒杀']);
+  assert.deepEqual(lintCopy('限\uFE00时秒杀').violations.map((v) => v.word), ['限时', '秒杀']);
+  assert.deepEqual(lintCopy('限\uFE0F时秒杀').violations.map((v) => v.word), ['限时', '秒杀']);
+});
+
+test('R3 NFKC：全角英文包型词（ＢＯＳＴＯＮ手提包 vs 凯莉卡）命中红拦（X2 全角规避实锤）', () => {
+  const r = checkNameImage({
+    name: 'ＢＯＳＴＯＮ手提包',
+    description: '',
+    factCard: { mainColor: '黑', bagType: '凯莉' },
+  });
+  const blockers = r.blockers.filter((b) => b.code === 'BAG_SILHOUETTE_MISMATCH');
+  assert.equal(blockers.length, 1, '全角ＢＯＳＴＯＮ 归一为 boston，与凯莉卡结构冲突红拦');
+  assert.equal(blockers[0].copyType, '波士顿');
+  // 反向：全角与事实卡一致时不误拦
+  const ok = checkNameImage({
+    name: 'ＢＯＳＴＯＮ手提包',
+    description: '',
+    factCard: { mainColor: '黑', bagType: '波士顿' },
+  });
+  assert.equal(ok.blockers.length, 0, '全角包型词与卡一致，放行');
+});
+
+test('R3 NFKC：CJK 兼容变体（U+F90A→金）仍参与色系比对，不再逃逸', () => {
+  // 描述用兼容变体 金（U+F90A）写「香槟金」→ NFKC 折回「香槟金」命中金系；
+  // 事实卡黑系 → COLOR_MISMATCH 黄警（匹配面恢复，而非静默漏检）
+  const r = checkNameImage({
+    name: '黑色波士顿',
+    description: '配色灵感来自香槟\uF90A',
+    factCard: { mainColor: '黑', bagType: '波士顿' },
+  });
+  assert.ok(
+    r.warnings.some((w) => w.code === 'COLOR_MISMATCH' && w.family === '金'),
+    '兼容变体 金 归一为 金，参与色系比对',
+  );
+  // 反向：事实卡用兼容变体写主色，文案的规范形「金」不误报
+  // （描述避开五金语境——「香槟金五金」会被五金消歧跳过，取非五金语境断言）
+  const ok = checkNameImage({
+    name: '波士顿手提包',
+    description: '香槟金的温润光泽',
+    factCard: { mainColor: '\uF90A', bagType: '波士顿' },
+  });
+  assert.ok(!ok.warnings.some((w) => w.code === 'COLOR_MISMATCH'), '卡侧变体归一后同系不误报');
+});
+
+test('R3 已知限制正控：繁体「限時搶購」仍会过（繁简归一挂账产品决策，不在此修）', () => {
+  assert.deepEqual(lintCopy('限時搶購').violations, [], '繁简不做归一——显式声明为已知限制');
+});
+
+test('R3 不影响合法文案：NFKC 后零宽正控仍绿', () => {
+  assert.deepEqual(lintCopy('\u200B\u200C\u200D\uFEFF\u2060\u00AD\u034F\u2061\uFE0F').violations, [], '纯隐形字符剥离后为空');
+  assert.deepEqual(lintCopy('总有一只先背。——2025 秋冬，到货了').violations, []);
+  assert.deepEqual(lintCopy('偶尔来信，不打扰。（真的偶尔。）').violations, [], '全角标点归一不产生假命中');
+});
+
+// ─────────────────────────────────────────────
+// R5（二次修复 2026-10-05）：闸稀释——blocker 不因 warning 降级。
+// 根因：M4「任一命中降级」为全局语义，name 命中主包型时 description 里
+// 与卡冲突的结构词被稀释为黄警放行（X1 实锤：name=凯莉包+老描述含"托特"→200 落库）。
+// 修法：降级判定收窄为「同字段命中」——描述的结构冲突与 name 命中无关。
+// ─────────────────────────────────────────────
+test('R5 闸稀释（X1 原案）：name=凯莉包+描述含托特+卡凯莉 → 红拦（不再被 name 命中稀释）', () => {
+  const r = checkNameImage({
+    name: '凯莉包',
+    description: '老描述：一只经典托特，通勤也拿得出手',
+    factCard: { mainColor: '黑', bagType: '凯莉' },
+  });
+  const blockers = r.blockers.filter((b) => b.code === 'BAG_SILHOUETTE_MISMATCH');
+  assert.equal(blockers.length, 1, '描述的托特与卡凯莉结构冲突，独立红拦');
+  assert.equal(blockers[0].field, 'description');
+  assert.equal(blockers[0].word, '托特');
+  assert.ok(!r.warnings.some((w) => w.code === 'BAG_SILHOUETTE_SECONDARY'), '不得降级为次要词黄警');
+});
+
+test('R5 对称面：描述命中不稀释标题的结构冲突', () => {
+  const r = checkNameImage({
+    name: '托特包',
+    description: '经典凯莉版型',
+    factCard: { mainColor: '黑', bagType: '凯莉' },
+  });
+  assert.ok(
+    r.blockers.some((b) => b.code === 'BAG_SILHOUETTE_MISMATCH' && b.field === 'name' && b.word === '托特'),
+    '标题托特 vs 卡凯莉：描述命中凯莉不得洗白标题冲突',
+  );
+});
+
+test('R5 不回退 M4：同字段叠词降级语义保留（云朵枕头包 vs 卡枕头包 仍是次要词黄警）', () => {
+  const r = checkNameImage({
+    name: '云朵枕头包',
+    description: '',
+    factCard: { mainColor: '黑', bagType: '枕头包' },
+  });
+  assert.equal(r.blockers.length, 0);
+  const secondary = r.warnings.filter((w) => w.code === 'BAG_SILHOUETTE_SECONDARY');
+  assert.equal(secondary.length, 1);
+  assert.equal(secondary[0].word, '云朵');
+});
+
+test('R5 同字段命中才降级：name 含匹配词+描述只含冲突词 → 描述红拦；两字段各自干净则放行', () => {
+  // name 云朵+枕头（枕头=匹配）→ name 内云朵降黄警；description 只有云朵（无匹配）→ 红拦
+  const r = checkNameImage({
+    name: '云朵枕头包',
+    description: '云朵般柔软',
+    factCard: { mainColor: '黑', bagType: '枕头包' },
+  });
+  const blockers = r.blockers.filter((b) => b.code === 'BAG_SILHOUETTE_MISMATCH');
+  assert.equal(blockers.length, 1, '描述的云朵（该字段无任何匹配词）独立红拦');
+  assert.equal(blockers[0].field, 'description');
+  assert.ok(
+    r.warnings.some((w) => w.code === 'BAG_SILHOUETTE_SECONDARY' && w.field === 'name' && w.word === '云朵'),
+    '标题内云朵仍按叠词降级黄警',
+  );
+});
+
+test('R5 与 R3 组合：全角冲突词+name 命中也不稀释（ＴＯＴＥ 描述 vs 凯莉卡）', () => {
+  const r = checkNameImage({
+    name: '凯莉包',
+    description: 'ＴＯＴＥ 版型经典',
+    factCard: { mainColor: '黑', bagType: '凯莉' },
+  });
+  assert.ok(
+    r.blockers.some((b) => b.code === 'BAG_SILHOUETTE_MISMATCH' && b.field === 'description'),
+    '全角 ＴＯＴＥ 归一命中托特，结构冲突红拦且不被 name 命中稀释',
+  );
 });

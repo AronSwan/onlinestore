@@ -258,15 +258,23 @@ function findBagGroup(factBag) {
 const FIELD_LABEL = { name: '标题', description: '描述' };
 
 /**
- * 匹配用规范化：剥离零宽/不可见字符（ZWSP \u200B、ZWNJ \u200C、ZWJ \u200D、
- * BOM \uFEFF、词连接符 \u2060）——防"限␈时"式零宽走私绕过词表匹配
- * （双盲审 P3，2026-10-05，随 P1-2 一并修）。
- * 仅用于匹配：不改变存库原文；violations 的 index 指向规范化（剥离后）文本。
+ * 匹配用规范化（R3·二次修复 2026-10-05，X1/X2 各实锤不同码位）：
+ *  ① NFKC 归一化——全角英文（ＢＯＳＴＯＮ→BOSTON，全角包型词规避）、CJK
+ *    兼容变体（U+F900-FaFF 族，如 U+F90A→金）、全角标点（！→!）等兼容
+ *    形态全部折回规范形；
+ *  ② 再剥残余不可见码位（NFKC 不消的兜底）：零宽族 U+200B-200D/
+ *    BOM U+FEFF/词连接 U+2060、隐形操作符族 U+2061-2064、软连字符
+ *    U+00AD、组合字连接符 U+034F、变体选择符 U+FE00-FE0F。
+ * 仅用于匹配：不改变存库原文；violations 的 index/word 指向规范化文本
+ * （NFKC 可改变长度，如全角对称 1:1、兼容汉字折并——管理界面高亮按
+ * 规范化文本对齐，属既有契约的延伸）。
+ * 已知限制：不做繁简归一（NFKC 不做简繁转换，"限時搶購"仍会过——
+ * 需专门映射表，挂账产品决策，见二次修复汇报）。
  * @private
  */
-const ZERO_WIDTH = /[\u200B-\u200D\uFEFF\u2060]/g;
+const INVISIBLE = /[\u00AD\u034F\u200B-\u200D\uFEFF\u2060-\u2064\uFE00-\uFE0F]/g;
 function normalizeForMatch(text) {
-  return text.replace(ZERO_WIDTH, '');
+  return text.normalize('NFKC').replace(INVISIBLE, '');
 }
 
 // ═════════════════════════════════════════════════════════════
@@ -286,7 +294,8 @@ function normalizeForMatch(text) {
  */
 export function lintCopy(text, rules) {
   if (typeof text !== 'string' || text.length === 0) return { violations: [] };
-  // 匹配前剥离零宽字符（防"限␈时"走私；存库原文不动，index 指规范化文本）
+  // 匹配前规范化（NFKC+剥不可见，R3·二次修复）——防"限␈时"式隐形走私与
+  // 全角/兼容变体规避；存库原文不动，index/word 指规范化文本
   text = normalizeForMatch(text);
   if (text.length === 0) {
     return { violations: [] };
@@ -350,9 +359,11 @@ export function lintCopy(text, rules) {
  *     色系归一处理子串：湖蓝↔蓝、柠檬黄↔黄、樱花粉↔粉 同系不警。
  *     事实卡主色含多个根字时全部放行（「蓝白」→ {蓝,白}；「绿橙紫渐变」→ {绿,橙,紫,渐变}）。
  *     颜色词紧邻五金语境（金色五金/银色链条/拉链银）跳过，不误报五金色。
- *  R2 包型-结构：命中的结构包型词中【没有任何一个】与事实卡结构包型一致 → 红拦
- *     （如文案「波士顿托特」混写 vs 事实卡「凯莉」）。任一命中词与事实卡一致（「云朵枕头包」
- *     vs 事实卡「枕头包」）即不红拦——其余叠加词降级黄警 BAG_SILHOUETTE_SECONDARY，人工确认。
+ *  R2 包型-结构：某字段命中的结构包型词中【没有任何一个】与事实卡结构包型一致 → 红拦
+ *     （如文案「波士顿托特」混写 vs 事实卡「凯莉」）。同一字段内任一命中词与事实卡一致
+ *     （「云朵枕头包」vs 事实卡「枕头包」）时该字段不红拦——其余叠加词降级黄警
+ *     BAG_SILHOUETTE_SECONDARY，人工确认。降级按字段独立判定（R5·二次修复）：
+ *     标题命中不得稀释描述里的结构冲突，反之亦然。
  *     结构包型写进名字即主要卖点，名实不符是上午事故 2 的原样重演，必须拦死。
  *     同组归一：小圆筒↔圆筒、托特↔tote 同组不拦。
  *  R3 包型-背法：文案背法词 ≠ 事实卡背法（斜挎 vs 手提）→ 黄警（一只包可兼顾多种背法，人工确认即可）。
@@ -374,8 +385,9 @@ export function lintCopy(text, rules) {
 export function checkNameImage({ name, description, factCard } = {}) {
   const warnings = [];
   const blockers = [];
-  // 匹配前剥离零宽字符（与 lintCopy 同源防线——"托␈特包"不得借零宽逃过
-  // 包型冲突红拦；存库原文不动，warnings/blockers 定位词取自规范化文本）
+  // 匹配前规范化（NFKC+剥不可见，与 lintCopy 同源防线——"托␈特包"不得借
+  // 零宽逃过包型冲突红拦、"ＢＯＳＴＯＮ"不得借全角逃过词表；存库原文不动，
+  // warnings/blockers 定位词取自规范化文本）
   const nameText = normalizeForMatch(typeof name === 'string' ? name : '');
   const descText = normalizeForMatch(typeof description === 'string' ? description : '');
   const fc = factCard && typeof factCard === 'object' ? factCard : {};
@@ -410,41 +422,57 @@ export function checkNameImage({ name, description, factCard } = {}) {
 
   // R2-R5 包型比对
   const bagHits = [...findBagHits(nameText, 'name'), ...findBagHits(descText, 'description')];
-  const copySilhouettes = new Map(); // canonical -> 首个命中（用于报文定位）
+  const copySilhouettes = new Map(); // canonical -> 首个命中（存在性判断/报文定位）
   const copyCarries = new Map();
+  // R5：canonical × 字段 双键聚合——同一结构词可能出现在标题与描述两处，
+  // 两处的裁决独立（字段内有无匹配词决定降级与否），不能按 canonical 合并。
+  const silhouetteByField = new Map(); // `${canonical}|${field}` -> 首个命中
   for (const hit of bagHits) {
     const target = hit.dimension === 'silhouette' ? copySilhouettes : copyCarries;
     if (!target.has(hit.canonical)) target.set(hit.canonical, hit);
+    if (hit.dimension === 'silhouette') {
+      const key = `${hit.canonical}|${hit.field}`;
+      if (!silhouetteByField.has(key)) silhouetteByField.set(key, hit);
+    }
   }
   const factGroup = findBagGroup(factBag);
 
   if (factGroup && factGroup.dimension === 'silhouette') {
     // M4（反查 P3）叠结构词防过拦：一只包名可叠加多个结构词（「云朵枕头包」）。
-    // 只要命中的结构词中【任一】与事实卡一致即视为名实相符主结构在案，不整单红拦；
-    // 其余次要叠加词降级黄警提示人工确认。仅当命中的结构词中没有任何一个与
-    // 事实卡一致（波士顿+托特 混写、事实卡凯莉）时才维持红拦。
-    const anySilhouetteMatch = [...copySilhouettes.keys()].some(
-      (canonical) => canonical === factGroup.canonical,
+    // 同字段内只要命中的结构词中【任一】与事实卡一致，该字段的次要叠加词降级
+    // 黄警提示人工确认；命中的结构词中没有任何一个与事实卡一致（波士顿+托特
+    // 混写、事实卡凯莉）时维持红拦。结构包型写进名字就是主要卖点，名实不符是
+    // 上午事故 2 的原样重演，必须拦死。
+    // R5（二次修复 2026-10-05，X1 闸稀释）：降级判定从「全局任一命中」收窄为
+    // 「同字段命中」——原语义下 name=凯莉包（与卡一致）会把 description 里与
+    // 卡冲突的结构词（托特）一并降级黄警放行（X1 实锤 200 落库）。降级只属于
+    // 叠词所在的字段本身：描述里的结构冲突不因标题命中而洗白，反之亦然；
+    // blocker 与 warning 独立聚合（有 blocker 即红拦，warning 只做提示）。
+    const matchFields = new Set(
+      bagHits
+        .filter((h) => h.dimension === 'silhouette' && h.canonical === factGroup.canonical)
+        .map((h) => h.field),
     );
-    for (const [canonical, hit] of copySilhouettes) {
+    for (const hit of silhouetteByField.values()) {
+      const { canonical, field } = hit;
       if (canonical === factGroup.canonical) continue;
-      if (anySilhouetteMatch) {
+      if (matchFields.has(field)) {
         warnings.push({
           code: 'BAG_SILHOUETTE_SECONDARY',
-          field: hit.field,
+          field,
           word: hit.word,
           copyType: canonical,
           factBagType: factBag,
-          message: `${FIELD_LABEL[hit.field]}叠加结构词「${hit.word}」与事实卡主包型「${factBag}」不一致——主结构词已匹配，次要词请对图确认`,
+          message: `${FIELD_LABEL[field]}叠加结构词「${hit.word}」与事实卡主包型「${factBag}」不一致——主结构词已匹配，次要词请对图确认`,
         });
       } else {
         blockers.push({
           code: 'BAG_SILHOUETTE_MISMATCH',
-          field: hit.field,
+          field,
           word: hit.word,
           copyType: canonical,
           factBagType: factBag,
-          message: `${FIELD_LABEL[hit.field]}包型「${hit.word}」与事实卡包型「${factBag}」结构冲突——结构包型写进名字就是主要卖点，名实不符，红拦`,
+          message: `${FIELD_LABEL[field]}包型「${hit.word}」与事实卡包型「${factBag}」结构冲突——结构包型写进名字就是主要卖点，名实不符，红拦`,
         });
       }
     }

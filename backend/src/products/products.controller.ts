@@ -492,14 +492,17 @@ export class ProductsController {
     // 合并视图：name/description/specifications 均取 dto ?? 存量（PATCH 语义，
     // 避免"只改价格却被 BAG_TYPE_MISSING 空文案红拦"误伤）；specifications
     // 浅合并（dto 键覆盖存量键，dto 未带 factCard 时沿用存量 factCard）。
+    // R2（二次修复 2026-10-05）：dto.specifications === null 时视图也是 null——
+    // 与 service 写入语义对齐（null=整体清空，闸走 lint-only），防"闸按合并
+    // 视图放行、库却被清空"的视图/写入错位。
     const existing = await this.productsService.findById(id).catch(() => null);
     const existingSpecs = (existing?.specifications ?? {}) as Record<string, unknown>;
-    const dtoSpecs = (updateProductDto.specifications ?? {}) as Record<string, unknown>;
+    const dtoSpecs = updateProductDto.specifications as Record<string, unknown> | null | undefined;
     const gateView: any = {
       ...updateProductDto,
       name: updateProductDto.name ?? existing?.name,
       description: updateProductDto.description ?? existing?.description,
-      specifications: { ...existingSpecs, ...dtoSpecs },
+      specifications: dtoSpecs === null ? null : { ...existingSpecs, ...(dtoSpecs ?? {}) },
     };
     await enforceProductIntegrityGate(gateView);
     const updated = await this.productsService.update(id, updateProductDto);

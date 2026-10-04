@@ -88,6 +88,7 @@ profile 完全不用 Tailwind，本次不链入口 CSS。纳入体系留给 F4�
 7. **vite 对非 module 的 `<script src>` 只警告不打包**：四页有大量无 `type="module"` 的 script（login.html:345-349、profile.html:17-18 等），vite build 会打 "can't be bundled without type=module" 警告并原样拷贝。这是**现状**（筹备期之前也如此），不是本次引入；路径是根相对的所以 dist 里能用。头部归一（F4）时顺手加 type="module" 即可消警。
 8. **safelist 与 content 的双保险关系**：js/ 已在 content 里，扫描器本可扫到 classList.add("...") 的字面量；safelist 真正的战场是**变量插值拼类名**（login-utils.js:590 的 `${strengthColor}`、navigation-icons.js:246 的三元、orders.js:904 的 toast）与**未来重构挪走字面量**的静默丢失。清单见附录 A，新增动态类时同步补。
 9. **postcss.config.js 改动后必须重启 dev server（实战已踩，2026-10-04）**：postcss 配置不在 vite HMR 范围。本次接入 tailwind 插件后，运行中的 5173 仍按旧配置执行，把 index.html 内联 `text/tailwindcss` 块抽成 html-proxy CSS 后插件无条件运行，**全站 500**（报错 `@layer utilities is used but no matching @tailwind utilities directive`）。指令探测包装写入磁盘也救不了运行中的进程——改 postcss/插件链配置后，`netstat -ano | grep :5173` 找 PID、taskkill、重启 vite，再验 curl 200。
+10. **零合并代价（P1-3 层叠修复的实测账，双盲审 Y1/Y2 量测 2026-10-05，补记）**：a5a3bc8 的 manualChunks 把每个源 CSS 钉进独立 chunk（取消跨页共享合并）+ restoreStylesheetOrder 重排回源序，修掉 login 生产构建 +124px 层叠反转。代价两席独立实测同量级：**每页 CSS 请求 +3~9 个**（共享 chunk 拆散后各页各自全量链入）、**页面 CSS 传输量 gzip +9.8%（绝对值 +1.0-3.3KB/页）**。判定：可接受——换来的是层叠契约（源序）在产物中显式可读、单页 CSS 变更不再跨页联动；若未来要回收这部分，方向是按页生成"页内合并、页间独立"的 CSS 入口（保留源序拼接），不是回退共享 chunk。
 
 ## 3. 附录 A · safelist 出处清单（tailwind.config.js 同步维护）
 
