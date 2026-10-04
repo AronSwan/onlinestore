@@ -105,8 +105,8 @@ textarea,
 
 /* 次要按钮触摸优化 */
 .btn-luxury-secondary:active {
-  background-color: var(--dark-secondary);
-  border-color: var(--dark-secondary);
+  background-color: var(--ink-soft);
+  border-color: var(--ink-soft);
 }
 
 /* 轮廓按钮触摸优化 */
@@ -286,7 +286,7 @@ textarea,
   -webkit-overflow-scrolling: touch;
   /* 显示滚动条提示 */
   scrollbar-width: thin;
-  scrollbar-color: var(--ink-soft) var(--gray-200);
+  scrollbar-color: var(--ink-soft) var(--line);
 }
 
 /* 水平滑动区域滚动条样式 */
@@ -295,7 +295,7 @@ textarea,
 }
 
 .horizontal-scroll::-webkit-scrollbar-track {
-  background: var(--gray-200);
+  background: var(--line);
   border-radius: 3px;
 }
 
@@ -406,8 +406,8 @@ textarea,
   }
 }
 
-/* 小屏移动设备触摸优化 */
-@media (max-width: 575px) {
+/* 小屏移动设备触摸优化（F2：575 归档 640 档，576-640 带获得更大触控目标） */
+@media (max-width: 640px) {
 
   /* 进一步扩大按钮的触摸区域 */
   .btn-luxury {
@@ -450,7 +450,6 @@ textarea,
   .reich-product-card {
     border-radius: 16px;
     overflow: hidden;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   }
 
   .reich-product-image-container {
@@ -597,7 +596,7 @@ textarea,
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 248, 248, 0.98) 100%);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    z-index: 1000;
+    z-index: var(--z-nav);
     padding: 100px 24px 32px;
     box-shadow: -8px 0 30px rgba(0, 0, 0, 0.15);
     transition: right 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);

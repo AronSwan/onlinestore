@@ -12,7 +12,7 @@
 .orders-container {
     max-width: var(--max-width-6xl);
     margin: 0 auto;
-    padding: 0 var(--container-padding-x);
+    padding: 0 var(--spacing-4);
 }
 
 /* 订单页面内容区域 */
@@ -102,11 +102,10 @@
     border: 1px solid var(--border-light);
     border-radius: var(--radius-lg);
     font-size: var(--text-base);
-    font-weight: var(--font-normal);
+    font-weight: var(--font-weight-normal);
     color: var(--text-primary);
     background: var(--bg-white);
     transition: all var(--transition-normal);
-    box-shadow: var(--shadow-sm);
 }
 
 /* 搜索框聚焦状态 */
@@ -141,7 +140,6 @@
 .order-card {
     background: var(--bg-white);
     border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-sm);
     border: 1px solid var(--border-light);
     overflow: hidden;
     transition: all var(--transition-normal);
@@ -271,7 +269,6 @@
     height: 80px;
     border-radius: var(--radius-lg);
     object-fit: cover;
-    box-shadow: var(--shadow-sm);
     transition: transform var(--transition-normal);
 }
 
@@ -339,7 +336,7 @@
 /* 订单总价 */
 .order-total {
     font-size: var(--text-xl);
-    font-weight: var(--font-bold);
+    font-weight: var(--font-weight-bold);
     color: var(--text-primary);
     font-family: var(--brand-font-secondary);
 }
@@ -374,12 +371,11 @@
     background: var(--gold-standard);
     color: var(--text-white);
     border-color: var(--gold-standard);
-    box-shadow: var(--shadow-sm);
 }
 
 .order-action-btn.primary:hover {
-    background: var(--gold-dark);
-    border-color: var(--gold-dark);
+    background: var(--candy-blush-ink);
+    border-color: var(--candy-blush-ink);
     transform: translateY(-1px);
     box-shadow: var(--shadow-md);
 }
@@ -510,7 +506,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: var(--z-50);
+    z-index: var(--z-modal);
     padding: var(--spacing-4);
     backdrop-filter: blur(4px);
 }
@@ -518,7 +514,7 @@
 /* 模态框内容 */
 .order-modal-content {
     background: var(--bg-white);
-    border-radius: var(--radius-2xl);
+    border-radius: var(--radius-xl);
     max-width: 800px;
     width: 100%;
     max-height: 90vh;
@@ -541,7 +537,7 @@
 /* 模态框标题 */
 .order-modal-title {
     font-size: var(--text-2xl);
-    font-weight: var(--font-bold);
+    font-weight: var(--font-weight-bold);
     color: var(--text-primary);
     font-family: var(--brand-font-secondary);
 }
@@ -666,7 +662,6 @@
     height: 100px;
     border-radius: var(--radius-lg);
     object-fit: cover;
-    box-shadow: var(--shadow-sm);
 }
 
 /* 订单详情商品信息 */
@@ -878,11 +873,10 @@
     font-weight: var(--font-medium);
     text-decoration: none;
     transition: all var(--transition-normal);
-    box-shadow: var(--shadow-sm);
 }
 
 .order-empty-action:hover {
-    background: var(--gold-dark);
+    background: var(--candy-blush-ink);
     transform: translateY(-1px);
     box-shadow: var(--shadow-md);
 }
@@ -1032,8 +1026,8 @@
     }
 }
 
-/* 平板端优化 */
-@media (min-width: 641px) and (max-width: 1024px) {
+/* 平板端优化（F2：641 归档 640，边界点 640 由后块胜出=mobile-first 惯例） */
+@media (min-width: 640px) and (max-width: 1024px) {
     /* 筛选按钮 */
     .order-filter-btn {
         font-size: var(--text-sm);
@@ -1169,7 +1163,7 @@
     .order-card {
         page-break-inside: avoid;
         margin-bottom: var(--spacing-4);
-        border: 1px solid var(--border-dark);
+        border: 1px solid var(--line-strong);
     }
 
     .order-card-header,
@@ -1211,7 +1205,7 @@
     .order-item,
     .order-detail-item-row,
     .order-empty {
-        background: var(--dark-bg-secondary);
+        background: var(--bg-soft);
         border-color: var(--dark-border-medium);
         color: var(--dark-text-primary);
     }
@@ -1244,7 +1238,7 @@
     }
 
     .order-modal-content {
-        background: var(--dark-bg-secondary);
+        background: var(--bg-soft);
         border-color: var(--dark-border-medium);
     }
 
@@ -1288,7 +1282,7 @@
     .order-timeline-description,
     .order-timeline-time,
     .order-empty-description {
-        color: var(--dark-text-secondary);
+        color: var(--ink-soft);
     }
 }
 

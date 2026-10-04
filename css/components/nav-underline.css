@@ -35,7 +35,7 @@
     display: inline-block;
     padding: 0.5rem 1rem;
     text-decoration: none;
-    color: var(--nav-text-color, #333);
+    color: var(--ink, #333);
     font-weight: 500;
     transition: color 0.2s ease, background-color 0.3s ease;
     /* 优化：添加背景色过渡 */
@@ -47,19 +47,19 @@
 /* 导航链接悬停和活动状态 - 优化：简化选择器，添加高亮效果 */
 .main-nav .nav-link-luxury:hover,
 .main-nav .nav-link-luxury.active {
-    color: var(--nav-text-active-color, #000);
+    color: var(--ink, #000);
 }
 
 /* 导航链接悬停状态 - 统一管理，确保同一时间只有一个悬停效果 */
 .main-nav .nav-link-luxury.hover-state {
     background-color: var(--nav-highlight-hover-color, rgba(0, 0, 0, 0.1));
-    color: var(--nav-text-active-color, #000);
+    color: var(--ink, #000);
 }
 
 /* 导航链接活动状态 - 统一管理，确保同一时间只有一个激活状态 */
 .main-nav .nav-link-luxury.active-state {
     background-color: var(--nav-highlight-active-color, rgba(0, 0, 0, 0.15));
-    color: var(--nav-text-active-color, #000);
+    color: var(--ink, #000);
     font-weight: 600;
 }
 
@@ -71,7 +71,7 @@
     left: 0;
     width: 100%;
     height: 2px;
-    background-color: var(--nav-underline-color, #000);
+    background-color: var(--candy-blush-ink, #000);
     transform: scaleX(0);
     transform-origin: left;
     transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -84,14 +84,14 @@
 /* 导航链接悬停状态的下划线 - 统一管理悬停动画，发光效果已移除 */
 .main-nav .nav-link-luxury.hover-state::after {
     transform: scaleX(1);
-    background-color: var(--nav-underline-hover-color, #666);
+    background-color: var(--candy-blush-ink, #666);
     /* 发光效果已移除：box-shadow: 0 0 var(--nav-underline-glow-size, 4px) var(--nav-underline-glow-color, rgba(0, 0, 0, 0.3)); */
 }
 
 /* 导航链接激活状态的下划线 - 统一管理激活动画，发光效果已移除 */
 .main-nav .nav-link-luxury.active-state::after {
     transform: scaleX(1);
-    background-color: var(--nav-underline-color, #000);
+    background-color: var(--candy-blush-ink, #000);
     /* 发光效果已移除：box-shadow: 0 0 calc(var(--nav-underline-glow-size, 4px) * 1.5) var(--nav-underline-glow-color, rgba(0, 0, 0, 0.4)); */
     height: calc(var(--nav-underline-height, 2px) * 1.5);
 }

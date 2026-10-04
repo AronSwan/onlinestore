@@ -1,13 +1,13 @@
 /* Enhanced Responsive Design for Login System */
 
-/* 基础响应式断点 */
-@media (max-width: 1200px) {
+/* 基础响应式断点（F2：1200 归档 1280、992 归档 1024） */
+@media (max-width: 1280px) {
     .login-container {
         padding: var(--spacing-8) var(--spacing-4);
     }
 }
 
-@media (max-width: 992px) {
+@media (max-width: 1024px) {
     .login-card {
         max-width: 500px;
         margin: 0 auto;
@@ -92,8 +92,8 @@
     }
 }
 
-/* 超小屏幕优化 */
-@media (max-width: 360px) {
+/* 超小屏幕优化（F2：360 归档 480 档，与上方 ≤480 块叠加、本块靠后优先） */
+@media (max-width: 480px) {
     .login-card {
         margin: var(--spacing-1);
         padding: var(--spacing-3) !important;
@@ -139,8 +139,8 @@
     }
 }
 
-/* 高分辨率屏幕优化 */
-@media (min-width: 1400px) {
+/* 高分辨率屏幕优化（F2：1400 归档 1280 档） */
+@media (min-width: 1280px) {
     .login-card {
         max-width: 480px;
         padding: var(--spacing-10);

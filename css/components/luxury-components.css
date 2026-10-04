@@ -81,9 +81,9 @@
     align-items: center;
     gap: var(--spacing-3);
     padding: var(--spacing-4);
-    border: 1px solid var(--border-medium);
+    border: 1px solid var(--line-strong);
     border-radius: var(--radius-lg);
-    background: var(--bg-light);
+    background: var(--bg-soft);
 }
 
 .captcha-image {
@@ -183,7 +183,7 @@
     justify-content: center;
     gap: var(--spacing-2);
     padding: var(--spacing-3) var(--spacing-4);
-    border: 2px solid var(--border-medium);
+    border: 2px solid var(--line-strong);
     border-radius: var(--radius-lg);
     background: white;
     color: var(--text-primary);

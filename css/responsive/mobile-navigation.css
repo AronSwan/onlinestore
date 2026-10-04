@@ -18,7 +18,7 @@
   bottom: 0;
   background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(10px);
-  z-index: 999;
+  z-index: var(--z-overlay);
   opacity: 0;
   visibility: hidden;
   transition: all 0.3s ease;
@@ -36,7 +36,7 @@
   width: min(85vw, 320px);
   height: 100vh;
   background: var(--bg-primary);
-  z-index: 1000;
+  z-index: var(--z-modal);
   transition: right 0.3s ease;
   overflow-y: auto;
   box-shadow: -10px 0 30px rgba(0, 0, 0, 0.3);
@@ -57,7 +57,7 @@
 }
 
 .mobile-nav-logo {
-  font-family: var(--brand-font-primary);
+  font-family: var(--font-display);
   font-size: 1.5rem;
   font-weight: var(--font-weight-bold);
   color: var(--ink);
@@ -81,7 +81,7 @@
 }
 
 .mobile-nav-close:hover {
-  background: var(--bg-tertiary);
+  background: var(--bg-soft);
   color: var(--candy-blush-ink);
 }
 
@@ -106,7 +106,7 @@
 }
 
 .mobile-nav-item {
-  border-bottom: 1px solid var(--border-color-light);
+  border-bottom: 1px solid var(--line);
 }
 
 .mobile-nav-item:last-child {
@@ -126,13 +126,13 @@
 }
 
 .mobile-nav-link:hover {
-  background: var(--bg-tertiary);
+  background: var(--bg-soft);
   color: var(--candy-blush-ink);
   padding-left: var(--spacing-6);
 }
 
 .mobile-nav-link.active {
-  background: var(--bg-tertiary);
+  background: var(--bg-soft);
   color: var(--candy-blush-ink);
   font-weight: var(--font-weight-semibold);
 }
@@ -188,8 +188,8 @@
   }
 }
 
-/* 移动端隐藏桌面端导航 */
-@media (max-width: 767px) {
+/* 移动端隐藏桌面端导航（F2：767 归档 768 档；.navbar-nav/.navbar-actions 现无消费方，惰性归值） */
+@media (max-width: 768px) {
   .navbar-nav {
     display: none !important;
   }

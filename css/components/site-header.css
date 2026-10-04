@@ -9,7 +9,7 @@
   top: 0;
   left: 0;
   right: 0;
-  z-index: 1000;
+  z-index: var(--z-header);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -154,7 +154,7 @@
   top: 72px;
   left: 0;
   right: 0;
-  z-index: 999;
+  z-index: var(--z-nav);
   background: var(--bg-base);
   border-bottom: 1px solid var(--line);
   padding: var(--spacing-4) clamp(1rem, 4vw, 3rem);
@@ -208,7 +208,7 @@
   top: 72px;
   left: 0;
   right: 0;
-  z-index: 999;
+  z-index: var(--z-dropdown);
   background: var(--bg-base);
 }
 

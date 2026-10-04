@@ -64,7 +64,7 @@
   background-color: #fff;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
+  z-index: var(--z-dropdown);
   display: none;
   margin-top: 5px;
 }
@@ -283,12 +283,11 @@
   gap: 25px;
 }
 
-/* 产品卡片 */
+/* 产品卡片（F6.5：静置阴影删，与 enhanced.css 的 border 方案对齐） */
 .product-card {
   background-color: #fff;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
@@ -421,8 +420,8 @@
   border-radius: 8px;
 }
 
-/* 响应式设计 */
-@media (max-width: 992px) {
+/* 响应式设计（F2：992 归档 1024、576 归档 640；.products-grid-inner 现无消费方，归档为惰性归值） */
+@media (max-width: 1024px) {
   .products-grid-inner {
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 20px;
@@ -466,7 +465,7 @@
   }
 }
 
-@media (max-width: 576px) {
+@media (max-width: 640px) {
   .products-grid-inner {
     grid-template-columns: 1fr;
   }

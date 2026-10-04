@@ -51,7 +51,7 @@
   position: relative;
   overflow: hidden;
   z-index: 1;
-  font-family: var(--font-family-luxury);
+  font-family: var(--font-display);
   font-weight: var(--font-weight-light);
   letter-spacing: var(--letter-spacing-wide);
   border-radius: 2px;
