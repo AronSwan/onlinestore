@@ -176,6 +176,43 @@ test('英文别名：Tote 与事实卡「托特」同组不拦', () => {
   assert.deepEqual(r, { warnings: [], blockers: [] });
 });
 
+// ─────────────────────────────────────────────
+// 三·五、M4（反查 P3）：叠结构词防过拦
+// ─────────────────────────────────────────────
+test('叠结构词：云朵枕头包（事实卡枕头）→ 任一命中词匹配即不红拦，次要词黄警', () => {
+  const r = checkNameImage({
+    name: '云朵枕头包',
+    description: '',
+    factCard: { mainColor: '黑', bagType: '枕头包' },
+  });
+  assert.equal(r.blockers.length, 0, '「枕头」与事实卡一致，主结构在案，不得红拦');
+  const secondary = r.warnings.filter((w) => w.code === 'BAG_SILHOUETTE_SECONDARY');
+  assert.equal(secondary.length, 1, '「云朵」作为次要叠加词降级黄警恰好一条');
+  assert.equal(secondary[0].word, '云朵');
+  assert.equal(secondary[0].factBagType, '枕头包');
+});
+
+test('叠结构词：波士顿托特混写（事实卡凯莉）→ 两个命中词都不匹配，仍红拦', () => {
+  const r = checkNameImage({
+    name: '波士顿托特包',
+    description: '',
+    factCard: { mainColor: '黑', bagType: '凯莉' },
+  });
+  const blockers = r.blockers.filter((b) => b.code === 'BAG_SILHOUETTE_MISMATCH');
+  assert.equal(blockers.length, 2, '波士顿、托特均与事实卡不一致，各红拦一条');
+  assert.deepEqual(blockers.map((b) => b.word).sort(), ['托特', '波士顿']);
+  assert.ok(!r.warnings.some((w) => w.code === 'BAG_SILHOUETTE_SECONDARY'), '无任何匹配词时不降级');
+});
+
+test('叠结构词：同组叠加不产生次要词黄警（小圆筒+圆筒 同 canonical 只记一次）', () => {
+  const r = checkNameImage({
+    name: '小圆筒圆筒包',
+    description: '',
+    factCard: { mainColor: '黑', bagType: '圆筒' },
+  });
+  assert.deepEqual(r, { warnings: [], blockers: [] });
+});
+
 test('R4 缺包型：文案与事实卡均无包型词 → 红拦 BAG_TYPE_MISSING', () => {
   const r = checkNameImage({ name: '黑色的它', description: '很能装', factCard: { mainColor: '黑', bagType: '' } });
   assert.ok(r.blockers.some((b) => b.code === 'BAG_TYPE_MISSING'));

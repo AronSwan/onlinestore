@@ -120,9 +120,13 @@ export class SearchSuggestionService {
   private async getProductSuggestions(query: string, limit: number): Promise<SearchSuggestion[]> {
     try {
       // 使用搜索引擎获取产品名称建议
+      // R3(反查 P2-2)：与 products.service 搜索路径同一语义——suggestions 直接消费引擎 hits
+      // 不回填 DB，必须把 isActive:true 过滤下推给引擎（meili/zinc 两策略的 buildFilters 均支持），
+      // 下架品不得以"搜索建议"形态回流。
       const searchResult = await this.searchManager.search(query, {
         limit: limit * 2, // 获取更多结果以便筛选
         facets: ['category'],
+        filters: { isActive: true },
       });
 
       // 转换为建议格式

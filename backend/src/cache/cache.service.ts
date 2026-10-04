@@ -10,6 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { MonitoringService } from '../monitoring/monitoring.service';
 
 export interface CacheOptions {
+  /** TTL，单位【秒】（对调用方保持秒语义；内部落库前换算毫秒） */
   ttl?: number;
   prefix?: string;
   tags?: string[];
@@ -79,7 +80,9 @@ export class CacheService {
     const start = process.hrtime.bigint();
 
     try {
-      await this.cacheManager.set(key, value, ttl);
+      // R1(反查 P2-1)：cache-manager@7（Keyv）TTL 单位是毫秒，本服务对外 API 与
+      // 默认值均为秒——在唯一落库边界 ×1000，杜绝 300s 变 300ms（条目闪 evaporate、零命中）。
+      await this.cacheManager.set(key, value, ttl * 1000);
       const end = process.hrtime.bigint();
       const duration = Number(end - start) / 1_000_000_000;
 

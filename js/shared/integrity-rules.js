@@ -333,7 +333,9 @@ export function lintCopy(text, rules) {
  *     色系归一处理子串：湖蓝↔蓝、柠檬黄↔黄、樱花粉↔粉 同系不警。
  *     事实卡主色含多个根字时全部放行（「蓝白」→ {蓝,白}；「绿橙紫渐变」→ {绿,橙,紫,渐变}）。
  *     颜色词紧邻五金语境（金色五金/银色链条/拉链银）跳过，不误报五金色。
- *  R2 包型-结构：文案结构包型词 ≠ 事实卡结构包型（如文案「托特」vs 事实卡「凯莉」）→ 红拦。
+ *  R2 包型-结构：命中的结构包型词中【没有任何一个】与事实卡结构包型一致 → 红拦
+ *     （如文案「波士顿托特」混写 vs 事实卡「凯莉」）。任一命中词与事实卡一致（「云朵枕头包」
+ *     vs 事实卡「枕头包」）即不红拦——其余叠加词降级黄警 BAG_SILHOUETTE_SECONDARY，人工确认。
  *     结构包型写进名字即主要卖点，名实不符是上午事故 2 的原样重演，必须拦死。
  *     同组归一：小圆筒↔圆筒、托特↔tote 同组不拦。
  *  R3 包型-背法：文案背法词 ≠ 事实卡背法（斜挎 vs 手提）→ 黄警（一只包可兼顾多种背法，人工确认即可）。
@@ -347,7 +349,8 @@ export function lintCopy(text, rules) {
  *   引擎实际消费 mainColor（主色）与 bagType（包型）两项，hardware/occasion 预留给表单透传。
  * @returns {{warnings:Array<object>, blockers:Array<object>}}
  *   每条形如 {code, field, message, …上下文}；code ∈
- *   COLOR_MISMATCH | FACT_CARD_COLOR_MISSING | CARRY_MISMATCH | FACT_CARD_BAG_MISSING（黄警）
+ *   COLOR_MISMATCH | FACT_CARD_COLOR_MISSING | CARRY_MISMATCH | FACT_CARD_BAG_MISSING |
+ *   BAG_SILHOUETTE_SECONDARY（黄警）
  *   BAG_SILHOUETTE_MISMATCH | BAG_TYPE_MISSING（红拦）。
  *   field ∈ 'name' | 'description' | 'factCard'，管理界面据此定位输入框。
  */
@@ -397,16 +400,34 @@ export function checkNameImage({ name, description, factCard } = {}) {
   const factGroup = findBagGroup(factBag);
 
   if (factGroup && factGroup.dimension === 'silhouette') {
+    // M4（反查 P3）叠结构词防过拦：一只包名可叠加多个结构词（「云朵枕头包」）。
+    // 只要命中的结构词中【任一】与事实卡一致即视为名实相符主结构在案，不整单红拦；
+    // 其余次要叠加词降级黄警提示人工确认。仅当命中的结构词中没有任何一个与
+    // 事实卡一致（波士顿+托特 混写、事实卡凯莉）时才维持红拦。
+    const anySilhouetteMatch = [...copySilhouettes.keys()].some(
+      (canonical) => canonical === factGroup.canonical,
+    );
     for (const [canonical, hit] of copySilhouettes) {
       if (canonical === factGroup.canonical) continue;
-      blockers.push({
-        code: 'BAG_SILHOUETTE_MISMATCH',
-        field: hit.field,
-        word: hit.word,
-        copyType: canonical,
-        factBagType: factBag,
-        message: `${FIELD_LABEL[hit.field]}包型「${hit.word}」与事实卡包型「${factBag}」结构冲突——结构包型写进名字就是主要卖点，名实不符，红拦`,
-      });
+      if (anySilhouetteMatch) {
+        warnings.push({
+          code: 'BAG_SILHOUETTE_SECONDARY',
+          field: hit.field,
+          word: hit.word,
+          copyType: canonical,
+          factBagType: factBag,
+          message: `${FIELD_LABEL[hit.field]}叠加结构词「${hit.word}」与事实卡主包型「${factBag}」不一致——主结构词已匹配，次要词请对图确认`,
+        });
+      } else {
+        blockers.push({
+          code: 'BAG_SILHOUETTE_MISMATCH',
+          field: hit.field,
+          word: hit.word,
+          copyType: canonical,
+          factBagType: factBag,
+          message: `${FIELD_LABEL[hit.field]}包型「${hit.word}」与事实卡包型「${factBag}」结构冲突——结构包型写进名字就是主要卖点，名实不符，红拦`,
+        });
+      }
     }
   } else if (factGroup && factGroup.dimension === 'carry') {
     for (const [canonical, hit] of copyCarries) {

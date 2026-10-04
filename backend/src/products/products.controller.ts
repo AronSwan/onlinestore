@@ -96,6 +96,38 @@ export function detectImageExt(buffer: Buffer): '.jpg' | '.png' | '.webp' | null
 }
 
 /**
+ * M2-B5 补强（攻击席 P2）：结构完整性复查——magic bytes 只认文件头 3-12 字节，
+ * polyglot（JPEG 头 + 脚本体 / RIFF 头 + 垃圾尾巴）可骗过第一层入库。本函数按
+ * 格式校验整份文件的骨架一致性，纯函数、零依赖：
+ *   - JPEG：EOI（FF D9）必须出现在缓冲区尾部 4 字节内（真实 JPEG 结尾允许少量填充字节）；
+ *   - PNG：尾部 12 字节内必须含 IEND 块标记（49 45 4E 44，即 0 长度 IEND + CRC 的 12 字节尾块）；
+ *   - WebP：RIFF 头 offset 4-8 的文件长度字段（little-endian）按规范 = 文件总长 - 8
+ *     （长度字段不含 "RIFF" 与自身共 8 字节），与 buffer.length 严格一致、容差 0。
+ */
+export function isImageStructurallyComplete(
+  buffer: Buffer,
+  ext: '.jpg' | '.png' | '.webp',
+): boolean {
+  if (!buffer || buffer.length < 12) return false;
+
+  if (ext === '.jpg') {
+    const tail = buffer.subarray(buffer.length - 4);
+    for (let i = 0; i + 1 < tail.length; i++) {
+      if (tail[i] === 0xff && tail[i + 1] === 0xd9) return true;
+    }
+    return false;
+  }
+
+  if (ext === '.png') {
+    return buffer.toString('ascii', buffer.length - 12).includes('IEND');
+  }
+
+  // .webp：RIFF <len:4LE> WEBP …——len 字段声明其后字节数，须与实际余量一致
+  const declaredSize = buffer.readUInt32LE(4);
+  return declaredSize === buffer.length - 8;
+}
+
+/**
  * 落盘目录：仓库根 images/products（前端 vite 直接服务该目录）。
  * 运行布局有两种——源码 <backend>/src/products、构建产物 <backend>/dist/src/products，
  * 据此定位 backend 根后再上溯一级；path.resolve 锁定，杜绝 cwd 漂移。
@@ -202,6 +234,11 @@ export class ProductsController {
     if (!detectedExt) {
       throw new BadRequestException('文件内容不是有效的 jpeg/png/webp 图片');
     }
+    // M2-B5 补强（攻击席 P2）：结构完整性复查——拦 polyglot（JPEG 头+脚本体 / 截断图），
+    // 位于 magic bytes 识别之后、落盘之前，不合格一律 400。
+    if (!isImageStructurallyComplete(file.buffer, detectedExt)) {
+      throw new BadRequestException('文件结构不完整');
+    }
     // 文件名服务端生成（时间戳+随机），扩展名以内容检测为准；绝不使用客户端文件名
     const filename = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}${detectedExt}`;
     const uploadDir = resolveUploadDir();
@@ -218,9 +255,8 @@ export class ProductsController {
   @Get()
   @ApiPaginatedQuery(Product, '获取产品列表', '分页获取产品列表，支持搜索和排序')
   @ApiQuery({ name: 'search', required: false, description: '搜索关键词', example: 'iPhone' })
-  @ApiQuery({ name: 'categoryId', required: false, description: '分类ID', example: 1 })
-  @ApiQuery({ name: 'minPrice', required: false, description: '最低价格', example: 100 })
-  @ApiQuery({ name: 'maxPrice', required: false, description: '最高价格', example: 1000 })
+  // R4(反查 P3)：此前此处还挂了 categoryId/minPrice/maxPrice 三行 @ApiQuery，但 handler
+  // 并不接收这些参数（过滤能力在 GET /products/search）——文档失实已删，只保留真实支持的 search。
   findAll(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,

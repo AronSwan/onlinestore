@@ -87,6 +87,17 @@ export class ProductsService {
     console.log('[cache]', { key, event, hits: this.cacheHits, misses: this.cacheMisses });
   }
 
+  /**
+   * R1(反查 P2-1)：@nestjs/cache-manager@3 + cache-manager@7（Keyv）的 TTL 单位是【毫秒】，
+   * 而 performance.cache.ttl.* 配置与历史默认值均为【秒】——此前 30/300/600 直接透传，
+   * 条目 30-600ms 即蒸发、全站缓存零命中。本方法统一在唯一的 cacheManager.set 边界
+   * 做秒→毫秒换算，配置语义保持秒不变。
+   */
+  private cacheTtlMs(configKey: string, defaultSeconds: number): number {
+    const seconds = this.configService.get<number>(configKey) || defaultSeconds;
+    return seconds * 1000;
+  }
+
   private async invalidateListCache() {
     const keyPrefix = this.configService.get<string>('redis.keyPrefix') || 'caddy_shopping';
 
@@ -227,7 +238,8 @@ export class ProductsService {
     this.monitoring.observeDbQuery('detail', 'products', Number(endDb - startDb) / 1_000_000_000);
 
     if (product) {
-      const ttl = this.configService.get<number>('performance.cache.ttl.detail') || 300;
+      // R1：秒→毫秒（detail 300s → 300000ms），见 cacheTtlMs 注释
+      const ttl = this.cacheTtlMs('performance.cache.ttl.detail', 300);
       try {
         const startSet = process.hrtime.bigint();
         await this.cacheManager.set(cacheKey, product, ttl);
@@ -292,7 +304,9 @@ export class ProductsService {
       }
 
       const products = await this.productRepository.find({
-        where: { id: In(productIds) },
+        // R3(反查 P2-2)：引擎侧虽传了 isActive:true 过滤，但索引与 DB 可能短暂不一致
+        // （下架事件异步、索引写失败重试中）——DB 回填必须复检，下架品不得回流给前台。
+        where: { id: In(productIds), isActive: true },
         relations: ['category', 'images'],
       });
 
@@ -424,7 +438,8 @@ export class ProductsService {
       Number(endDb - startDb) / 1_000_000_000,
     );
 
-    const ttl = this.configService.get<number>('performance.cache.ttl.popular') || 600;
+    // R1：秒→毫秒（popular 600s → 600000ms），见 cacheTtlMs 注释
+    const ttl = this.cacheTtlMs('performance.cache.ttl.popular', 600);
     const startSet = process.hrtime.bigint();
     await this.cacheManager.set(cacheKey, products, ttl);
     const endSet = process.hrtime.bigint();
@@ -651,7 +666,8 @@ export class ProductsService {
     const endDb = process.hrtime.bigint();
     this.monitoring.observeDbQuery('list', 'products', Number(endDb - startDb) / 1_000_000_000);
     const result = { products, total };
-    const ttl = this.configService.get<number>('performance.cache.ttl.list') || 30;
+    // R1：秒→毫秒（list 30s → 30000ms），见 cacheTtlMs 注释
+    const ttl = this.cacheTtlMs('performance.cache.ttl.list', 30);
     const startSet = process.hrtime.bigint();
     await this.cacheManager.set(cacheKey, result, ttl);
     const endSet = process.hrtime.bigint();
@@ -875,7 +891,8 @@ export class ProductsService {
     const endDb = process.hrtime.bigint();
     this.monitoring.observeDbQuery('list', 'products', Number(endDb - startDb) / 1_000_000_000);
 
-    const ttl = this.configService.get<number>('performance.cache.ttl.list') || 30;
+    // R1：秒→毫秒（list 30s → 30000ms），见 cacheTtlMs 注释
+    const ttl = this.cacheTtlMs('performance.cache.ttl.list', 30);
     const startSet = process.hrtime.bigint();
     await this.cacheManager.set(cacheKey, products, ttl);
     const endSet = process.hrtime.bigint();
@@ -957,10 +974,10 @@ export class ProductsService {
     const endDb = process.hrtime.bigint();
     this.monitoring.observeDbQuery('list', 'categories', Number(endDb - startDb) / 1_000_000_000);
 
-    // 缓存分类数据
-    const ttl = this.configService.get<number>('performance.cache.ttl.list') || 30;
+    // 缓存分类数据（R1：秒→毫秒，list TTL ×2 仍以秒为基準换算）
+    const ttl = this.cacheTtlMs('performance.cache.ttl.list', 30) * 2;
     const startSet = process.hrtime.bigint();
-    await this.cacheManager.set(cacheKey, categories, ttl * 2); // 分类缓存时间更长
+    await this.cacheManager.set(cacheKey, categories, ttl); // 分类缓存时间更长（list TTL ×2）
     const endSet = process.hrtime.bigint();
     this.monitoring.observeRedisDuration('set', Number(endSet - startSet) / 1_000_000_000);
 

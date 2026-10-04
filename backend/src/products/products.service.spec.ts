@@ -387,7 +387,7 @@ describe('ProductsService', () => {
       expect(mockCacheManager.set).toHaveBeenCalledWith(
         'caddy_shopping:product:1',
         mockProduct,
-        300,
+        300000,
       );
       expect(mockMonitoringService.recordCacheMiss).toHaveBeenCalledWith(
         'caddy_shopping:product:1',
@@ -500,6 +500,29 @@ describe('ProductsService', () => {
       });
     });
 
+    // R3(反查 P2-2)：引擎在线路径的 DB 回填必须复检 isActive——引擎索引与 DB 短暂不一致时
+    // （下架事件异步、索引写失败重试中），下架品不得借搜索结果回流给前台。
+    it('should re-check isActive when backfilling products from search engine hits', async () => {
+      const activeProduct = { ...mockProduct, id: 1, isActive: true };
+      const searchResult = {
+        hits: [{ id: '1' }, { id: '2' }], // 引擎返回了已下架的 id=2
+        total: 2,
+      };
+
+      mockSearchManagerService.search.mockResolvedValue(searchResult);
+      // DB 复检后只有 id=1 在售（模拟 id=2 已下架被 where isActive:true 过滤）
+      mockProductRepository.find.mockResolvedValue([activeProduct]);
+
+      const result = await service.search(searchOptions);
+
+      expect(mockProductRepository.find).toHaveBeenCalledWith({
+        where: { id: In([1, 2]), isActive: true },
+        relations: ['category', 'images'],
+      });
+      expect(result.products).toEqual([activeProduct]);
+      expect(result.products.every((p: Product) => p.isActive !== false)).toBe(true);
+    });
+
     // M1-B7(2026-10-04)：databaseSearch 的 tags 过滤双方言——
     // SQLite/Postgres 用 (',' || tags || ',') LIKE '%,tag,%'，MySQL/TiDB 保留 FIND_IN_SET。
     describe('tags 过滤方言（B7）', () => {
@@ -603,7 +626,7 @@ describe('ProductsService', () => {
       expect(mockCacheManager.set).toHaveBeenCalledWith(
         'caddy_shopping:popular:products:10',
         [mockProduct],
-        600,
+        600000,
       );
       expect(mockMonitoringService.recordCacheMiss).toHaveBeenCalledWith(
         'caddy_shopping:popular:products:10',
@@ -774,6 +797,28 @@ describe('ProductsService', () => {
       search: '测试',
     };
 
+    // R1(反查 P2-1)：cache-manager@7（Keyv）TTL 单位为毫秒——list 30s 必须以 30000 落库，
+    // 且配置缺省时默认值同样按秒换算（300 → 300000），防止 30-600ms 条目闪蒸发、零命中。
+    it('should set list cache TTL in milliseconds even when config is missing', async () => {
+      mockConfigService.get.mockImplementation((key: string) => {
+        if (key === 'redis.keyPrefix') return 'caddy_shopping';
+        return null; // performance.cache.ttl.list 未配置 → 默认 30s
+      });
+      mockCacheManager.get.mockResolvedValue(null);
+      const qb = createMockQueryBuilder<Product>();
+      qb.getManyAndCount.mockResolvedValue([[mockProduct], 1]);
+      mockProductRepository.createQueryBuilder.mockReturnValue(qb);
+      mockCacheManager.set.mockResolvedValue(true);
+
+      await service.findAll({ page: 1, limit: 20 });
+
+      expect(mockCacheManager.set).toHaveBeenCalledWith(
+        'caddy_shopping:products:list:1:20:',
+        { products: [mockProduct], total: 1 },
+        30000,
+      );
+    });
+
     it('should return cached products when available', async () => {
       const cachedResult = { products: [mockProduct], total: 1 };
       mockCacheManager.get.mockResolvedValue(cachedResult);
@@ -805,7 +850,7 @@ describe('ProductsService', () => {
       expect(mockCacheManager.set).toHaveBeenCalledWith(
         'caddy_shopping:products:list:1:20:测试',
         { products: [mockProduct], total: 1 },
-        30,
+        30000,
       );
       expect(mockMonitoringService.recordCacheMiss).toHaveBeenCalledWith(
         'caddy_shopping:products:list:1:20:测试',
@@ -828,7 +873,7 @@ describe('ProductsService', () => {
       expect(mockCacheManager.set).toHaveBeenCalledWith(
         'caddy_shopping:products:list:1:20:',
         { products: [mockProduct], total: 1 },
-        30,
+        30000,
       );
     });
 
@@ -867,7 +912,7 @@ describe('ProductsService', () => {
       expect(mockCacheManager.set).toHaveBeenCalledWith(
         'caddy_shopping:products:list:admin:1:50:',
         { products: [mockProduct], total: 1 },
-        30,
+        30000,
       );
     });
   });
@@ -905,7 +950,7 @@ describe('ProductsService', () => {
       expect(mockCacheManager.set).toHaveBeenCalledWith(
         'caddy_shopping:products:category:测试分类:10',
         [mockProduct],
-        30,
+        30000,
       );
       expect(mockMonitoringService.recordCacheMiss).toHaveBeenCalledWith(
         'caddy_shopping:products:category:测试分类:10',
@@ -945,7 +990,7 @@ describe('ProductsService', () => {
       expect(mockCacheManager.set).toHaveBeenCalledWith(
         'caddy_shopping:categories:all',
         [mockCategory],
-        60,
+        60000,
       );
       expect(mockMonitoringService.recordCacheMiss).toHaveBeenCalledWith(
         'caddy_shopping:categories:all',

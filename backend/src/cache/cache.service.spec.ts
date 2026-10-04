@@ -154,10 +154,11 @@ describe('CacheService', () => {
 
       await service.set(module, resource, value, id);
 
+      // R1(反查 P2-1)：cache-manager@7 TTL 单位毫秒——秒级默认值须 ×1000 落库
       expect(mockCache.set).toHaveBeenCalledWith(
         'caddy_shopping:products:product_detail:1',
         value,
-        300,
+        300000,
       );
       expect(monitoringService.incrementCacheSet).toHaveBeenCalledWith('product_detail');
       expect(monitoringService.observeRedisDuration).toHaveBeenCalledWith(
@@ -179,7 +180,7 @@ describe('CacheService', () => {
       expect(mockCache.set).toHaveBeenCalledWith(
         'caddy_shopping:products:product_detail:1',
         value,
-        600,
+        600000,
       );
       expect(monitoringService.incrementCacheSet).toHaveBeenCalledWith('product_detail');
     });
@@ -195,7 +196,7 @@ describe('CacheService', () => {
       expect(mockCache.set).toHaveBeenCalledWith(
         'caddy_shopping:products:popular_products',
         value,
-        600,
+        600000,
       );
       expect(monitoringService.incrementCacheSet).toHaveBeenCalledWith('popular_products');
     });
@@ -279,12 +280,12 @@ describe('CacheService', () => {
       expect(mockCache.set).toHaveBeenCalledWith(
         'caddy_shopping:products:product_detail:1',
         data[0],
-        300,
+        300000,
       );
       expect(mockCache.set).toHaveBeenCalledWith(
         'caddy_shopping:products:product_detail:2',
         data[1],
-        300,
+        300000,
       );
     });
   });
@@ -302,10 +303,10 @@ describe('CacheService', () => {
   describe('Default TTL', () => {
     it('should return correct TTL for different resources', async () => {
       const testCases = [
-        { resource: 'product_detail', expectedTtl: 300 },
-        { resource: 'popular_products', expectedTtl: 600 },
-        { resource: 'product_list', expectedTtl: 30 },
-        { resource: 'unknown_resource', expectedTtl: 300 },
+        { resource: 'product_detail', expectedTtl: 300000 },
+        { resource: 'popular_products', expectedTtl: 600000 },
+        { resource: 'product_list', expectedTtl: 30000 },
+        { resource: 'unknown_resource', expectedTtl: 300000 },
       ];
 
       for (const testCase of testCases) {
@@ -323,9 +324,42 @@ describe('CacheService', () => {
     });
   });
 
+  describe('R1 TTL Unit (cache-manager v7 milliseconds)', () => {
+    // R1(反查 P2-1)：cache-manager@7（Keyv）TTL 单位为毫秒。秒级 API 值必须 ×1000 落库，
+    // 否则 300s 条目 300ms 即蒸发、全站缓存零命中。
+    it('converts caller seconds to milliseconds at the cache-manager boundary', async () => {
+      mockCache.set.mockResolvedValue(undefined);
+
+      await service.set('search', 'suggestions', [{ text: 'a' }], 'query', { ttl: 300 });
+
+      expect(mockCache.set).toHaveBeenCalledWith(
+        'caddy_shopping:search:suggestions:query',
+        [{ text: 'a' }],
+        300000,
+      );
+    });
+
+    it('converts long-horizon second TTLs (7d/30d) without overflow or pass-through', async () => {
+      mockCache.set.mockResolvedValue(undefined);
+
+      await service.set('search', 'zero_results', {}, 'q', { ttl: 604800 });
+      expect(mockCache.set).toHaveBeenCalledWith(
+        'caddy_shopping:search:zero_results:q',
+        {},
+        604800000,
+      );
+
+      await service.set('search', 'records', {}, 'k', { ttl: 86400 * 30 });
+      expect(mockCache.set).toHaveBeenCalledWith(
+        'caddy_shopping:search:records:k',
+        {},
+        2592000000,
+      );
+    });
+  });
+
   describe('Integration Scenarios', () => {
-    it('should handle complete cache workflow', async () => {
-      const module = 'products';
+    it('should handle complete cache workflow', async () => {      const module = 'products';
       const resource = 'product_detail';
       const id = '1';
       const value = { id: 1, name: 'Test Product' };
