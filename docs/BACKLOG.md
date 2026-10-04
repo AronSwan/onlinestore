@@ -27,7 +27,10 @@
 
 - **假遥测与卫生债（已知不修）**：logAuditLog 伪 id/getAuditLogs 恒空、MetricsInterceptor 双注册、时序攻击空壳测试×2、security-monitoring 四端点硬编码 success:true、新旧 CacheService 双轨、D8 僵尸命令四件（config:generate/file:.. 自引用/PM2 入口漂移/scripts 包边界）、webpack 生产 source-map、孤儿模块四控制器（见 safety.md 支付行警示）
 - **挂账区（产品决策类，永不自动开工）**：logout 服务端令牌黑名单 / verify-code 邮件 provider 选型 / 实体收敛触发器（真实 MySQL 部署时） / register 返回语义（201+token vs 纯 201）/ 中文用户名支持
-- **审美轮挂账（2026-10-04 审美改进组+审计组记录）**：① 导航"男士"入口 7 处（index/orders/profile/login/_header-template）指向 index.html，站点已无男士品类——入口可点通、非死链，去留属产品决策；② seed id1 spec"头层牛皮"图不可证（不矛盾，备案）；③ js/product-search/product-search-manager.js 未接线死代码（无任何页面引用），其 mock 词表（智能手表/蓝牙耳机等）不到达用户，随死代码清理批次处理；④ jest 44-46 个环境依赖型失败（Redis/OpenObserve 类）在 HEAD 既有，专项处理
+- **实战检验挂账（2026-10-04 实战检验反查组三席+修复记录）**：① audit 写操作覆盖不全——上传 201 无审计行、失败尝试（403/404）零痕迹、ip 恒空串，随 M3 管理界面一并补；② 真实安全响应头（X-Frame-Options/nosniff 经 HTTP 头而非 meta）随 F4 login CSP 收紧一并做（login.html 三个无效 meta 已删）；③ cart.js 游客态调 /api/cart/items/guest 得 401 属正确拦截，前端静默化处理随"购物车服务端同步"挂账项；④ checkNameImage 词表外包型红拦报文措辞与事实不符（P3，js/shared/integrity-rules.js 已修叠词过拦，报文待润色）；⑤ 上传端点无配额/频控（admin-only 已缓解）
+- **实战检验战果（同轮，已修不复存在）**：游客图标劫持（bindUserIconClick 绑容器+内联脚本无条件跳 login 双根因）、搜索建议 [object Object]、缓存 TTL 毫秒/秒单位错位（全站缓存 0 命中，修复后 miss→hit→hit 实测）、引擎在线 isActive 两回流面、@ApiQuery 三行失实、上传 polyglot（结构完整性校验补齐）、M4 叠结构词过拦假阳性
+- **审计改判记录（2026-10-04 反查席）**：里程碑一竣工验收"13/13 通过零 P0"改判为"范围内达标，活站带 1 P1+2 P2"——方法以代码存在+视觉尺寸为主、缺交互与运行态行为验证；上轮审计对 jest"零偏差"表述未充分披露 44=环境型失败数。改判教训入 remediation-ledger：**验收必须含交互级实测（点击行为/缓存命中/运行态）**，纸面"类名都在"不等于"契约活着"
+- **服务运维**：本地双服务起停已固化为 `bash scripts/dev.sh start|stop|status|restart`（后端启动 60-90s 属外部依赖重试所致，非故障；vite 绑 IPv6，探测用 localhost）
 
 ## 若真要接手（非承诺）
 
