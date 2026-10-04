@@ -308,11 +308,7 @@ body {
    P6 · 超窄屏（≤380px）修补：hero 文案不溢出、大写标签可断词、跑马灯不撑宽页面
    ========================================================================== */
 @media (max-width: 380px) {
-    /* hero 主标题 32px（"总有一只先背。"仅 7 字，360-380px 屏放 2rem 不溢出），副标同步收缩 */
-    #hero-heading {
-        font-size: 2rem;
-    }
-
+    /* hero 主标题由 .hero-title 的 clamp(2.5rem, 8vw, 7rem) 全权负责（F5：min 40px，7 字×40px≈280px 不溢出），此处仅收缩副标 */
     #hero-heading + p {
         font-size: 0.95rem;
     }
@@ -2683,43 +2679,6 @@ body {
     }
 }
 
-/* 暗色模式支持 */
-@media (prefers-color-scheme: dark) {
-    :root {
-        /* 暗色模式变量覆盖 */
-        --bg-primary: var(--dark-bg-primary);
-        --bg-secondary: var(--dark-bg-secondary);
-        --text-primary: var(--dark-text-primary);
-        --text-secondary: var(--dark-text-secondary);
-        --border-color: var(--dark-border-color);
-        --card-bg: var(--dark-card-bg);
-        --input-bg: var(--dark-input-bg);
-        --hover-bg: var(--dark-hover-bg);
-    }
-
-    /* 暗色模式特定样式 */
-    .card {
-        background-color: var(--dark-card-bg);
-        border-color: var(--dark-border-color);
-    }
-
-    .form-input {
-        background-color: var(--dark-input-bg);
-        border-color: var(--dark-border-color);
-        color: var(--dark-text-primary);
-    }
-
-    .navbar {
-        background-color: var(--dark-bg-primary);
-        border-color: var(--dark-border-color);
-    }
-
-    .notification {
-        background-color: var(--dark-card-bg);
-        border-color: var(--dark-border-color);
-    }
-}
-
 /* 减少动画偏好 */
 @media (prefers-reduced-motion: reduce) {
     * {
@@ -3671,8 +3630,15 @@ body {
 }
 
 /* 求美修复(2026-10-04): hero Signature Moment——candy 色波浪下划线全站唯一记忆点 */
+/* F5: hero 大字标题——可变字体 900 档，clamp 流式字号（min 40px 保证 375px 不溢出） */
+.hero-title {
+  font-size: clamp(2.5rem, 8vw, 7rem);
+  font-weight: 900;
+  line-height: 1.1;
+}
 .hero-accent {
   position: relative;
+  isolation: isolate;  /* F5: 让 ::after 的 z-index:-1 只沉到字形之下，不再被 hero 渐变遮罩盖没 */
   color: var(--candy-blush-ink);
 }
 .hero-accent::after {

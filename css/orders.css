@@ -1360,7 +1360,8 @@
    ========================================================================== */
 
 /* CSS变量回退 */
-@supports not (css: var(--test)) {
+/* F1 注：原条件引用未定义的 var(--test)；伪属性 css: 恒不成立使 not() 恒真，改用已定义变量保持原行为 */
+@supports not (css: var(--bg-base)) {
     /* 为不支持CSS变量的浏览器提供回退样式 */
     .order-card {
         background: #ffffff;

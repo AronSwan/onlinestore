@@ -46,6 +46,15 @@
   --text-lead: 1.0625rem;          /* 17px 引导 */
   --text-title: 1.75rem;           /* 28px 区块标题 */
   --text-hero: clamp(2.25rem, 5vw, 4rem);
+  /* F1 补齐：Tailwind 风格字号刻度（与上方 11/13/15/17/28 同体系插值） */
+  --text-xs: 0.75rem;              /* 12px */
+  --text-sm: 0.875rem;             /* 14px */
+  --text-base: 1rem;               /* 16px */
+  --text-lg: 1.125rem;             /* 18px */
+  --text-xl: 1.25rem;              /* 20px */
+  --text-2xl: 1.5rem;              /* 24px */
+  --text-3xl: 1.875rem;            /* 30px */
+  --text-4xl: 2.25rem;             /* 36px */
   --font-weight-light: 300;
   --font-weight-normal: 400;
   --font-weight-medium: 500;
@@ -62,6 +71,12 @@
   --spacing-1: 0.25rem; --spacing-2: 0.5rem; --spacing-3: 0.75rem;
   --spacing-4: 1rem; --spacing-6: 1.5rem; --spacing-8: 2rem;
   --spacing-12: 3rem; --spacing-16: 4rem;
+  /* F1 补齐：同 4px 节奏的空档刻度 */
+  --spacing-5: 1.25rem;            /* 20px */
+  --spacing-10: 2.5rem;            /* 40px */
+  --spacing-20: 5rem;              /* 80px */
+  --spacing-24: 6rem;              /* 96px */
+  --spacing-32: 8rem;              /* 128px */
   --space-section: clamp(4rem, 10vw, 9rem);
   --gutter-grid: 1rem;
   /* 旧间距名兼容映射 */
@@ -75,10 +90,14 @@
   --radius-pill: 999px;            /* 全部主 CTA */
   --radius-full: 50%;
   --radius-xl: 16px;
+  /* F1 补齐：lg/2xl 归入三档制（禁 >16px 大圆角卡） */
+  --radius-lg: var(--radius-md);
+  --radius-2xl: var(--radius-xl);
   /* 旧名兼容映射 */
   --border-radius-sm: var(--radius-sm);
   --border-radius-md: var(--radius-md);
   --border-radius-lg: var(--radius-md);
+  --border-radius-xl: var(--radius-xl);
   --border-radius-full: var(--radius-full);
 
   /* ---- 动效（双档 ease-in-out · 禁 overshoot） ---- */
@@ -134,6 +153,14 @@
   --dark-bg-primary: var(--bg-base);
   --dark-bg-secondary: var(--bg-soft);
 
+  /* ---- 边框刻度（F1 补齐：色档归 line/line-strong，宽档 1/2/4px） ---- */
+  --border-light: var(--line);
+  --border-medium: var(--line-strong);
+  --border-dark: var(--line-strong);
+  --border-color: var(--line);
+  --border-color-light: var(--line);
+  --border-width-4: 4px;
+
   /* ---- 杂项兼容映射 ---- */
   --cream-luxury: var(--bg-soft);
   --beige-light: var(--bg-soft);
@@ -152,8 +179,138 @@
   /* ---- 导航（nav-underline.css fallback 统一） ---- */
   --nav-text-color: var(--ink);
   --nav-text-color-hover: var(--candy-blush-ink);
+  --nav-text-active-color: var(--ink);
   --nav-underline-color: var(--candy-blush-ink);
   --nav-underline-color-hover: var(--candy-blush-ink);
+  --nav-underline-hover-color: var(--nav-underline-color-hover);
+  --nav-highlight-transition: var(--transition-normal);
+
+  /* ---- F1 补齐：组件级旧名映射（引用保留、统一指向现行令牌） ---- */
+  /* 字重/字体旧名 */
+  --brand-font-primary: var(--font-display);
+  --brand-font-secondary: var(--font-body);
+  --font-normal: var(--font-weight-normal);
+  --font-medium: var(--font-weight-medium);
+  --font-semibold: var(--font-weight-semibold);
+  --font-bold: var(--font-weight-bold);
+  /* 底色/文本色旧名 */
+  --brand-white: #FFFFFF;
+  --bg-white: var(--bg-base);
+  --bg-primary: var(--bg-base);
+  --bg-secondary: var(--bg-soft);
+  --bg-tertiary: var(--bg-soft);
+  --bg-hover: var(--bg-soft);
+  --bg-light: var(--bg-soft);
+  --text-white: #FFFFFF;
+  --hover-bg: var(--bg-soft);
+  --card-bg: var(--bg-base);
+  --card-footer-bg: var(--bg-soft);
+  --input-bg: var(--bg-base);
+  --input-border: var(--line);
+  --input-focus-border: var(--candy-blush-ink);
+  /* 灰阶旧名 → 现行中性色 */
+  --gray-100: var(--bg-soft);
+  --gray-200: var(--line);
+  --gray-300: var(--line-strong);
+  --gray-400: var(--ink-faint);    /* JS 注入类 text-[var(--gray-400)] 用，搜索图标弱化色 */
+  --brand-gray-100: var(--bg-soft);
+  --brand-gray-500: var(--ink-soft);
+  /* 品牌色旧名（v3 糖果一主两备） */
+  --brand-primary: var(--ink);
+  --brand-secondary: var(--ink-soft);
+  --brand-accent: var(--candy-blush-ink);
+  /* 旧暗色系补充（v2 不做暗色模式 · 统一指向亮色） */
+  --dark-primary: var(--ink);
+  --dark-secondary: var(--ink-soft);
+  --dark-text-primary: var(--ink);
+  --dark-text-secondary: var(--ink-soft);
+  /* 状态色旧名 + 浅底档（仅图标/徽章底色，非彩色底块） */
+  --error-color: var(--error);
+  --error-light: #F9E8E8;
+  --error-dark: #A83E3E;
+  --error-bg: var(--error-light);
+  --success-color: var(--success);
+  --success-bg: #E6F2EC;
+  --warning-color: var(--warning);
+  --warning-bg: #F7EEDC;
+  --info-color: var(--info);
+  --info-bg: #E8F0F7;
+  /* 焦点态 */
+  --focus-ring-color: var(--candy-blush-ink);
+  --focus-ring-offset: 2px;
+  --focus-shadow: 0 0 0 3px rgba(209, 77, 103, 0.25);
+  --focus-translate-y: -1px;
+  /* 层级（F1 最小补齐，F2 再建正式标度） */
+  --z-10: 10;
+  --z-20: 20;
+  --z-40: 40;
+  --z-50: 50;
+  /* 排版杂项 */
+  --letter-spacing-tight: -0.025em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide: var(--tracking-wide);
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+  --leading-loose: 2;
+  --leading-body: normal;          /* 保持现行 html 实际渲染值 */
+  /* 布局杂项 */
+  --max-width-6xl: 72rem;
+  --container-padding-x: var(--spacing-4);
+  --grid-gap: var(--gutter-grid);
+  --grid-gap-sm: var(--spacing-2);
+  --grid-gap-md: var(--gutter-grid);
+  --grid-gap-lg: var(--spacing-6);
+  --grid-gap-xl: var(--spacing-8);
+  --space-2: var(--spacing-2);
+  --space-4: var(--spacing-4);
+  --space-6: var(--spacing-6);
+  /* 组件间距旧名 */
+  --component-padding-sm: var(--spacing-2);
+  --component-padding: var(--spacing-3);
+  --component-padding-lg: var(--spacing-4);
+  --component-padding-xl: var(--spacing-6);
+  --component-padding-sm-y: var(--spacing-2);
+  --component-padding-sm-x: var(--spacing-3);
+  --component-padding-md-y: var(--spacing-3);
+  --component-padding-md-x: var(--spacing-4);
+  /* 按钮旧名 */
+  --button-primary-bg: var(--ink);
+  --button-primary-color: #FFFFFF;
+  --button-primary-hover-bg: var(--primary-dark);
+  --button-primary-hover-color: #FFFFFF;
+  --button-secondary-bg: transparent;
+  --button-secondary-color: var(--ink);
+  --button-secondary-hover-bg: var(--bg-soft);
+  --button-ghost-bg: transparent;
+  --button-ghost-color: var(--ink);
+  /* 徽章旧名 */
+  --badge-bg: var(--bg-soft);
+  --badge-color: var(--ink);
+  --badge-primary-color: #FFFFFF;
+  --badge-secondary-color: var(--ink);
+  --badge-success-color: #FFFFFF;
+  --badge-warning-color: #FFFFFF;
+  --badge-error-color: #FFFFFF;
+  /* 导航条旧名 */
+  --navbar-bg: var(--bg-base);
+  --navbar-scrolled-bg: var(--bg-base);
+  --navbar-icon-color: var(--ink);
+  --navbar-icon-hover-color: var(--candy-blush-ink);
+  --navbar-icon-active-color: var(--candy-blush-ink);
+  /* 加载/骨架屏旧名 */
+  --loading-spinner-color: var(--ink);
+  --loading-spinner-bg: var(--line);
+  --loading-progress-bg: var(--line);
+  --loading-progress-color: var(--ink);
+  --skeleton-bg: var(--line);
+  --skeleton-shine: #F5F3F0;
+  /* 其余单点 */
+  --scroll-behavior-smooth: smooth;
+  --selection-bg: var(--candy-blush-soft);
+  --selection-color: var(--ink);
+  --backdrop-blur-lg: blur(16px);
+  --shadow-2xl: 0 24px 64px rgba(26, 32, 44, 0.14);
 }
 
 /* ---- 焦点可见性统一（≥3:1 · 2px + 2px offset） ---- */

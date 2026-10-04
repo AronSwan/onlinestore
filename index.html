@@ -47,8 +47,7 @@
     <!-- 预连接关键第三方域名 -->
     <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin>
     <!-- CSS变量系统 - 必须在其他样式之前加载 -->
-    <link rel="preload" href="fonts/barlow-700.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="fonts/barlow-400.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="fonts/barlow-variable.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="fonts/fonts.css">
     <link rel="stylesheet" href="css/tokens.css">
     <!-- 统一站点导航（P3） -->
@@ -83,11 +82,11 @@
                         primary: 'var(--brand-black)',
                         secondary: 'var(--brand-gold)',
                         accent: 'var(--brand-red)',
-                        dark: 'var(--bg-dark)',
+                        dark: 'var(--ink)',
                     },
                     fontFamily: {
-                        sans: ['var(--brand-font-secondary)', 'Arial', 'sans-serif'],
-                        serif: ['var(--brand-font-primary)', 'serif'],
+                        sans: ['var(--font-body)', 'Arial', 'sans-serif'],
+                        serif: ['var(--font-display)', 'serif'],
                     },
                 },
             }
@@ -228,7 +227,7 @@
             </picture>
             <div class="absolute inset-0 bg-gradient-to-b from-transparent to-[rgba(250,248,243,0.9)]"></div>
             <div class="relative container mx-auto px-4 h-full flex flex-col justify-end pb-20">
-                <h2 id="hero-heading" class="text-4xl md:text-6xl font-bold tracking-tight mb-4">总有一只先背。</h2>
+                <h2 id="hero-heading" class="hero-title tracking-tight mb-4">总有一只先<span class="hero-accent">背</span>。</h2>
                 <p class="text-lg md:text-xl mb-8 max-w-2xl">2025 秋冬系列，到货了</p>
                 <div class="flex flex-wrap gap-4">
                     <a href="#featured-collections" class="btn-pill btn-pill-primary" aria-describedby="hero-heading">来看看</a>

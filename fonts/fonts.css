@@ -1,6 +1,7 @@
-@font-face { font-family: 'Barlow'; font-style: normal; font-weight: 400; font-display: swap; src: url('/fonts/barlow-400.woff2') format('woff2'); }
-@font-face { font-family: 'Barlow'; font-style: normal; font-weight: 500; font-display: swap; src: url('/fonts/barlow-500.woff2') format('woff2'); }
-@font-face { font-family: 'Barlow'; font-style: normal; font-weight: 600; font-display: swap; src: url('/fonts/barlow-600.woff2') format('woff2'); }
-@font-face { font-family: 'Barlow'; font-style: normal; font-weight: 700; font-display: swap; src: url('/fonts/barlow-700.woff2') format('woff2'); }
+/* F5: Barlow 可变字体（自托管，OFL）——单文件覆盖 100-900 全字重
+   源: jpt/barlow fonts/gx/BarlowGX.ttf，经 scripts/build-barlow-variable.py
+   钉死 wdth=500(Normal)、wght 轴改号 100/400/900 + avar 锚定 9 个命名实例 */
+@font-face { font-family: 'Barlow'; font-style: normal; font-weight: 100 900; font-display: swap; src: url('/fonts/barlow-variable.woff2') format('woff2'); }
+/* Barlow Condensed 静态实例保留不动（数字/价格专用） */
 @font-face { font-family: 'Barlow Condensed'; font-style: normal; font-weight: 500; font-display: swap; src: url('/fonts/barlow-condensed-500.woff2') format('woff2'); }
 @font-face { font-family: 'Barlow Condensed'; font-style: normal; font-weight: 600; font-display: swap; src: url('/fonts/barlow-condensed-600.woff2') format('woff2'); }
