@@ -147,6 +147,7 @@ export default defineConfig(({ mode }) => {
           admin: resolve(__dirname, 'admin.html'), // M3/M4 管理后台正式入库（a4f0775），F3 纳入 MPA 构建
           returns: resolve(__dirname, 'returns.html'), // M7·B13 退换政策静态页（2026-10-05）
           product: resolve(__dirname, 'product.html'), // M5(A1)：PDP 商品详情页入 MPA 入口
+          privacy: resolve(__dirname, 'privacy.html'), // 权益批 A3：隐私政策与服务条款页（2026-10-06 成文）
         },
         output: {
           // P1-3 ①：每个源 CSS 强制独立 chunk（取消跨页共享合并）。

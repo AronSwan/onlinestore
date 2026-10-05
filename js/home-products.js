@@ -190,7 +190,9 @@
       '<p class="featured-kicker">本期主打</p>' +
       '<h3 class="featured-name reich-product-name" itemprop="name"><a href="product.html?id=' + f.id8 + '">' + f.name + '</a></h3>' +
       '<p class="featured-desc">' + f.descVisible + '</p>' +
-      '<p class="featured-social">' + escapeHtml(socialText(f)) + '</p>' +
+      '<p class="featured-social">' + escapeHtml(socialText(f)) +
+      /* 权益批 B9（双席共中）：社会证明数字旁演示标注（12px ink-soft，与 PDP 信任区同款） */
+      '<span class="social-demo-note">（示例数据）</span></p>' +
       '<div class="featured-meta">' + priceOffer(f) + bagButton(f) + '</div>' +
       metaTail(f) +
       '</div>' +

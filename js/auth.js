@@ -138,12 +138,10 @@ function setupFormValidations() {
     console.log("Setting up form validations...");
     
     // 登录表单验证
-    const loginEmail = document.getElementById("login-email");
-    const loginPassword = document.getElementById("login-password");
-  
-  console.log("loginEmail:", loginEmail);
-  console.log("loginPassword:", loginPassword);
-  
+  const loginEmail = document.getElementById("login-email");
+  const loginPassword = document.getElementById("login-password");
+
+  // 权益批 A4（隐私 P1③）：DOM 元素打印调试残留删除（含密码输入框引用四行）
   if (loginEmail) {
     loginEmail.addEventListener("input", function() {
       validateEmail(this.value);
@@ -160,12 +158,7 @@ function setupFormValidations() {
     const registerEmail = document.getElementById("register-email");
     const registerPassword = document.getElementById("register-password");
     const registerConfirmPassword = document.getElementById("confirm-password");
-  
-  console.log("registerName:", registerName);
-  console.log("registerEmail:", registerEmail);
-  console.log("registerPassword:", registerPassword);
-  console.log("registerConfirmPassword:", registerConfirmPassword);
-  
+  // （权益批 A4：同上——registerPassword/confirmPassword 打印行一并删除）
   if (registerName) {
     registerName.addEventListener("input", function() {
       validateName(this.value);
@@ -373,6 +366,14 @@ function hideError(inputId) {
   }
 }
 
+// 权益批 B11（隐私 P2④）：双份令牌清理——登录/注册成功时清空另一存储，
+// 防止"记住我"与未勾选两种登录方式交替后旧令牌残留在另一存储里
+// （"记住我"逻辑不变：勾选写 localStorage，不勾写 sessionStorage；切换时旧存储清）
+const AUTH_STORAGE_KEYS = ["userLoggedIn", "userEmail", "token", "refreshToken", "userId"];
+function clearAuthStorage(store) {
+  AUTH_STORAGE_KEYS.forEach((k) => store.removeItem(k));
+}
+
 /**
  * 登录API调用
  */
@@ -424,6 +425,7 @@ async function login(email, password, rememberMe) {
       const user = data.user;
       const userId = user && user.id != null ? String(user.id) : null;
       if (rememberMe) {
+        clearAuthStorage(sessionStorage); // B11：勾选写 LS 前清 SS 旧令牌
         localStorage.setItem("userLoggedIn", "true");
         localStorage.setItem("userEmail", email);
         localStorage.setItem("token", accessToken);
@@ -432,6 +434,7 @@ async function login(email, password, rememberMe) {
           localStorage.setItem("userId", userId);
         }
       } else {
+        clearAuthStorage(localStorage); // B11：不勾写 SS 前清 LS 旧令牌
         sessionStorage.setItem("userLoggedIn", "true");
         sessionStorage.setItem("userEmail", email);
         sessionStorage.setItem("token", accessToken);
@@ -524,6 +527,7 @@ async function register(username, email, password) {
 
       // 注册即返回令牌：直接写入会话（注册表单没有"记住我"，默认 sessionStorage，
       // 与登录未勾选 rememberMe 的分支规则一致）
+      clearAuthStorage(localStorage); // B11：注册→登录流转残留清（如此前"记住我"残留的 LS 旧令牌）
       sessionStorage.setItem("userLoggedIn", "true");
       sessionStorage.setItem("userEmail", email);
       sessionStorage.setItem("token", accessToken);

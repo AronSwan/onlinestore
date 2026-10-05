@@ -32,6 +32,7 @@ import { GetUserForEditingQuery } from './application/queries/get-user-for-editi
 import { SearchUsersQuery } from './application/queries/search-users.query';
 import { CreateUserDto } from './application/dto/create-user.dto';
 import { UpdateUserDto } from './application/dto/update-user.dto';
+import { UserDeletionService } from './user-deletion.service';
 
 export interface UserResponseDto {
   id: string;
@@ -64,6 +65,7 @@ export class UsersController {
   constructor(
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
+    private readonly userDeletion: UserDeletionService,
   ) {}
 
   @Post()
@@ -131,6 +133,18 @@ export class UsersController {
   // 兼容测试：提供无装饰器的别名方法，支持 number|string 的 id
   async update(id: string | number, updateUserDto: UpdateUserDto): Promise<UserResponseDto> {
     return this.updateUser(String(id), updateUserDto);
+  }
+
+  // 权益批 B10（隐私 P1② 被遗忘权）：本人注销端点。必须声明在 @Delete(':id')
+  // 之前——否则字面量 'me' 被 ':id' 抢先匹配（与 @Get('profile') 同坑，
+  // 求真修复 2026-10-04 已在 GET 侧修过一次）。鉴权：类级 JwtAuthGuard；
+  // id 取自令牌 sub，不经 URL——A 删 B 无路径（管理员的 /users/:id 另有 ADMIN 角色闸）。
+  @Delete('me')
+  @HttpCode(HttpStatus.OK)
+  async deleteMe(@Request() req: Record<string, any>): Promise<{ message: string }> {
+    const userId = Number(req.user?.sub);
+    await this.userDeletion.deleteMeCascade(userId);
+    return { message: '账号已注销' };
   }
 
   @Delete(':id')

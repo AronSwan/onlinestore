@@ -303,6 +303,10 @@ class ProfileManager {
         // 密码修改相关事件
         this.bindPasswordModalEvents();
 
+        // 权益批 B10（隐私 P1② 被遗忘权）：注销账号入口——两步确认 armed 模式
+        // （与购物袋"清空袋子"同款：第一步亮"再点一次确认"，3s 还原；不用原生 confirm）
+        this.bindAccountDeletion();
+
         // 侧边栏导航事件
         this.bindSidebarEvents();
 
@@ -371,8 +375,69 @@ class ProfileManager {
         }
     }
 
-    bindPasswordModalEvents() {
-        const modal = document.getElementById('password-modal');
+    /**
+     * 权益批 B10（隐私 P1② 被遗忘权）：注销账号——两步确认（armed 模式，对齐
+     * 购物袋"清空袋子"：第一步亮"再点一次确认注销"3s 还原，第二步真调
+     * DELETE /api/users/me）。成功后清空本地登录态回首页；失败诚实提示。
+     */
+    bindAccountDeletion() {
+        const btn = document.getElementById('delete-account-btn');
+        if (!btn) return;
+        this.deleteArmed = false;
+        this.deleteTimer = null;
+
+        const disarm = () => {
+            clearTimeout(this.deleteTimer);
+            this.deleteTimer = null;
+            this.deleteArmed = false;
+            btn.textContent = '注销账号';
+            btn.classList.remove('armed');
+            btn.setAttribute('aria-label', '注销账号');
+        };
+
+        btn.addEventListener('click', async () => {
+            if (!this.deleteArmed) {
+                // 第一步：亮确认态并起 3s 还原计时
+                this.deleteArmed = true;
+                btn.textContent = '再点一次确认注销';
+                btn.classList.add('armed');
+                btn.setAttribute('aria-label', '再点一次确认注销账号（3 秒内有效）');
+                clearTimeout(this.deleteTimer);
+                this.deleteTimer = setTimeout(disarm, 3000);
+                return;
+            }
+            disarm();
+            btn.disabled = true;
+            btn.textContent = '注销中...';
+            try {
+                const response = await fetch(`${this.baseUrl}/users/me`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${this.getAccessToken()}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                if (!response.ok) {
+                    const data = await response.json().catch(() => ({}));
+                    throw new Error(data.message || `注销失败（${response.status}）`);
+                }
+                // 成功：清空本地登录态（五键，与登录写入清单对齐）+ 本地资产提示后离场
+                ['userLoggedIn', 'userEmail', 'token', 'refreshToken', 'userId'].forEach((k) => {
+                    localStorage.removeItem(k);
+                    sessionStorage.removeItem(k);
+                });
+                this.showNotification('账号已注销，浏览器的购物袋与心头好缓存请自行清除（见隐私政策"怎么删"）', 'info');
+                setTimeout(() => { window.location.href = 'index.html'; }, 1800);
+            } catch (error) {
+                console.error('注销账号失败:', error);
+                btn.disabled = false;
+                disarm();
+                this.showNotification(`注销未完成：${error.message || '请稍后重试'}`, 'error');
+            }
+        });
+    }
+
+    bindPasswordModalEvents() {        const modal = document.getElementById('password-modal');
         const changeBtn = document.getElementById('change-password-btn');
         const closeBtn = modal?.querySelector('.close');
         const cancelBtn = document.getElementById('cancel-password');

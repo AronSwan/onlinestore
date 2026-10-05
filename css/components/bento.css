@@ -71,6 +71,8 @@
 .bento-grid .featured-desc { max-width: 44ch; }
 /* M4 社会证明双数（v1.1 裁决 2）：实时 sales/favorites，零值态文案由 JS 切换 */
 .bento-grid .featured-social { margin: 0; font-size: var(--text-small); font-weight: 500; color: var(--ink-soft); }
+/* 权益批 B9（双席共中）：社会证明数字旁演示标注——12px ink-soft（与 PDP .social-demo-note 同款） */
+.bento-grid .featured-social .social-demo-note { font-size: var(--text-xs); font-weight: 400; }
 .bento-grid .cell-desc { font-size: var(--text-small); }
 /* M4 品质行：材质·工艺（specifications 实时）——ink-soft 12px，禁 faint（C4 宪法） */
 .bento-grid .cell-quality { margin: 0; font-size: var(--text-xs); line-height: 1.4; color: var(--ink-soft); }

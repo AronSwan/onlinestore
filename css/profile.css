@@ -194,6 +194,12 @@
     background: #c82333;
 }
 
+/* 权益批 B10：注销钮 armed 态（两步确认第一步——与购物袋清空钮同款语义） */
+.btn-danger.armed {
+    background: #a71d2a;
+    box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.25);
+}
+
 /* 地址管理样式 */
 .address-header {
     display: flex;

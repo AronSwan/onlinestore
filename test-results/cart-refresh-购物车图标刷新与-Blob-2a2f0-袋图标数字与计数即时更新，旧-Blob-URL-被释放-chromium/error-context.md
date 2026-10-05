@@ -1,0 +1,234 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "跳转到主内容" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - navigation "主导航" [ref=e5]:
+        - list [ref=e6]:
+          - listitem [ref=e7]:
+            - link "手袋" [ref=e8] [cursor=pointer]:
+              - /url: index.html#featured-collections
+          - listitem [ref=e9]:
+            - link "品牌故事" [ref=e10] [cursor=pointer]:
+              - /url: index.html#brand-story
+          - listitem [ref=e11]:
+            - link "订单" [ref=e12] [cursor=pointer]:
+              - /url: orders.html
+      - link "REICH" [ref=e13] [cursor=pointer]:
+        - /url: index.html
+      - generic [ref=e14]:
+        - button "打开搜索" [ref=e15] [cursor=pointer]:
+          - img [ref=e16] [cursor=pointer]
+        - link "心头好" [ref=e19] [cursor=pointer]:
+          - /url: profile.html#wishlist
+          - img [ref=e20] [cursor=pointer]
+        - link "用户登录" [ref=e22] [cursor=pointer]:
+          - /url: login.html
+          - img [ref=e23] [cursor=pointer]
+        - button "购物袋" [ref=e26] [cursor=pointer]:
+          - img [ref=e27] [cursor=pointer]
+  - main [ref=e30]:
+    - heading "REICH 手袋店" [level=1] [ref=e31]
+    - generic [ref=e33]:
+      - generic [ref=e34]: IT'S TOTE SEASON — NEW ARRIVALS — 总有一只先背 — 2026 秋冬到货 — 本季 ¥88-299 —
+      - generic [ref=e35]: IT'S TOTE SEASON — NEW ARRIVALS — 总有一只先背 — 2026 秋冬到货 — 本季 ¥88-299 —
+    - region "总有一只先背。" [ref=e36]:
+      - generic [ref=e37]:
+        - img "Reich 2026秋冬系列——彩色墙绘前的手袋" [ref=e38]
+        - text: loading="eager" fetchpriority="high" width="2400" height="1600">
+      - generic [ref=e40]:
+        - heading "总有一只先背。" [level=2] [ref=e41]
+        - paragraph [ref=e42]: 2026 秋冬系列，到货了
+        - generic [ref=e43]:
+          - link "来看看" [ref=e44] [cursor=pointer]:
+            - /url: "#featured-collections"
+          - link "听听品牌故事" [ref=e45] [cursor=pointer]:
+            - /url: "#brand-story"
+    - region "手袋们的季节到了" [ref=e46]:
+      - generic [ref=e47]:
+        - paragraph [ref=e48]: IT'S TOTE SEASON
+        - heading "手袋们的季节到了" [level=2] [ref=e49]
+        - generic [ref=e50]:
+          - article "本期主打：渐变褶皱手袋" [ref=e51]:
+            - generic [ref=e52]:
+              - figure [ref=e53]:
+                - generic [ref=e54]: 新到
+                - img "Reich 渐变褶皱手袋" [ref=e56]
+                - button "收藏渐变褶皱手袋" [ref=e57] [cursor=pointer]
+                - link "渐变褶皱手袋——查看详情" [ref=e58] [cursor=pointer]:
+                  - /url: product.html?id=00000001
+              - generic [ref=e59]:
+                - paragraph [ref=e60]: 本期主打
+                - heading "渐变褶皱手袋" [level=3] [ref=e61]:
+                  - link "渐变褶皱手袋" [ref=e62] [cursor=pointer]:
+                    - /url: product.html?id=00000001
+                - paragraph [ref=e63]: 绿到橙再到紫，渐变在褶皱上慢慢晕开，紫红提手一拎就走。像把傍晚的天色收进包里，慢慢挑。
+                - paragraph [ref=e64]:
+                  - text: 12 只已去新家 · 26 人的心头好
+                  - generic [ref=e65]: （示例数据）
+                - generic [ref=e66]:
+                  - generic [ref=e68]: ¥299
+                  - button "将渐变褶皱手袋加入购物袋" [ref=e69] [cursor=pointer]: 加入购物袋
+          - article [ref=e70]:
+            - generic [ref=e71]:
+              - figure [ref=e72]:
+                - generic [ref=e73]: 心头好
+                - img "Reich 黑皮波士顿包" [ref=e75]
+                - button "收藏黑皮波士顿包" [ref=e76] [cursor=pointer]
+                - link "黑皮波士顿包——查看详情" [ref=e77] [cursor=pointer]:
+                  - /url: product.html?id=00000002
+              - generic [ref=e78]:
+                - heading "黑皮波士顿包" [level=3] [ref=e79]:
+                  - link "黑皮波士顿包" [ref=e80] [cursor=pointer]:
+                    - /url: product.html?id=00000002
+                - paragraph [ref=e81]: 黑色粒面皮革，双提手加一道皮带扣，精神又稳当。装得下手机、口红和一句俏皮话，通勤路上的老搭档。
+                - paragraph [ref=e82]: 粒面皮革 · 手缝提手
+                - generic [ref=e83]:
+                  - generic [ref=e85]: ¥259
+                  - button "将黑皮波士顿包加入购物袋" [ref=e86] [cursor=pointer]: 加入购物袋
+          - article [ref=e87]:
+            - generic [ref=e88]:
+              - figure [ref=e89]:
+                - generic [ref=e90]: 经典款
+                - img "Reich 湖蓝锁扣手提包" [ref=e92]
+                - button "收藏湖蓝锁扣手提包" [ref=e93] [cursor=pointer]
+                - link "湖蓝锁扣手提包——查看详情" [ref=e94] [cursor=pointer]:
+                  - /url: product.html?id=00000003
+              - generic [ref=e95]:
+                - heading "湖蓝锁扣手提包" [level=3] [ref=e96]:
+                  - link "湖蓝锁扣手提包" [ref=e97] [cursor=pointer]:
+                    - /url: product.html?id=00000003
+                - paragraph [ref=e98]: 湖蓝色光面皮革，白色矩形锁扣配一点金色五金。拎在手上，像拎着一小片晴天。
+                - paragraph [ref=e99]: 光面皮革
+                - generic [ref=e100]:
+                  - generic [ref=e102]: ¥189
+                  - button "将湖蓝锁扣手提包加入购物袋" [ref=e103] [cursor=pointer]: 加入购物袋
+          - article [ref=e104]:
+            - generic [ref=e105]:
+              - figure [ref=e106]:
+                - generic [ref=e107]: 新到
+                - img "Reich 双色糖果链条包" [ref=e109]
+                - button "收藏双色糖果链条包" [ref=e110] [cursor=pointer]
+                - link "双色糖果链条包——查看详情" [ref=e111] [cursor=pointer]:
+                  - /url: product.html?id=00000004
+              - generic [ref=e112]:
+                - heading "双色糖果链条包" [level=3] [ref=e113]:
+                  - link "双色糖果链条包" [ref=e114] [cursor=pointer]:
+                    - /url: product.html?id=00000004
+                - paragraph [ref=e115]: 薄荷绿与樱花粉两色可选，挂在银色链条上晒太阳。出门前选颜色，是每天的小快乐。
+                - paragraph [ref=e116]: 柔面皮革
+                - generic [ref=e117]:
+                  - generic [ref=e119]: ¥168
+                  - button "将双色糖果链条包加入购物袋" [ref=e120] [cursor=pointer]: 加入购物袋
+          - article [ref=e121]:
+            - generic [ref=e122]:
+              - figure [ref=e123]:
+                - generic [ref=e124]: 心头好
+                - img "Reich 花语皮革手提包" [ref=e126]
+                - button "收藏花语皮革手提包" [ref=e127] [cursor=pointer]
+                - link "花语皮革手提包——查看详情" [ref=e128] [cursor=pointer]:
+                  - /url: product.html?id=00000005
+              - generic [ref=e129]:
+                - heading "花语皮革手提包" [level=3] [ref=e130]:
+                  - link "花语皮革手提包" [ref=e131] [cursor=pointer]:
+                    - /url: product.html?id=00000005
+                - paragraph [ref=e132]: 棕榈叶与粉花朵开在蓝波浪纹上，银色大圆环一拎就走。热闹得刚刚好的一只。
+                - paragraph [ref=e133]: 印花皮革
+                - generic [ref=e134]:
+                  - generic [ref=e136]: ¥229
+                  - button "将花语皮革手提包加入购物袋" [ref=e137] [cursor=pointer]: 加入购物袋
+          - article [ref=e138]:
+            - generic [ref=e139]:
+              - figure [ref=e140]:
+                - generic [ref=e141]: 新到
+                - img "Reich 粉色 V 纹链条包" [ref=e143]
+                - button "收藏粉色 V 纹链条包" [ref=e144] [cursor=pointer]
+                - link "粉色 V 纹链条包——查看详情" [ref=e145] [cursor=pointer]:
+                  - /url: product.html?id=00000006
+              - generic [ref=e146]:
+                - heading "粉色 V 纹链条包" [level=3] [ref=e147]:
+                  - link "粉色 V 纹链条包" [ref=e148] [cursor=pointer]:
+                    - /url: product.html?id=00000006
+                - paragraph [ref=e149]: 粉色翻盖压着黄白 V 纹，银色链条斜挎刚好。小小一只，装下出门的必备和一点点心动。
+                - paragraph [ref=e150]: 粉色皮革
+                - generic [ref=e151]:
+                  - generic [ref=e153]: ¥88
+                  - button "将粉色 V 纹链条包加入购物袋" [ref=e154] [cursor=pointer]: 加入购物袋
+    - region "不赶时间的东西" [ref=e155]:
+      - generic [ref=e157]:
+        - generic [ref=e159]:
+          - img "Reich品牌故事 - 三只本季皮具，明亮影棚里的新品们" [ref=e160]
+          - text: loading="lazy" decoding="async" width="1200" height="800">
+        - generic [ref=e161]:
+          - heading "不赶时间的东西" [level=2] [ref=e162]
+          - paragraph [ref=e163]: 我们不赶时间，只做一件事：把一只袋子做扎实，让它陪你久一点。
+          - paragraph [ref=e164]: 每一只都由工匠慢慢做完——不赶时间的东西，才经得起每天背。
+    - region "偶尔来信，不打扰。（真的偶尔。）" [ref=e165]:
+      - generic [ref=e166]:
+        - heading "偶尔来信，不打扰。（真的偶尔。）" [level=2] [ref=e167]
+        - paragraph [ref=e168]: 新到的心头好、值得一看的搭配——每月一封小信寄给你，不群发、不催促。
+        - form "偶尔来信，不打扰。（真的偶尔。）" [ref=e169]:
+          - generic [ref=e170]: 您的电子邮箱
+          - textbox "您的电子邮箱" [ref=e171]
+          - button "好呀" [ref=e172] [cursor=pointer]
+        - paragraph [ref=e173]:
+          - text: 我们承诺保护您的隐私，不会向第三方分享您的信息。
+          - link "隐私政策" [ref=e174] [cursor=pointer]:
+            - /url: privacy.html
+  - contentinfo [ref=e175]:
+    - generic [ref=e176]:
+      - generic [ref=e177]:
+        - generic [ref=e178]:
+          - heading "REICH" [level=3] [ref=e179]
+          - paragraph [ref=e180]: 慢慢挑，不着急——好东西都在店里等你。
+          - paragraph [ref=e181]: "@REICH（即将开张）"
+        - generic [ref=e182]:
+          - heading "快速导航" [level=4] [ref=e183]
+          - navigation "快速导航链接" [ref=e184]:
+            - list [ref=e185]:
+              - listitem [ref=e186]:
+                - link "首页" [ref=e187] [cursor=pointer]:
+                  - /url: index.html
+              - listitem [ref=e188]:
+                - link "我的订单" [ref=e189] [cursor=pointer]:
+                  - /url: orders.html
+              - listitem [ref=e190]:
+                - link "登录 / 注册" [ref=e191] [cursor=pointer]:
+                  - /url: login.html
+              - listitem [ref=e192]:
+                - link "个人中心" [ref=e193] [cursor=pointer]:
+                  - /url: profile.html
+              - listitem [ref=e194]:
+                - link "退换与售后" [ref=e195] [cursor=pointer]:
+                  - /url: returns.html
+        - generic [ref=e196]:
+          - heading "客户服务" [level=4] [ref=e197]
+          - list "客户服务（演示站未开通）" [ref=e198]:
+            - listitem [ref=e199]: 联系我们
+            - listitem [ref=e200]: 配送信息
+            - listitem [ref=e201]:
+              - link "退换与售后" [ref=e202] [cursor=pointer]:
+                - /url: returns.html
+            - listitem [ref=e203]: 常见问题
+        - generic [ref=e204]:
+          - heading "法律信息" [level=4] [ref=e205]
+          - list "法律信息（演示站未开通）" [ref=e206]:
+            - listitem [ref=e207]: 隐私政策
+            - listitem [ref=e208]: 使用条款
+            - listitem [ref=e209]: Cookie政策
+            - listitem [ref=e210]: 知识产权
+      - generic "经营者信息（演示占位）" [ref=e211]:
+        - paragraph [ref=e212]: 经营者信息
+        - paragraph [ref=e213]: REICH 演示项目（个人经营者登记占位）
+        - paragraph [ref=e214]:
+          - text: 联系邮箱：
+          - generic [ref=e215]: demo@reich.example
+          - text: （占位）
+        - paragraph [ref=e216]: ICP 备案号：上线后回填
+      - generic [ref=e217]:
+        - paragraph [ref=e218]: © 2026 Reich. 保留所有权利。
+        - paragraph [ref=e219]: 演示项目 · 数据为示例
+```

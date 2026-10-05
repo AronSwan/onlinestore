@@ -144,6 +144,8 @@ import { formatPrice } from './shared/format-price.js';
       '<figure class="pdp-main">' +
       '<img class="reich-product-image" src="' + escapeHtml(String(p.mainImage || '/images/default-product.png')) + '"' +
       ' alt="Reich ' + name + '" width="800" height="1000" decoding="async" itemprop="image">' +
+      /* 权益批 A7（消费者 P3-3）：图区色差提示行——影棚图≠实物色的诚实口径 */
+      '<figcaption class="pdp-color-note">影棚灯光与调色可能造成轻微色差，以实物为准。</figcaption>' +
       '</figure>' +
       '<div class="pdp-info">' +
       '<p class="pdp-kicker">' + kicker + '</p>' +
@@ -154,7 +156,9 @@ import { formatPrice } from './shared/format-price.js';
       /* 批一(3)：ATC 与收藏心形同行（主行动+轻收藏，48px 同高） */
       '<div class="pdp-actions">' + atc + heartButton(p, name) + '</div>' +
       '<div class="pdp-trust">' +
-      '<p class="pdp-trust-social">' + escapeHtml(socialLine(p)) + '</p>' +
+      '<p class="pdp-trust-social">' + escapeHtml(socialLine(p)) +
+      /* 权益批 B9（双席共中）：社会证明数字旁演示标注（12px ink-soft 同行小字） */
+      '<span class="social-demo-note">（示例数据）</span></p>' +
       /* 批二(9)：信任行"30 天可退"链接化对齐 cart 面板口径（returns.html 活链） */
       '<p class="pdp-trust-line">含运费 · <a href="returns.html" title="退换与售后（30 天可退，来回运费我们担）">30 天可退</a> · 每只人工质检</p>' +
       '</div>' +
@@ -198,6 +202,9 @@ import { formatPrice } from './shared/format-price.js';
     var url = window.location.href;
 
     document.title = name + ' — Reich';
+    // 权益批 A1：PDP 运行时注入处同步 noindex（与 product.html 静态 meta 同口径，
+    // 防止 applySeo 动态写描述时 robots 口径与本页静态头部漂移）
+    setMeta('name', 'robots', 'noindex, nofollow');
     setMeta('name', 'description', desc + '——规格、材质、五金一目了然。');
     setMeta('property', 'og:title', name + ' — Reich');
     setMeta('property', 'og:description', desc);

@@ -71,9 +71,9 @@ class LoginEnhanced {
             return;
         }
         
-        // 这里添加登录逻辑，目前使用模拟数据
-        console.log('登录请求:', { email, password });
-        
+        // 权益批 A4（隐私 P1③）：密码值打印调试残留删除——生产 bundle 零密码打印
+        // （此路径本就走 data-submit-bound="auth" 短路，残留仅为防御性清理）
+
         // 模拟登录成功
         alert('登录成功！');
         window.location.href = 'index.html';
@@ -97,9 +97,8 @@ class LoginEnhanced {
             return;
         }
         
-        // 这里添加注册逻辑，目前使用模拟数据
-        console.log('注册请求:', { username, email, password });
-        
+        // 权益批 A4（隐私 P1③）：密码值打印调试残留删除——同上
+
         // 模拟注册成功
         alert('注册成功！请登录。');
         // 切换到登录选项卡

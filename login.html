@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reich — 欢迎回来</title>
+    <!-- 权益批 A1（品牌 P1-1/P1-3b 防御）：演示站全站 noindex——七页同改 -->
+    <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     
     <!-- 安全防护 -->
@@ -283,11 +285,12 @@
                                     <input type="checkbox" id="agree-terms" class="mt-1 mr-2" required 
                                            aria-describedby="terms-description">
                                     <span id="terms-description" class="text-sm text-gray-600">
-                                        <!-- P5：/terms /privacy 演示站未开通，链接降为纯文字 -->
+                                        <!-- 权益批 A3（隐私 P1①+消费者 P2-1）：两处灰字升活链——隐私政策/服务条款
+                                             均落 privacy.html 成文页（P5 时期"演示站未开通降纯文字"退役） -->
                                         我已阅读并同意
-                                        <span class="text-secondary">服务条款</span>
+                                        <a href="privacy.html#terms" class="text-secondary underline underline-offset-2 hover:text-[var(--candy-blush-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">服务条款</a>
                                         和
-                                        <span class="text-secondary">隐私政策</span>
+                                        <a href="privacy.html" class="text-secondary underline underline-offset-2 hover:text-[var(--candy-blush-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">隐私政策</a>
                                     </span>
                                 </label>
                                 <div id="terms-error" class="invalid-feedback" role="alert" aria-live="polite"></div>
@@ -319,7 +322,9 @@
     <script type="module" src="js/main.js"></script>
     <script type="module" src="js/auth.js"></script>
     <script src="js/advanced-email-verifier.js"></script>
-    <script src="js/login-utils.js"></script>
+    <!-- P2-18：login-utils 升 module（toast 归一需 import shared/toast.js）——
+         类经 window.LoginUtils 全局暴露，消费方调用点全在事件回调，时序不变 -->
+    <script type="module" src="js/login-utils.js"></script>
     <script src="js/login-enhanced.js"></script>
     <script src="js/email-verification.js"></script>
     <script src="js/oauth-handler.js"></script>

@@ -1,5 +1,7 @@
 # 图片来源与许可（P1 · 换真图）
 
+> **演示边界（权益批 A5 · 品牌 P1-2 演示补丁）**：演示商品图文为图库素材，非实际销售商品——规格数据为演示虚构。
+
 全部图片来自 Unsplash，依据 [Unsplash License](https://unsplash.com/license)（免费商用、无需署名）使用。
 后期统一处理：`sharp .modulate({ brightness: 1.05, saturation: 0.95 })`（调亮 + 微暖），JPEG quality 85 / WebP quality 82。
 

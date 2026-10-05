@@ -49,10 +49,12 @@ class NavigationIconManager {
     // 尝试多种可能的选择器来找到用户图标
     // 求真修复(2026-10-04): P3 导航已改用内联 SVG <a class="site-user-btn">,
     // 旧 img 选择器全空 → 退化为直接跳 login.html
+    // 权益批 B13（品牌 P3-1 他人商标痕迹清理）：原品牌前缀命名的图标文件已改名
+    // 选择器同步（历史残留 img 结构本就恒空，改名只为仓库零他人商标词）
     const userIcon = document.querySelector('.site-user-btn') ||
                      document.querySelector('[data-user-btn]') ||
                      document.querySelector('.user-icon-btn') ||
-                     document.querySelector('button img[src="gucci-style-user-icon.svg"]');
+                     document.querySelector('button img[src="user-icon.svg"]');
     
     if (userIcon) {
       console.log('NavigationIconManager: 找到用户图标，绑定点击事件');
@@ -97,7 +99,7 @@ class NavigationIconManager {
       userMenu.id = 'user-menu';
       userMenu.className = 'absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50';
       userMenu.innerHTML = `
-        <a href="/profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">个人资料</a>
+        <a href="/profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">个人中心</a><!-- P2-17（权益批）：术语表定名——"个人资料"退役 -->
         <a href="/orders.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">我的订单</a>
         <a href="/profile.html#preferences" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">设置</a>
         <hr class="my-1">
@@ -106,22 +108,36 @@ class NavigationIconManager {
       
       // 添加到DOM
       const userIcon = document.querySelector('.site-user-btn') ||
-                       document.querySelector('button img[src="gucci-style-user-icon.svg"]');
+                       document.querySelector('button img[src="user-icon.svg"]'); // 权益批 B13：改名后选择器
       if (userIcon) {
         // 与 bindUserIconClick 同修: 菜单挂载到按钮自身而非四图标容器
         const userButton = userIcon;
         userButton.style.position = 'relative';
+        // P1-16（大师批验收罚单·菜单几何）：菜单补 top:100%——原 className 只有
+        // absolute+right-0 无 top，绝对定位回落到静态位（flex 容器内居中压住按钮
+        // 自身），四项菜单越过视口顶不可点。父锚 relative + top:100% = 紧贴锚下沿
+        userMenu.style.top = '100%';
         userButton.appendChild(userMenu);
       }
-      
+
       // 绑定退出登录按钮点击事件
       const logoutBtn = document.getElementById('logout-btn');
       if (logoutBtn) {
         logoutBtn.addEventListener('click', (e) => {
           e.preventDefault();
+          // P1-15（大师批验收罚单·退出 toast 不可达）：阻止冒泡到 .site-user-btn——
+          // 原点击在 logout 处理器清空登录态后冒泡到父锚 click 处理器，
+          // handleUserIconClick 读到"未登录"立即跳 /login.html，toast 从未可见
+          e.stopPropagation();
           this.handleLogout();
         });
       }
+      // P1-16 补尾（四项"含鼠标"可点）：菜单挂在内层 <a> 里，导航链接点击冒泡到
+      // 父锚 .site-user-btn 的处理器时 preventDefault 会连带取消内层链接的默认
+      // 导航（同一事件对象）——三枚导航链接 stopPropagation 放行默认行为
+      userMenu.querySelectorAll('a[href]:not(#logout-btn)').forEach((link) => {
+        link.addEventListener('click', (e) => e.stopPropagation());
+      });
       // 批一(6): 外点关闭监听已在 init() 常驻挂载（此前"创建时挂/隐藏时卸"，
       // toggle 分支重开不再补挂——菜单第二次展开后外点永远关不掉）
     } else {
@@ -140,15 +156,17 @@ class NavigationIconManager {
    * 处理退出登录
    */
   handleLogout() {
-    // 清除本地存储的登录状态
+    // 清除本地存储的登录状态（权益批 B11：补 userId 键——与登录写入的五键清单对齐）
     localStorage.removeItem('userLoggedIn');
     localStorage.removeItem('userEmail');
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
+    localStorage.removeItem('userId');
     sessionStorage.removeItem('userLoggedIn');
     sessionStorage.removeItem('userEmail');
     sessionStorage.removeItem('token');
     sessionStorage.removeItem('refreshToken');
+    sessionStorage.removeItem('userId');
     
     // 隐藏用户菜单
     const userMenu = document.getElementById('user-menu');
@@ -158,17 +176,18 @@ class NavigationIconManager {
     
     // 显示退出成功消息
     this.showNotification('已成功退出登录');
-    
-    // 刷新页面
+
+    // 刷新页面（P1-15：延时 1000→600ms——toast 先可见后离场；stopPropagation 已
+    // 掐掉父锚的即时跳转，这里负责在 toast 可感知后收尾）
     setTimeout(() => {
       window.location.reload();
-    }, 1000);
+    }, 600);
   }
 
   /**
    * 处理点击外部区域关闭菜单
    * 批一(6) 大师会诊：选择器改 .site-user-btn——原选择器
-   * 'button img[src="gucci-style-user-icon.svg"]' 是旧 img 结构的残骸
+   * 'button img[src="user-icon.svg"]' 是旧 img 结构的残骸
    * （选择器腐烂第二次同根：SVG 头部下恒 null），菜单外点永远关不掉。
    * 监听 init() 常驻，此处只判开合，不再卸载自身。
    */

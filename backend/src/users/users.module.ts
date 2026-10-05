@@ -30,6 +30,7 @@ import { UsersController } from './users.controller';
 
 // Services
 import { UsersService } from './users.service';
+import { UserDeletionService } from './user-deletion.service'; // 权益批 B10
 
 const CommandHandlers = [CreateUserHandler, UpdateUserHandler];
 
@@ -40,6 +41,7 @@ const QueryHandlers = [GetUserForEditingHandler, SearchUsersHandler];
   controllers: [UsersController],
   providers: [
     UsersService,
+    UserDeletionService, // 权益批 B10：DELETE /users/me 级联注销（被遗忘权）
     {
       provide: 'EnhancedUsersRepository',
       useClass: TypeOrmEnhancedUsersRepository,

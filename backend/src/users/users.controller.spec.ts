@@ -14,8 +14,11 @@ import { Order } from '../orders/entities/order.entity';
 import { UserRoleEntity } from '../auth/rbac/entities/user-role.entity';
 import { Address } from './domain/entities/address.entity';
 
+import { UserDeletionService } from './user-deletion.service';
+
 describe('UsersController', () => {
   let controller: UsersController;
+  let userDeletion: { deleteMeCascade: jest.Mock };
 
   const mockAuthService = {
     validateUser: jest.fn(),
@@ -77,6 +80,11 @@ describe('UsersController', () => {
       execute: jest.fn(),
     };
 
+    // 权益批 B10：UserDeletionService mock（DELETE /users/me 委托目标）
+    const mockUserDeletion = {
+      deleteMeCascade: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UsersController],
       providers: [
@@ -96,10 +104,15 @@ describe('UsersController', () => {
           provide: ConfigService,
           useValue: mockConfigService,
         },
+        {
+          provide: UserDeletionService,
+          useValue: mockUserDeletion,
+        },
       ],
     }).compile();
 
     controller = module.get<UsersController>(UsersController);
+    userDeletion = mockUserDeletion;
 
     // Reset all mocks before each test
     jest.clearAllMocks();
@@ -567,6 +580,29 @@ describe('UsersController', () => {
       await expect(controller.createUser(createUserDto)).rejects.toThrow(
         'User service unavailable',
       );
+    });
+  });
+
+  // 权益批 B10（隐私 P1② 被遗忘权）：本人注销端点——委托 UserDeletionService，
+  // id 取自令牌 sub（不经 URL，A 删 B 无路径）
+  describe('DELETE /users/me', () => {
+    it('应按令牌 sub 委托级联注销并返回确认', async () => {
+      const result = await controller.deleteMe({ user: { sub: 42, email: 'a@b.c', role: 'user' } });
+      expect(userDeletion.deleteMeCascade).toHaveBeenCalledWith(42);
+      expect(result).toEqual({ message: '账号已注销' });
+    });
+
+    it('用户不存在时应透传 NotFoundException（404）', async () => {
+      const { NotFoundException } = await import('@nestjs/common');
+      userDeletion.deleteMeCascade.mockRejectedValueOnce(new NotFoundException('用户不存在'));
+      await expect(controller.deleteMe({ user: { sub: 999 } })).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+    });
+
+    it('sub 非法（NaN）也应原样送服务层（由服务层 404 兜底）', async () => {
+      await controller.deleteMe({ user: {} });
+      expect(userDeletion.deleteMeCascade).toHaveBeenCalledWith(NaN);
     });
   });
 });

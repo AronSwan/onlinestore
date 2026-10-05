@@ -48,7 +48,7 @@
    Reich风格按钮变体
    ========================================================================== */
 
-/* 1. 主按钮 - Gucci奢华风格 */
+/* 1. 主按钮 - 经典奢华风格（权益批 B13：品牌痕迹清理——他人商标词退出注释） */
 .btn-primary {
   background-color: var(--dark-elegant);
   color: var(--cream-luxury);
@@ -89,7 +89,7 @@
   transform: translateY(0);
 }
 
-/* 2. 次要按钮 - Gucci奢华风格 */
+/* 2. 次要按钮 - 经典奢华风格（权益批 B13 同批） */
 .btn-secondary {
   background-color: transparent;
   color: var(--dark-elegant);

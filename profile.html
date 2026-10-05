@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>个人中心 - REICH</title><!-- 批四(11): 品牌口径——"个人资料 - Reich 购物网站"退役 -->
+    <!-- 权益批 A1（品牌 P1-1/P1-3b 防御）：演示站全站 noindex——七页同改 -->
+    <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <!-- CSS变量系统 + 主样式表 + 个人资料页样式 -->
     <link rel="preload" href="fonts/barlow-variable.woff2" as="font" type="font/woff2" crossorigin>
@@ -128,6 +130,13 @@
                     <div class="security-item">
                         <h3>登录记录</h3>
                         <button id="view-login-history" class="btn-secondary">查看记录</button>
+                    </div>
+                    <!-- 权益批 B10（隐私 P1② 被遗忘权）：注销账号入口——两步确认（armed 模式，
+                         与购物袋"清空袋子"同款交互）；privacy.html"怎么删"链到此 -->
+                    <div class="security-item">
+                        <h3>注销账号</h3>
+                        <p class="text-sm" style="color: var(--ink-soft)">删除账号与订单记录，不可恢复。</p>
+                        <button id="delete-account-btn" class="btn-danger" aria-label="注销账号">注销账号</button>
                     </div>
                 </div>
             </section>

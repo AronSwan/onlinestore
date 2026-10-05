@@ -1,6 +1,14 @@
 /**
  * 登录页面工具函数
+ *
+ * P2-18（权益批顺带 · toast 第五物种归一，2026-10-06）：本文件升 ES module
+ * （login.html 加载处同步 type="module"），.notification 私货通知退役——
+ * showNotification 改调 js/shared/toast.js 纯通知语态（与 cart/orders/
+ * navigation-icons 四处同件同底，只保留文案）。type 形参保留仅为调用点兼容。
+ * 类仍挂 window.LoginUtils（email-verification.js / oauth-handler.js 等
+ * 经典脚本按全局名调用，全部在事件回调里调用，模块先于 DOMContentLoaded 执行）。
  */
+import { showToast } from './shared/toast.js';
 
 class LoginUtils {
     static generateCaptcha() {
@@ -54,51 +62,14 @@ class LoginUtils {
         return { canvas, text: captchaText };
     }
 
+    /**
+     * 统一通知（P2-18：.notification 第五物种退役——改调 shared/toast.js
+     * 纯通知语态，confirmText/dismissText 传 null 不渲染动作钮；
+     * type 形参保留仅为调用点兼容，不再区分样式物种）
+     */
     static showNotification(message, type = 'info') {
-        const container = document.getElementById('notification-container') || document.body;
-
-        // 安全修复（S1 XSS）：message 可能包含外部输入（OAuth 错误参数、后端消息等），
-        // 禁止 innerHTML 拼接，改用 DOM API + textContent 设置纯文本
-        const notification = document.createElement('div');
-        notification.className = `notification notification-${type}`;
-
-        const inner = document.createElement('div');
-        inner.className = 'flex items-center justify-between';
-
-        const messageSpan = document.createElement('span');
-        messageSpan.textContent = message;
-        inner.appendChild(messageSpan);
-
-        const closeButton = document.createElement('button');
-        closeButton.type = 'button';
-        closeButton.className = 'ml-4 text-white hover:text-gray-200';
-        closeButton.setAttribute('aria-label', '关闭通知');
-        // P7'：原 Font Awesome <i> 图标内联 SVG 化
-        const closeIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        closeIcon.setAttribute('viewBox', '0 0 24 24');
-        closeIcon.setAttribute('width', '14');
-        closeIcon.setAttribute('height', '14');
-        closeIcon.setAttribute('fill', 'none');
-        closeIcon.setAttribute('stroke', 'currentColor');
-        closeIcon.setAttribute('stroke-width', '2');
-        closeIcon.setAttribute('aria-hidden', 'true');
-        closeIcon.innerHTML = '<path d="M6 6l12 12M18 6L6 18"/>';
-        closeButton.appendChild(closeIcon);
-        closeButton.addEventListener('click', () => notification.remove());
-        inner.appendChild(closeButton);
-
-        notification.appendChild(inner);
-
-        container.appendChild(notification);
-        
-        // 显示通知
-        setTimeout(() => notification.classList.add('show'), 100);
-        
-        // 自动隐藏
-        setTimeout(() => {
-            notification.classList.remove('show');
-            setTimeout(() => notification.remove(), 300);
-        }, 5000);
+        void type;
+        showToast({ message, confirmText: null, dismissText: null });
     }
 
     static setButtonLoading(button, loading) {
@@ -602,3 +573,7 @@ class LoginUtils {
         }
     }
 }
+
+// P2-18：模块化后经典脚本消费方仍按全局名调用——挂 window（模块执行先于
+// DOMContentLoaded，login.html 内联初始化块与各事件回调取用时已就绪）
+window.LoginUtils = LoginUtils;

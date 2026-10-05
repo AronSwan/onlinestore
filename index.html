@@ -10,7 +10,8 @@
     <meta name="description" content="Reich 2026 秋冬系列到货了。手袋、斜挎包、迷你链条包——慢慢挑，不着急。">
     <meta name="keywords" content="Reich,手袋,女士手袋,斜挎包,迷你链条包,2026秋冬系列">
     <meta name="author" content="Reich">
-    <meta name="robots" content="index, follow">
+    <!-- 权益批 A1（品牌 P1-1/P1-3b 防御）：演示站全站 noindex——七页同改 -->
+    <meta name="robots" content="noindex, nofollow">
 
     <!-- Open Graph / Facebook（M8·C7: reich.com 假域名的 url/canonical/image 绝对 URL 摘除；上线注册域名后回填） -->
     <meta property="og:type" content="website">
@@ -212,7 +213,7 @@
                            aria-describedby="newsletter-description"><!-- C5(裁决): 订阅带输入框 rounded-none→radius-md -->
                     <button type="submit" class="btn-pill btn-pill-primary focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] focus:ring-offset-2 focus:ring-offset-[var(--candy-mint-soft)]">好呀</button>
                 </form>
-                <p id="newsletter-description" class="text-sm text-[var(--ink-soft)] mt-4">我们承诺保护您的隐私，不会向第三方分享您的信息。</p>
+                <p id="newsletter-description" class="text-sm text-[var(--ink-soft)] mt-4">我们承诺保护您的隐私，不会向第三方分享您的信息。<a href="privacy.html" class="underline decoration-[var(--line-strong)] underline-offset-4 hover:text-[var(--candy-blush-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">隐私政策</a><!-- 权益批 A3：订阅承诺链激活——隐私政策页成文 --></p>
             </div>
         </section>
     </main>
@@ -267,8 +268,19 @@
                 </div>
             </div>
             
+            <!-- 权益批 B8（消费者 P1-1）：卖家身份占位块——经营者主体/回信邮箱/ICP 备案三行占位，
+                 上线前回填真实登记信息（商业化硬前置清单已挂 BACKLOG） -->
+            <div class="mt-10 text-sm text-[var(--ink-soft)] leading-relaxed" aria-label="经营者信息（演示占位）">
+                <p class="font-medium text-[var(--ink)]">经营者信息</p>
+                <p>REICH 演示项目（个人经营者登记占位）</p>
+                <p>联系邮箱：<span class="select-all">demo@reich.example</span>（占位）</p>
+                <p>ICP 备案号：上线后回填</p>
+            </div>
+
             <div class="mt-12 pt-8 border-t border-[var(--border-default)] text-center">
                 <p>&copy; 2026 Reich. 保留所有权利。</p>
+                <!-- 权益批 A2（品牌 P1-3a+消费者 P1-2）：首页可见演示声明——八字口径 -->
+                <p class="text-sm text-[var(--ink-soft)] mt-2">演示项目 · 数据为示例</p>
             </div>
         </div>
     </footer>

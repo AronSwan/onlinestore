@@ -763,15 +763,20 @@ class CartUI {
     }
   }
 
-  /** 批一(4)：遮罩后 main 内容 inert（aria 无需另设——inert 本身从可访问树移除） */
+  /** 批一(4)：遮罩后 main 内容 inert（aria 无需另设——inert 本身从可访问树移除）。
+      P2-19（权益批顺带）：inert 范围 main→main+header——Tab 圈禁此前已补位，
+      此改补 SR 游标漏（头部导航在遮罩下仍可被读屏游标到达）；hide() 先解除
+      inert 再还原焦点到头部触发钮，时序不变 */
   setMainInert(inert) {
-    const main = document.querySelector('main');
-    if (!main) return;
-    if (inert) {
-      main.setAttribute('inert', '');
-    } else {
-      main.removeAttribute('inert');
-    }
+    const targets = [document.querySelector('main'), document.getElementById('siteHeader')];
+    targets.forEach((el) => {
+      if (!el) return;
+      if (inert) {
+        el.setAttribute('inert', '');
+      } else {
+        el.removeAttribute('inert');
+      }
+    });
   }
 
   /**

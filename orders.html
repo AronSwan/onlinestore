@@ -7,15 +7,17 @@
     
     <!-- SEO 优化 -->
     <title>我的订单 - Reich | 订单历史与详情</title>
-    <meta name="description" content="查看您的Reich订单历史，追踪订单状态，下载发票，管理退换货。有问必答的客户服务。">
-    <meta name="keywords" content="Reich订单,订单历史,订单追踪,发票下载,退换货,客户服务">
+    <!-- 权益批 A6（消费者 P3-1）：meta description 修正——"下载发票/退换货/客服"三承诺
+         演示期均未开通，改为如实口径；og/JSON-LD 同字段三处编码同文对齐 -->
+    <meta name="description" content="查看您的 Reich 订单历史与详情。">
+    <meta name="keywords" content="Reich订单,订单历史,订单详情">
     <meta name="author" content="Reich">
     <meta name="robots" content="noindex, nofollow">
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="我的订单 - Reich">
-    <meta property="og:description" content="查看您的Reich订单历史，追踪订单状态，下载发票，管理退换货。">
+    <meta property="og:description" content="查看您的 Reich 订单历史与详情。">
     <!-- M8·C7: og:url 假域名 reich.com 摘除（域名未注册，绝对 URL 即谎言） -->
     
     <!-- Favicon -->
@@ -59,9 +61,9 @@
         "@context": "https://schema.org",
         "@type": "WebPage",
         "name": "我的订单 - Reich",
-        "description": "查看您的Reich订单历史，追踪订单状态，下载发票，管理退换货"
+        "description": "查看您的 Reich 订单历史与详情"
     }
-    </script>    </script>
+    </script>
 </head>
 
 <body class="text-[var(--text-primary)]" style="padding-top: 72px"><!-- C7(裁决): cream-luxury 底删除回落白 -->
@@ -247,6 +249,14 @@
                 </div>
             </div>
             
+            <!-- 权益批 B8（消费者 P1-1）：卖家身份占位块——与 index footer 同款三行占位 -->
+            <div class="mt-10 text-sm text-[var(--ink-soft)] leading-relaxed" aria-label="经营者信息（演示占位）">
+                <p class="font-medium text-[var(--ink)]">经营者信息</p>
+                <p>REICH 演示项目（个人经营者登记占位）</p>
+                <p>联系邮箱：<span class="select-all">demo@reich.example</span>（占位）</p>
+                <p>ICP 备案号：上线后回填</p>
+            </div>
+
             <div class="mt-12 pt-8 border-t border-[var(--border-default)] text-center">
                 <p>&copy; 2026 Reich. 保留所有权利。</p>
             </div>

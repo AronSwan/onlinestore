@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- 权益批 A3（隐私 P1①+消费者 P2-1 双席共中）：隐私政策页成文——五问直答结构 +
+         服务条款简版同页。此前"同意勾选指向不存在的隐私政策"（同意空转）自此闭环。 -->
+    <title>隐私政策与服务条款 - Reich</title>
+    <meta name="description" content="Reich 演示站隐私政策与服务条款：收什么、存哪、存多久、谁看、怎么删——五问直答。">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+    <!-- 样式（与 returns 页同栈的静页子集） -->
+    <link rel="preload" href="fonts/barlow-variable.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="fonts/fonts.css">
+    <link rel="stylesheet" href="css/tokens.css">
+    <link rel="stylesheet" href="css/components/site-header.css">
+    <link rel="stylesheet" href="css/components/nav-underline.css">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/tailwind-entry.css">
+</head>
+
+<body class="text-[var(--text-primary)]" style="padding-top: 72px">
+    <!-- 跳转到主内容链接 (无障碍性) -->
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-[var(--ink)] text-white px-4 py-2 rounded z-50">跳转到主内容</a>
+
+    <!-- 统一站点导航（js/site-header.js 渲染；PAGE_CONFIG 无 privacy 键时回落 index 配置——
+         与 returns 页同一兜底路径） -->
+    <noscript>
+      <header class="site-header" id="siteHeader">
+        <div class="container mx-auto px-4 site-header-inner">
+        <nav aria-label="主导航">
+          <ul class="site-nav">
+            <li><a href="index.html#featured-collections">手袋</a></li>
+            <li><a href="index.html#brand-story">品牌故事</a></li>
+          </ul>
+        </nav>
+        <a href="index.html" class="site-brand">REICH</a>
+        <div class="site-tools">
+          <a href="login.html" aria-label="账户">账户</a>
+        </div>
+        </div>
+      </header>
+    </noscript>
+    <template data-site-header data-page="privacy"></template>
+    <script type="module" src="js/site-header.js"></script>
+
+    <!-- 主内容区 -->
+    <main id="main-content" role="main">
+        <section class="bg-white py-8 border-b border-[var(--border-default)]">
+            <div class="container mx-auto px-4">
+                <h1 class="text-[2rem] leading-[1.25] font-bold">隐私政策与服务条款</h1>
+                <p class="text-[var(--ink-soft)] mt-2">五问直答，不绕弯子。（演示站口径，2026-10-06 成文）</p>
+            </div>
+        </section>
+
+        <section class="py-12">
+            <div class="container mx-auto px-4 max-w-2xl space-y-10">
+                <div id="privacy">
+                    <h2 class="text-xl font-bold mb-3">我们收什么</h2>
+                    <p class="text-[var(--ink-soft)] leading-relaxed">
+                        注册时收三样：邮箱、用户名、密码——密码经 bcrypt 哈希后存储，明文不落库。
+                        浏览与购物数据（购物袋、心愿单、订单记录）保存在你浏览器的本地存储（localStorage）里。
+                    </p>
+                </div>
+
+                <div>
+                    <h2 class="text-xl font-bold mb-3">存在哪</h2>
+                    <p class="text-[var(--ink-soft)] leading-relaxed">
+                        两处：你的浏览器本地存储，和本站的演示后端（本地演示数据库）。
+                        没有第三方分析、广告或追踪 SDK。
+                    </p>
+                </div>
+
+                <div>
+                    <h2 class="text-xl font-bold mb-3">存多久</h2>
+                    <p class="text-[var(--ink-soft)] leading-relaxed">
+                        会话期数据（未勾选"记住我"的登录态）随会话结束而失效；
+                        账号数据存续至你注销账号为止——注销后即删除（见下）。
+                    </p>
+                </div>
+
+                <div>
+                    <h2 class="text-xl font-bold mb-3">谁能看</h2>
+                    <p class="text-[var(--ink-soft)] leading-relaxed">
+                        仅本站演示系统可见，不向任何第三方共享或出售。
+                        如实披露：登录页有一枚"casdoor 统一登录"探测入口——它是演示探测项，
+                        未启用第三方回调，也没有数据共享；正式上线前会移除或替换为真实配置并更新本页。
+                    </p>
+                </div>
+
+                <div>
+                    <h2 class="text-xl font-bold mb-3">怎么删</h2>
+                    <p class="text-[var(--ink-soft)] leading-relaxed">
+                        账号与账号侧数据（订单、购物车记录）：个人中心 →
+                        <a href="profile.html#security" class="text-[var(--candy-blush-ink)] underline underline-offset-4 focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">账户安全 → 注销账号</a>
+                        ——两步确认后即删（被遗忘权，权益批 B10）。
+                        浏览器本地数据（购物袋/心愿单缓存）：清除浏览器站点数据即可
+                        （浏览器设置 → 隐私 → 清除浏览数据，勾选"Cookie 和站点数据"）。
+                    </p>
+                </div>
+
+                <div id="terms" class="pt-6 border-t border-[var(--line)]">
+                    <h2 class="text-xl font-bold mb-3">服务条款（简版）</h2>
+                    <p class="text-[var(--ink-soft)] leading-relaxed">
+                        本站是演示项目：商品图文为图库素材、非实际销售商品，结算通道未开通——
+                        不构成任何买卖要约。退换承诺采用上线口径：
+                        <a href="returns.html" class="text-[var(--candy-blush-ink)] underline underline-offset-4 focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">30 天可退，来回运费我们担</a>（详见退换与售后页）。
+                        账号内容规范与完整条款在正式上线时随本页一并成文。
+                    </p>
+                </div>
+
+                <div class="pt-6 border-t border-[var(--line)]">
+                    <!-- 批五(17) 同款回程：有来路回来路，冷启动才落首页 -->
+                    <a href="javascript:history.length>1?history.back():location.href='index.html'" class="text-[var(--candy-blush-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">← 回去继续逛</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚（与全站一致的极简版） -->
+    <footer class="border-t border-[var(--line)] py-8 mt-8">
+        <div class="container mx-auto px-4 text-sm text-[var(--ink-soft)]">
+            <p>&copy; 2026 Reich. 保留所有权利。</p>
+            <!-- 权益批 A2 同口径：演示声明 -->
+            <p class="mt-1">演示项目 · 数据为示例</p>
+        </div>
+    </footer>
+</body>
+
+</html>

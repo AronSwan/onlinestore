@@ -19,6 +19,12 @@ import { showToast } from './shared/toast.js';
 const HEART_EMPTY = 'heart-icon.svg';
 const HEART_FILLED = 'heart-icon-filled.svg';
 
+// P1-14（大师批验收罚单·m4 契约红）：幂等护栏从 data-* 键改 WeakSet——
+// dataset.wishlistBound 会在心形钮上泄漏第二个 data- 键，m4 spec
+// "五件 data-* 全清，只留 productId" 契约复绿；WeakSet 语义与原护栏逐字等价
+// （同钮二次 bindEvents 不叠加监听；home-products 重渲染的新节点不在集合内，照常绑定）
+const boundButtons = new WeakSet();
+
 class WishlistManager {
   constructor() {
     this.wishlist = JSON.parse(localStorage.getItem('reich_wishlist')) || [];
@@ -55,10 +61,10 @@ class WishlistManager {
     // 绑定收藏按钮点击事件（批一(3)：按钮级绑定覆盖卡片与 PDP 两处；
     // 原选择器 .reich-product-action img[src*="heart-icon"] 的绑定落点即本钮）
     document.querySelectorAll('button.reich-heart-pill').forEach(btn => {
-      // 幂等护栏：home-products 渲染后重绑只作用于新节点；同钮二次 bindEvents
+      // 幂等护栏（P1-14：WeakSet 化，不泄漏 data-* 键）：同钮二次 bindEvents
       //（如 PDP 与重绑并存）不得叠加监听（add/remove 双触发互相抵消）
-      if (btn.dataset.wishlistBound === '1') return;
-      btn.dataset.wishlistBound = '1';
+      if (boundButtons.has(btn)) return;
+      boundButtons.add(btn);
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const productId = this.resolveProductId(btn);

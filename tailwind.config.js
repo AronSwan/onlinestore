@@ -36,6 +36,7 @@ export default {
     //   仅为统一 content 口径——贡献为空，防未来加类时静默丢失
     './product.html', // 批二(8) 2026-10-06 PDP 接入 tailwind-entry.css（大师会诊栅格 P1-1）
     //   ——仅补 content 扫描口径（该页与六页同源）；theme 零改动
+    './privacy.html', // 权益批 A3：隐私政策页（skip-link/tailwind 工具类同 returns 页口径）
     './js/**/*.js',
   ],
 

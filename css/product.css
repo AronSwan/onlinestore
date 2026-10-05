@@ -44,6 +44,16 @@
   aspect-ratio: 4 / 5;       /* 主图 4:5 不压（A1 规格） */
   object-fit: cover;
 }
+/* 权益批 A7（消费者 P3-3）：图区色差提示行——12px ink-soft 小字贴图底 */
+.pdp-color-note {
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+/* 权益批 B9（双席共中）：社会证明数字旁演示标注（12px ink-soft） */
+.social-demo-note { font-size: 12px; font-weight: 400; color: var(--ink-soft); }
 
 /* 信息列 */
 .pdp-info {
