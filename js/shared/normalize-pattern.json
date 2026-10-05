@@ -2,8 +2,8 @@
   "version": 1,
   "updated": "2026-10-05",
   "purpose": "名实比对视图白名单字符类——单源声明。三处消费：① js/shared/integrity-rules.js（normalizeForMatch）② backend/src/products/dto/create-product.dto.ts（normalizeNameInput）③ 本文件。①②内嵌的 pattern 字符串必须与本文件 stripPattern 逐字符一致，js/shared/integrity-rules.test.js 的一致性用例守门（改本文件必须同步两处，否则 node --test 红）",
-  "stripPattern": "[^\\p{L}\\p{N}]|[\\u115F\\u1160\\u3164]",
+  "stripPattern": "[^\\p{L}\\p{N}]|[\\u115F\\u1160\\u3164\\u02D0\\u02D1\\u0640]",
   "flags": "gu",
-  "design": "白名单法（四修 P1-1）：NFKC 后只保留字母（\\p{L}）与数字（\\p{N}），其余一律剥除——Cf/Mn/Me/Mc/Co/Cn/Cs/So/Sk/Po/Pd/Pi/Pf/Pc 全部标点/符号/组合记号/私有区/未赋码位/代理对，及 White_Space/Zs/Zl/Zp 全部空白分隔，不需要枚举黑名单（黑名单法永远追不完属性类，X1/X2 三轮打地鼠的根因）。例外集：U+115F/U+1160/U+3164（Hangul 填充符，含半角 U+FFA0 经 NFKC 折到 U+1160）属 \\p{L}（Lo）但视觉空白、可拆词可做空名，白名单必须显式剥——这是 \\p{L} 内唯一需要枚举的例外族（Unicode 官方钦定的三个 filler 码位，非姿势拟合）",
+  "design": "白名单法（四修 P1-1）：NFKC 后只保留字母（\\p{L}）与数字（\\p{N}），其余一律剥除——Cf/Mn/Me/Mc/Co/Cn/Cs/So/Sk/Po/Pd/Pi/Pf/Pc 全部标点/符号/组合记号/私有区/未赋码位/代理对，及 White_Space/Zs/Zl/Zp 全部空白分隔，不需要枚举黑名单（黑名单法永远追不完属性类，X1/X2 三轮打地鼠的根因）。例外集：U+115F/U+1160/U+3164（Hangul 填充符，含半角 U+FFA0 经 NFKC 折到 U+1160），及五修补入 Lm 视觉分隔族 U+02D0/U+02D1/U+0640（冒号形/横线形修饰字母，四修盲审 X 组共中可拆词绕名实红拦，词表无 Lm 字符故剥离零治理损失）属 \\p{L}（Lo）但视觉空白、可拆词可做空名，白名单必须显式剥——这是 \\p{L} 内唯一需要枚举的例外族（Unicode 官方钦定的三个 filler 码位，非姿势拟合）",
   "knownLimit": "\\p{L} 内其余视觉近似分隔符（如片假名长音符 U+30FC「ー」，Lm 类）不在剥除集——剥它会误伤合法日文假名文本，挂账见四修汇报已知限制段"
 }

@@ -80,7 +80,7 @@ export const nullToUndefined = ({ value }: { value: any }) =>
  * 守门）。不直接 import JSON：composite 工程 rootDir 锁定 backend/，仓外 JSON
  * 进编译会破坏 dist 输出布局（node dist/src/main.js 启动契约）——取舍见四修汇报。
  */
-const MATCH_VIEW_STRIP_PATTERN = '[^\\p{L}\\p{N}]|[\\u115F\\u1160\\u3164]';
+const MATCH_VIEW_STRIP_PATTERN = '[^\\p{L}\\p{N}]|[\\u115F\\u1160\\u3164\\u02D0\\u02D1\\u0640]';
 const MATCH_VIEW_STRIP = new RegExp(MATCH_VIEW_STRIP_PATTERN, 'gu');
 const normalizeNameInput = ({ value }: { value: any }) => {
   if (value === null) return undefined;

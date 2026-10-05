@@ -247,11 +247,15 @@ function findBagHits(text, field) {
   return hits;
 }
 
-/** 事实卡包型字符串 → 所属词组（结构优先于背法；空/未知返回 null）@private */
+/** 事实卡包型字符串 → 所属词组（结构优先于背法；空/未知返回 null）。
+ *  五修（四修盲审 X1 F1）：归组前小写化——此前 'KELLY'/'Tote' 等非小写 ASCII
+ *  使归组得 null，结构冲突降级黄警，名实红拦被大小写绕过；文案侧 findBagHits
+ *  本就小写匹配，事实卡侧对齐。 @private */
 function findBagGroup(factBag) {
   if (!factBag) return null;
-  for (const g of BAG_SILHOUETTES) if (g.words.some((w) => factBag.includes(w))) return { dimension: 'silhouette', canonical: g.canonical };
-  for (const g of BAG_CARRY_STYLES) if (g.words.some((w) => factBag.includes(w))) return { dimension: 'carry', canonical: g.canonical };
+  const lower = String(factBag).toLowerCase();
+  for (const g of BAG_SILHOUETTES) if (g.words.some((w) => lower.includes(w))) return { dimension: 'silhouette', canonical: g.canonical };
+  for (const g of BAG_CARRY_STYLES) if (g.words.some((w) => lower.includes(w))) return { dimension: 'carry', canonical: g.canonical };
   return null;
 }
 
@@ -292,7 +296,7 @@ const FIELD_LABEL = { name: '标题', description: '描述' };
  * 第三级）同时消费——import 属性语法/JSON 模块在两条链上都不成立。
  * @private
  */
-const STRIP_PATTERN = '[^\\p{L}\\p{N}]|[\\u115F\\u1160\\u3164]';
+const STRIP_PATTERN = '[^\\p{L}\\p{N}]|[\\u115F\\u1160\\u3164\\u02D0\\u02D1\\u0640]';
 const COMPARE_VIEW_STRIP = new RegExp(STRIP_PATTERN, 'gu');
 function normalizeForMatch(text) {
   return text.normalize('NFKC').replace(COMPARE_VIEW_STRIP, '');
@@ -307,9 +311,20 @@ function normalizeForMatch(text) {
  * 全 \p{L} 构成）走比对视图；正则（pattern 面，可含标点）走本轻归一视图。
  * @private
  */
-const INVISIBLE_AND_SPACE = /[\p{Cf}\u034F\uFE00-\uFE0F\p{White_Space}]/gu;
+const INVISIBLE_AND_SPACE = /[\p{Cf}\u034F\uFE00-\uFE0F\p{White_Space}\p{Mn}\p{Me}\u115F\u1160\u3164]/gu;
+/** 感叹号视觉替身族归一（五修，四修盲审 X 组共中 F2）：双字符替身（⁉ U+2049
+ *  /‽ U+203D）先在 NFKC **之前**归一为 '!!'——NFKC 会把它们胀裂成 '!?' 破坏
+ *  邻接使 {2,} 规则漏过，而其营销意图实为"多感叹号"；单字符替身（ǃ U+01C3/
+ *  ❗ U+2757/¡ U+00A1）在 NFKC 后归一为 '!'。映射表封闭列举（视觉替身=有限族），
+ *  非姿势拟合。 */
+const EXCLAMATION_CLONES_DOUBLE = /[\u2049\u203D]/g;
+const EXCLAMATION_CLONES = /[\u01C3\u2757\u00A1]/g;
 function normalizeLightForPattern(text) {
-  return text.normalize('NFKC').replace(INVISIBLE_AND_SPACE, '');
+  return text
+    .replace(EXCLAMATION_CLONES_DOUBLE, '!!')
+    .normalize('NFKC')
+    .replace(EXCLAMATION_CLONES, '!')
+    .replace(INVISIBLE_AND_SPACE, '');
 }
 
 // ═════════════════════════════════════════════════════════════
