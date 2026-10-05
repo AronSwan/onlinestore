@@ -24,19 +24,21 @@
          渲染+移动菜单，行为（开合/滚动阴影）也归一于该模块；noscript 静态头部兜底） -->
     <noscript>
       <header class="site-header" id="siteHeader">
+        <div class="container mx-auto px-4 site-header-inner">
         <nav aria-label="主导航">
           <ul class="site-nav">
-            <li><a href="index.html">女士</a></li>
-            <li><a href="index.html">男士</a></li>
-            <li><a href="index.html">配饰</a></li>
+            <li><a href="index.html#featured-collections">手袋</a></li>
+            <li><a href="index.html#brand-story">品牌故事</a></li>
+            <li><a href="orders.html">订单</a></li>
           </ul>
         </nav>
         <a href="index.html" class="site-brand">REICH</a>
         <div class="site-tools">
           <a href="login.html" aria-label="登录">登录</a>
         </div>
+        </div>
       </header>
-    </noscript>
+    </noscript><!-- C11(裁决): 假门收敛 + C8(裁决): container 对齐（与 site-header.js 渲染结构一致） -->
     <template data-site-header data-page="profile"></template>
     <script type="module" src="js/site-header.js"></script>
     <!-- 移动菜单（id=mobileMenu 冻结契约；F4 归一由 site-header.js 紧跟 header 插入） -->

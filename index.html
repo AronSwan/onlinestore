@@ -107,10 +107,11 @@
          defer 模块执行。JS 关闭时下方 <noscript> 静态头部兜底） -->
     <noscript>
       <header class="site-header" id="siteHeader">
+        <div class="container mx-auto px-4 site-header-inner">
         <nav aria-label="主导航">
           <ul class="site-nav">
-            <li><a href="index.html#featured-collections">手袋</a></li>
-            <li><a href="index.html#brand-story">品牌故事</a></li>
+            <li><a href="#featured-collections">手袋</a></li>
+            <li><a href="#brand-story">品牌故事</a></li>
             <li><a href="orders.html">订单</a></li>
           </ul>
         </nav>
@@ -119,8 +120,9 @@
           <a href="login.html" id="userProfileBtn" aria-label="用户登录" class="site-user-btn">登录</a>
           <a href="orders.html" aria-label="我的订单">订单</a>
         </div>
+        </div>
       </header>
-    </noscript><!-- C11(裁决): 假门收敛——女士/男士/配饰→手袋（锚点）/品牌故事（锚点）/订单 -->
+    </noscript><!-- C11(裁决): 假门收敛 + C8(裁决): container 对齐（与 site-header.js 渲染结构一致） -->
     <template data-site-header data-page="index"></template>
     <script type="module" src="js/site-header.js"></script>
 
