@@ -237,3 +237,4 @@ roo_task_*.md
 # Security-scan output artifacts
 security-report.json
 backend/docs/openapi.json
+test-results/
