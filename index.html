@@ -49,6 +49,8 @@
     <link rel="stylesheet" href="css/components/site-header.css">
     <!-- 主样式表 -->
     <link rel="stylesheet" href="css/main.css">
+    <!-- F7：首页商品区 bento 陈列（作用域组件，参数表一次定死；须在 main.css 之后加载） -->
+    <link rel="stylesheet" href="css/components/bento.css">
     <!-- 购物车浮层样式（cart.js CartUI 动态创建 .cart-overlay） -->
     <link rel="stylesheet" href="css/components/cart.css">
     <!-- 奢华组件样式 -->
@@ -176,7 +178,7 @@
                      卡片结构/类名为冻结契约（.reich-product-card/.reich-product-action/.reich-product-name/
                      -price/-image/[data-product-id]/.reich-heart-pill/.stagger-item）；
                      API 不可用时脚本内置硬编码 3 卡回退。 -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8" id="home-product-grid"
+                <div class="bento-grid" id="home-product-grid"
                      aria-busy="true" aria-live="polite"></div>
             </div>
         </section>

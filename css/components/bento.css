@@ -1,0 +1,73 @@
+/** bento.css — F7 首页商品区 bento 陈列：参数表一次定死；锚定 .bento-grid/.bento-card 禁裸类；卡图容器 3:4；Ⓞ=作用域覆盖 */
+
+.bento-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: var(--gutter-grid); align-items: stretch; }
+@media (max-width:1023px) { .bento-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+.bento-card {
+  background: var(--bg-base); border: 1px solid var(--line); border-radius: var(--radius-md);
+  overflow: hidden; display: flex; min-width: 0;
+  transition: border-color var(--dur-fast) var(--ease-lux);
+}
+.bento-grid .card-fig { position: relative; background: var(--bg-soft); flex: none; min-width: 0; }
+.bento-card .reich-product-image { height: 100%; aspect-ratio: auto; }
+.bento-grid .badge {
+  position: absolute; top: 12px; left: 12px;
+  font-size: .75rem; font-weight: 600; line-height: 1; padding: 6px 10px;
+  border-radius: var(--radius-sm); color: var(--ink);
+}
+.bento-grid .badge-blush { background: var(--candy-blush-soft); }
+.bento-grid .badge-sun { background: var(--candy-sun-soft); }
+.bento-grid .badge-mint { background: var(--candy-mint-soft); }
+.bento-card .reich-product-price { margin: 0; font-size: 1rem; font-weight: 700; white-space: nowrap; }
+.bento-card.bento-featured .reich-product-price { font-size: 1.5rem; }
+.bento-grid .btn-bag {
+  border-radius: var(--radius-pill); padding: 9px 18px;
+  font-size: var(--text-small); font-weight: 600; line-height: 1; white-space: nowrap;
+  color: var(--candy-blush-ink); background: color-mix(in srgb,var(--candy-blush-soft) 68%,transparent);
+  transition: background var(--dur-fast) var(--ease-lux),color var(--dur-fast) var(--ease-lux);
+}
+@media (hover:none),(pointer:coarse) { .bento-grid .btn-bag { min-height: 44px; } }
+.bento-card:is(:hover,:has(:focus-visible)) { border-color: var(--candy-blush); }
+.bento-card:is(:hover,:has(:focus-visible)) .btn-bag,
+.bento-grid .btn-bag:is(:hover,:focus-visible) { background: var(--candy-blush-ink); color: #fff; }
+@media (prefers-reduced-motion: no-preference) {
+  .bento-card:is(:hover,:has(:focus-visible)) .card-fig img { transform: translateY(-2px) scale(1.03); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bento-card:is(:hover,:has(:focus-visible)),
+  .bento-card:is(:hover,:has(:focus-visible)) .card-fig img { transform: none; }
+}
+@supports not selector(:has(*)) {
+  .bento-card:focus-within { border-color: var(--candy-blush); }
+  .bento-card:focus-within .btn-bag { background: var(--candy-blush-ink); color: #fff; }
+  @media (prefers-reduced-motion: no-preference) {
+    .bento-card:focus-within .card-fig img { transform: translateY(-2px) scale(1.03); }
+  }
+}
+.bento-grid .bento-featured { grid-column: span 2; min-height: 420px; container: featured / inline-size; }
+.bento-grid .bento-cell { container: cell / inline-size; }
+/* Ⓞ1 心 pill 锚卡图右上（防 touch-optimization 晚加载改 relative） */
+.bento-card .card-fig .reich-product-action { position: absolute; left: auto; right: 12px; top: 12px; bottom: auto; transform: none; }
+@media (max-width:639px) { .bento-grid { grid-template-columns: minmax(0,1fr); } .bento-grid .bento-featured { grid-column: span 1; } }
+.bento-grid :is(.featured-inner,.cell-inner) { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.bento-grid :is(.featured-fig,.cell-fig) { width: 100%; aspect-ratio: 3/4; }
+.bento-grid .featured-body { flex: 1; min-width: 0; padding: 20px; display: flex; flex-direction: column; justify-content: center; gap: 8px; }
+.bento-grid .featured-kicker { font-size: var(--text-caption); font-weight: 700; letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--candy-blush-ink); }
+.bento-grid .featured-name { margin: 0; font-size: clamp(1.75rem,3.2vw,2.375rem); font-weight: 700; line-height: 1.2; }
+.bento-grid :is(.featured-desc,.cell-desc) { color: var(--ink-soft); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.bento-grid .featured-desc { max-width: 44ch; }
+.bento-grid .cell-desc { font-size: var(--text-small); }
+.bento-grid .featured-meta { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 8px; }
+.bento-grid .cell-body { flex: 1; min-width: 0; padding: 16px; display: flex; flex-direction: column; gap: 6px; }
+.bento-grid .cell-name { margin: 0; font-size: 1.125rem; font-weight: 600; line-height: 1.35; }
+.bento-grid .cell-meta { margin-top: auto; padding-top: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+@container featured (min-width:560px) {
+  .bento-grid .featured-inner { flex-direction: row; }
+  .bento-grid .featured-fig { width: clamp(314px,42%,340px); align-self: flex-start; }
+  .bento-grid .featured-body { padding: 32px 36px; gap: 12px; }
+  .bento-grid .featured-desc { -webkit-line-clamp: 3; }
+}
+@container cell (min-width:280px) {
+  .bento-grid .cell-inner { flex-direction: row; }
+  .bento-grid .cell-fig { width: 42%; align-self: flex-start; }
+  .bento-grid .cell-name { font-size: 1rem; }
+}
