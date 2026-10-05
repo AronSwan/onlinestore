@@ -30,7 +30,7 @@
     <!-- 关键资源预加载 -->
     <link rel="preload" href="css/tokens.css" as="style">
     <link rel="preload" href="css/main.css" as="style">
-    <link rel="preload" href="js/navigation.js" as="script">
+    <!-- 批五(16): js/navigation.js preload 删——文件同批废弃（死绑定 .nav-button 全站无 DOM） -->
     <!-- P1：hero 预加载 webp（<picture> 首选源；不支持 webp 的浏览器自动回落 jpg） -->
     <link rel="preload" href="images/hero/hero-main.webp" as="image" type="image/webp" fetchpriority="high">
     
@@ -118,6 +118,8 @@
 
     <!-- 主内容区 -->
     <main id="main-content" role="main">
+        <!-- 批四(6): 本页视觉主标题是 hero h2（保留），此处补页级唯一 h1（sr-only 视觉隐藏） -->
+        <h1 class="sr-only">REICH 手袋店</h1>
         <!-- 跑马灯公告条（P2 · B1：CSS-only 无限横向滚动） -->
         <div class="marquee" aria-label="公告：托特包的季节，新品到货">
             <div class="marquee-track">
@@ -134,7 +136,7 @@
                 <img
                     src="images/hero/hero-main.jpg"
                     alt="Reich 2026秋冬系列——彩色墙绘前的手袋"
-                    class="absolute inset-0 w-full h-full object-cover"
+                    class="absolute inset-0 w-full h-full object-cover object-[center_42%]"<!-- 批四(16): object-position 上移 8%（center 50%→42%）——文案压底部，主角让出上半幅；hero CTA 已改词，本项并批四（记档条款"已改词则并入"） -->
                     loading="eager"
                     fetchpriority="high"
                     width="2400"
@@ -146,7 +148,7 @@
                 <p class="text-lg mb-8 max-w-2xl">2026 秋冬系列，到货了</p><!-- C26(裁决): 副标 20px 归档锁 18px -->
                 <div class="flex flex-wrap gap-4">
                     <a href="#featured-collections" class="btn-pill btn-pill-hero btn-pill-primary" aria-describedby="hero-heading">来看看</a>
-                    <a href="#brand-story" class="btn-pill btn-pill-hero btn-pill-outline">先随便逛逛</a>
+                    <a href="#brand-story" class="btn-pill btn-pill-hero btn-pill-outline">听听品牌故事</a><!-- 批五(18): "先随便逛逛"→词与目标 #brand-story 对齐 -->
                 </div>
             </div>
         </section>
@@ -155,7 +157,7 @@
         <section id="featured-collections" class="py-[var(--space-section)] bg-white" aria-labelledby="featured-heading">
             <div class="container mx-auto px-4">
                 <p class="text-center text-[length:var(--text-caption)] font-semibold uppercase tracking-[var(--tracking-caps)] text-[color:var(--ink-soft)] mb-3">IT'S TOTE SEASON</p>
-                <h2 id="featured-heading" class="text-3xl md:text-4xl font-bold text-center mb-16">包包们的季节到了</h2>
+                <h2 id="featured-heading" class="text-3xl md:text-4xl font-bold text-center mb-16">手袋们的季节到了</h2><!-- 批五(19): "包包们"→"手袋们"（品类唯一词，术语表口径） -->
                 <!-- P4：精选商品改由 /api/products 渲染（js/home-products.js）。
                      卡片结构/类名为冻结契约（.reich-product-card/.reich-product-action/.reich-product-name/
                      -price/-image/[data-product-id]/.reich-heart-pill/.stagger-item）；
@@ -168,7 +170,7 @@
         <!-- 品牌故事（C23 裁决：--space-section 令牌启用；C17 裁决：正文 30em、图列顺势 55%） -->
         <section id="brand-story" class="py-[var(--space-section)] bg-[var(--bg-soft)]" aria-labelledby="brand-story-heading">
             <div class="container mx-auto px-4">
-                <div class="grid grid-cols-1 md:grid-cols-[45%_55%] gap-12 items-center">
+                <div class="grid grid-cols-1 md:grid-cols-[minmax(0,45fr)_minmax(0,55fr)] gap-12 items-center"><!-- 批四(7) 大师会诊栅格 P1-4：45%_55% → minmax fr 化（fr 列受 gap 挤压时按内容自愈，不再溢出轨道） -->
                     <div>
                         <!-- P1：品牌故事区真图（Unsplash，见 images/CREDITS.md） -->
                         <picture>
@@ -176,7 +178,7 @@
                             <img
                                 src="images/banners/banner-promo.jpg"
                                 alt="Reich品牌故事 - 三只本季皮具，明亮影棚里的新品们"
-                                class="w-full h-auto rounded-xl shadow-lg"
+                                class="w-full h-auto rounded-xl shadow-lg max-w-[clamp(480px,52vw,560px)] md:justify-self-end"<!-- 批四(7): 图列 clamp(480,52vw,560) 右轴闭合（不追列全宽，右缘与 55% 列轴对齐） -->
                                 loading="lazy"
                                 decoding="async"
                                 width="1200"
@@ -222,7 +224,7 @@
                 <!-- 品牌信息 -->
                 <div>
                     <h3 class="text-2xl font-semibold tracking-[0.18em] mb-6">REICH</h3><!-- C16(裁决): 字标字距 0.18em/字重 600 -->
-                    <p class="mb-6">慢慢挑，不着急——好东西都在店里等你。</p>
+                    <p class="mb-6 leading-[var(--leading-relaxed)]">慢慢挑，不着急——好东西都在店里等你。</p><!-- 批四(6): ln≥2 正文块行宽舒适区三起手之三（footer 导语） -->
                     <!-- M8·C7: 社媒死链（instagram/facebook/twitter/weibo.com/reich 空账号）摘除，换纯文本占位——上线开号后再换回图标 -->
                     <p class="text-sm text-[var(--ink-soft)]">@REICH（即将开张）</p>
                 </div>
@@ -241,16 +243,15 @@
                     </nav>
                 </div>
 
-                <!-- 客户服务（P5：/contact 等路由演示站未开通，降为纯文字） -->
+                <!-- 客户服务（P5：/contact 等路由演示站未开通，降为纯文字；批五(15): "退换政策"死文本→活链"退换与售后"，删"敬请期待"行） -->
                 <div>
                     <h4 class="text-lg font-medium mb-6">客户服务</h4>
                     <ul class="space-y-3 text-[var(--ink-soft)]" aria-label="客户服务（演示站未开通）">
                         <li>联系我们</li>
                         <li>配送信息</li>
-                        <li>退换政策</li>
+                        <li><a href="returns.html" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">退换与售后</a></li>
                         <li>常见问题</li>
                     </ul>
-                    <p class="mt-3 text-xs text-[var(--ink-soft)]">演示站未开通，敬请期待</p>
                 </div>
 
                 <!-- 法律信息（P5：同上，降为纯文字） -->
@@ -262,7 +263,7 @@
                         <li>Cookie政策</li>
                         <li>知识产权</li>
                     </ul>
-                    <p class="mt-3 text-xs text-[var(--ink-soft)]">演示站未开通，敬请期待</p>
+                    <!-- 批五(15): "敬请期待"行删——与客户服务栏同批（演示口径的诚实清单已在栏 aria 内） -->
                 </div>
             </div>
             
@@ -275,7 +276,7 @@
     <!-- JavaScript -->
     <!-- escapeHtml 全局工具：经典脚本立即执行，先于下方 defer 的 module（cart.js 渲染依赖它） -->
     <script src="js/utils/escape-html.js"></script>
-    <script type="module" defer src="js/navigation.js"></script>
+    <!-- 批五(16): js/navigation.js 脚本引用删（死模块，同批文件已废弃；头部行为早归 site-header.js） -->
     <script type="module" defer src="js/main.js"></script>
     <script type="module" defer src="js/product-id-manager.js"></script>
     <script type="module" defer src="js/cart.js"></script>

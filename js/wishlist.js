@@ -34,37 +34,57 @@ class WishlistManager {
   }
 
   initWishlistUI() {
-    // 更新收藏按钮状态
-    document.querySelectorAll('.reich-product-card').forEach(card => {
-      const productId = card.dataset.productId;
-      if (productId && this.isInWishlist(productId)) {
-        const heartIcon = card.querySelector('img[src*="heart-icon"]');
-        if (heartIcon) {
-          this.setHeartState(heartIcon, true);
-        }
+    // 批一(3) 大师会诊（2026-10-06）：绑定域从"卡片内心形"扩为全站 .reich-heart-pill
+    // （PDP ATC 旁同契约钮，product.js 渲染）——在册态一律实心化
+    document.querySelectorAll('button.reich-heart-pill').forEach(btn => {
+      const productId = this.resolveProductId(btn);
+      const heartIcon = btn.querySelector('img[src*="heart-icon"]');
+      if (productId && heartIcon && this.isInWishlist(productId)) {
+        this.setHeartState(heartIcon, true);
       }
     });
   }
 
+  /** 心形钮的商品 id：钮自带 data-product-id 优先，否则回卡片上下文（冻结契约） */
+  resolveProductId(btn) {
+    const card = btn.closest('.reich-product-card');
+    return btn.dataset.productId || (card && card.dataset.productId) || null;
+  }
+
   bindEvents() {
-    // 绑定收藏按钮点击事件
-    document.querySelectorAll('.reich-product-action img[src*="heart-icon"]').forEach(btn => {
-      btn.closest('.reich-product-action').addEventListener('click', (e) => {
+    // 绑定收藏按钮点击事件（批一(3)：按钮级绑定覆盖卡片与 PDP 两处；
+    // 原选择器 .reich-product-action img[src*="heart-icon"] 的绑定落点即本钮）
+    document.querySelectorAll('button.reich-heart-pill').forEach(btn => {
+      // 幂等护栏：home-products 渲染后重绑只作用于新节点；同钮二次 bindEvents
+      //（如 PDP 与重绑并存）不得叠加监听（add/remove 双触发互相抵消）
+      if (btn.dataset.wishlistBound === '1') return;
+      btn.dataset.wishlistBound = '1';
+      btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        const productCard = btn.closest('.reich-product-card');
-        const productId = productCard.dataset.productId;
+        const productId = this.resolveProductId(btn);
+        if (!productId) return;
+        const heartImg = btn.querySelector('img[src*="heart-icon"]');
 
         if (this.isInWishlist(productId)) {
           this.removeFromWishlist(productId);
-          this.setHeartState(btn, false);
+          this.setHeartState(heartImg, false);
         } else {
-          this.addToWishlist({
-            id: productId || Date.now().toString(),
-            name: productCard.querySelector('.reich-product-name').textContent,
-            price: productCard.querySelector('.reich-product-price').textContent,
-            image: productCard.querySelector('.reich-product-image').src,
-          });
-          this.setHeartState(btn, true);
+          const card = btn.closest('.reich-product-card');
+          // 卡片上下文（index bento 卡）按 DOM 读品名/价格/图；PDP 钮自带
+          // data-product-name/price/pic（product.js 渲染，存储形状一致）
+          const product = card
+            ? {
+                name: card.querySelector('.reich-product-name').textContent,
+                price: card.querySelector('.reich-product-price').textContent,
+                image: card.querySelector('.reich-product-image').src
+              }
+            : {
+                name: btn.dataset.productName || 'Reich 单品',
+                price: btn.dataset.productPrice || '',
+                image: btn.dataset.productPic || ''
+              };
+          this.addToWishlist(Object.assign({ id: productId }, product));
+          this.setHeartState(heartImg, true);
         }
       });
     });

@@ -8,7 +8,12 @@
     <meta name="robots" content="noindex, nofollow">
     <title>商品管理 · REICH</title>
     <!-- 复用站点令牌唯一源（糖果体系/白底黑 ink 骨架/12px 圆角），不引 Tailwind CDN、不等构建链 -->
+    <!-- 批三(2026-10-06 masters-verdict): admin 字体孤岛接入——fonts.css 供 Barlow 字面、
+         main.css 供 html 根字体兜底；两行均在下方页内 <style> 之前，同特异性时页内规则仍胜 -->
+    <link rel="preload" href="fonts/barlow-variable.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="fonts/fonts.css">
     <link rel="stylesheet" href="css/tokens.css">
+    <link rel="stylesheet" href="css/main.css">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <!--
       admin 样式全部内嵌本页（禁令：不新建主站 css 文件、不污染 css/ 目录）。
@@ -23,7 +28,7 @@
         background: var(--bg-base);
         color: var(--ink);
         font-family: var(--font-body);
-        font-size: var(--text-body);
+        font-size: 16px; /* 批三: 15px(--text-body) → 16px 与全站正文底对齐 */
         line-height: 1.6;
         -webkit-font-smoothing: antialiased;
       }
@@ -47,6 +52,7 @@
       .brand .crumb {
         font-size: var(--text-caption); text-transform: uppercase;
         letter-spacing: var(--tracking-caps); color: var(--ink-soft);
+        font-weight: 600; /* 批三: caps 层 400→600（crumb 补漏） */
       }
       .session { display: flex; align-items: center; gap: 14px; font-size: var(--text-small); color: var(--ink-soft); }
       .session .email { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -56,7 +62,7 @@
       /* ── 布局容器 ────────────────────────────────────────── */
       .admin-main { max-width: 1240px; margin: 0 auto; padding: 28px 24px 80px; }
       .view-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
-      .view-head h1 { font-family: var(--font-display); font-size: var(--text-title); font-weight: 800; margin: 0; letter-spacing: 0.01em; }
+      .view-head h1 { font-family: var(--font-display); font-size: 2rem; font-weight: 700; line-height: 1.25; margin: 0; } /* 批三+批四: h1 典范 32px/700/lh1.25/无字距（原 28/800/0.01em） */
       .view-head .sub { color: var(--ink-soft); font-size: var(--text-small); margin-top: 4px; }
 
       /* ── 按钮（pill 主 CTA，与站点一致） ─────────────────── */

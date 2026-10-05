@@ -26,13 +26,19 @@
     <!-- M5：PDP 专属样式（≤8KB gz 预算） -->
     <link rel="stylesheet" href="css/product.css">
     <link rel="stylesheet" href="css/components/cart.css">
+    <!-- 批二(8) 大师会诊栅格 P1-1：PDP 接入 Tailwind 容器（与六页同源同层叠位——
+         .container/.mx-auto/.px-4 工具类生效，1280 容器+16 内边距，1440 轴线归 96；
+         原 main.css .container ≥1280 档 padding 32px 叠边距随工具类层叠自然退位） -->
+    <link rel="stylesheet" href="css/tailwind-entry.css">
 </head>
 
 <body class="text-[var(--text-primary)]" style="padding-top: 72px">
     <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-[var(--ink)] text-white px-4 py-2 rounded z-50">跳转到主内容</a>
 
-    <!-- 统一站点导航（M5 挂靠 index 页配置：PDP 无独立 PAGE_CONFIG，
-         M6 头部域如需 product 专属 aria-current 再行登记） -->
+    <!-- 统一站点导航（批二(11) 大师会诊 IA P2-1：PDP 独立 PAGE_CONFIG——
+         navCurrent/mobileCurrent=手袋（面包屑"手袋/品名"与主导航互证），
+         移动菜单不再错标"首页"；批一(1)：搜索钮全站化后本页搜索条由
+         site-header.js 同构渲染，搜索钮为活钮） -->
     <noscript>
       <header class="site-header" id="siteHeader">
         <div class="container mx-auto px-4 site-header-inner">
@@ -51,7 +57,7 @@
         </div>
       </header>
     </noscript>
-    <template data-site-header data-page="index"></template>
+    <template data-site-header data-page="product"></template>
     <script type="module" src="js/site-header.js"></script>
 
     <!-- 主内容：商品详情（js/product.js 按 ?id= 渲染；三路异常落页内诚实空态，不伪 404） -->
@@ -66,9 +72,67 @@
 
     <!-- 移动端吸底加购条（product.js 渲染，product.css ≤1023px 显示） -->
 
+    <!-- 批二(9) 大师会诊栅格 P1-2：PDP 四栏 footer（与 index/orders 同款结构，
+         商品页语境导航适配——"手袋"回商品区锚点；"退换与售后"活链同名词；
+         底部收尾 padding 144→108 见 product.css .product-detail） -->
+    <footer class="bg-white py-16 mt-16" role="contentinfo">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-12">
+                <!-- 品牌信息 -->
+                <div>
+                    <h3 class="text-2xl font-semibold tracking-[0.18em] mb-6">REICH</h3>
+                    <p class="mb-6 leading-[var(--leading-relaxed)]">慢慢挑，不着急——好东西都在店里等你。</p>
+                    <p class="text-sm text-[var(--ink-soft)]">@REICH（即将开张）</p>
+                </div>
+
+                <!-- 快速导航（商品页语境：手袋回商品区锚点居首） -->
+                <div>
+                    <h4 class="text-lg font-medium mb-6">快速导航</h4>
+                    <nav aria-label="快速导航链接">
+                        <ul class="space-y-3">
+                            <li><a href="index.html#featured-collections" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">手袋</a></li>
+                            <li><a href="index.html" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">首页</a></li>
+                            <li><a href="orders.html" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">我的订单</a></li>
+                            <li><a href="profile.html" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">个人中心</a></li>
+                            <li><a href="returns.html" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">退换与售后</a></li>
+                        </ul>
+                    </nav>
+                </div>
+
+                <!-- 客户服务（P5 口径：未开通项降为纯文字） -->
+                <div>
+                    <h4 class="text-lg font-medium mb-6">客户服务</h4>
+                    <ul class="space-y-3 text-[var(--ink-soft)]" aria-label="客户服务（演示站未开通）">
+                        <li>联系我们</li>
+                        <li>配送信息</li>
+                        <li><a href="returns.html" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">退换与售后</a></li>
+                        <li>常见问题</li>
+                    </ul>
+                </div>
+
+                <!-- 法律信息（P5：同上，降为纯文字；批五(15): 同删"敬请期待"行——aria-label 已自述"未开通"） -->
+                <div>
+                    <h4 class="text-lg font-medium mb-6">法律信息</h4>
+                    <ul class="space-y-3 text-[var(--ink-soft)]" aria-label="法律信息（演示站未开通）">
+                        <li>隐私政策</li>
+                        <li>使用条款</li>
+                        <li>Cookie政策</li>
+                        <li>知识产权</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="mt-12 pt-8 border-t border-[var(--border-default)] text-center">
+                <p>&copy; 2026 Reich. 保留所有权利。</p>
+            </div>
+        </div>
+    </footer>
+
     <!-- JavaScript -->
     <script src="js/utils/escape-html.js"></script>
     <script type="module" defer src="js/product.js"></script>
+    <!-- 批一(3)：wishlist.js 全站绑定 .reich-heart-pill——PDP ATC 旁收藏心形生效 -->
+    <script type="module" defer src="js/wishlist.js"></script>
     <script type="module" defer src="js/cart.js"></script>
 </body>
 

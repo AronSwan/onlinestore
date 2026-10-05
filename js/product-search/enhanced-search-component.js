@@ -109,7 +109,7 @@ async init() {
     searchInput.type = 'search';
     searchInput.id = this.options.searchInputId;
     searchInput.name = 'q';
-    searchInput.placeholder = '搜索产品、系列或关键词';
+    searchInput.placeholder = '搜手袋、颜色或系列'; // 批五(19): 品类词口径（弃"产品"泛词）
     searchInput.className = 'w-full py-3 pl-12 pr-4 border border-[var(--border-default)] rounded-none focus:outline-none focus:border-[var(--candy-blush-ink)] focus:ring-2 focus:ring-[var(--ink)] focus:ring-opacity-20 text-lg';
     searchInput.autocomplete = 'off';
     searchInput.spellcheck = 'false';

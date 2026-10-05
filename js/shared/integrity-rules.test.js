@@ -86,7 +86,7 @@ test('事故 3：绿橙紫渐变描述写「粉到金」→ 黄警 COLOR_MISMATC
 // ─────────────────────────────────────────────
 test('lintCopy：voice-sheet 示例文案全部干净（正控）', () => {
   assert.deepEqual(lintCopy('总有一只先背。——2025 秋冬，到货了'), { violations: [] });
-  assert.deepEqual(lintCopy('IT\'S TOTE SEASON · 包包们的季节到了'), { violations: [] });
+  assert.deepEqual(lintCopy('IT\'S TOTE SEASON · 手袋们的季节到了'), { violations: [] }); // 批五(19): 样例与线上文案同步（"包包们"→"手袋们"）
   assert.deepEqual(lintCopy('偶尔来信，不打扰。（真的偶尔。）'), { violations: [] });
 });
 

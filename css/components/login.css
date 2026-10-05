@@ -33,7 +33,9 @@
     border-radius: var(--radius-md); /* C1(裁决): 2px 方正旧世界 → 三档圆角归位（卡=md） */
     /* F6.5：25px 静置装饰阴影删，改 hairline 边界定卡（宪法禁卡片浮起感） */
     border: 1px solid var(--line);
-    padding: var(--spacing-16);
+    /* 批四(8) 大师会诊栅格 P1-3：基线 padding 落令牌 spacing-8（2rem）——
+       与原 Tailwind p-8（login.html 已同批摘除）视觉等值，响应档令牌值得以下自然生效 */
+    padding: var(--spacing-8);
     width: 100%;
     max-width: 420px;
     position: relative;
@@ -57,11 +59,12 @@
 .login-card h1 {
     font-family: var(--font-display);
     font-size: 2rem;
-    font-weight: var(--font-weight-semibold); /* C1(裁决): 300 细体换季 → 600 */
+    font-weight: 700; /* 批四(6): h1 典范 600→700（C1 裁决的 600 是过渡态） */
     color: var(--dark-elegant);
     text-align: center;
     margin-bottom: var(--spacing-sm);
-    letter-spacing: var(--letter-spacing-wide);
+    /* 批四(6): letter-spacing 2.56px(--letter-spacing-wide) 删除——h1 典范无字距 */
+    line-height: 1.25;
 }
 
 .login-card p {
@@ -132,8 +135,9 @@
     font-weight: var(--font-weight-semibold); /* C22(裁决): caps 微标签层字重统一 600 */
     color: var(--dark-elegant);
     margin-bottom: var(--spacing-2);
-    text-transform: uppercase;
-    letter-spacing: var(--letter-spacing-wide);
+    /* 批四(12) 大师会诊：中文标签（邮箱地址/密码）去 uppercase（中文无效形制）、
+       tracking 收 0.02em（--letter-spacing-wide 0.08em 是拉丁全大写档） */
+    letter-spacing: 0.02em;
 }
 
 .form-input {
@@ -546,8 +550,11 @@
         font-size: 1.75rem;
     }
     
-    .auth-tab {
-        font-size: var(--text-xs);
+    /* 批四(7): 双 tab 移动档 12→13px（中文 pill 底线）。提特异度写法（.auth-tabs .auth-tab）
+       是为压过 enhanced-responsive.css 768 档同特异度的 --text-xs（该文件本行之后加载；
+       其 login768 段属 A 席域不动，此处只在己文件内胜出层叠） */
+    .auth-tabs .auth-tab {
+        font-size: var(--text-small);
     }
     
     .notification {

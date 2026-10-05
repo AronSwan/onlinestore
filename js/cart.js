@@ -31,7 +31,9 @@
 import { formatPrice } from './shared/format-price.js';
 // M3(B1)：加购反馈系统——飞行克隆 + 统一 toast（规格见两文件头注）
 import { flyToCart, resolveFlightSource } from './shared/fly-to-cart.js';
-import { showCartToast } from './shared/toast.js';
+import { showCartToast, showToast } from './shared/toast.js';
+// 批一(7) 大师会诊：ESC 关闭走全站分发器（购物袋浮层注册回调）
+import { registerOverlayEscape } from './shared/overlay-escape.js';
 
 /**
  * 购物车管理器类 - 增强版
@@ -543,13 +545,22 @@ class CartUI {
       });
     }
     
-    // ESC键关闭
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && this.isVisible) {
+    // 批一(7) 大师会诊：ESC 关闭走 overlay-escape 全站分发器
+    //（替代本文件原自挂的 document keydown——与用户菜单/移动菜单/订单弹窗同一位分发者）
+    registerOverlayEscape('cart-panel', () => {
+      if (this.isVisible) {
         this.hide();
+        return true;
       }
+      return false;
     });
-    
+
+    // 批一(4) 假模态焦点三件套：
+    //   ① focusin 拦截圈禁——面板打开时焦点逸出面板即拉回（浏览器自动聚焦/
+    //      脚本 focus 的兜底）；② Tab 首尾循环（keydown 层，Shift+Tab 回尾钮）；
+    //   ③ show/hide 的焦点进出（见两方法）。
+    this.bindFocusTrap();
+
     // 去结算按钮：此前只管理 disabled 态、零点击绑定（纯装饰）。
     // 演示环境未开通结算/下单后端，诚实提示，不做假跳转
     if (this.elements.checkoutBtn) {
@@ -654,6 +665,53 @@ class CartUI {
   }
 
   /**
+   * 批一(4) 焦点圈禁双通道绑定（一次绑定，常驻判 isVisible）
+   */
+  bindFocusTrap() {
+    const panel = () => this.elements.cartPanel;
+
+    // ① focusin 拦截：面板打开时，焦点落到面板外（含遮罩/页面残留）→ 拉回面板
+    document.addEventListener('focusin', (e) => {
+      if (!this.isVisible) return;
+      const p = panel();
+      if (p && !p.contains(e.target)) {
+        const closeBtn = p.querySelector('.cart-close-btn');
+        if (closeBtn) closeBtn.focus();
+      }
+    });
+
+    // ② Tab 首尾循环：面板内第一个/最后一个可聚焦元素之间循环
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Tab' || !this.isVisible) return;
+      const p = panel();
+      if (!p) return;
+      const focusables = this.getPanelFocusables(p);
+      if (!focusables.length) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      } else if (!p.contains(active)) {
+        e.preventDefault();
+        first.focus();
+      }
+    });
+  }
+
+  /** 面板内可聚焦元素（可见且非 disabled） */
+  getPanelFocusables(panel) {
+    if (!panel) return [];
+    return Array.from(
+      panel.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+    ).filter((el) => !el.disabled && el.offsetParent !== null);
+  }
+
+  /**
    * 显示购物车
    */
   show() {
@@ -661,10 +719,24 @@ class CartUI {
       // 打开前先按当前购物车状态渲染：浮层可能是刚懒创建的，
       // 不先渲染会误显示"购物车为空"
       this.updateCartDisplay();
+      // 批一(4)：记忆焦点来处（hide 时还原），遮罩后 main 内容 inert（不可聚焦/不可交互）
+      this.lastFocused = document.activeElement;
+      this.setMainInert(true);
       this.elements.cartOverlay.style.display = 'block';
       setTimeout(() => {
         this.elements.cartOverlay.classList.add('visible');
         this.isVisible = true;
+        // 批一(4)：打开即聚焦关闭钮——键盘用户第一站是"怎么离开"。
+        // 时序修正（验收实锤）：.cart-overlay 是 visibility 0.3s 过渡——过渡启动
+        // 前的同类任务/邻帧 focus() 均为无声 no-op（无 focusin、activeElement 不动，
+        // 实测 t+35ms 仍失败、t+100ms 起稳定成功：离散可见性翻转落定+渲染树更新
+        // 需要一两帧之外的余量）。取 150ms：早于人类键盘反应（≈200ms+），
+        // 晚于可聚焦窗口；isVisible 已翻 false（快速关面板）则不抢焦点
+        setTimeout(() => {
+          if (!this.isVisible) return;
+          const closeBtn = this.elements.cartPanel && this.elements.cartPanel.querySelector('.cart-close-btn');
+          if (closeBtn) closeBtn.focus();
+        }, 150);
       }, 10);
     }
   }
@@ -674,11 +746,31 @@ class CartUI {
    */
   hide() {
     if (this.elements.cartOverlay) {
+      // isVisible 即刻置 false：焦点圈禁（focusin/Tab）与 ESC 分发都键控它，
+      // 若等动画结束才置 false，下方"焦点还原触发钮"会被 focusin 拦截拉回面板
+      this.isVisible = false;
       this.elements.cartOverlay.classList.remove('visible');
+      // 批一(4)：解除 main inert，焦点还原触发钮（.site-cart-btn 冻结类；
+      // 无头部购物袋钮的极端场景回落记忆来处）
+      this.setMainInert(false);
+      const trigger = document.querySelector('.site-cart-btn');
+      const restore = trigger || this.lastFocused;
+      if (restore && typeof restore.focus === 'function') restore.focus();
+      this.lastFocused = null;
       setTimeout(() => {
         this.elements.cartOverlay.style.display = 'none';
-        this.isVisible = false;
       }, this.animationDuration);
+    }
+  }
+
+  /** 批一(4)：遮罩后 main 内容 inert（aria 无需另设——inert 本身从可访问树移除） */
+  setMainInert(inert) {
+    const main = document.querySelector('main');
+    if (!main) return;
+    if (inert) {
+      main.setAttribute('inert', '');
+    } else {
+      main.removeAttribute('inert');
     }
   }
 
@@ -727,9 +819,16 @@ class CartUI {
    * M2(蓝图 v1.1)：C5 新列序 [缩略 72px][名称两行+价格行][步进器][×]；
    * B5 formatPrice 统一格式；C28 qty=1 单价只显一次、qty>1 单行算术
    * "¥259 × 2 = ¥518"（Condensed 600 15px 由 cart.css 锁）
+   *
+   * 批四(22) 步进器边界（大师会诊交互席）：+ 达 999 disabled + 行内提示
+   * "一件最多带 999 只"（与 updateItemQuantity 999 上限同口径）；− 到 1 给
+   * "再按即移除"轻提示（再按即走 removeItem）。
+   * 批四(23) 增量更新：重渲后对"上一帧已在袋"的行挂 .is-old（cart.css
+   * 去入场动画）——点 + 不再全列表重播 cartItemSlideIn。
    */
   updateItemsList(cart) {
     if (!this.elements.cartItemsList) return;
+    const prevSkus = this._renderedSkus || new Set();
 
     // F7 渲染层转义：购物车数据来自 localStorage/后端同步，
     // 所有字符串字段插值统一包 escapeHtml()（js/utils/escape-html.js，
@@ -739,8 +838,15 @@ class CartUI {
       const line = item.productQuantity > 1
         ? `${unit} × ${item.productQuantity} = ${formatPrice(item.productPrice * item.productQuantity)}`
         : unit;
+      // 批四(22)：边界态——上限 disabled / 底限轻提示
+      const atMax = item.productQuantity >= 999;
+      const atMin = item.productQuantity <= 1;
+      const qtyHint = atMax
+        ? '一件最多带 999 只'
+        : (atMin ? '再按即移除' : '');
+      const oldCls = prevSkus.has(item.productSkuId) ? ' is-old' : '';
       return `
-      <div class="cart-item" data-sku-id="${escapeHtml(item.productSkuId)}">
+      <div class="cart-item${oldCls}" data-sku-id="${escapeHtml(item.productSkuId)}">
         <div class="item-image">
           <img src="${escapeHtml(item.productPic)}" alt="${escapeHtml(item.productName)}">
         </div>
@@ -749,15 +855,18 @@ class CartUI {
           <p class="item-price-line">${line}</p>
         </div>
         <div class="item-quantity">
-          <button onclick="cartManager.updateItemQuantity('${escapeHtml(item.productSkuId)}', ${item.productQuantity - 1})" aria-label="减少数量">−</button>
+          <button onclick="cartManager.updateItemQuantity('${escapeHtml(item.productSkuId)}', ${item.productQuantity - 1})" aria-label="减少数量"${atMin ? ' title="再按即移除"' : ''}>−</button>
           <span>${item.productQuantity}</span>
-          <button onclick="cartManager.updateItemQuantity('${escapeHtml(item.productSkuId)}', ${item.productQuantity + 1})" aria-label="增加数量">+</button>
+          <button onclick="cartManager.updateItemQuantity('${escapeHtml(item.productSkuId)}', ${item.productQuantity + 1})" aria-label="增加数量"${atMax ? ' disabled title="一件最多带 999 只"' : ''}>+</button>
+          ${qtyHint ? `<span class="qty-hint" role="status">${qtyHint}</span>` : ''}
         </div>
-        <button class="item-remove" onclick="cartManager.removeItem('${escapeHtml(item.productSkuId)}')" aria-label="移除此商品">
+        <button class="item-remove" onclick="cartManager.removeItem('${escapeHtml(item.productSkuId)}')" aria-label="移除此单品">
           ×
         </button>
       </div>
     `;}).join('');
+
+    this._renderedSkus = new Set(cart.map(item => item.productSkuId));
   }
 
   /**
@@ -805,34 +914,14 @@ class CartUI {
   }
 
   /**
-   * 轻量提示 toast（对齐 F5-min 诚实 UI 语义）
-   * 说明：cart.js 页面（index/orders）未加载 login-utils.js，
-   * LoginUtils.showNotification 不可用，故自写内联样式 toast；
-   * z-index 取 11000，确保盖在 .cart-overlay（var(--z-overlay)=400）之上
+   * 轻量提示（批一(5) 大师会诊 toast 四物种归一，2026-10-06）：
+   * 原自写内联黑底硬切 toast（#1a1a1a 3s 消失）退役，改调 shared/toast.js
+   * 纯通知语态（confirmText/dismissText 传 null）——同底/同圆角/同进出/同位置，
+   * 只保留各自文案；停留时长归组件罗马下限（≥5s，hover 暂停）。
+   * type 形参保留仅为两处调用点兼容（归一后无色分语义，文案自足）。
    */
-  showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = 'cart-toast-notification';
-    notification.setAttribute('role', 'status');
-    notification.textContent = message;
-    notification.style.cssText = [
-      'position:fixed',
-      'top:24px',
-      'right:24px',
-      'z-index:11000',
-      'padding:12px 24px',
-      'border-radius:8px',
-      'color:#fff',
-      'font-size:14px',
-      'box-shadow:0 4px 16px rgba(0,0,0,0.2)',
-      type === 'error' ? 'background-color:#c0392b' : 'background-color:#1a1a1a',
-      'max-width:320px'
-    ].join(';');
-    
-    document.body.appendChild(notification);
-    
-    // 3秒后自动移除
-    setTimeout(() => notification.remove(), 3000);
+  showNotification(message) {
+    showToast({ message, confirmText: null, dismissText: null });
   }
 }
 

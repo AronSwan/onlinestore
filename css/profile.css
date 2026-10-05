@@ -4,28 +4,34 @@
 /* 时间：2025-09-26 21:20:00 */
 
 /* 用户资料容器 */
+/* 批三(2026-10-06 masters-verdict 栅格 P2-6): 1200→1280 接入全站容器制度，
+   左右内边距 20→16 对齐全站 .container px-4（1440 视口下内容轴线 96px），
+   gap 30→32（spacing-8） */
 .profile-container {
     display: flex;
-    max-width: 1200px;
+    max-width: 1280px;
     margin: 0 auto;
-    padding: 20px;
-    gap: 30px;
+    padding: 20px 16px;
+    gap: 32px;
 }
 
 /* 侧边栏样式 */
+/* 批三: 三遗留值换令牌——#f8f9fa→--bg-soft、圆角 8→12(--radius-md)、h2 #333→--ink-soft */
 .profile-sidebar {
-    flex: 0 0 250px;
-    background: #f8f9fa;
-    border-radius: 8px;
+    flex: 0 0 256px;
+    background: var(--bg-soft);
+    border-radius: var(--radius-md);
     padding: 20px;
     height: fit-content;
 }
 
-.profile-sidebar h2 {
+/* 批四: "个人中心"由 h2 升 h1（页级唯一 h1），样式取 h1 典范 32px/700/lh1.25 */
+.profile-sidebar h1 {
     margin-bottom: 20px;
-    color: #333;
-    font-size: 18px;
-    font-weight: 600;
+    color: var(--ink-soft);
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.25;
 }
 
 .profile-menu {
@@ -140,15 +146,17 @@
 }
 
 /* 按钮样式 */
+/* 批三(排版 P1-7): .btn-primary 并入 btn-pill 形制——圆角 6→pill、14px/500→13px/600
+   （main.css .btn-pill 同参）；配色不在裁决范围，保守不动 */
 .btn-primary {
     background: #007bff;
     color: white;
     border: none;
     padding: 12px 24px;
-    border-radius: 6px;
+    border-radius: var(--radius-pill);
     cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
+    font-size: var(--text-small);
+    font-weight: 600;
     transition: background 0.3s ease;
 }
 
@@ -552,23 +560,15 @@
 }
 /* ============================================================
  * F4 · preflight 补偿（tailwind-entry.css 纳入后的还原账）
- * 本页原无 Tailwind，纳入统一构建入口后 preflight 改了四处 UA 默认
- * （逐条依据 .tmp-f3-shots/style-diff-profile.cjs 的 computed 对比）：
- *   1. html 行高 normal → 1.5：label 21→24px、输入框 42→47px、
- *      菜单项 45→48px，全页 +51px（桌面）/ +56px（移动）；
- *   2. h3/h4 字重 → inherit(400)：账户安全/地址列表的标题去粗；
- *   3. 表单控件 color → inherit：rgb(0,0,0) → var(--ink)；
- *   4. button 字号 13.33px → 100%(16px)（头部按钮，图标固定尺寸不可见）。
- * 还原策略：body 归 normal、标题归粗、表单字色归黑——头部
- * （.site-header/.site-mobile-menu）保持与另三页一致的 1.5 行高不还原。
- * 注：body/h3/h4 特意加 html>/body 前缀抬特异度——本文件在 tailwind-entry.css
- * 之前加载，preflight 的 body{line-height:inherit}/h3,h4{font-weight:inherit}
- * 同特异度且靠后，普通写法会被反杀。
+ * 批三(2026-10-06 masters-verdict 排版 P1-7)清账三段：
+ *   ① html>body{line-height:normal} ② 表单控件 font-family:Arial
+ *   ③ 按钮 font-family:Arial —— 三段全删，正文/输入框/按钮归
+ *   Barlow 正字（profile Arial 基线自首问题消灭）。
+ * 仍保留（不在删除清单）：
+ *   - h3/h4 字重归粗（preflight inherit(400) 还原）；
+ *   - 头部 .site-header/.site-mobile-menu 行高 1.5 显式化；
+ *   - date 输入框 monospace（UA 对 input[type=date] 的特例，见下）。
  * ============================================================ */
-html > body {
-    line-height: normal;
-}
-
 .site-header,
 .site-mobile-menu {
     line-height: 1.5;
@@ -579,24 +579,8 @@ body h4 {
     font-weight: 700;
 }
 
-html > body .form-group input,
-html > body .form-group select,
-html > body .form-group textarea {
-    color: #000;
-    /* 输入框字体还原 UA 默认（Arial）：preflight 的 font-family:inherit 会让
-       14px 行盒比 Arial 高 1px（42→43px），全页累计 +6px */
-    font-family: Arial, sans-serif;
-}
-
-/* 按钮同理：preflight font-family:inherit 令 .btn-primary/.btn-secondary 文字
-   从 UA Arial 变为正文字体（字形宽度差异，截图 diff 0.04% 残留），还原 */
-html > body .btn-primary,
-html > body .btn-secondary {
-    font-family: Arial, sans-serif;
-}
-
 /* date 输入框：UA 对 input[type=date] 特例用 monospace（截图基线即如此），
-   上面统一还原 Arial 时把它带偏了，单独归位 */
+   preflight 的 font-family:inherit 会把它带偏，单独归位 */
 html > body .form-group input[type="date"] {
     font-family: monospace;
 }

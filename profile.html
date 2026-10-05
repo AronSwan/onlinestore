@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>个人资料 - Reich 购物网站</title>
+    <title>个人中心 - REICH</title><!-- 批四(11): 品牌口径——"个人资料 - Reich 购物网站"退役 -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <!-- CSS变量系统 + 主样式表 + 个人资料页样式 -->
     <link rel="preload" href="fonts/barlow-variable.woff2" as="font" type="font/woff2" crossorigin>
@@ -49,9 +49,10 @@
     <!-- 主要内容区域 -->
     <main id="main-content" class="profile-container">
         <div class="profile-sidebar">
-            <h2>个人中心</h2>
+            <h1>个人中心</h1><!-- 批四(6): h2 升 h1——本页唯一 h1（h1 典范 32/700/lh1.25，见 profile.css） -->
             <ul class="profile-menu">
                 <li><a href="#basic-info" class="active">基本信息</a></li>
+                <li><a href="orders.html">我的订单</a></li><!-- 批三(4): 与 orders 面包屑"我的账户>我的订单"互证 -->
                 <li><a href="#wishlist">我的心头好</a></li>
                 <li><a href="#addresses">收货地址</a></li>
                 <li><a href="#security">账户安全</a></li>
@@ -259,12 +260,15 @@
 
             menuLinks.forEach(link => {
                 link.addEventListener('click', function(e) {
+                    // 批三(4): 站外页链（"我的订单"→orders.html）直接放行导航，
+                    // 只拦截本页锚点切换（# 开头才走 section 切换）
+                    if (!this.getAttribute('href').startsWith('#')) return;
                     e.preventDefault();
-                    
+
                     // 移除所有激活状态
                     menuLinks.forEach(l => l.classList.remove('active'));
                     sections.forEach(s => s.classList.remove('active'));
-                    
+
                     // 添加当前激活状态
                     this.classList.add('active');
                     const targetId = this.getAttribute('href').substring(1);

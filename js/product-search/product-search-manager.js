@@ -512,7 +512,7 @@ class ProductSearchManager {
                     <div class="product-price">¥${product.price}</div>
                     <!-- M7·B10: 五星/评价计数删除——零评价不上假社会证明 -->
                     <div class="product-actions">
-                        <button class="product-button add-to-cart-button">加入购物车</button>
+                        <button class="product-button add-to-cart-button">加入购物袋</button><!-- 批五(19): 术语表 ATC 唯一动作词（此渲染路径现无 setContainers 调用者=死路径，防复活带错词） -->
                         <button class="product-button add-to-wishlist-button">收藏</button>
                     </div>
                 </div>

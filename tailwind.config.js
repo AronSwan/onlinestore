@@ -34,6 +34,8 @@ export default {
     './admin.html', // F3 纳入：admin 页为纯 CSS 内嵌（零 Tailwind 类），圈入扫描
     './returns.html', // M7·B13 退换政策页（skip-link/tailwind 工具类同四页口径）
     //   仅为统一 content 口径——贡献为空，防未来加类时静默丢失
+    './product.html', // 批二(8) 2026-10-06 PDP 接入 tailwind-entry.css（大师会诊栅格 P1-1）
+    //   ——仅补 content 扫描口径（该页与六页同源）；theme 零改动
     './js/**/*.js',
   ],
 

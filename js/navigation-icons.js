@@ -7,6 +7,12 @@
 // 用途：处理导航栏中各种图标的点击事件，包括用户登录/注册、购物车、心愿单等功能
 // 依赖文件：auth.js (用于用户登录状态检查), cart.js (用于购物车功能), wishlist.js (用于心愿单功能)
 
+// 批一(5)(6)(7) 大师会诊（2026-10-06）：私货 toast 改调 shared/toast.js；
+// 用户菜单外点关闭选择器改 .site-user-btn（选择器腐烂第二次同根）；
+// ESC 关闭走 overlay-escape 全站分发器（与购物袋/移动菜单/搜索条/订单弹窗同一位分发者）
+import { showToast } from './shared/toast.js';
+import { registerOverlayEscape } from './shared/overlay-escape.js';
+
 class NavigationIconManager {
   constructor() {
     this.init();
@@ -20,6 +26,19 @@ class NavigationIconManager {
     // 搜索按钮/移动端菜单不再在此绑定：index.html 内联脚本已有更完整的
     // 独占绑定（含 aria-expanded、ESC 关闭、焦点管理），此处再绑一次
     // 会导致同一点击触发两次 toggle（开关互相抵消，表现为"点不动"）
+
+    // 批一(6)(7) 大师会诊：外点关闭监听改"init 一次常驻"（原挂两处——创建菜单时
+    // 挂、隐藏时卸，第二次展开走 toggle 分支不再重挂，菜单就再也点不开了门外）；
+    // ESC 关闭走 overlay-escape 全站分发器（注册一次常驻判开合）
+    document.addEventListener('click', this.handleOutsideClick.bind(this));
+    registerOverlayEscape('user-menu', () => {
+      const menu = document.getElementById('user-menu');
+      if (menu && !menu.classList.contains('hidden')) {
+        this.hideUserMenu();
+        return true;
+      }
+      return false;
+    });
     console.log('NavigationIconManager: 初始化完成');
   }
 
@@ -103,13 +122,18 @@ class NavigationIconManager {
           this.handleLogout();
         });
       }
-      
-      // 点击其他地方关闭菜单
-      document.addEventListener('click', this.handleOutsideClick.bind(this));
+      // 批一(6): 外点关闭监听已在 init() 常驻挂载（此前"创建时挂/隐藏时卸"，
+      // toggle 分支重开不再补挂——菜单第二次展开后外点永远关不掉）
     } else {
       // 切换菜单显示状态
       userMenu.classList.toggle('hidden');
     }
+  }
+
+  /** 批一(7): 统一收口——ESC 分发器回调与外点关闭共用同一隐藏路径 */
+  hideUserMenu() {
+    const userMenu = document.getElementById('user-menu');
+    if (userMenu) userMenu.classList.add('hidden');
   }
 
   /**
@@ -143,14 +167,18 @@ class NavigationIconManager {
 
   /**
    * 处理点击外部区域关闭菜单
+   * 批一(6) 大师会诊：选择器改 .site-user-btn——原选择器
+   * 'button img[src="gucci-style-user-icon.svg"]' 是旧 img 结构的残骸
+   * （选择器腐烂第二次同根：SVG 头部下恒 null），菜单外点永远关不掉。
+   * 监听 init() 常驻，此处只判开合，不再卸载自身。
    */
   handleOutsideClick(event) {
-    const userIcon = document.querySelector('button img[src="gucci-style-user-icon.svg"]');
+    const userBtn = document.querySelector('.site-user-btn');
     const userMenu = document.getElementById('user-menu');
-    
-    if (userIcon && userMenu && !userIcon.contains(event.target) && !userMenu.contains(event.target)) {
-      userMenu.classList.add('hidden');
-      document.removeEventListener('click', this.handleOutsideClick.bind(this));
+
+    if (userBtn && userMenu && !userMenu.classList.contains('hidden') &&
+        !userBtn.contains(event.target) && !userMenu.contains(event.target)) {
+      this.hideUserMenu();
     }
   }
 
@@ -210,21 +238,13 @@ class NavigationIconManager {
   }
 
   /**
-   * 显示通知消息
+   * 显示通知消息（批一(5) toast 四物种归一，2026-10-06）：
+   * 原绿/红双态顶右角硬切私货退役，改调 shared/toast.js 纯通知语态
+   * （confirmText/dismissText 传 null）——同底/同进出/同位置，只保留文案。
+   * type 形参保留仅为调用点兼容。
    */
-  showNotification(message, type = 'success') {
-    const notification = document.createElement('div');
-    notification.className = `fixed top-4 right-4 px-6 py-3 rounded-md shadow-lg z-50 ${
-      type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-    }`;
-    notification.textContent = message;
-    
-    document.body.appendChild(notification);
-    
-    // 3秒后自动移除
-    setTimeout(() => {
-      notification.remove();
-    }, 3000);
+  showNotification(message) {
+    showToast({ message, confirmText: null, dismissText: null });
   }
 }
 

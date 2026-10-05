@@ -25,6 +25,10 @@ html {
     scroll-behavior: var(--scroll-behavior-smooth);
     font-size: 16px;
     line-height: var(--leading-body);
+    /* 批四(5) 大师会诊：根字体统一 var(--font-body)——product/admin 两页
+       原回落 Times New Roman（body 虽有族但 html 裸奔，表单/伪元素等
+       继承源不一的角落会露出衬线兜底） */
+    font-family: var(--font-body);
     /* 移除overflow: hidden以允许正常滚动 */
 }
 
@@ -2375,6 +2379,7 @@ body {
     font-weight: var(--font-weight-semibold);
     color: var(--ink);
     margin-bottom: var(--spacing-4);
+    font-variant-numeric: tabular-nums; /* 批四(8): 等宽数字铺满——A 卡价对位 */
 }
 
 /* 悬浮添加购物袋按钮（P2：金圆钮 → 卡片底部滑出的 pill；

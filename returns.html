@@ -8,7 +8,7 @@
     <!-- B13(2026-10-05): 退换与售后静态成文——香港席"查退换"一步全灭的风险路径补上。
          口径与购物袋信任行（cart.js"含运费 · 30 天可退"）一字不差同源。 -->
     <title>退换与售后 - Reich</title>
-    <meta name="description" content="Reich 退换政策：30 天可退，来回运费我们担。演示站说明一并写在明处。">
+    <meta name="description" content="Reich 退换与售后：30 天可退，来回运费我们担。演示站说明一并写在明处。"><!-- 批五(14): 弃用别名"退换政策"→定名（术语表口径，与 title/h1/footer 链文字一致） -->
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
 
@@ -50,7 +50,7 @@
     <main id="main-content" role="main">
         <section class="bg-white py-8 border-b border-[var(--border-default)]">
             <div class="container mx-auto px-4">
-                <h1 class="text-3xl font-bold">退换与售后</h1>
+                <h1 class="text-[2rem] leading-[1.25] font-bold">退换与售后</h1><!-- 批四(6): h1 典范 30→32px（text-3xl 退役） -->
                 <p class="text-[var(--ink-soft)] mt-2">写得明明白白，买错了也不慌。</p>
             </div>
         </section>
@@ -82,7 +82,8 @@
                 </div>
 
                 <div class="pt-6 border-t border-[var(--line)]">
-                    <a href="index.html" class="text-[var(--candy-blush-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">← 回去继续逛</a>
+                    <!-- 批五(17): 回程不再写死 index.html——有来路回来路，冷启动才落首页 -->
+                    <a href="javascript:history.length>1?history.back():location.href='index.html'" class="text-[var(--candy-blush-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">← 回去继续逛</a>
                 </div>
             </div>
         </section>

@@ -5,7 +5,9 @@
  */
 
 .product-detail {
-  padding-block: var(--spacing-8) var(--space-section);
+  /* 批二(9) 大师会诊栅格 P1-2：底部收尾档 144→108（--space-section 上限 9rem 退役——
+     PDP 有四栏 footer 接底，区块间距不必给到全宽档页的 144 收尾） */
+  padding-block: var(--spacing-8) 6.75rem;
 }
 
 /* 面包屑（≤一级） */
@@ -63,7 +65,9 @@
 
 .pdp-name {
   margin: 0;
-  font-size: clamp(1.5rem, 2.2vw, 2rem);
+  /* 批二(10) 大师会诊排版 P1-6：clamp 上限 2rem→1.75rem（28px 档）——
+     名（1.75rem/700）< 价（2rem Condensed 600）秩序双端成立 */
+  font-size: clamp(1.5rem, 2.2vw, 1.75rem);
   font-weight: 700;
   line-height: 1.25;
   color: var(--ink);
@@ -96,7 +100,9 @@
 .pdp-spec-row dt {
   font-size: var(--text-xs);
   font-weight: var(--font-weight-semibold);
-  letter-spacing: var(--tracking-caps);
+  /* 批四(12) 大师会诊：中文微标签 tracking 收 0.02em（--tracking-caps 0.05em
+     是拉丁全大写档——dt 是"材质/颜色"类中文词，宽字距在此是形制错配） */
+  letter-spacing: 0.02em;
   color: var(--ink-soft);
   align-self: baseline;
 }
@@ -141,6 +147,49 @@
   .pdp-atc { min-height: 48px; } /* 触屏 48px 触达 */
 }
 
+/* 批一(3) ATC 旁收藏心形：主行动+轻收藏同行（.pdp-actions 由 product.js 渲染——
+   atc 与 .reich-heart-pill.pdp-heart 同契约钮 48px 同高）。
+   .reich-product-action 基类是"卡片悬浮件"（absolute/opacity 0/hover 才现），
+   PDP 无卡片上下文——.pdp-heart 就地反转为常驻静态钮 */
+.pdp-actions {
+  display: flex;
+  align-items: stretch;
+  gap: var(--spacing-3);
+}
+.pdp-actions .pdp-atc {
+  flex: 1;
+  width: auto;
+}
+.pdp-actions .pdp-heart {
+  position: static;
+  opacity: 1;
+  transform: none;
+  width: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-base);
+  color: var(--candy-blush-ink);
+  border: 1px solid var(--line);
+  letter-spacing: normal;
+  text-transform: none;
+}
+.pdp-actions .pdp-heart:focus-visible,
+.pdp-actions .pdp-heart:hover {
+  transform: none;
+  border-color: var(--candy-blush-ink);
+}
+.pdp-actions .pdp-heart img {
+  width: 16px;
+  height: 16px;
+}
+.pdp-actions .pdp-heart:active {
+  transform: scale(0.98); /* 批四(13) 按下态铺底（轻收藏钮同典） */
+}
+
 /* 信任区：双数 + 运费退换（12px ink-soft——付款时刻的两行安静话） */
 .pdp-trust {
   display: flex;
@@ -154,6 +203,8 @@
   font-size: var(--text-xs);
   line-height: 1.5;
   color: var(--ink-soft);
+  /* 批二(12) 大师会诊：信任区/社交行 tnum——数字段（库存只只只/年份）等宽对位 */
+  font-variant-numeric: tabular-nums;
 }
 .pdp-trust-social { font-weight: var(--font-weight-medium); }
 
@@ -260,6 +311,7 @@
   .site-header,
   .pdp-breadcrumb,
   .pdp-atc,
+  .pdp-actions,
   .pdp-atc-bar,
   .pdp-trust,
   .pdp-empty-back,

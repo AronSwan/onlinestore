@@ -124,11 +124,16 @@ function reducedMotion() {
  * @param {object} opts
  *   message      主文案（必填）
  *   sub          次行小字（可选）
- *   confirmText  主钮文字（默认"去结算"）
+ *   confirmText  主钮文字（默认"去结算"；传 null 不渲染主钮——纯通知语态）
  *   onConfirm    主钮回调（默认无 → 只关闭）
- *   dismissText  文字钮（默认"继续逛"）
+ *   dismissText  文字钮（默认"继续逛"；传 null 不渲染——纯通知语态）
  *   duration     停留毫秒（默认 5200，下限 5000——罗马红线）
  * @returns {Element} toast 元素（测试/扩展用）
+ *
+ * 大师会诊批一（2026-10-06）toast 四物种归一：cart.js showNotification /
+ * orders.js showToast / navigation-icons.js showNotification 三处私货 toast
+ * 改调本组件。纯通知（无动作）语态经 confirmText:null + dismissText:null 进入——
+ * 样式语系统一（同底/同圆角/同进出/同位置），只保留各自文案。
  */
 export function showToast(opts) {
   const o = opts || {};
@@ -182,21 +187,26 @@ export function showToast(opts) {
     }
   };
 
-  const confirmBtn = document.createElement('button');
-  confirmBtn.type = 'button';
-  confirmBtn.className = 'reich-toast-confirm';
-  confirmBtn.textContent = o.confirmText || '去结算';
-  confirmBtn.addEventListener('click', () => {
-    try { if (typeof o.onConfirm === 'function') o.onConfirm(); } finally { dismiss(); }
-  });
-  el.appendChild(confirmBtn);
+  // 纯通知语态（confirmText/dismissText 传 null）：不渲染两钮（批一 toast 归一）
+  if (o.confirmText !== null) {
+    const confirmBtn = document.createElement('button');
+    confirmBtn.type = 'button';
+    confirmBtn.className = 'reich-toast-confirm';
+    confirmBtn.textContent = o.confirmText || '去结算';
+    confirmBtn.addEventListener('click', () => {
+      try { if (typeof o.onConfirm === 'function') o.onConfirm(); } finally { dismiss(); }
+    });
+    el.appendChild(confirmBtn);
+  }
 
-  const dismissBtn = document.createElement('button');
-  dismissBtn.type = 'button';
-  dismissBtn.className = 'reich-toast-dismiss';
-  dismissBtn.textContent = o.dismissText || '继续逛';
-  dismissBtn.addEventListener('click', dismiss);
-  el.appendChild(dismissBtn);
+  if (o.dismissText !== null) {
+    const dismissBtn = document.createElement('button');
+    dismissBtn.type = 'button';
+    dismissBtn.className = 'reich-toast-dismiss';
+    dismissBtn.textContent = o.dismissText || '继续逛';
+    dismissBtn.addEventListener('click', dismiss);
+    el.appendChild(dismissBtn);
+  }
 
   // hover 暂停 / 移出续走（罗马：移动端单手 4s 不够 + 桌面端读完再走）
   el.addEventListener('mouseenter', () => {

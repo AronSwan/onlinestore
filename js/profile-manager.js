@@ -45,7 +45,12 @@ class ProfileManager {
                            sessionStorage.getItem('userLoggedIn') === 'true';
         
         if (!userLoggedIn) {
-            window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.href);
+            // 批一(2) 大师会诊 IA 席裁决（2026-10-06）：回跳参数统一 returnUrl，
+            // 值为相对路径+锚编码（/profile.html%23wishlist）——原 redirect=绝对URL
+            // 与 auth.js 读的 returnUrl 参数名双重断裂（登录后回不到来处）。
+            // auth.js isSafeReturnUrl 白名单：单 / 开头、非 //、首段无冒号——
+            // /profile.html#wishlist 编码后合法；URLSearchParams 解码还原 #wishlist。
+            window.location.href = 'login.html?returnUrl=' + encodeURIComponent('/profile.html#wishlist');
             return false;
         }
 

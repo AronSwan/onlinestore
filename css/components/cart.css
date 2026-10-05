@@ -353,6 +353,7 @@
 .cart-items-list .item-quantity {
   display: flex;
   align-items: center;
+  flex-wrap: wrap; /* 批四(10): 边界提示 .qty-hint 换行到步进器下方 */
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   overflow: hidden;
@@ -373,6 +374,33 @@
   font-weight: 500;
   line-height: 1;
   transition: background-color var(--dur-fast) var(--ease-lux), color var(--dur-fast) var(--ease-lux);
+}
+
+/* 批四(9) 大师会诊·步进器触控 44px：触屏/粗指针下 ±/×/关闭 扩到 44px 命中域
+   （.item-quantity overflow:hidden 会裁掉伪元素外扩——直接放大钮本体，诚实命中） */
+@media (hover: none), (pointer: coarse) {
+  .cart-items-list .item-quantity button {
+    width: 44px;
+    height: 44px;
+  }
+  .cart-items-list .item-quantity span {
+    min-width: 36px;
+  }
+  .cart-items-list .item-remove {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .cart-close-btn {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* 批四(13) :active 按下态铺底（0.98 全站同典）：步进/移除/关闭 */
+.cart-items-list .item-quantity button:active:not(:disabled),
+.cart-items-list .item-remove:active,
+.cart-close-btn:active {
+  transform: scale(0.98);
 }
 
 .cart-items-list .item-quantity button:hover {
@@ -580,6 +608,24 @@
   animation: cartItemSlideIn 0.3s ease-out;
 }
 
+/* 批四(14) 大师会诊·步进器增量更新：cart.js 渲染时对"上一帧已在袋"的行挂
+   .is-old（sku 对照 _renderedSkus）——点 +/− 不再全列表重播入场动画，
+   新入袋行照常滑入（新老一眼可分） */
+.cart-item.is-old {
+  animation: none;
+}
+
+/* 批四(10) 步进器边界行内提示（cart.js 渲染 .qty-hint[role=status]）：
+   "一件最多带 999 只" / "再按即移除"——11px 安静小字，不抢价格行 */
+.qty-hint {
+  flex-basis: 100%;
+  margin: 2px 0 0;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-muted, var(--ink-soft, #767268));
+  text-align: center;
+}
+
 /* 无障碍优化 */
 @media (prefers-reduced-motion: reduce) {
   .cart-overlay,
@@ -632,3 +678,9 @@
 .cart-items-list .item-remove { background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 4px 8px; border-radius: 4px; font-size: 18px; line-height: 1; }
 .cart-items-list .item-remove:hover { color: var(--error); background: var(--error-light); }
 .cart-items-list .item-remove:focus-visible { outline: 2px solid var(--focus-ring-color); outline-offset: var(--focus-ring-offset); }
+
+/* 批四(13) :active 按下态铺底：结算/清空（0.98 与 btn-pill/pdp-atc 同典） */
+.checkout-btn:active:not(:disabled),
+.clear-bag-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}

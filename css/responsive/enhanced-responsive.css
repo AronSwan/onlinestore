@@ -22,28 +22,36 @@
     .login-container {
         padding: var(--spacing-6) var(--spacing-3);
     }
-    
+
+    /* 批四(8) 大师会诊栅格 P1-3（768 偏右 32px 实事故，2026-10-06）：
+       原 margin: var(--spacing-4) 四向 margins 叠在 flex 居中容器上，
+       与内层 .container px-4 的不对称余量合计把卡片顶偏右 32px——
+       margin-inline 归零（垂直呼吸保留），width 放 auto 由 max-width 管宽。
+       padding 落令牌；!important 退役（login.html 的 Tailwind p-8 已同批摘除，
+       本文件层叠序在 login.css 之后，令牌值自然生效） */
     .login-card {
-        margin: var(--spacing-4);
-        padding: var(--spacing-6) !important;
+        margin-inline: 0;
+        margin-block: var(--spacing-4);
+        width: auto;
+        padding: var(--spacing-6);
     }
-    
+
     .auth-tabs {
         font-size: var(--text-sm);
     }
-    
+
     .form-input {
         padding: var(--spacing-3);
         font-size: var(--text-sm);
     }
-    
+
     .notification {
         right: var(--spacing-4);
         left: var(--spacing-4);
         max-width: none;
         font-size: var(--text-sm);
     }
-    
+
     .social-btn {
         padding: var(--spacing-2) var(--spacing-3);
         font-size: var(--text-xs);
@@ -54,36 +62,39 @@
     .login-container {
         padding: var(--spacing-4) var(--spacing-2);
     }
-    
+
+    /* 批四(8): 同 768 口径——inline 归零、block 呼吸、padding 落令牌无 !important */
     .login-card {
-        margin: var(--spacing-2);
-        padding: var(--spacing-4) !important;
+        margin-inline: 0;
+        margin-block: var(--spacing-2);
+        width: auto;
+        padding: var(--spacing-4);
         border-radius: var(--radius-lg);
     }
-    
+
     .login-card h1 {
         font-size: 1.75rem;
     }
-    
+
     .auth-tab {
         padding: var(--spacing-2);
         font-size: var(--text-xs);
     }
-    
+
     .form-input {
         padding: var(--spacing-2) var(--spacing-3);
     }
-    
+
     .btn-luxury {
         padding: var(--spacing-3);
         font-size: var(--text-sm);
     }
-    
+
     .social-btn {
-        padding: var(--spacing-2);
+        padding: var(--spacing-2) var(--spacing-3);
         font-size: var(--text-xs);
     }
-    
+
     .notification {
         top: var(--spacing-4);
         right: var(--spacing-2);
@@ -94,9 +105,12 @@
 
 /* 超小屏幕优化（F2：360 归档 480 档，与上方 ≤480 块叠加、本块靠后优先） */
 @media (max-width: 480px) {
+    /* 批四(8): 同口径——最窄档 padding 再收一档（令牌，无 !important） */
     .login-card {
-        margin: var(--spacing-1);
-        padding: var(--spacing-3) !important;
+        margin-inline: 0;
+        margin-block: var(--spacing-1);
+        width: auto;
+        padding: var(--spacing-3);
     }
     
     .login-card h1 {

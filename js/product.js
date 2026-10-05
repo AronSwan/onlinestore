@@ -104,10 +104,30 @@ import { formatPrice } from './shared/format-price.js';
       ' data-product-pic="' + pic + '">' + label + '</button>';
   }
 
+  /** 批一(3) 收藏心形钮（.reich-heart-pill 同契约：wishlist.js 全站绑定；
+      PDP 无 .reich-product-card 上下文，品名/价格/图自带 data-* 供存储） */
+  function heartButton(p, name) {
+    var id8 = String(p.id).padStart(8, '0');
+    return '<button class="reich-product-action reich-heart-pill pdp-heart" type="button" aria-label="收藏' + name + '"' +
+      ' data-product-id="' + id8 + '"' +
+      ' data-product-name="' + name + '"' +
+      ' data-product-price="' + formatPrice(p.price) + '"' +
+      ' data-product-pic="' + escapeHtml(String(p.mainImage || '')) + '">' +
+      '<img src="heart-icon.svg" alt="" width="16" height="16"></button>';
+  }
+
   function productHtml(p) {
     var name = escapeHtml(String(p.name || 'Reich 单品'));
     var tags = Array.isArray(p.tags) ? p.tags : [];
-    var kicker = escapeHtml(String(tags[1] || '手袋')) + ' · ' + escapeHtml(String(tags[0] || '新到'));
+    /* 批五(14): kicker 过滤功能词——tags 含"心头好/本期主打"不渲染进 kicker，
+       类目位只留类目词（手袋/斜挎包/手提包/链条包/托特包），状态位兜底"新到" */
+    var KICKER_CATEGORY = ['手袋', '斜挎包', '手提包', '链条包', '托特包'];
+    var KICKER_FUNCTION = ['心头好', '本期主打'];
+    var safeTags = tags.map(function (t) { return String(t).trim(); })
+      .filter(function (t) { return t && KICKER_FUNCTION.indexOf(t) === -1; });
+    var cat = safeTags.filter(function (t) { return KICKER_CATEGORY.indexOf(t) !== -1; })[0] || safeTags[1] || '手袋';
+    var state = safeTags.filter(function (t) { return KICKER_CATEGORY.indexOf(t) === -1; })[0] || '新到';
+    var kicker = escapeHtml(cat) + ' · ' + escapeHtml(state);
     var inStock = Number(p.stock != null ? p.stock : 1) > 0;
     var atc = inStock
       ? atcButton(p, 'btn-pill pdp-atc', '加入购物袋')
@@ -131,10 +151,12 @@ import { formatPrice } from './shared/format-price.js';
       '<p class="pdp-price">' + formatPrice(p.price) + '</p>' +
       specsDl(p.specifications) +
       '<p class="pdp-desc">' + escapeHtml(String(p.description || '')) + '</p>' +
-      atc +
+      /* 批一(3)：ATC 与收藏心形同行（主行动+轻收藏，48px 同高） */
+      '<div class="pdp-actions">' + atc + heartButton(p, name) + '</div>' +
       '<div class="pdp-trust">' +
       '<p class="pdp-trust-social">' + escapeHtml(socialLine(p)) + '</p>' +
-      '<p class="pdp-trust-line">含运费 · 30 天可退 · 每只人工质检</p>' +
+      /* 批二(9)：信任行"30 天可退"链接化对齐 cart 面板口径（returns.html 活链） */
+      '<p class="pdp-trust-line">含运费 · <a href="returns.html" title="退换与售后（30 天可退，来回运费我们担）">30 天可退</a> · 每只人工质检</p>' +
       '</div>' +
       '</div>' +
       '</div>' +
@@ -222,6 +244,18 @@ import { formatPrice } from './shared/format-price.js';
     var root = document.querySelector(ROOT_SELECTOR);
     if (!root) return;
     root.innerHTML = html;
+    // 批一(3) 收尾：PDP 心形钮随本渲染异步产出——晚于 wishlist.js 的
+    // DOMContentLoaded 绑定（product.js 取数渲染期间按钮尚不存在）。
+    // 与 index 侧 home-products.js rebindWishlist 同法：渲染后重绑 + 在册态实心化
+    //（wishlist.js bindEvents 有 data-wishlistBound 幂等护栏，重绑只作用于新节点）
+    if (window.wishlistManager) {
+      try {
+        if (typeof window.wishlistManager.bindEvents === 'function') window.wishlistManager.bindEvents();
+        if (typeof window.wishlistManager.initWishlistUI === 'function') window.wishlistManager.initWishlistUI();
+      } catch (e) {
+        console.warn('PDP 心愿单事件重绑失败：', e);
+      }
+    }
   }
 
   // PDP 不操纵滚动：scrollRestoration 显式回到浏览器基线（双保险之"基线"半）；

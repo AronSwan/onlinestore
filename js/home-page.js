@@ -8,142 +8,14 @@
  * 外联为 type=module 后走 vite 的模块原生路径：dev 正确解析、build 正常
  * 打包进产物（dist 不再有动态 import 404 缺口）。
  *
- * 与原内联块的差异（仅两处，均为 F4 头部归一的搬运，行为不变）：
+ * 与原内联块的差异：
  *   - 移动菜单开合与 header 滚动阴影两段已迁入 js/site-header.js；
- *   - 动态 import 路径由页面相对 './js/product-search/...' 改为模块相对
- *     './product-search/...'（本文件在 js/ 目录下）。
+ *   - 批一(1) 大师会诊（2026-10-06）搜索钮全站化：window.toggleSearch、
+ *     增强搜索组件初始化、searchBtn 点击绑定与 ESC 关闭四段整体迁入
+ *     js/site-header.js（全站单一源）——本文件不再是搜索的落脚点。
  */
 
-// 全局变量
-let enhancedSearchComponent = null;
-
-// 全局函数
-window.toggleSearch = async function(show) {
-    const searchBtn = document.getElementById('searchBtn');
-    const searchBar = document.getElementById('searchBar');
-
-    if (!searchBtn || !searchBar) {
-        console.error('搜索按钮或搜索栏元素未找到');
-        return;
-    }
-
-    const isHidden = searchBar.classList.contains('hidden');
-    if (show === undefined) show = isHidden;
-
-    if (show) {
-        searchBar.classList.remove('hidden');
-        searchBtn.setAttribute('aria-expanded', 'true');
-
-        // 如果增强搜索组件已初始化，则显示热门搜索
-        if (enhancedSearchComponent) {
-            try {
-                await enhancedSearchComponent.showPopularSearches();
-            } catch (error) {
-                console.error('显示热门搜索失败:', error);
-            }
-        }
-
-        setTimeout(() => {
-            // 尝试通过增强搜索组件获取搜索输入框
-            let searchInputElement = null;
-            if (enhancedSearchComponent && enhancedSearchComponent.elements && enhancedSearchComponent.elements.searchInput) {
-                searchInputElement = enhancedSearchComponent.elements.searchInput;
-            } else {
-                // 如果通过组件获取失败，则尝试直接通过ID获取
-                searchInputElement = document.getElementById('search-input');
-            }
-
-            if (searchInputElement) {
-                searchInputElement.focus();
-            }
-        }, 100);
-    } else {
-        searchBar.classList.add('hidden');
-        searchBtn.setAttribute('aria-expanded', 'false');
-
-        // 如果增强搜索组件已初始化，则隐藏热门搜索
-        if (enhancedSearchComponent) {
-            try {
-                enhancedSearchComponent.hidePopularSearches();
-            } catch (error) {
-                console.error('隐藏热门搜索失败:', error);
-            }
-        }
-    }
-};
-
 document.addEventListener('DOMContentLoaded', function() {
-    const searchBtn = document.getElementById('searchBtn');
-    const searchBar = document.getElementById('searchBar');
-    const searchInput = document.getElementById('search-input');
-    const enhancedSearchContainer = document.getElementById('enhanced-search-container');
-
-    // 动态导入增强搜索组件（原页面相对 './js/product-search/...'；外联后本脚本在 js/ 下，
-    // 改为脚本相对路径 './product-search/...'——dev 由浏览器原生解析，不经过 vite 内联改写）
-    import('./product-search/enhanced-search-component.js').then(async module => {
-        const EnhancedSearchComponent = module.EnhancedSearchComponent;
-
-        try {
-            // 创建增强搜索组件实例
-            // API 失败时组件内部会自动回退到本地模拟数据（getMockSearchResults 等）
-            enhancedSearchComponent = new EnhancedSearchComponent({
-                containerId: 'enhanced-search-container',
-                searchApiEndpoint: '/api/products/search',
-                suggestionsApiEndpoint: '/api/products/suggestions',
-                popularSearchesApiEndpoint: '/api/products/popular-searches',
-                cacheTTL: 300000, // 5分钟缓存
-                maxSuggestions: 8,
-                maxPopularSearches: 10,
-                maxSearchHistory: 5
-            });
-
-            // 初始化增强搜索组件（异步）
-            await enhancedSearchComponent.init();
-
-            // 监听搜索事件
-            enhancedSearchComponent.on('search', (results) => {
-                console.log('搜索结果:', results);
-            });
-
-            // 监听产品点击事件
-            enhancedSearchComponent.on('productClick', (product) => {
-                console.log('点击产品:', product);
-                // 这里可以添加产品详情页面跳转逻辑
-            });
-
-            // 监听添加到购物车事件
-            enhancedSearchComponent.on('addToCart', (product) => {
-                console.log('添加到购物车:', product);
-                // 这里可以添加购物车逻辑
-                if (typeof updateCartCount === 'function') {
-                    // 假设购物车中有5件商品
-                    updateCartCount(5);
-                }
-            });
-
-            // 监听添加到收藏夹事件
-            enhancedSearchComponent.on('addToWishlist', (product) => {
-                console.log('添加到收藏夹:', product);
-                // 这里可以添加收藏夹逻辑
-            });
-
-            console.log('增强搜索组件初始化成功');
-        } catch (error) {
-            console.error('增强搜索组件初始化失败:', error);
-        }
-    }).catch(error => {
-        console.error('加载增强搜索组件失败:', error);
-    });
-
-    searchBtn.addEventListener('click', () => window.toggleSearch());
-
-    // ESC键关闭搜索
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && searchBar && !searchBar.classList.contains('hidden')) {
-            window.toggleSearch(false);
-        }
-    });
-
     // 购物车数量更新（P3：新模板徽章为内联 style="display:none"，与 cart.js 的
     // style.display 管理方式对齐；旧 'hidden' class 切换对内联样式无效）
     function updateCartCount(count) {

@@ -292,6 +292,7 @@
     font-size: var(--text-xl);
     font-weight: var(--font-weight-semibold);
     color: var(--ink);
+    font-variant-numeric: tabular-nums; /* 批四(8): 等宽数字——金额列对位 */
 }
 
 /* 更多商品提示 */
@@ -326,6 +327,12 @@
     font-size: var(--text-2xl);
     font-weight: var(--font-weight-semibold);
     color: var(--text-primary);
+    font-variant-numeric: tabular-nums; /* 批四(8): 等宽数字 */
+}
+
+/* 批四(8): "总计"中文段与金额拆两 span——中文标签 0.75em 与 Condensed 金额基线视觉对齐 */
+.order-total-label {
+    font-size: 0.75em;
 }
 
 /* 订单操作按钮组 */
@@ -881,7 +888,7 @@
     }
 
     .order-filter-btn {
-        font-size: var(--text-xs);
+        font-size: var(--text-small); /* 批四(7): 移动档中文 pill 底线 12→13px（横滑容器在 .order-filter-group） */
         padding: var(--spacing-1) var(--spacing-3);
         /* 原 flex:1 均分导致 6 个 chip 挤压变形，改为内容宽不收缩 */
         flex: none;

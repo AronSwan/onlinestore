@@ -12,6 +12,11 @@
  * - 无障碍性支持
  */
 
+// 批一(5) toast 四物种归一：本文件私货 showToast（Tailwind 绿/红/蓝三色顶右角）
+// 退役，改调 shared/toast.js；批一(7) 订单弹窗 ESC 关闭走 overlay-escape 全站分发器
+import { showToast } from './shared/toast.js';
+import { registerOverlayEscape } from './shared/overlay-escape.js';
+
 // 订单管理类
 class OrderManager {
     constructor() {
@@ -31,6 +36,7 @@ class OrderManager {
             ordersList: document.getElementById('ordersList'),
             pagination: document.getElementById('pagination'),
             orderSearch: document.getElementById('orderSearch'),
+            searchEmptyState: document.getElementById('searchEmptyState'),
             filterButtons: document.querySelectorAll('.order-filter-btn'),
             orderDetailModal: document.getElementById('orderDetailModal'),
             modalTitle: document.getElementById('modalTitle'),
@@ -76,6 +82,12 @@ class OrderManager {
                 this.filterAndDisplayOrders();
             });
         });
+
+        // 批四(11): 搜索无果独立空态的"清空搜索"按钮（没命中≠没有订单，不指责记忆）
+        const clearSearchBtn = document.getElementById('clearSearchBtn');
+        if (clearSearchBtn) {
+            clearSearchBtn.addEventListener('click', () => this.clearSearch());
+        }
         
         // 模态框关闭
         if (this.elements.closeModal) {
@@ -93,11 +105,14 @@ class OrderManager {
             });
         }
         
-        // ESC键关闭模态框
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && !this.elements.orderDetailModal.classList.contains('hidden')) {
+        // 批一(7)：ESC 关闭模态框——走 overlay-escape 全站分发器
+        //（与购物袋/用户菜单/移动菜单/搜索条同一位分发者，替代本文件私挂 document keydown）
+        registerOverlayEscape('order-modal', () => {
+            if (!this.elements.orderDetailModal.classList.contains('hidden')) {
                 this.closeOrderDetailModal();
+                return true;
             }
+            return false;
         });
     }
     
@@ -382,9 +397,13 @@ class OrderManager {
         this.displayOrders();
         this.displayPagination();
         
-        // 显示空状态或订单列表
+        // 显示空状态或订单列表（批四(11): 搜索无果走独立空态——词没命中≠没有订单）
         if (this.filteredOrders.length === 0) {
-            this.showEmptyState();
+            if (this.searchTerm && this.orders.length > 0) {
+                this.showSearchEmptyState();
+            } else {
+                this.showEmptyState();
+            }
         } else {
             this.showOrdersList();
         }
@@ -430,7 +449,7 @@ class OrderManager {
                     </div>
 
                     <div class="order-summary">
-                        <span class="order-total">总计: ${this.formatCurrency(order.total)}</span>
+                        <span class="order-total"><span class="order-total-label">总计：</span>${this.formatCurrency(order.total)}</span><!-- 批四(8)+批五(10): 拆两 span（中文段 0.75em 对齐）+全角冒号 -->
                     </div>
                 </div>
 
@@ -771,7 +790,7 @@ class OrderManager {
         
         const cartManager = window.cartManager;
         if (!cartManager || typeof cartManager.addToCart !== 'function') {
-            this.showError('购物车模块未就绪，添加失败，请稍后重试');
+            this.showError('购物袋模块未就绪，添加失败，请稍后重试'); // 批五(19): 术语表口径"购物袋"
             return;
         }
         
@@ -795,13 +814,13 @@ class OrderManager {
         }
         
         if (failedCount > 0) {
-            // 有失败：不提示成功、不跳转（部分已加入的商品保留在购物车中）
-            this.showError(`添加到购物车失败：成功 ${addedCount} 件，失败 ${failedCount} 件，请稍后重试`);
+            // 有失败：不提示成功、不跳转（部分已加入的商品保留在购物袋中）
+            this.showError(`添加到购物袋失败：成功 ${addedCount} 件，失败 ${failedCount} 件，请稍后重试`); // 批五(19): 术语表口径
             return;
         }
         
         // 显示成功消息
-        this.showSuccess('商品已添加到购物车');
+        this.showSuccess('商品已加入购物袋'); // 批五(19): ATC 动作词唯一——"加入购物袋"（弃"添加到购物车"）
         
         // 关闭模态框
         this.closeOrderDetailModal();
@@ -856,6 +875,7 @@ class OrderManager {
         this.elements.emptyState.classList.add('hidden');
         this.elements.ordersList.classList.add('hidden');
         this.elements.pagination.classList.add('hidden');
+        if (this.elements.searchEmptyState) this.elements.searchEmptyState.classList.add('hidden');
     }
     
     /**
@@ -873,14 +893,44 @@ class OrderManager {
         this.elements.emptyState.classList.remove('hidden');
         this.elements.ordersList.classList.add('hidden');
         this.elements.pagination.classList.add('hidden');
+        if (this.elements.searchEmptyState) this.elements.searchEmptyState.classList.add('hidden');
     }
-    
+
+    /**
+     * 批四(11) 搜索无果独立空态：有订单、只是这个词没命中——
+     * "没找到含'xxx'的订单"+一键清空，不再借"还没有订单"指责用户记忆
+     */
+    showSearchEmptyState() {
+        const el = this.elements.searchEmptyState;
+        if (el) {
+            const term = this.elements.orderSearch ? this.elements.orderSearch.value.trim() : '';
+            const q = el.querySelector('.search-empty-term');
+            if (q) q.textContent = `「${term}」`;
+            el.classList.remove('hidden');
+        }
+        this.elements.emptyState.classList.add('hidden');
+        this.elements.ordersList.classList.add('hidden');
+        this.elements.pagination.classList.add('hidden');
+    }
+
+    /**
+     * 批四(11): 清空搜索词并复位列表（焦点回搜索框，便于换词再试）
+     */
+    clearSearch() {
+        this.searchTerm = '';
+        if (this.elements.orderSearch) this.elements.orderSearch.value = '';
+        this.currentPage = 1;
+        this.filterAndDisplayOrders();
+        if (this.elements.orderSearch) this.elements.orderSearch.focus();
+    }
+
     /**
      * 显示订单列表
      */
     showOrdersList() {
         this.elements.ordersList.classList.remove('hidden');
         this.elements.emptyState.classList.add('hidden');
+        if (this.elements.searchEmptyState) this.elements.searchEmptyState.classList.add('hidden');
     }
     
     /**
@@ -898,37 +948,12 @@ class OrderManager {
     }
     
     /**
-     * 显示提示消息
+     * 显示提示消息（批一(5) toast 归一：原 Tailwind 三色顶右角私货退役，
+     * 改调 shared/toast.js 纯通知语态——同语系同进出同位置，只保留文案。
+     * type 形参保留仅为调用点兼容，归一后无色分语义）
      */
-    showToast(message, type = 'info') {
-        // 创建toast元素
-        const toast = document.createElement('div');
-        toast.className = `fixed top-24 right-4 z-50 px-6 py-3 rounded-lg shadow-lg transform translate-x-full transition-transform duration-300`;
-        
-        // 设置样式
-        if (type === 'success') {
-            toast.classList.add('bg-green-500', 'text-white');
-        } else if (type === 'error') {
-            toast.classList.add('bg-red-500', 'text-white');
-        } else {
-            toast.classList.add('bg-blue-500', 'text-white');
-        }
-        
-        toast.textContent = message;
-        document.body.appendChild(toast);
-        
-        // 显示toast
-        setTimeout(() => {
-            toast.classList.remove('translate-x-full');
-        }, 100);
-        
-        // 自动隐藏
-        setTimeout(() => {
-            toast.classList.add('translate-x-full');
-            setTimeout(() => {
-                document.body.removeChild(toast);
-            }, 300);
-        }, 3000);
+    showToast(message) {
+        showToast({ message, confirmText: null, dismissText: null });
     }
     
     /**
