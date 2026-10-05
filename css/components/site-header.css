@@ -149,8 +149,8 @@
 /* C12(裁决): 登录态用户钮 candy blush 小圆点（一枚足矣） */
 .site-user-dot {
   position: absolute;
-  top: 7px;
-  right: 7px;
+  top: 5px; /* M6·C12: 圆点向右上提 2px，坐进人形肩线 */
+  right: 5px;
   width: 7px;
   height: 7px;
   background: var(--candy-blush);
@@ -158,8 +158,10 @@
   border-radius: var(--radius-full);
 }
 
-/* 汉堡（移动端） */
-.site-burger {
+/* 汉堡（移动端）。M6·B8 修复：桌面撤汉堡——原单类 .site-burger{display:none} 被
+   .site-tools button{display:flex}（特异性 0,1,1）反压，汉堡在 ≥769px 桌面一直可见；
+   提为 .site-tools .site-burger（0,2,0）恢复隐藏，≤768 档 flex 同步提权。 */
+.site-tools .site-burger {
   display: none;
 }
 
@@ -243,7 +245,7 @@
     display: none;
   }
 
-  .site-burger {
+  .site-tools .site-burger {
     display: flex;
   }
 
@@ -265,6 +267,32 @@
 @media (max-width: 480px) {
   .site-tools .site-tools-back {
     display: none;
+  }
+}
+
+/* M6·B8: 超窄屏（≤359px，Galaxy Fold 外屏级）头部截断修复——五枚工具钮 44px 下限把
+   汉堡钮挤出视口（280px 实测右侧溢出 92px，抽屉不可开）。手段：图标钮横向收至 32px
+   （纵向保 44px 触达高度，WCAG 2.5.8 面积达标）、间距收紧、brand 缩小、容器左右距收窄。
+   两档选择器（.site-header .site-header-inner）压过 tailwind px-4 的单类特异性。 */
+@media (max-width: 359px) {
+  .site-header .site-header-inner {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .site-brand {
+    font-size: 1.05rem;
+    letter-spacing: 0.12em;
+  }
+
+  .site-tools {
+    gap: 6px;
+  }
+
+  .site-tools button,
+  .site-tools a {
+    min-width: 32px;
+    padding: 0.5rem 0;
   }
 }
 

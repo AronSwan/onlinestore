@@ -32,6 +32,7 @@ export default {
     './orders.html',
     './profile.html', // F4：profile 已纳入入口 CSS 管线（头部归一后与四页同链）
     './admin.html', // F3 纳入：admin 页为纯 CSS 内嵌（零 Tailwind 类），圈入扫描
+    './returns.html', // M7·B13 退换政策页（skip-link/tailwind 工具类同四页口径）
     //   仅为统一 content 口径——贡献为空，防未来加类时静默丢失
     './js/**/*.js',
   ],

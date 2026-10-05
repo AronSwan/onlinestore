@@ -252,6 +252,63 @@
     flex-wrap: wrap;
 }
 
+/* M6·B4 我的心头好（wishlist.js 写入 localStorage reich_wishlist；本区块渲染+可移除） */
+.wishlist-list {
+    display: grid;
+    gap: 20px;
+}
+
+.wishlist-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 16px 20px;
+    transition: all 0.3s ease;
+}
+
+.wishlist-item:hover {
+    border-color: var(--candy-blush-ink, #B93A54);
+    box-shadow: 0 2px 8px rgba(185, 58, 84, 0.08);
+}
+
+.wishlist-item-image {
+    width: 56px;
+    height: 72px; /* 3:4 与商品卡同比例 */
+    object-fit: cover;
+    border-radius: 6px;
+    flex: none;
+}
+
+.wishlist-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.wishlist-item-info h4 {
+    margin: 0 0 4px;
+    color: #333;
+    font-size: 16px;
+}
+
+.wishlist-item-info p {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.wishlist-remove-btn {
+    flex: none;
+}
+
+.no-wishlist {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+    padding: 40px 20px;
+}
+
 .no-addresses {
     text-align: center;
     color: #666;

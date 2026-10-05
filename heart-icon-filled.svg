@@ -1,0 +1,14 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- M6·C6 心形实心化反馈：收藏在册态的实心变体（candy-blush 主档 #FF6B81 实底 + 白描边）。
+       与 heart-icon.svg（淡粉填充+玫瑰红描边的空态）成对；wishlist.js 收藏切换时替换 img src。 -->
+
+  <!-- 爱心主体：实心 candy blush + 白色内描边（在淡底卡图上读作"已收藏"实心章） -->
+  <path
+    d="M12 21.5L10.55 20.23C5.4 15.69 2 12.73 2 9.1C2 6.14 4.42 3.9 7.5 3.9C9.24 3.9 10.91 4.65 12 5.93C13.09 4.65 14.76 3.9 16.5 3.9C19.58 3.9 22 6.14 22 9.1C22 12.73 18.6 15.69 13.45 20.23L12 21.5Z"
+    fill="#FF6B81"
+    stroke="#FFFFFF"
+    stroke-width="1.2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

@@ -275,7 +275,7 @@ class LoginEnhanced {
                     errorMessage = '密码不能为空';
                     isValid = false;
                 } else if (field.id === 'register-password' && value.length < 8) {
-                    errorMessage = '密码至少需要8个字符';
+                    errorMessage = '密码要 8 位起步'; /* M8·C7: 文案与 login-utils 放宽政策同调 */
                     isValid = false;
                 }
                 break;

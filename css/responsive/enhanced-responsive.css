@@ -220,43 +220,6 @@
         border-width: 2px;
     }
 }
-
-/* 暗色模式支持 */
-@media (prefers-color-scheme: dark) {
-    .login-container {
-        background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
-    }
-    
-    .login-card {
-        background: #374151;
-        border-color: #4b5563;
-    }
-    
-    .form-input {
-        background: #4b5563;
-        border-color: #6b7280;
-        color: #f9fafb;
-    }
-    
-    .form-input:focus {
-        border-color: var(--candy-blush-ink);
-    }
-    
-    .form-label {
-        color: #f9fafb;
-    }
-    
-    .social-btn {
-        background: #4b5563;
-        border-color: #6b7280;
-        color: #f9fafb;
-    }
-    
-    .auth-tab {
-        color: #d1d5db;
-    }
-    
-    .auth-tab.active {
-        color: var(--candy-blush-ink);
-    }
-}
+/* M8·C2（2026-10-05）：暗色模式块同葬（佛罗伦萨五处之四）——加载序在 login.css 之后，
+   暗色 OS 用户实际看到的是这套灰渐变(#1f2937/#111827/#374151)覆盖前面的品牌暗色——
+   "一页没设计过的灰"；整块删除，login 场景唯一暗色实现归零（白底宪法）。 */

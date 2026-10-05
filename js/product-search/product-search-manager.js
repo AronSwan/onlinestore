@@ -510,10 +510,7 @@ class ProductSearchManager {
                 <div class="product-info">
                     <div class="product-name">${product.name}</div>
                     <div class="product-price">¥${product.price}</div>
-                    <div class="product-rating">
-                        <div class="product-rating-stars">★★★★★</div>
-                        <div class="product-rating-count">${product.reviewCount || 0} 评价</div>
-                    </div>
+                    <!-- M7·B10: 五星/评价计数删除——零评价不上假社会证明 -->
                     <div class="product-actions">
                         <button class="product-button add-to-cart-button">加入购物车</button>
                         <button class="product-button add-to-wishlist-button">收藏</button>

@@ -323,90 +323,92 @@ class LoginUtils {
     }
 
     // 密码即时验证和强度检查
+    // M8·C7: 政策放宽——硬性门槛只留两条（8 位起步 + 不在常见弱密码名单），
+    // 字符多样性降为强度提示（feedback）不再拦人；文案过 voice-sheet（从容、不安检腔）
     static validatePassword(password) {
         if (!password) {
-            return { 
-                valid: false, 
-                strength: 0, 
-                level: '未输入', 
-                message: '请输入密码',
-                feedback: ['请输入密码'] 
+            return {
+                valid: false,
+                strength: 0,
+                level: "未输入",
+                message: "请输入密码",
+                feedback: ["请输入密码"]
             };
         }
-        
+
         let strength = 0;
         let feedback = [];
         let errors = [];
 
-        // 长度检查
+        // 长度检查（硬性）
         if (password.length >= 8) {
             strength++;
         } else {
-            errors.push('密码至少需要8个字符');
-            feedback.push('至少8个字符');
-        }
-        
-        if (password.length > 128) {
-            errors.push('密码不能超过128个字符');
+            errors.push("密码要 8 位起步");
+            feedback.push("8 位起步");
         }
 
-        // 小写字母检查
+        if (password.length > 128) {
+            errors.push("密码太长了，128 位以内就好");
+        }
+
+        // 小写字母检查（提示）
         if (/[a-z]/.test(password)) {
             strength++;
         } else {
-            feedback.push('包含小写字母');
+            feedback.push("加一个小写字母更稳");
         }
 
-        // 大写字母检查
+        // 大写字母检查（提示）
         if (/[A-Z]/.test(password)) {
             strength++;
         } else {
-            feedback.push('包含大写字母');
+            feedback.push("加一个大写字母更稳");
         }
 
-        // 数字检查
+        // 数字检查（提示）
         if (/[0-9]/.test(password)) {
             strength++;
         } else {
-            feedback.push('包含数字');
+            feedback.push("加一个数字更稳");
         }
 
-        // 特殊字符检查
+        // 特殊字符检查（提示）
         if (/[^A-Za-z0-9]/.test(password)) {
             strength++;
         } else {
-            feedback.push('包含特殊字符(!@#$%^&*等)');
-        }
-        
-        // 常见弱密码检查
-        const commonPasswords = ['password', '123456', '123456789', 'qwerty', 'abc123', 'password123'];
-        if (commonPasswords.includes(password.toLowerCase())) {
-            errors.push('不能使用常见的弱密码');
-            strength = Math.max(0, strength - 2);
-        }
-        
-        // 重复字符检查
-        if (/(.)\1{2,}/.test(password)) {
-            errors.push('不能包含3个或更多连续相同字符');
+            feedback.push("加个符号（!@# 等）更稳");
         }
 
-        const levels = ['很弱', '弱', '一般', '强', '很强'];
-        const level = levels[Math.min(strength, 4)] || '很弱';
-        
-        // 判断是否有效（至少需要达到"一般"强度且无错误）
-        const isValid = strength >= 3 && errors.length === 0 && password.length >= 8;
-        
+        // 常见弱密码检查（硬性）
+        const commonPasswords = ["password", "123456", "123456789", "qwerty", "abc123", "password123"];
+        if (commonPasswords.includes(password.toLowerCase())) {
+            errors.push("这个密码太出名了，换一个吧");
+            strength = Math.max(0, strength - 2);
+        }
+
+        // 重复字符检查（提示——放宽：不再硬拦）
+        if (/(.)\1{2,}/.test(password)) {
+            feedback.push("连续三个相同字符，稍稍换个花样");
+        }
+
+        const levels = ["有点简单", "一般", "还不错", "挺稳", "非常稳"];
+        const level = levels[Math.min(strength, 4)] || "有点简单";
+
+        // 判定放宽：8 位起步 + 无硬性错误即过（多样性只进强度显示，不拦人）
+        const isValid = password.length >= 8 && password.length <= 128 && errors.length === 0;
+
         return {
             valid: isValid,
             strength: strength,
             level: level,
-            message: isValid ? '密码强度良好' : (errors.length > 0 ? errors[0] : '密码强度不足'),
+            message: isValid ? "这个密码，稳了" : (errors.length > 0 ? errors[0] : "密码再长一点点更好"),
             feedback: feedback,
             errors: errors
         };
     }
 
-    // 显示验证错误信息
+        // 显示验证错误信息
     static showValidationError(fieldId, message) {
         const field = document.getElementById(fieldId);
         const errorElement = document.getElementById(fieldId + '-error');

@@ -1,5 +1,5 @@
 // 用途：增强版搜索组件，提供搜索建议、热门搜索和搜索结果缓存等功能
-// 依赖文件：product-search-manager.js, main.js (通过全局对象使用)
+// 依赖文件：product-search-manager.js, main.js (通过全局对象使用), utils/escape-html.js, shared/format-price.js
 // 作者：AI助手
 // 时间：2025-09-22 21:30:00
 
@@ -7,6 +7,9 @@
  * 增强版搜索组件类
  * 提供搜索建议、热门搜索和搜索结果缓存等功能
  */
+// M7·B5: 价格格式单一来源（整数直出 ¥299 非整两位）——A 席 M0 组件复用
+import { formatPrice } from '../shared/format-price.js';
+
 class EnhancedSearchComponent {
   /**
    * 构造函数
@@ -107,7 +110,7 @@ async init() {
     searchInput.id = this.options.searchInputId;
     searchInput.name = 'q';
     searchInput.placeholder = '搜索产品、系列或关键词';
-    searchInput.className = 'w-full py-3 pl-12 pr-4 border border-[var(--border-default)] rounded-none focus:outline-none focus:border-[var(--candy-blush-ink)] focus:ring-2 focus:ring-[var(--gold-standard)] focus:ring-opacity-20 text-lg';
+    searchInput.className = 'w-full py-3 pl-12 pr-4 border border-[var(--border-default)] rounded-none focus:outline-none focus:border-[var(--candy-blush-ink)] focus:ring-2 focus:ring-[var(--ink)] focus:ring-opacity-20 text-lg';
     searchInput.autocomplete = 'off';
     searchInput.spellcheck = 'false';
 
@@ -379,7 +382,7 @@ async fetchSearchSuggestions(query) {
 getMockSuggestions(query) {
   const allSuggestions = [
     '皮革手袋', '帆布包', '迷你包', '托特包', '斜挎包',
-    '凯莉包', '波士顿包', '褶皱手袋', '迷你链条包', '翻盖链条包',
+    '锁扣手提包', '波士顿包', '褶皱手袋', '迷你链条包', '翻盖链条包',
     '链条包', '手提包', '单肩包', '信封包', '水桶包',
     '马鞍包', '云朵包', '腋下包', '法棍包', '手拿包',
     '粒面皮', '光面皮', '印花皮革', '糖果色', '渐变褶皱',
@@ -451,7 +454,7 @@ async loadPopularSearches() {
 getMockPopularSearches() {
   return [
     { term: '皮革手袋', count: 125 },
-    { term: '凯莉包', count: 98 },
+    { term: '锁扣手提包', count: 98 },
     { term: '波士顿包', count: 76 },
     { term: '褶皱手袋', count: 65 },
     { term: '迷你链条包', count: 54 },
@@ -799,11 +802,33 @@ async performSearch(query) {
     // 清空容器
     this.elements.searchResults.innerHTML = '';
     
-    // 如果没有搜索结果，显示无结果提示
+    // 如果没有搜索结果，显示无结果提示（香港席 M7：voice-sheet 三态承诺——
+    // 乱词搜索不该是一片空白；文案从容，附两枚推荐词把人领回去）
     if (this.state.searchResults.length === 0) {
       const noResults = document.createElement('div');
       noResults.className = 'no-search-results';
-      noResults.textContent = '没找到——换个词试试？';
+      noResults.textContent = '没找到这只——它可能还在路上。';
+
+      const suggest = document.createElement('div');
+      suggest.className = 'no-search-results-suggest';
+      const suggestLabel = document.createElement('span');
+      suggestLabel.className = 'no-search-results-suggest-label';
+      suggestLabel.textContent = '不如看看：';
+      suggest.appendChild(suggestLabel);
+      ['波士顿包', '湖蓝锁扣手提包'].forEach(term => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'no-search-results-chip';
+        chip.textContent = term;
+        chip.addEventListener('click', () => {
+          if (this.elements.searchInput) {
+            this.elements.searchInput.value = term;
+          }
+          this.performSearch(term);
+        });
+        suggest.appendChild(chip);
+      });
+      noResults.appendChild(suggest);
       this.elements.searchResults.appendChild(noResults);
       return;
     }
@@ -832,82 +857,111 @@ async performSearch(query) {
    * @param {Object} product - 产品数据
    * @returns {HTMLElement} 产品卡片元素
    */
+  /**
+   * 创建产品卡片（M7·B2+B10 重构）
+   * 结构复用首页 bento 单格卡（.bento-card/.cell-fig/.cell-body——bento.css 已随页面加载），
+   * 图与名为双锚点链接直入 PDP（product.html?id=8 位零填充，与 home-products 卡片同口径）；
+   * 五星与评价计数删除（假社会证明），零评价态换"首批上架，来做第一个"；
+   * 死按钮（原加入购物车/收藏 console.log 桩）删除——加购在 PDP 内完成，不在搜索结果里假装。
+   * 插值统一 escapeHtml（js/utils/escape-html.js 由页面先载）；价格走 formatPrice。
+   */
   createProductCard(product) {
-    const card = document.createElement('div');
-    card.className = 'product-card';
-    
-    // 产品图片
-    const image = document.createElement('img');
-    image.className = 'product-image';
-    image.src = product.image || 'https://via.placeholder.com/300x200?text=Product';
-    image.alt = product.name;
-    card.appendChild(image);
-    
-    // 产品信息容器
-    const info = document.createElement('div');
-    info.className = 'product-info';
-    
-    // 产品名称
-    const name = document.createElement('div');
-    name.className = 'product-name';
-    name.textContent = product.name;
-    info.appendChild(name);
-    
-    // 产品价格
-    const price = document.createElement('div');
-    price.className = 'product-price';
-    price.textContent = `¥${product.price}`;
-    info.appendChild(price);
-    
-    // 产品评分
-    const rating = document.createElement('div');
-    rating.className = 'product-rating';
-    
-    const stars = document.createElement('div');
-    stars.className = 'product-rating-stars';
-    stars.textContent = '★★★★★';
-    rating.appendChild(stars);
-    
-    const count = document.createElement('div');
-    count.className = 'product-rating-count';
-    count.textContent = `${product.reviewCount || 0} 评价`;
-    rating.appendChild(count);
-    
-    info.appendChild(rating);
-    
-    // 产品操作按钮
-    const actions = document.createElement('div');
-    actions.className = 'product-actions';
-    
-    const addToCartBtn = document.createElement('button');
-    addToCartBtn.className = 'product-button add-to-cart-button';
-    addToCartBtn.textContent = '加入购物车';
-    actions.appendChild(addToCartBtn);
-    
-    const addToWishlistBtn = document.createElement('button');
-    addToWishlistBtn.className = 'product-button add-to-wishlist-button';
-    addToWishlistBtn.textContent = '收藏';
-    actions.appendChild(addToWishlistBtn);
-    
-    info.appendChild(actions);
-    
-    card.appendChild(info);
-    
-    // 添加点击事件
+    const esc = (v) => escapeHtml(String(v ?? ''));
+    const name = product.name ? String(product.name) : 'Reich 单品';
+    const pdpHref = this.pdpUrl(product);
+
+    const card = document.createElement('article');
+    card.className = 'bento-card reich-product-card';
+    card.setAttribute('itemscope', '');
+    card.setAttribute('itemtype', 'https://schema.org/Product');
+    if (product.id != null) card.dataset.productId = String(product.id);
+
+    const inner = document.createElement('div');
+    inner.className = 'cell-inner';
+
+    // 图锚点：figure 链接化（可点入 PDP）
+    const fig = document.createElement('a');
+    fig.className = 'card-fig cell-fig';
+    if (pdpHref) fig.href = pdpHref;
+    fig.setAttribute('aria-label', name);
+    const img = document.createElement('img');
+    img.className = 'reich-product-image';
+    img.src = product.image || product.mainImage || '/images/default-product.png';
+    img.alt = 'Reich ' + name;
+    img.loading = 'lazy';
+    img.decoding = 'async';
+    fig.appendChild(img);
+
+    const body = document.createElement('div');
+    body.className = 'cell-body';
+
+    // 名锚点：h3 内联链接（双锚不包卡——bag/心形若日后挂入不受牵连）
+    const h3 = document.createElement('h3');
+    h3.className = 'cell-name reich-product-name';
+    h3.setAttribute('itemprop', 'name');
+    if (pdpHref) {
+      const a = document.createElement('a');
+      a.href = pdpHref;
+      a.textContent = name;
+      h3.appendChild(a);
+    } else {
+      h3.textContent = name;
+    }
+
+    const desc = document.createElement('p');
+    desc.className = 'cell-desc';
+    desc.textContent = product.description ? String(product.description) : name + '，本季上新，慢慢挑。';
+
+    const meta = document.createElement('div');
+    meta.className = 'cell-meta';
+    const price = document.createElement('p');
+    price.className = 'reich-product-price';
+    price.style.margin = '0';
+    price.textContent = typeof formatPrice === 'function'
+      ? formatPrice(Number(product.price) || 0)
+      : '¥' + (Number(product.price) || 0);
+
+    // B10: 零评价诚实态（首批上架，来做第一个）——不上假五星
+    const social = document.createElement('span');
+    social.className = 'reich-product-social';
+    social.style.fontSize = 'var(--text-caption, 0.6875rem)';
+    social.style.color = 'var(--ink-soft)';
+    social.textContent = !product.reviewCount ? '首批上架，来做第一个' : '';
+
+    meta.appendChild(price);
+    if (social.textContent) meta.appendChild(social);
+
+    body.appendChild(h3);
+    body.appendChild(desc);
+    body.appendChild(meta);
+    inner.appendChild(fig);
+    inner.appendChild(body);
+    card.appendChild(inner);
+
+    // 卡片点击兜底（点在卡空白处也进 PDP；链接已在键盘焦点路径上）
     card.addEventListener('click', (event) => {
-      // 如果点击的是按钮，不触发卡片点击事件
-      if (event.target.classList.contains('product-button')) {
-        return;
-      }
-      
-      // 触发产品选择事件
-      this.handleProductSelect(product);
+      if (event.target.closest('a') || event.target.closest('button')) return;
+      if (pdpHref) window.location.href = pdpHref;
     });
-    
+
     return card;
   }
 
+  /** PDP 深链 id 口径：8 位零填充（与 home-products/PDP ?id= 一致）；
+   *  API 数字 id 直补零，mock 的 prod-003 取尾数字归一；无数字 id 不出链接。 */
+  pdpUrl(product) {
+    const raw = String(product.id ?? '');
+    let num = null;
+    if (/^\d+$/.test(raw)) num = Number(raw);
+    else {
+      const m = raw.match(/(\d+)$/);
+      if (m) num = Number(m[1]);
+    }
+    return num ? 'product.html?id=' + String(num).padStart(8, '0') : null;
+  }
+
   /**
+   * 处理产品选择
    * 处理产品选择
    * @param {Object} product - 产品数据
    */
@@ -1008,7 +1062,7 @@ getMockSearchResults(query, filters = {}) {
     },
     {
       id: 'prod-003',
-      name: '湖蓝凯莉手提包',
+      name: '湖蓝锁扣手提包',
       category: '手提包',
       price: 189,
       originalPrice: null,
@@ -1017,7 +1071,7 @@ getMockSearchResults(query, filters = {}) {
       rating: 4.9,
       reviewCount: 67,
       inStock: true,
-      tags: ['凯莉包', '手提包', '湖蓝']
+      tags: ['锁扣手提包', '手提包', '湖蓝']
     },
     {
       id: 'prod-004',

@@ -7,7 +7,7 @@
     box-shadow:
         0 20px 25px -5px rgba(0, 0, 0, 0.1),
         0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    /* C1(裁决): 金幽灵 rgba(212, 175, 55, ×) 清除——描边换 line 令牌 */
+    /* C1(裁决): 金幽灵 金色 rgba 记法 清除——描边换 line 令牌 */
     border: 1px solid var(--line);
     position: relative;
     overflow: hidden;
@@ -20,7 +20,7 @@
     left: 0;
     right: 0;
     height: 3px;
-    background: linear-gradient(90deg, var(--brand-gold), var(--brand-red), var(--brand-gold));
+    background: linear-gradient(90deg, var(--ink), var(--brand-red), var(--ink));
 }
 
 /* 奢华输入框 */
@@ -41,7 +41,7 @@
 }
 
 .luxury-input input:focus {
-    /* C1(裁决): 金幽灵 focus ring rgba(212, 175, 55, ×) 清除——换 blush-ink 令牌环；
+    /* C1(裁决): 金幽灵 focus ring 金色 rgba 记法 清除——换 blush-ink 令牌环；
        C20(裁决): 删 translateY 位移 */
     outline: 2px solid var(--focus-ring-color);
     outline-offset: var(--focus-ring-offset);
@@ -61,7 +61,7 @@
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
-    background: linear-gradient(135deg, var(--brand-gold) 0%, #c9a96e 100%);
+    background: linear-gradient(135deg, var(--ink) 0%, var(--ink-soft) 100%); /* M8·金扫描: 香槟金渐变字面量对齐 ink 系解析值 */
     color: white;
     box-shadow: 
         0 4px 6px -1px rgba(0, 0, 0, 0.1),
@@ -96,7 +96,7 @@
 .captcha-refresh {
     padding: var(--spacing-2);
     border: none;
-    background: var(--brand-gold);
+    background: var(--ink);
     color: white;
     border-radius: var(--radius-md);
     cursor: pointer;
@@ -104,7 +104,7 @@
 }
 
 .captcha-refresh:hover {
-    background: #c9a96e;
+    background: var(--ink-soft); /* M8·金扫描: 香槟金 hover 字面量收编 ink 系 */
 }
 
 /* 密码强度指示器 */
@@ -205,7 +205,7 @@
 }
 
 .social-btn-luxury:hover {
-    border-color: var(--brand-gold);
+    border-color: var(--ink);
     background: var(--bg-hover);
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);

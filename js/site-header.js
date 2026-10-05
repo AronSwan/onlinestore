@@ -71,6 +71,14 @@ const PAGE_CONFIG = {
     back: false,
     mobileCurrent: null,
   },
+  // M7·B13: 退换政策静态页（静态成文，头部复用同一模块）
+  returns: {
+    navCurrent: null,
+    searchBtn: { label: '搜索', expanded: false, controls: null },
+    user: { id: null, label: '账户', href: 'login.html', current: false },
+    back: false,
+    mobileCurrent: null,
+  },
 };
 
 // 模块内 document.currentScript 为 null——页级参数从占位元素 data-page 读取。
@@ -112,8 +120,8 @@ ${cfg.back ? `        <!-- 返回个人中心（orders 页独有，原独立返�
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
         </button>
 
-        <!-- 心愿单 -->
-        <a href="index.html" aria-label="心愿单" class="site-wishlist-btn">
+        <!-- 心愿单（M6·B4: href 首页→profile 页"我的心头好"区块——承诺-兑现闭环；C6(裁决): aria"心头好"） -->
+        <a href="profile.html#wishlist" aria-label="心头好" class="site-wishlist-btn">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.8-9.8-9.2C.6 8.8 2.5 5 6.1 5c2 0 3.4 1 4.4 2.5h3C14.5 6 15.9 5 17.9 5c3.6 0 5.5 3.8 3.9 6.8C19.5 16.2 12 21 12 21z" fill="none"/></svg>
         </a>
 

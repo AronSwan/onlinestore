@@ -20,6 +20,9 @@
     <script src="js/profile-manager.js"></script>
 </head>
 <body style="padding-top: 72px">
+    <!-- 跳转到主内容链接 (无障碍性) M8·C7: 四页补齐 -->
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-[var(--ink)] text-white px-4 py-2 rounded z-50">跳转到主内容</a>
+
     <!-- 统一站点导航（P3 → F4 归一：js/site-header.js 单一 ES module 按 PAGE_CONFIG=profile
          渲染+移动菜单，行为（开合/滚动阴影）也归一于该模块；noscript 静态头部兜底） -->
     <noscript>
@@ -44,11 +47,12 @@
     <!-- 移动菜单（id=mobileMenu 冻结契约；F4 归一由 site-header.js 紧跟 header 插入） -->
 
     <!-- 主要内容区域 -->
-    <main class="profile-container">
+    <main id="main-content" class="profile-container">
         <div class="profile-sidebar">
             <h2>个人中心</h2>
             <ul class="profile-menu">
                 <li><a href="#basic-info" class="active">基本信息</a></li>
+                <li><a href="#wishlist">我的心头好</a></li>
                 <li><a href="#addresses">收货地址</a></li>
                 <li><a href="#security">账户安全</a></li>
                 <li><a href="#preferences">偏好设置</a></li>
@@ -91,6 +95,14 @@
                     </div>
                     <button type="submit" class="btn-primary">保存修改</button>
                 </form>
+            </section>
+
+            <!-- 我的心头好（M6·B4：心愿单闭环的"房间"——头部心形指到这；localStorage reich_wishlist 渲染） -->
+            <section id="wishlist" class="profile-section">
+                <h2>我的心头好</h2>
+                <div id="wishlist-list" class="wishlist-list" aria-live="polite">
+                    <!-- profile-manager.js renderWishlist 渲染 -->
+                </div>
             </section>
 
             <!-- 收货地址部分 -->

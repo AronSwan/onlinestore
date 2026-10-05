@@ -216,6 +216,69 @@ class ProfileManager {
         this.bindAddressEvents();
     }
 
+    /**
+     * M6·B4 · 渲染"我的心头好"区块（localStorage reich_wishlist → 可移除列表）。
+     * 与 wishlist.js 同一存储键；渲染插值统一 escapeHtml（心愿单 name 来自卡片 DOM
+     * textContent，本站内容，仍按不可信处理——F7 渲染层转义纪律）。
+     * 空态文案过 voice-sheet：俏皮但不尖叫（上海席："空态是全店性价比最高的可爱位"）。
+     */
+    renderWishlist() {
+        const container = document.getElementById('wishlist-list');
+        if (!container) {
+            return;
+        }
+
+        let items = [];
+        try {
+            items = JSON.parse(localStorage.getItem('reich_wishlist')) || [];
+        } catch (e) {
+            console.warn('心头好数据读取失败，按空处理', e);
+            items = [];
+        }
+
+        if (items.length === 0) {
+            container.innerHTML = '<p class="no-wishlist">还没记下心头好——逛到喜欢的，点一下卡片上的小心形就好。</p>';
+            return;
+        }
+
+        container.innerHTML = items.map(item => `
+            <div class="wishlist-item" data-id="${escapeHtml(String(item.id))}">
+                <img src="${escapeHtml(String(item.image))}" alt="${escapeHtml(String(item.name))}" class="wishlist-item-image" loading="lazy">
+                <div class="wishlist-item-info">
+                    <h4>${escapeHtml(String(item.name))}</h4>
+                    <p>${escapeHtml(String(item.price))}</p>
+                </div>
+                <button type="button" class="btn-secondary wishlist-remove-btn" data-id="${escapeHtml(String(item.id))}">不心动了</button>
+            </div>
+        `).join('');
+
+        // 可移除：本地即时更新（心愿单是本地资产，无后端往返）
+        container.querySelectorAll('.wishlist-remove-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.dataset.id;
+                let remaining = [];
+                try {
+                    remaining = (JSON.parse(localStorage.getItem('reich_wishlist')) || []).filter(i => String(i.id) !== id);
+                } catch (e) {
+                    remaining = [];
+                }
+                localStorage.setItem('reich_wishlist', JSON.stringify(remaining));
+                this.renderWishlist();
+            });
+        });
+    }
+
+    /** M6·B4 · 深链激活：profile.html#wishlist 直达心头好区块（头部心形/toast 的落点） */
+    activateSectionFromHash() {
+        const hash = window.location.hash;
+        if (!hash || hash === '#') return;
+        const link = document.querySelector(`.profile-menu a[href="${hash}"]`);
+        if (!link) return;
+        this.switchSection(hash);
+        document.querySelectorAll('.profile-menu a').forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+    }
+
     bindEvents() {
         // 基本信息表单提交
         const basicInfoForm = document.getElementById('basic-info-form');
@@ -237,6 +300,10 @@ class ProfileManager {
 
         // 侧边栏导航事件
         this.bindSidebarEvents();
+
+        // M6·B4: 心头好区块渲染 + 深链激活（头部心形 → profile.html#wishlist）
+        this.renderWishlist();
+        this.activateSectionFromHash();
     }
 
     bindSidebarEvents() {

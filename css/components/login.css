@@ -11,7 +11,7 @@
 .login-container {
     min-height: 100vh;
     background: var(--cream-luxury);
-    /* C1(裁决): 金幽灵 rgba(212, 175, 55, ×) 清除——淡金光晕换 blush-ink 系 */
+    /* C1(裁决): 金幽灵 金色 rgba 记法 清除——淡金光晕换 blush-ink 系 */
     background-image:
         radial-gradient(circle at 20% 80%, rgba(209, 77, 103, 0.05) 0%, transparent 50%),
         radial-gradient(circle at 80% 20%, rgba(26, 26, 26, 0.03) 0%, transparent 50%);
@@ -22,7 +22,7 @@
     position: relative;
 }
 
-/* C26(裁决): 原 ::before 金色颗粒 SVG 纹理（%23d4af37 残金）删除 */
+/* C26(裁决): 原 ::before 金色颗粒 SVG 纹理（URL 编码金 hex 残金）删除 */
 
 /* ==========================================================================
    登录卡片 - Reich经典设计
@@ -162,8 +162,8 @@
 }
 
 .form-input::placeholder {
-    /* C1(裁决): 斜体占位换正体；色锁 --ink-faint 弱化档 */
-    color: var(--ink-faint);
+    /* C1(裁决): 斜体占位换正体；M0·ink-faint判定表: 占位=可读提示→ink-soft */
+    color: var(--ink-soft);
 }
 
 .form-input.is-invalid {
@@ -480,7 +480,7 @@
     margin-bottom: var(--spacing-lg);
     font-family: var(--font-family-serif);
     font-size: var(--text-xs);
-    color: var(--candy-blush-ink);
+    color: var(--ink-soft); /* M8·C4: blush-ink ≤14px 文字禁用——12px 小字换 ink-soft，blush 边框/淡底保留 accent */
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
@@ -608,35 +608,6 @@
         transition-duration: 0.01ms !important;
     }
 }
-
-/* 暗色模式支持（保持Reich品牌一致性） */
-@media (prefers-color-scheme: dark) {
-    .login-container {
-        background: var(--dark-elegant);
-        /* C1(裁决): 金幽灵 rgba(212, 175, 55, ×) 清除——换 blush-ink 系 */
-        background-image:
-            radial-gradient(circle at 20% 80%, rgba(209, 77, 103, 0.08) 0%, transparent 50%),
-            radial-gradient(circle at 80% 20%, rgba(245, 245, 220, 0.05) 0%, transparent 50%);
-    }
-
-    .login-card {
-        background: rgba(26, 26, 26, 0.95);
-        color: var(--cream-luxury);
-    }
-
-    .login-card h1 {
-        color: var(--cream-luxury);
-    }
-
-    .form-input {
-        background: rgba(245, 245, 220, 0.05);
-        border-color: rgba(209, 77, 103, 0.2);
-        color: var(--cream-luxury);
-    }
-
-    .social-btn {
-        background: rgba(245, 245, 220, 0.05);
-        border-color: rgba(209, 77, 103, 0.2);
-        color: var(--cream-luxury);
-    }
-}
+/* M8·C2（2026-10-05）：暗色模式块同葬（佛罗伦萨五处之二）——白底宪法下暗色是未设计态。
+   原块给暗色 OS 用户的是黑底+blush 微光的半成品（login-container/card/input/social 四件）；
+   判定：整块删除优于修补（同一 @media 在 enhanced-responsive.css 还有更粗糙的灰渐变重复实现）。 */

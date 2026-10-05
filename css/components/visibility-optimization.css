@@ -122,17 +122,7 @@
     }
 }
 
-/* 暗色模式可见性优化 */
-@media (prefers-color-scheme: dark) {
-    .dark-mode-visible {
-        background-color: #1a1a1a;
-        color: #ffffff;
-    }
-    
-    .dark-mode-border {
-        border-color: #333;
-    }
-}
+/* M8·C2（2026-10-05）：暗色可见性类对同葬（佛罗伦萨五处之五）——全仓 HTML/JS 零消费者，纯死代码 */
 
 /* 可访问性优化类 */
 .sr-only {

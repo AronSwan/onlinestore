@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reich - 用户登录 | 奢华购物体验</title>
+    <title>Reich — 欢迎回来</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     
     <!-- 安全防护 -->
@@ -31,6 +31,9 @@
 </head>
 
 <body style="padding-top: 72px">
+    <!-- 跳转到主内容链接 (无障碍性) M8·C7: 四页补齐 -->
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-[var(--ink)] text-white px-4 py-2 rounded z-50">跳转到主内容</a>
+
     <!-- 统一站点导航（P3 → F4 归一：js/site-header.js 单一 ES module 按 PAGE_CONFIG=login
          渲染+移动菜单，行为（开合/滚动阴影）也归一于该模块；noscript 静态头部兜底） -->
     <noscript>
@@ -55,7 +58,7 @@
     <!-- 移动菜单（id=mobileMenu 冻结契约；F4 归一由 site-header.js 紧跟 header 插入） -->
 
     <!-- 主要内容 -->
-    <main class="login-container">
+    <main id="main-content" class="login-container">
         <div class="container mx-auto px-4 py-12">
             <div class="max-w-md mx-auto">
                 <!-- 安全提示 -->
@@ -115,7 +118,7 @@
                                         id="login-password" 
                                         name="password"
                                         class="form-input pr-12" 
-                                        placeholder="请输入您的密码"
+                                        placeholder="密码"
                                         required
                                         autocomplete="current-password"
                                         aria-describedby="login-password-help"
@@ -196,7 +199,7 @@
                                     id="register-username" 
                                     name="username"
                                     class="form-input" 
-                                    placeholder="请输入用户名（3-20个字符）"
+                                    placeholder="用户名"
                                     required
                                     minlength="3"
                                     maxlength="20"
@@ -230,7 +233,7 @@
                                         id="register-password" 
                                         name="password"
                                         class="form-input pr-12" 
-                                        placeholder="请输入密码（至少8位）"
+                                        placeholder="密码（8 位起步）"
                                         required
                                         minlength="8"
                                         aria-describedby="register-password-help"
@@ -267,7 +270,7 @@
                                     id="confirm-password" 
                                     name="confirmPassword"
                                     class="form-input" 
-                                    placeholder="请再次输入密码"
+                                    placeholder="再输一次密码"
                                     required
                                     aria-describedby="confirm-password-help"
                                 >
