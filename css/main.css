@@ -256,7 +256,7 @@ body {
     white-space: nowrap;
     font-size: var(--text-caption);
     font-weight: 600;
-    letter-spacing: var(--tracking-caps);
+    letter-spacing: calc(var(--tracking-caps) + 0.05em); /* M8·C7(米兰P3): 跑马灯字距 +0.05em（滚动文字需要更透气的字距） */
     text-transform: uppercase;
     border-bottom: 1px solid var(--line);
     user-select: none;
@@ -595,7 +595,7 @@ body {
 .navbar-icon:hover {
     color: var(--candy-blush-ink);
     transform: scale(1.1);
-    /* C1(裁决): 金幽灵 rgba(212, 175, 55, ×) 清除——换 blush-soft 系 */
+    /* C1(裁决): 金幽灵 金色 rgba 记法 清除——换 blush-soft 系 */
     background-color: var(--candy-blush-soft);
     border-radius: 50%;
 }
@@ -1881,7 +1881,7 @@ body {
     background: none;
     border: none;
     cursor: pointer;
-    color: var(--text-tertiary);
+    color: var(--text-secondary); /* M0·ink-faint判定表: 交互件→ink-soft+hover blush-ink */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1891,7 +1891,7 @@ body {
 
 .notification-close:hover {
     background-color: var(--hover-bg);
-    color: var(--text-primary);
+    color: var(--candy-blush-ink);
 }
 
 /* 通知进度条 */
@@ -2069,7 +2069,7 @@ body {
     background: none;
     border: none;
     cursor: pointer;
-    color: var(--text-tertiary);
+    color: var(--text-secondary); /* M0·ink-faint判定表: 交互件→ink-soft+hover blush-ink */
     font-size: var(--text-sm);
     padding: var(--spacing-1);
     border-radius: var(--border-radius-sm);
@@ -2078,7 +2078,7 @@ body {
 
 .notification-group-close:hover {
     background-color: var(--hover-bg);
-    color: var(--text-primary);
+    color: var(--candy-blush-ink);
 }
 
 /* 通知组内容 */
@@ -3646,27 +3646,12 @@ body {
     filter: brightness(1.1);
 }
 
-/* 求美修复(2026-10-04): hero Signature Moment——candy 色波浪下划线全站唯一记忆点 */
 /* F5: hero 大字标题——可变字体 900 档，clamp 流式字号（min 40px 保证 375px 不溢出） */
+/* M4 用户终裁(2026-10-05)：hero Signature Moment 下划线整体删除（"如无必要不要下划线"），
+   强调 span 与其 ::after 波浪/直棒样式全数下架——标题整句纯文本干净呈现；
+   v3 宪法"波浪线唯一处"条款由协调席收官时同步下架（本注释留痕） */
 .hero-title {
   font-size: clamp(2.5rem, 8vw, 7rem);
   font-weight: 900;
   line-height: 1.1;
-}
-.hero-accent {
-  position: relative;
-  isolation: isolate;  /* F5: 让 ::after 的 z-index:-1 只沉到字形之下，不再被 hero 渐变遮罩盖没 */
-  color: var(--candy-blush-ink);
-}
-.hero-accent::after {
-  content: '';
-  position: absolute;
-  bottom: 0.05em;
-  left: 0;
-  width: 100%;
-  height: 0.08em;
-  background: var(--candy-blush);
-  opacity: 0.6;
-  z-index: -1;
-  border-radius: 2px;
 }

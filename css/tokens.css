@@ -5,6 +5,9 @@
    F2：断点五档令牌化 + z 六档标度 + 映射层消肿第一批（136→44）
    F6：色彩定义层升级 OKLCH——基色 hex→oklch()（视觉等值），
        soft/ink 档 color-mix(in oklch) 自动派生（mint-ink 除外，见注）
+   M0(2026-10-05 蓝图 v1.1)：三文本档换实测字面值（blush-ink #B93A54 /
+       mint-ink #146B57 / 新增 warning-ink #8A6508）+ --dur-flight；
+       本文件自此冻结（冻结条款：M0 合入后任何模块不得再动）
    ============================================================ */
 
 :root {
@@ -20,7 +23,10 @@
   /* ---- 糖果一主两备 · 三档制（F6：基色 oklch，soft/ink 由 color-mix 派生） ---- */
   --candy-blush: oklch(0.7162 0.1805 13.83);      /* #FF6B81 主档（描边/强调） */
   --candy-blush-soft: color-mix(in oklch, var(--candy-blush), white 79.5%);  /* ≈#F9E2EC deltaE1.79 */
-  --candy-blush-ink: color-mix(in oklch, var(--candy-blush), black 15%);     /* ≈#D14D67 deltaE1.52 文本档 ≥4.5:1 */
+  /* C4(v1.1 终审·M0)：文本档换佛伦萨实测字面值——旧 color-mix 派生 ≈#D14D67 白底
+     实算 4.12:1，原注"≥4.5:1"为假注释（必修项）；#B93A54 白底 5.53 / blush-soft
+     淡底 4.63 / 12% 淡底 4.51 三关全过。字面直写不再派生（保实测精确，同 mint-ink 例） */
+  --candy-blush-ink: #B93A54;
   --candy-blush-hover: color-mix(in oklch, var(--candy-blush), black 8%);    /* F6 预埋 hover 档（F7 消费） */
 
   --candy-sun: oklch(0.8803 0.1348 86.06);        /* #FFD166 主档（禁做白底文本） */
@@ -30,8 +36,9 @@
   --candy-mint: oklch(0.8106 0.0924 177.09);      /* #7BD5C0 主档 */
   --candy-mint-soft: color-mix(in oklch, var(--candy-mint), white 78%);      /* ≈#E4F6F0 deltaE0.11 */
   /* mint-ink 不派生：目标彩度 C=0.1016 高于基色 C=0.0924，color-mix 只降彩度，
-     最优逼近 deltaE=3.73 超预算；且该档承担 ≥3:1 文本对比度义务，保字面精确 */
-  --candy-mint-ink: oklch(0.5685 0.1016 171.99);  /* #1F8A70 文本档 ≥3:1（大字用） */
+     最优逼近 deltaE=3.73 超预算；且该档承担 ≥3:1 文本对比度义务，保字面精确。
+     C4(v1.1 终审·M0)：值调深 #1F8A70→#146B57——白底 6.42 / 淡底 5.38（旧值 4.26 堪用但薄） */
+  --candy-mint-ink: #146B57;                       /* 文本档 白底 6.42:1 */
   --candy-mint-hover: color-mix(in oklch, var(--candy-mint), black 8%);      /* F6 预埋 hover 档（F7 消费） */
 
   /* ---- 字体 ---- */
@@ -103,6 +110,9 @@
   --dur-fast: 0.2s;
   --dur-slow: 0.4s;
   --ease-lux: ease-in-out;
+  /* B1 fly-to-cart（v1.1 终裁）：飞行时长上限档——运行时按距离自适应
+     clamp(240ms, d/1.6px/ms, 400ms)，本令牌即 400ms 上限（≤400ms 别抢 toast 注目） */
+  --dur-flight: 0.4s;
   /* 旧名兼容映射 */
   --transition-fast: 0.2s ease-in-out;
   --transition-normal: 0.3s ease-in-out;
@@ -123,6 +133,9 @@
   --warning: #B8860B;
   --error: #C44B4B;
   --info: #4A7FB5;
+  /* C4(v1.1 终审·M0)：状态文本档——徽章/小字文本一律用 -ink 档（升字重不救
+     对比度，必须换色）。实测：#8A6508 白底 5.32 / 12% 淡底 4.55（旧 #B8860B 白底 3.25） */
+  --warning-ink: #8A6508;
 
   /* ---- 购物车面板（修复 cart.css 幽灵） ---- */
   --primary: var(--ink);
@@ -189,10 +202,10 @@
   --warning-bg: #F7EEDC;
   --info-color: var(--info);
   --info-bg: #E8F0F7;
-  /* 焦点态 */
+  /* 焦点态（C4·M0：shadow 底色随 blush-ink 新值 #B93A54=rgb(185,58,84) 对齐） */
   --focus-ring-color: var(--candy-blush-ink);
   --focus-ring-offset: 2px;
-  --focus-shadow: 0 0 0 3px rgba(209, 77, 103, 0.25);
+  --focus-shadow: 0 0 0 3px rgba(185, 58, 84, 0.25);
   --focus-translate-y: -1px;
   /* ---- 层级标度（F2：六档 UI 层叠，替代 F1 临时 --z-10/20/40/50） ---- */
   --z-nav: 100;        /* 导航面板（移动菜单） */

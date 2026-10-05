@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商品详情 — Reich</title>
+    <meta name="description" content="Reich 单品详情——规格、材质、五金一目了然，慢慢看，不着急。">
+    <meta name="robots" content="index, follow">
+
+    <!-- M5(修 OG 假域名)：静态层不带任何假域名 og:url/og:image；per-product 的
+         og:title/og:image/og:url/canonical/JSON-LD 由 product.js 按运行时真实
+         origin + 商品数据注入（绝对地址、真图路径） -->
+    <meta property="og:type" content="product">
+    <meta property="og:site_name" content="Reich">
+    <meta property="og:locale" content="zh_CN">
+    <meta property="twitter:card" content="summary_large_image">
+
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+    <link rel="preload" href="fonts/barlow-variable.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="fonts/fonts.css">
+    <link rel="stylesheet" href="css/tokens.css">
+    <link rel="stylesheet" href="css/components/site-header.css">
+    <link rel="stylesheet" href="css/main.css">
+    <!-- M5：PDP 专属样式（≤8KB gz 预算） -->
+    <link rel="stylesheet" href="css/product.css">
+    <link rel="stylesheet" href="css/components/cart.css">
+</head>
+
+<body class="text-[var(--text-primary)]" style="padding-top: 72px">
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-[var(--ink)] text-white px-4 py-2 rounded z-50">跳转到主内容</a>
+
+    <!-- 统一站点导航（M5 挂靠 index 页配置：PDP 无独立 PAGE_CONFIG，
+         M6 头部域如需 product 专属 aria-current 再行登记） -->
+    <noscript>
+      <header class="site-header" id="siteHeader">
+        <div class="container mx-auto px-4 site-header-inner">
+        <nav aria-label="主导航">
+          <ul class="site-nav">
+            <li><a href="#featured-collections">手袋</a></li>
+            <li><a href="#brand-story">品牌故事</a></li>
+            <li><a href="orders.html">订单</a></li>
+          </ul>
+        </nav>
+        <a href="index.html" class="site-brand">REICH</a>
+        <div class="site-tools">
+          <a href="login.html" aria-label="用户登录" class="site-user-btn">登录</a>
+          <a href="orders.html" aria-label="我的订单">订单</a>
+        </div>
+        </div>
+      </header>
+    </noscript>
+    <template data-site-header data-page="index"></template>
+    <script type="module" src="js/site-header.js"></script>
+
+    <!-- 主内容：商品详情（js/product.js 按 ?id= 渲染；三路异常落页内诚实空态，不伪 404） -->
+    <main id="main-content" role="main">
+        <div class="product-detail container mx-auto px-4" data-product-detail>
+            <!-- 渲染前占位（aria-busy）：JS 关闭/接口极慢时页面不空场 -->
+            <div class="pdp-loading" aria-busy="true">
+                <p>正在把这只包从店里请出来…</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- 移动端吸底加购条（product.js 渲染，product.css ≤1023px 显示） -->
+
+    <!-- JavaScript -->
+    <script src="js/utils/escape-html.js"></script>
+    <script type="module" defer src="js/product.js"></script>
+    <script type="module" defer src="js/cart.js"></script>
+</body>
+
+</html>

@@ -1,14 +1,37 @@
 /**
  * 统一购物车模块 - 最大化功能整合
- * 
+ *
  * 整合功能：
  * 1. CartManager - 购物车状态管理（保留现有功能）
  * 2. CartUI - 购物车界面组件（新增）
  * 3. 购物车图标管理（保留现有功能）
  * 4. 后端同步功能（增强）
- * 
+ *
  * 确保不影响现有购物车按钮图标功能
+ *
+ * ── 冻结契约（蓝图 M2/M3 施工前置，违反即 P1）───────────────────────
+ * ① [data-add-to-cart] 文档级点击委托（bindEvents）；
+ * ② getProductDataFromElement 的 .reich-product-card 卡上下文兜底；
+ * ③ showCart() 公开入口（navigation-icons.js 购物袋图标调用）；
+ * ④ pulseCartBadge()（remove/void offsetWidth/add 重触发脉冲）；
+ * ⑤ 徽章选择器组 '.cart-badge, .cart-count, #cart-badge, #cart-count,
+ *    .site-cart-badge'（updateCartBadge 与 pulseCartBadge 同组）。
+ *
+ * M2(2026-10-05 蓝图 v1.1)：C5 勾选模型砍除（getSelectedTotalPrice/
+ *   setItemSelected/clearSelectedItems 及 selectionChanged/selectedItemsCleared
+ *   事件一并删除——收口 grep 确认调用方全在本文件）；列序改
+ *   [缩略 72px][名称两行+价格行][步进器][×]；qty>1 单行算术
+ *   "¥259 × 2 = ¥518"；两步内联清空（3s 还原）；底部"共 N 件 · ¥518"+
+ *   结算独占 + B6 信任行；B5 三处 toFixed(2) → formatPrice；
+ *   C28 qty=1 单价只显一次；C24 随勾选砍除消解。
+ *   过渡态：itemAdded 只脉冲不自动开面板（M3 接手 toast 反馈）。
  */
+
+// M0(B5)：价格格式统一（整数直出/非整两位），替换本文件原三处 toFixed(2)
+import { formatPrice } from './shared/format-price.js';
+// M3(B1)：加购反馈系统——飞行克隆 + 统一 toast（规格见两文件头注）
+import { flyToCart, resolveFlightSource } from './shared/fly-to-cart.js';
+import { showCartToast } from './shared/toast.js';
 
 /**
  * 购物车管理器类 - 增强版
@@ -128,7 +151,12 @@ class CartManager {
         if (newQuantity > 999) {
           throw new Error('单个商品数量不能超过999');
         }
-        return await this.updateItemQuantity(productSkuId, newQuantity);
+        const updated = await this.updateItemQuantity(productSkuId, newQuantity);
+        // M3(罗马 P1-1 生死线)：合并路径补发带 merged 标记的 itemAdded——
+        // 同款二次加购只走 quantityUpdated，反馈层只挂 itemAdded 会整体静默
+        // （最高频场景零反馈）。merged 标记供文案区分"放进/又放进一只"
+        this.notifyListeners('itemAdded', { item: updated, merged: true });
+        return updated;
       }
 
       // 检查购物车容量
@@ -239,59 +267,11 @@ class CartManager {
     return this.cart.reduce((total, item) => total + (item.productPrice * item.productQuantity), 0);
   }
 
-  // 保留现有方法：获取选中商品总价格
-  getSelectedTotalPrice() {
-    return this.cart
-      .filter(item => item.selected)
-      .reduce((total, item) => total + (item.productPrice * item.productQuantity), 0);
-  }
-
-  // 新增：设置单个商品勾选状态（cartUI 渲染的 checkbox onchange 调用，
-  // 此前该方法不存在，勾选即 TypeError——三层断裂之一）
-  setItemSelected(productSkuId, selected) {
-    const item = this.cart.find(item => item.productSkuId === productSkuId);
-    if (!item) {
-      console.warn('setItemSelected: 商品不存在于购物车中', productSkuId);
-      return false;
-    }
-    
-    item.selected = Boolean(selected);
-    
-    // 本地持久化
-    this.saveCart();
-    
-    // 同步到服务端（内部 try/catch，失败仅 console.error，静默降级）
-    this.syncToServer();
-    
-    // 通知监听器（cartUI 据此重渲染勾选态与已选合计）
-    this.notifyListeners('selectionChanged', { item });
-    
-    return true;
-  }
-
-  // 新增：清空所有勾选（selected=true）的商品
-  async clearSelectedItems() {
-    const removedItems = this.cart.filter(item => item.selected);
-    if (removedItems.length === 0) {
-      return [];
-    }
-    
-    this.cart = this.cart.filter(item => !item.selected);
-    
-    // 本地持久化
-    this.saveCart();
-    
-    // 同步到服务端（静默降级同上）
-    await this.syncToServer();
-    
-    // 更新图标徽章
-    await this.initCartUI();
-    
-    // 通知监听器（cartUI 重渲染列表与合计）
-    this.notifyListeners('selectedItemsCleared', { removedItems });
-    
-    return removedItems;
-  }
+// M2（C5 砍除）：getSelectedTotalPrice / setItemSelected / clearSelectedItems
+// 三个勾选域方法整体删除——收口 grep（2026-10-05）确认调用方全部位于本文件，
+// 站内无外部消费方。旧 localStorage 数据中的 selected 字段从此无人读取：
+// 兼容策略 = 读侧忽略（老袋子原样进新面板，件数/金额按全量计），写侧
+// addToCart 仍写 selected:true（字段形状不变，本模块独立回退时旧代码可直接接管）。
 
   // 新增：公开打开购物车浮层的统一入口。外部（navigation-icons.js 的
   // 购物袋图标等）此前直调管理器上并不存在的弹窗方法导致恒跳首页——
@@ -384,15 +364,24 @@ class CartManager {
 
   // 保留现有方法：绑定事件
   bindEvents() {
-    // 保留现有事件绑定逻辑
+    // 冻结契约①：[data-add-to-cart] 文档级委托。
+    // M3：capture 阶段监听——按钮级监听器（M4 的 btn-bag stopPropagation 隔离卡内
+    // 双锚链接误触）发生在冒泡阶段，capture 先行保证加购委托永不被按钮隔离截断；
+    // 事件语义不变，仍是"点击含 data-add-to-cart 的元素即加购"。
     document.addEventListener('click', (e) => {
-      if (e.target.closest('[data-add-to-cart]')) {
-        const productData = this.getProductDataFromElement(e.target.closest('[data-add-to-cart]'));
+      const btn = e.target.closest('[data-add-to-cart]');
+      if (btn) {
+        // M3(B1)：飞行源在点击现场解析（itemAdded 异步回来时 rect 已漂移）
+        this.pendingFlyTrigger = btn;
+        this.pendingFlySource = resolveFlightSource(btn);
+        const productData = this.getProductDataFromElement(btn);
         if (productData) {
-          this.addToCart(productData);
+          // addToCart 内部已 console.error 带定位；此处吞掉 rejection 防
+          // unhandledrejection 噪声（失败路径同样有清晰日志）
+          this.addToCart(productData).catch(() => {});
         }
       }
-    });
+    }, true);
   }
 
   // 保留现有方法：从元素获取商品数据
@@ -441,7 +430,10 @@ class CartUI {
     this.cartManager = cartManager;
     this.isVisible = false;
     this.animationDuration = 300;
-    
+    // M2：两步清空确认的armed态与3s还原计时器
+    this.clearArmed = false;
+    this.clearTimer = null;
+
     this.init();
   }
 
@@ -457,6 +449,9 @@ class CartUI {
 
   /**
    * 创建购物车HTML结构
+   * M2(蓝图 v1.1)：C5 勾选砍除后的新面板——头部 h3"购物袋"+两步清空文字链；
+   * 列表行 [缩略 72px][名称两行+价格行][步进器][×]；底部"共 N 件 · ¥518" +
+   * B6 信任行 + 结算 pill 独占一行
    */
   createCartHTML() {
     // 如果页面已有购物车浮层，则使用现有结构
@@ -465,25 +460,25 @@ class CartUI {
       this.elements = this.getExistingElements(existingOverlay);
       return;
     }
-    
+
     // 创建新的购物车浮层
     const overlay = document.createElement('div');
     overlay.className = 'cart-overlay';
     overlay.innerHTML = `
-      <div class="cart-panel">
+      <div class="cart-panel" role="dialog" aria-modal="true" aria-label="购物袋">
         <div class="cart-header">
-          <h3>购物车</h3>
+          <h3>购物袋</h3>
           <div class="cart-header-actions">
-            <!-- C13(裁决): 清空选中降权为面板头部文字链，底部结算钮独占 -->
-            <button class="clear-selected-btn" disabled>清空选中</button>
-            <button class="cart-close-btn" aria-label="关闭购物车">
+            <!-- C5(终裁)+C13: 勾选模型砍除后，"清空"升为整袋两步确认文字链 -->
+            <button class="clear-bag-btn" disabled>清空袋子</button>
+            <button class="cart-close-btn" aria-label="关闭购物袋">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"/>
               </svg>
             </button>
           </div>
         </div>
-        
+
         <div class="cart-body">
           <div class="cart-items-list"></div>
           <div class="cart-empty">
@@ -491,21 +486,21 @@ class CartUI {
             <a href="index.html" class="continue-shopping-btn">去逛逛</a>
           </div>
         </div>
-        
+
         <div class="cart-footer">
-          <div class="cart-summary">
-            <div class="cart-total">
-              <span>已选 <span class="selected-count">0</span> 件商品</span>
-              <span class="total-price">¥0.00</span>
-            </div>
-            <div class="cart-actions">
-              <button class="checkout-btn" disabled>去结算</button>
-            </div>
+          <!-- C5(终裁)+B3: 计数继承件数求和语义（productQuantity），金额全量 -->
+          <div class="cart-total-row">
+            <span>共 <span class="total-count">0</span> 件 · <span class="total-price">¥0</span></span>
+          </div>
+          <!-- B6(罗马位置裁决): 信任行在总价行下方、结算钮上方——最后一眼犹豫的位置 -->
+          <p class="cart-trust-line"><a href="returns.html" title="退换与售后（30 天可退，来回运费我们担）">含运费 · 30 天可退</a></p>
+          <div class="cart-actions">
+            <button class="checkout-btn" disabled>去结算</button>
           </div>
         </div>
       </div>
     `;
-    
+
     document.body.appendChild(overlay);
     this.elements = this.getExistingElements(overlay);
   }
@@ -521,11 +516,10 @@ class CartUI {
       cartBody: overlay.querySelector('.cart-body'),
       cartFooter: overlay.querySelector('.cart-footer'),
       cartItemsList: overlay.querySelector('.cart-items-list'),
-      selectAllCheckbox: overlay.querySelector('.select-all-checkbox'),
+      totalCount: overlay.querySelector('.total-count'),
       totalPrice: overlay.querySelector('.total-price'),
-      selectedCount: overlay.querySelector('.selected-count'),
       checkoutBtn: overlay.querySelector('.checkout-btn'),
-      clearSelectedBtn: overlay.querySelector('.clear-selected-btn')
+      clearBagBtn: overlay.querySelector('.clear-bag-btn')
     };
   }
 
@@ -563,18 +557,47 @@ class CartUI {
         this.showNotification('结算功能未开通：演示环境暂不支持下单');
       });
     }
-    
-    // 清空选中按钮：移除所有 selected=true 的商品并重渲染
-    if (this.elements.clearSelectedBtn) {
-      this.elements.clearSelectedBtn.addEventListener('click', async () => {
+
+    // M2(C5 终裁)：清空袋子两步内联确认——第一步亮"再点一次清空"（3s 还原），
+    // 第二步才整袋清空；不用原生 confirm（合弹窗宪法），文案用品牌声音
+    if (this.elements.clearBagBtn) {
+      this.elements.clearBagBtn.addEventListener('click', async () => {
+        if (this.cartManager.cart.length === 0) return;
+        if (!this.clearArmed) {
+          this.armClearBag();
+          return;
+        }
+        this.disarmClearBag();
         try {
-          await this.cartManager.clearSelectedItems();
+          await this.cartManager.clearCart();
         } catch (error) {
-          console.error('清空选中商品失败:', error);
-          this.showNotification('清空选中商品失败，请重试', 'error');
+          console.error('清空购物袋失败:', error);
+          this.showNotification('清空购物袋失败，请重试', 'error');
         }
       });
     }
+  }
+
+  /** 两步清空·第一步：亮确认态并起 3s 还原计时 */
+  armClearBag() {
+    if (!this.elements.clearBagBtn) return;
+    this.clearArmed = true;
+    this.elements.clearBagBtn.textContent = '再点一次清空';
+    this.elements.clearBagBtn.classList.add('armed');
+    this.elements.clearBagBtn.setAttribute('aria-label', '再点一次确认清空购物袋');
+    clearTimeout(this.clearTimer);
+    this.clearTimer = setTimeout(() => this.disarmClearBag(), 3000);
+  }
+
+  /** 两步清空·还原：文字/样式/计时器全部回到初始态 */
+  disarmClearBag() {
+    clearTimeout(this.clearTimer);
+    this.clearTimer = null;
+    this.clearArmed = false;
+    if (!this.elements.clearBagBtn) return;
+    this.elements.clearBagBtn.textContent = '清空袋子';
+    this.elements.clearBagBtn.classList.remove('armed');
+    this.elements.clearBagBtn.setAttribute('aria-label', '清空购物袋');
   }
 
   /**
@@ -583,19 +606,36 @@ class CartUI {
   bindCartManagerEvents() {
     this.cartManager.addListener((event, data) => {
       switch (event) {
-        case 'itemAdded':
-          // B4(意大利审查裁决): 加购后面板自动打开——"面板即是确认"，省 toast；
-          // 徽章脉冲重触发给已在页面上可见的计数第二次动画
+        case 'itemAdded': {
+          // M3(B1 v1.1 终裁)：反馈三件套——
+          // ① 数据刷新；② 徽章脉冲即刻（解耦于飞行 onfinish，反馈延迟归零）；
+          // ③ 飞行克隆（源在点击现场解析）+ 落点脉冲后 120ms 出 toast 双选。
+          // 不自动开面板（M2 已去 showCart：抽屉留主动点击，四席裁决）
           this.updateCartDisplay();
           this.pulseCartBadge();
-          this.cartManager.showCart();
+          const trigger = this.cartManager.pendingFlyTrigger;
+          const source = this.cartManager.pendingFlySource;
+          if (source) {
+            flyToCart(source, { triggerEl: trigger });
+          }
+          const item = data && data.item;
+          const merged = !!(data && data.merged);
+          window.setTimeout(() => {
+            showCartToast({
+              name: item ? item.productName : '',
+              merged,
+              quantity: item ? item.productQuantity : 1,
+              onCheckout: () => this.cartManager.showCart(), // "去结算"=打开面板（罗马裁决）
+            });
+          }, 120);
           break;
+        }
         case 'itemRemoved':
         case 'quantityUpdated':
         case 'cartCleared':
-        case 'selectionChanged':
-        case 'selectedItemsCleared':
+          // 步进器/移除/清空只刷新数据——不触发加购 toast/fly（出口验收项）
           this.updateCartDisplay();
+          this.disarmClearBag();
           break;
       }
     });
@@ -684,6 +724,9 @@ class CartUI {
 
   /**
    * 更新商品列表
+   * M2(蓝图 v1.1)：C5 新列序 [缩略 72px][名称两行+价格行][步进器][×]；
+   * B5 formatPrice 统一格式；C28 qty=1 单价只显一次、qty>1 单行算术
+   * "¥259 × 2 = ¥518"（Condensed 600 15px 由 cart.css 锁）
    */
   updateItemsList(cart) {
     if (!this.elements.cartItemsList) return;
@@ -691,60 +734,57 @@ class CartUI {
     // F7 渲染层转义：购物车数据来自 localStorage/后端同步，
     // 所有字符串字段插值统一包 escapeHtml()（js/utils/escape-html.js，
     // 由页面在 cart.js 之前加载）；数量/价格为数字，无需转义
-    this.elements.cartItemsList.innerHTML = cart.map(item => `
+    this.elements.cartItemsList.innerHTML = cart.map(item => {
+      const unit = formatPrice(item.productPrice);
+      const line = item.productQuantity > 1
+        ? `${unit} × ${item.productQuantity} = ${formatPrice(item.productPrice * item.productQuantity)}`
+        : unit;
+      return `
       <div class="cart-item" data-sku-id="${escapeHtml(item.productSkuId)}">
-        <div class="item-checkbox">
-          <input type="checkbox" ${item.selected ? 'checked' : ''}
-                 onchange="cartManager.setItemSelected('${escapeHtml(item.productSkuId)}', this.checked)">
-        </div>
         <div class="item-image">
           <img src="${escapeHtml(item.productPic)}" alt="${escapeHtml(item.productName)}">
         </div>
         <div class="item-details">
           <h4 class="item-name">${escapeHtml(item.productName)}</h4>
-          <p class="item-price">¥${item.productPrice.toFixed(2)}</p>
+          <p class="item-price-line">${line}</p>
         </div>
         <div class="item-quantity">
-          <button onclick="cartManager.updateItemQuantity('${escapeHtml(item.productSkuId)}', ${item.productQuantity - 1})">-</button>
+          <button onclick="cartManager.updateItemQuantity('${escapeHtml(item.productSkuId)}', ${item.productQuantity - 1})" aria-label="减少数量">−</button>
           <span>${item.productQuantity}</span>
-          <button onclick="cartManager.updateItemQuantity('${escapeHtml(item.productSkuId)}', ${item.productQuantity + 1})">+</button>
+          <button onclick="cartManager.updateItemQuantity('${escapeHtml(item.productSkuId)}', ${item.productQuantity + 1})" aria-label="增加数量">+</button>
         </div>
-        <div class="item-total">
-          ${item.productQuantity > 1 ? `¥${(item.productPrice * item.productQuantity).toFixed(2)}` : ''}
-        </div>
-        <button class="item-remove" onclick="cartManager.removeItem('${escapeHtml(item.productSkuId)}')">
+        <button class="item-remove" onclick="cartManager.removeItem('${escapeHtml(item.productSkuId)}')" aria-label="移除此商品">
           ×
         </button>
       </div>
-    `).join('');
+    `;}).join('');
   }
 
   /**
-   * 更新购物车摘要
+   * 更新购物袋摘要
+   * M2(C5 终裁)：无勾选域——件数=productQuantity 全量求和，金额=全量合计；
+   * B5 formatPrice；结算/清空按钮只看"袋是否非空"
    */
   updateCartSummary() {
-    // B3 修复(意大利审查裁决): 已选件数按 productQuantity 求和——原按行数计数，
-    // 同款加 3 件面板仍说"已选 1 件"（计数说谎）
-    const selectedItems = this.cartManager.cart
-      .filter(item => item.selected)
-      .reduce((total, item) => total + item.productQuantity, 0);
-    const totalValue = this.cartManager.getSelectedTotalPrice();
-    
-    if (this.elements.selectedCount) {
-      this.elements.selectedCount.textContent = selectedItems;
+    const totalCount = this.cartManager.getTotalItems();
+    const totalValue = this.cartManager.getTotalPrice();
+
+    if (this.elements.totalCount) {
+      this.elements.totalCount.textContent = totalCount;
     }
-    
+
     if (this.elements.totalPrice) {
-      this.elements.totalPrice.textContent = `¥${totalValue.toFixed(2)}`;
+      this.elements.totalPrice.textContent = formatPrice(totalValue);
     }
-    
+
     // 更新按钮状态
-    const hasSelected = selectedItems > 0;
+    const hasItems = totalCount > 0;
     if (this.elements.checkoutBtn) {
-      this.elements.checkoutBtn.disabled = !hasSelected;
+      this.elements.checkoutBtn.disabled = !hasItems;
     }
-    if (this.elements.clearSelectedBtn) {
-      this.elements.clearSelectedBtn.disabled = !hasSelected;
+    if (this.elements.clearBagBtn) {
+      this.elements.clearBagBtn.disabled = !hasItems;
+      if (!hasItems) this.disarmClearBag();
     }
   }
 

@@ -23,8 +23,10 @@
 .bento-card.bento-featured .reich-product-price { font-size: 1.625rem; }
 .bento-grid .btn-bag {
   border-radius: var(--radius-pill); padding: 9px 18px;
-  font-size: var(--text-small); font-weight: 600; line-height: 1; white-space: nowrap;
-  color: var(--candy-blush-ink); background: color-mix(in srgb,var(--candy-blush-soft) 68%,transparent);
+  /* B12(M4)：13px/68% 透明双虚 → 15px/100% blush-soft 实底 + blush-ink(#B93A54) 字——
+     文字对底 4.51:1 过 AA（M0 终审三关之一） */
+  font-size: var(--text-body); font-weight: 600; line-height: 1; white-space: nowrap;
+  color: var(--candy-blush-ink); background: var(--candy-blush-soft);
   transition: background var(--dur-fast) var(--ease-lux),color var(--dur-fast) var(--ease-lux);
 }
 @media (hover:none),(pointer:coarse) { .bento-grid .btn-bag { min-height: 44px; } }
@@ -47,8 +49,18 @@
 }
 .bento-grid .bento-featured { grid-column: span 2; min-height: 420px; container: featured / inline-size; }
 .bento-grid .bento-cell { container: cell / inline-size; }
-/* Ⓞ1 心 pill 锚卡图右上（防 touch-optimization 晚加载改 relative） */
-.bento-card .card-fig .reich-product-action { position: absolute; left: auto; right: 12px; top: 12px; bottom: auto; transform: none; }
+/* Ⓞ1 心 pill 锚卡图右上（防 touch-optimization 晚加载改 relative）；
+   M4 双锚压层：拉伸锚 z1 全图可点，心形 z2 浮其上（先于心形定位，锚不夺心形点击） */
+.bento-card .card-fig .card-link { position: absolute; inset: 0; z-index: 1; border-radius: inherit; }
+.bento-card .card-fig .reich-product-action { position: absolute; left: auto; right: 12px; top: 12px; bottom: auto; transform: none; z-index: 2; }
+.bento-grid .card-fig .badge { z-index: 2; }
+/* C6(M4)：心形 14→16px 实心（触达区随 pill 不动）；active 反馈=scale 一档 */
+.bento-card .card-fig .reich-product-action img { width: 16px; height: 16px; display: block; }
+.bento-card .card-fig .reich-product-action img.active { transform: scale(1.18); }
+/* M4 品名内联锚：承袭卡名字体，hover blush-ink */
+.bento-card .reich-product-name a { color: inherit; text-decoration: none; }
+.bento-card .reich-product-name a:hover { color: var(--candy-blush-ink); }
+.bento-card .reich-product-name a:focus-visible { outline: 2px solid var(--focus-ring-color); outline-offset: 2px; border-radius: 2px; }
 @media (max-width:639px) { .bento-grid { grid-template-columns: minmax(0,1fr); } .bento-grid .bento-featured { grid-column: span 1; } }
 .bento-grid :is(.featured-inner,.cell-inner) { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .bento-grid :is(.featured-fig,.cell-fig) { width: 100%; aspect-ratio: 3/4; }
@@ -57,19 +69,32 @@
 .bento-grid .featured-name { margin: 0; font-size: clamp(1.75rem,3vw,2rem); font-weight: 700; line-height: 1.2; } /* C6(裁决): 38px 与区块 h2 36px 拉开一档——上限收 2rem=32px */
 .bento-grid :is(.featured-desc,.cell-desc) { color: var(--ink-soft); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .bento-grid .featured-desc { max-width: 44ch; }
+/* M4 社会证明双数（v1.1 裁决 2）：实时 sales/favorites，零值态文案由 JS 切换 */
+.bento-grid .featured-social { margin: 0; font-size: var(--text-small); font-weight: 500; color: var(--ink-soft); }
 .bento-grid .cell-desc { font-size: var(--text-small); }
+/* M4 品质行：材质·工艺（specifications 实时）——ink-soft 12px，禁 faint（C4 宪法） */
+.bento-grid .cell-quality { margin: 0; font-size: var(--text-xs); line-height: 1.4; color: var(--ink-soft); }
 .bento-grid .featured-meta { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 8px; }
 .bento-grid .cell-body { flex: 1; min-width: 0; padding: 16px; display: flex; flex-direction: column; gap: 6px; }
 .bento-grid .cell-name { margin: 0; font-size: 1.125rem; font-weight: 600; line-height: 1.35; }
 .bento-grid .cell-meta { margin-top: 12px; padding-top: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; } /* C9(裁决): margin-top:auto（贴底拉伸帮凶）改 12px 定距 */
 @container featured (min-width:560px) {
   .bento-grid .featured-inner { flex-direction: row; }
-  .bento-grid .featured-fig { width: clamp(314px,42%,340px); align-self: flex-start; }
+  /* B7-CSS(M4)：旗舰图区 42%→52%（clamp 380-480）——"大"不再打对折（≥50% 红线） */
+  .bento-grid .featured-fig { width: clamp(380px, 52%, 480px); align-self: flex-start; }
   .bento-grid .featured-body { padding: 32px 36px; gap: 12px; }
   .bento-grid .featured-desc { -webkit-line-clamp: 3; }
 }
 @container cell (min-width:280px) {
   .bento-grid .cell-inner { flex-direction: row; }
-  .bento-grid .cell-fig { width: 42%; align-self: flex-start; }
+  /* B7-CSS(M4)：桌面单格 42%→clamp(240px,46%,300px)——图是逛的路面，路面别再 169px */
+  .bento-grid .cell-fig { width: clamp(240px, 46%, 300px); align-self: flex-start; }
   .bento-grid .cell-name { font-size: 1rem; }
+}
+
+/* B7-CSS(M4)：移动 <639 竖版图上文下全宽（罗马："二选一不要中间态"——
+   容器查询只知卡宽不知视口，窄屏强制竖版覆写后置于容器块，层叠序胜出） */
+@media (max-width: 639px) {
+  .bento-grid .cell-inner { flex-direction: column; }
+  .bento-grid .cell-fig { width: 100%; }
 }

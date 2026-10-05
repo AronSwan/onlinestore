@@ -97,7 +97,7 @@
 
 /* 搜索框聚焦状态 */
 .order-search-input:focus {
-    /* C1(裁决): 金幽灵 rgba(212, 175, 55, ×) 清除 + C20(裁决): 删 translateY/shadow 双重奏 */
+    /* C1(裁决): 金幽灵 金色 rgba 记法 清除 + C20(裁决): 删 translateY/shadow 双重奏 */
     outline: 2px solid var(--focus-ring-color);
     outline-offset: var(--focus-ring-offset);
     border-color: var(--candy-blush-ink);
@@ -116,7 +116,7 @@
 }
 
 .order-search-input:focus ~ .order-search-icon {
-    color: var(--gold-standard);
+    color: var(--ink);
 }
 
 /* ==========================================================================
@@ -137,8 +137,7 @@
 /* 订单卡片悬停效果 */
 .order-card:hover {
     box-shadow: var(--shadow-lg);
-    transform: translateY(-2px);
-    border-color: var(--candy-blush); /* C4(裁决): hover 收敛 border-color blush */
+    border-color: var(--candy-blush); /* C4(裁决): hover 收敛 border-color blush；M8·C3: translateY(-2px) 残留扫尾 */
 }
 
 /* 订单卡片头部 */
@@ -172,7 +171,7 @@
 /* 订单日期样式 */
 .order-date {
     font-size: var(--text-sm);
-    color: var(--text-tertiary);
+    color: var(--text-secondary); /* M0·ink-faint判定表: 日期=信息正文→ink-soft */
     font-family: var(--brand-font-secondary);
 }
 
@@ -283,7 +282,7 @@
 /* 订单项数量 */
 .order-item-quantity {
     font-size: var(--text-sm);
-    color: var(--text-tertiary);
+    color: var(--text-secondary); /* M0·ink-faint判定表: 数量=信息正文→ink-soft */
 }
 
 /* 订单项价格 */
@@ -302,7 +301,7 @@
     background: var(--bg-hover);
     border-radius: var(--radius-lg);
     font-size: var(--text-sm);
-    color: var(--text-tertiary);
+    color: var(--text-secondary); /* M0·ink-faint判定表: 提示文案=信息正文→ink-soft */
     border: 1px dashed var(--border-light);
 }
 
@@ -356,16 +355,15 @@
 
 /* 主要操作按钮 */
 .order-action-btn.primary {
-    background: var(--gold-standard);
+    background: var(--ink);
     color: var(--text-white);
-    border-color: var(--gold-standard);
+    border-color: var(--ink);
 }
 
 .order-action-btn.primary:hover {
     background: var(--candy-blush-ink);
     border-color: var(--candy-blush-ink);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-md); /* M8·C3: translateY(-1px) 残留扫尾 */
 }
 
 /* 次要操作按钮 */
@@ -377,9 +375,8 @@
 
 .order-action-btn.secondary:hover {
     background: var(--bg-hover);
-    border-color: var(--gold-standard);
-    color: var(--gold-standard);
-    transform: translateY(-1px);
+    border-color: var(--ink);
+    color: var(--ink); /* M8·C3: translateY(-1px) 残留扫尾 */
 }
 
 /* 轮廓操作按钮 */
@@ -391,24 +388,7 @@
 
 .order-action-btn.outline:hover {
     background: var(--brand-red);
-    color: var(--text-white);
-    transform: translateY(-1px);
-}
-
-/* 按钮光泽效果 */
-.order-action-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left var(--transition-slow);
-}
-
-.order-action-btn:hover::before {
-    left: 100%;
+    color: var(--text-white); /* M8·C3: translateY(-1px) 残留扫尾 */
 }
 
 /* ==========================================================================
@@ -451,7 +431,7 @@
 
 /* 分页按钮悬停效果 */
 .pagination-btn:hover:not(:disabled) {
-    /* C1(裁决): 金幽灵 rgba(212, 175, 55, ×) 清除——换 blush 系；删 translateY */
+    /* C1(裁决): 金幽灵 金色 rgba 记法 清除——换 blush 系；删 translateY */
     border-color: var(--candy-blush);
     color: var(--candy-blush-ink);
     background: var(--bg-soft);
@@ -459,9 +439,9 @@
 
 /* 分页按钮激活状态 */
 .pagination-btn.active {
-    background: var(--gold-standard);
+    background: var(--ink);
     color: var(--text-white);
-    border-color: var(--gold-standard);
+    border-color: var(--ink);
     font-weight: var(--font-semibold);
 }
 
@@ -535,7 +515,7 @@
     background: none;
     border: none;
     font-size: var(--text-xl);
-    color: var(--text-tertiary);
+    color: var(--text-secondary); /* M0·ink-faint判定表: 交互件→ink-soft+hover blush-ink */
     cursor: pointer;
     padding: var(--spacing-2);
     border-radius: var(--radius-md);
@@ -544,7 +524,7 @@
 
 .order-modal-close:hover {
     background: var(--bg-hover);
-    color: var(--text-primary);
+    color: var(--candy-blush-ink);
 }
 
 /* 模态框主体 */
@@ -580,7 +560,7 @@
     content: '';
     width: 4px;
     height: 20px;
-    background: var(--gold-standard);
+    background: var(--ink);
     border-radius: var(--radius-sm);
 }
 
@@ -602,7 +582,7 @@
 .order-detail-label {
     font-size: var(--text-sm);
     font-weight: var(--font-weight-semibold); /* C22(裁决): caps 微标签层字重统一 600 */
-    color: var(--text-tertiary);
+    color: var(--text-secondary); /* M0·ink-faint判定表: 详情标签=承重信息→ink-soft */
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
@@ -669,14 +649,14 @@
 /* 订单详情商品SKU */
 .order-detail-item-sku {
     font-size: var(--text-sm);
-    color: var(--text-tertiary);
+    color: var(--text-secondary); /* M0·ink-faint判定表: SKU=信息正文→ink-soft */
     margin-bottom: var(--spacing-1);
 }
 
 /* 订单详情商品数量 */
 .order-detail-item-quantity {
     font-size: var(--text-sm);
-    color: var(--text-tertiary);
+    color: var(--text-secondary); /* M0·ink-faint判定表: 数量=信息正文→ink-soft */
 }
 
 /* 订单详情商品价格 */
@@ -738,9 +718,9 @@
 
 /* 时间线圆点完成状态 */
 .order-timeline-dot.completed {
-    background: var(--gold-standard);
-    border-color: var(--gold-standard);
-    /* C1(裁决): 金幽灵 rgba(212, 175, 55, ×) 清除——光晕换 blush 系 */
+    background: var(--ink);
+    border-color: var(--ink);
+    /* C1(裁决): 金幽灵 金色 rgba 记法 清除——光晕换 blush 系 */
     box-shadow: 0 0 0 4px color-mix(in srgb, var(--candy-blush) 15%, transparent);
 }
 
@@ -771,14 +751,14 @@
 /* 时间线描述 */
 .order-timeline-description {
     font-size: var(--text-sm);
-    color: var(--text-tertiary);
+    color: var(--text-secondary); /* M0·ink-faint判定表: 时间线描述=信息正文→ink-soft */
     margin-bottom: var(--spacing-1);
 }
 
 /* 时间线时间 */
 .order-timeline-time {
     font-size: var(--text-xs);
-    color: var(--text-tertiary);
+    color: var(--text-secondary); /* M0·ink-faint判定表: 时间戳=信息正文→ink-soft */
     font-family: var(--brand-font-secondary);
 }
 
@@ -801,7 +781,7 @@
     width: 48px;
     height: 48px;
     border: 3px solid var(--border-light);
-    border-top-color: var(--gold-standard);
+    border-top-color: var(--ink);
     border-radius: 50%;
     animation: order-spin 1s linear infinite;
     margin-bottom: var(--spacing-4);
@@ -810,7 +790,7 @@
 /* 加载文本 */
 .order-loading-text {
     font-size: var(--text-base);
-    color: var(--text-tertiary);
+    color: var(--text-secondary); /* M0·ink-faint判定表: 加载提示=可读文本→ink-soft */
     font-family: var(--brand-font-secondary);
 }
 
@@ -846,7 +826,7 @@
 /* 空状态描述 */
 .order-empty-description {
     font-size: var(--text-base);
-    color: var(--text-tertiary);
+    color: var(--text-secondary); /* M0·ink-faint判定表: 空态描述=信息正文→ink-soft */
     margin-bottom: var(--spacing-6);
     max-width: 400px;
     line-height: var(--leading-relaxed);
@@ -855,7 +835,7 @@
 /* 空状态按钮 */
 .order-empty-action {
     padding: var(--spacing-3) var(--spacing-6);
-    background: var(--gold-standard);
+    background: var(--ink);
     color: var(--text-white);
     border-radius: var(--radius-lg);
     font-size: var(--text-base);
@@ -866,8 +846,7 @@
 
 .order-empty-action:hover {
     background: var(--candy-blush-ink);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-md); /* M8·C3: translateY(-1px) 残留扫尾（空态钮同族） */
 }
 
 /* ==========================================================================
@@ -1078,12 +1057,14 @@
    ========================================================================== */
 
 /* 焦点状态增强 */
+/* M0(佛伦萨P2): 焦点环金映射名(映射=ink) 与 --focus-ring-color(blush-ink)
+   两色并存——统一 blush-ink（本块为 orders 页最后一处旧环） */
 .order-card:focus-within,
 .order-action-btn:focus-visible,
 .order-filter-btn:focus-visible,
 .pagination-btn:focus-visible,
 .order-modal-close:focus-visible {
-    outline: 2px solid var(--gold-standard);
+    outline: 2px solid var(--focus-ring-color);
     outline-offset: 2px;
 }
 
@@ -1184,98 +1165,6 @@
 }
 
 /* ==========================================================================
-   15. 暗色模式支持
-   ========================================================================== */
-
-@media (prefers-color-scheme: dark) {
-    /* 调整背景和文字颜色 */
-    .orders-filter-section,
-    .order-card,
-    .order-item,
-    .order-detail-item-row,
-    .order-empty {
-        background: var(--bg-soft);
-        border-color: var(--dark-border-medium);
-        color: var(--dark-text-primary);
-    }
-
-    .order-search-input {
-        background: var(--dark-bg-primary);
-        border-color: var(--dark-border-medium);
-        color: var(--dark-text-primary);
-    }
-
-    .order-filter-btn {
-        background: var(--dark-bg-primary);
-        border-color: var(--dark-border-medium);
-        color: var(--dark-text-primary);
-    }
-
-    .order-filter-btn.active {
-        background: var(--gold-standard);
-        color: var(--text-white);
-        border-color: var(--gold-standard);
-    }
-
-    .order-item,
-    .order-detail-item-row {
-        background: var(--dark-bg-primary);
-    }
-
-    .order-summary {
-        border-color: var(--dark-border-medium);
-    }
-
-    .order-modal-content {
-        background: var(--bg-soft);
-        border-color: var(--dark-border-medium);
-    }
-
-    .order-modal-header {
-        background: var(--dark-bg-primary);
-        border-color: var(--dark-border-medium);
-    }
-
-    .order-timeline::before {
-        background: var(--dark-border-medium);
-    }
-
-    .pagination-btn {
-        background: var(--dark-bg-primary);
-        border-color: var(--dark-border-medium);
-        color: var(--dark-text-primary);
-    }
-
-    .pagination-btn.active {
-        background: var(--gold-standard);
-        color: var(--text-white);
-        border-color: var(--gold-standard);
-    }
-
-    /* 调整文字颜色 */
-    .order-number,
-    .order-date,
-    .order-item-name,
-    .order-item-price,
-    .order-total,
-    .order-detail-title,
-    .order-detail-value,
-    .order-timeline-title,
-    .order-empty-title {
-        color: var(--dark-text-primary);
-    }
-
-    .order-item-quantity,
-    .order-item-sku,
-    .order-detail-label,
-    .order-timeline-description,
-    .order-timeline-time,
-    .order-empty-description {
-        color: var(--ink-soft);
-    }
-}
-
-/* ==========================================================================
    16. 性能优化
    ========================================================================== */
 
@@ -1338,57 +1227,6 @@
     }
 }
 
-/* ==========================================================================
-   18. 浏览器兼容性
-   ========================================================================== */
-
-/* CSS变量回退 */
-/* F1 注：原条件引用未定义的 var(--test)；伪属性 css: 恒不成立使 not() 恒真，改用已定义变量保持原行为 */
-@supports not (css: var(--bg-base)) {
-    /* 为不支持CSS变量的浏览器提供回退样式 */
-    .order-card {
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
-    }
-
-    .order-filter-btn {
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        color: #4b5563;
-    }
-
-    .order-filter-btn.active {
-        background: #d4af37;
-        color: #ffffff;
-    }
-
-    .order-action-btn.primary {
-        background: #d4af37;
-        color: #ffffff;
-    }
-}
-
-/* IE11特定修复 */
-@media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
-    .order-card {
-        display: block;
-    }
-
-    .order-item {
-        display: block;
-    }
-
-    .order-actions {
-        display: block;
-    }
-
-    .order-detail-grid {
-        display: block;
-    }
-
-    .order-detail-item {
-        display: block;
-        margin-bottom: 1rem;
-    }
-}
+/* M8·C1+C2（2026-10-05）：§15 暗色模式块与 §18 兼容块（@supports 恒真金回退+IE11）同葬——
+   白底宪法下暗色是未设计态；恒真 @supports 让十六进制金记法回退在现代浏览器实际生效（金回魂），
+   IE11 目标浏览器已退场（vite 5 目标 baseline 超 IE）。bento.css:41 的 @supports not selector(:has) 为真检测，未动。 */

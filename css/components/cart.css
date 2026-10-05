@@ -181,51 +181,8 @@
   flex-direction: column;
 }
 
-/* 购物车控制栏 */
-.cart-controls {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 24px;
-  border-bottom: 1px solid var(--border-color);
-  background: var(--background-primary);
-  position: sticky;
-  top: 73px;
-  z-index: 9;
-}
-
-.select-all-control {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  color: var(--text-primary);
-  user-select: none;
-}
-
-.select-all-checkbox {
-  width: 16px;
-  height: 16px;
-  border: 2px solid var(--border-color);
-  border-radius: 3px;
-  background: var(--background-primary);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.select-all-checkbox:checked {
-  background: var(--primary);
-  border-color: var(--primary);
-}
-
-.select-all-checkbox:indeterminate {
-  background: var(--primary);
-  border-color: var(--primary);
-}
-
-/* C13(裁决): 清空选中降权——从底部描边按钮改为头部文字链，hover blush-ink */
-.clear-selected-btn {
+/* M2(C5 终裁)：两步清空文字链（原"清空选中"随勾选模型砍除改整袋版） */
+.clear-bag-btn {
   padding: var(--spacing-1) var(--spacing-2);
   border: none;
   background: none;
@@ -302,15 +259,15 @@
   transform: translateY(-1px);
 }
 
-/* 购物车商品项 */
+/* 购物袋商品项 · M2(C5 新列序)：[缩略 72px][名称两行+价格行][步进器][×] */
 .cart-item {
   display: grid;
-  grid-template-columns: auto 60px 1fr auto auto auto;
+  grid-template-columns: 72px minmax(0, 1fr) auto auto;
   gap: 12px;
   align-items: center;
   padding: 16px 0;
   border-bottom: 1px solid var(--border-color);
-  transition: all 0.2s ease;
+  transition: background-color var(--dur-fast) var(--ease-lux);
 }
 
 .cart-item:last-child {
@@ -324,27 +281,11 @@
   border-radius: 8px;
 }
 
-/* 商品选择框 */
-.cart-item-select input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  border: 2px solid var(--border-color);
-  border-radius: 3px;
-  background: var(--background-primary);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.cart-item-select input[type="checkbox"]:checked {
-  background: var(--primary);
-  border-color: var(--primary);
-}
-
-/* 商品图片 */
+/* 商品缩略图（列序第一列 72px） */
 .cart-item-image {
-  width: 60px;
-  height: 60px;
-  border-radius: 8px;
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   background: var(--background-secondary);
 }
@@ -357,7 +298,7 @@
 }
 
 .cart-item:hover .cart-item-image img {
-  transform: scale(1.05);
+  transform: scale(1.03);
 }
 
 /* 商品信息 */
@@ -400,17 +341,18 @@
   color: var(--primary);
 }
 
-/* 数量控制 */
-.cart-item-quantity {
+/* 数量步进器 · M2：CartUI 实际类名 .item-quantity（旧 .cart-item-quantity 词表块与本对齐归一；
+   markup 为 <button>−<span>n</span><button>+，无 input——.quantity-input 死样式同葬 */
+.cart-items-list .item-quantity {
   display: flex;
   align-items: center;
   border: 1px solid var(--border-color);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
   background: var(--background-primary);
 }
 
-.quantity-btn {
+.cart-items-list .item-quantity button {
   width: 28px;
   height: 28px;
   border: none;
@@ -422,42 +364,32 @@
   justify-content: center;
   font-size: 14px;
   font-weight: 500;
-  transition: all 0.2s ease;
+  line-height: 1;
+  transition: background-color var(--dur-fast) var(--ease-lux), color var(--dur-fast) var(--ease-lux);
 }
 
-.quantity-btn:hover:not(:disabled) {
+.cart-items-list .item-quantity button:hover {
   background: var(--background-secondary);
-  color: var(--text-primary);
+  color: var(--ink);
 }
 
-.quantity-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
+.cart-items-list .item-quantity button:focus-visible {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: -2px;
 }
 
-.quantity-input {
-  width: 40px;
-  height: 28px;
-  border: none;
-  background: transparent;
+/* 数量读数锁 Condensed（与价格行同族数字） */
+.cart-items-list .item-quantity span {
+  min-width: 28px;
   text-align: center;
-  font-size: 13px;
-  color: var(--text-primary);
-  outline: none;
+  font-family: var(--font-numeric);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
 }
 
-.quantity-input::-webkit-outer-spin-button,
-.quantity-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-.quantity-input[type=number] {
-  -moz-appearance: textfield;
-  appearance: textfield;
-}
-
-/* 商品总价 */
+/* 商品总价（旧独立小计列已随 C5 砍除，保留词表占位防外链） */
 .cart-item-total {
   font-size: 14px;
   font-weight: 600;
@@ -496,38 +428,59 @@
   outline-offset: var(--focus-ring-offset);
 }
 
-/* 购物车底部 */
+/* 购物袋底部 · M2(C5)：合计行 + B6 信任行 + 结算独占一行 */
 .cart-footer {
   border-top: 1px solid var(--border-color);
   background: var(--background-primary);
-  padding: 20px 24px;
+  padding: 16px 24px 20px;
   position: sticky;
   bottom: 0;
   z-index: 10;
 }
 
-/* 购物车摘要 */
-.cart-summary {
-  margin-bottom: 16px;
-}
-
-.summary-row {
+/* 合计行："共 N 件 · ¥518"——计数继承件数求和语义，N 与金额同锁 Condensed */
+.cart-total-row {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 14px;
+  align-items: baseline;
+  gap: 2px;
+  font-family: var(--font-numeric);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 4px;
 }
 
-.summary-row span:first-child {
+.cart-total-row .total-count {
+  font-variant-numeric: tabular-nums;
+}
+
+/* B6(罗马位置)：总价行下方、结算钮上方——最后一眼犹豫的位置；
+   12px ink-soft（C4 之后 faint 退出一切可读文本） */
+.cart-trust-line {
+  margin: 0 0 12px;
+  font-size: var(--text-xs);
+  line-height: 1.4;
+}
+
+.cart-trust-line a {
   color: var(--text-secondary);
+  text-decoration: underline;
+  text-decoration-color: var(--line-strong);
+  text-underline-offset: 3px;
+  transition: color var(--dur-fast) var(--ease-lux);
 }
 
+.cart-trust-line a:hover {
+  color: var(--candy-blush-ink);
+}
+
+/* C2(裁决): 金额锁 Barlow Condensed（--font-numeric）600；18→20px 补偿窄身 */
 .total-price {
-  /* C2(裁决): 金额锁 Barlow Condensed（--font-numeric）600；18→20px 补偿窄身 */
   font-family: var(--font-numeric);
   font-size: 20px;
   font-weight: 600;
   color: var(--primary);
+  font-variant-numeric: tabular-nums;
 }
 
 /* 购物车操作 */
@@ -554,7 +507,8 @@
 }
 
 .checkout-btn:hover:not(:disabled) {
-  background: var(--candy-blush);
+  /* C4 顺带欠账(M0 终审值)：旧 hover 白字压 blush 2.74:1 → 底换 blush-ink #B93A54 */
+  background: var(--candy-blush-ink);
   color: #fff;
 }
 
@@ -589,69 +543,19 @@
   }
   
   .cart-item {
-    grid-template-columns: auto 50px 1fr auto;
-    gap: 8px;
-  }
-  
-  .cart-item-total,
-  .cart-item-actions {
-    grid-column: 3 / 5;
-    justify-self: end;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 8px;
-  }
-  
-  .cart-item-quantity {
-    grid-column: 4;
-    grid-row: 1;
+    grid-template-columns: 56px minmax(0, 1fr) auto auto;
+    gap: 10px;
   }
 }
 
 @media (max-width: 480px) {
   .cart-item {
-    grid-template-columns: auto 40px 1fr;
-    gap: 6px;
-  }
-  
-  .cart-item-image {
-    width: 40px;
-    height: 40px;
-  }
-  
-  .cart-item-quantity,
-  .cart-item-total,
-  .cart-item-actions {
-    grid-column: 1 / 4;
-    justify-self: stretch;
-    margin-top: 8px;
-  }
-  
-  .cart-item-quantity {
-    justify-self: start;
-    width: fit-content;
-  }
-  
-  .cart-item-total {
-    justify-self: center;
-  }
-  
-  .cart-item-actions {
-    justify-self: end;
+    grid-template-columns: 48px minmax(0, 1fr) auto auto;
+    gap: 8px;
   }
 }
 
-/* 深色模式适配 */
-@media (prefers-color-scheme: dark) {
-  .cart-overlay {
-    background-color: rgba(0, 0, 0, 0.7);
-  }
-  
-  .cart-panel {
-    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.3);
-  }
-}
+/* M8·C2（2026-10-05）：暗色模式适配块同葬（佛罗伦萨五处之三）——overlay 黑度/panel 阴影加深的暗色分支删除；亮色基线不变 */
 
 /* 动画效果 */
 @keyframes cartItemSlideIn {
@@ -678,7 +582,7 @@
   /* P7'：站点头徽章（P2 · B3 加购脉冲）同样静止 */
   .site-cart-badge,
   .cart-item,
-  .quantity-btn,
+  .cart-items-list .item-quantity button,
   .checkout-btn {
     transition: none;
     animation: none;
@@ -695,24 +599,29 @@
     border-bottom-width: 2px;
   }
   
-  .quantity-btn,
+  .cart-items-list .item-quantity button,
   .remove-item-btn,
   .cart-close-btn {
     border: 1px solid var(--text-secondary);
   }
 }
-/* 审计整改(2026-10-03): CartUI 生成的条目级类名(.item-*)与本文件词表(.cart-item-*)
-   错位 8 处——补别名对齐, 商品行从毛坯恢复样式 */
+/* 审计整改(2026-10-03)沿革 + M2(C5 终裁)改写：CartUI 条目级类名(.item-*)别名对齐——
+   新列序 [缩略 72px][名称两行+价格行][步进器][×]，勾选框/独立小计列已随模型砍除（C24 消解） */
 .item-image { grid-area: image; }
 .cart-items-list .item-image,
-.cart-item-image { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; }
+.cart-item-image { width: 72px; height: 72px; object-fit: cover; border-radius: var(--radius-md); }
 .cart-items-list .item-details { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.cart-items-list .item-name { font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* C2(裁决): 面板单价锁 Barlow Condensed 600，14→16px 补偿窄身 */
-.cart-items-list .item-price { font-family: var(--font-numeric); font-size: 16px; color: var(--ink); font-weight: 600; }
-/* C28(裁决): 小计列仅 qty>1 时有内容；样式与单价同锁数字字体 */
-.cart-items-list .item-total { font-family: var(--font-numeric); font-size: 16px; color: var(--ink); font-weight: 600; text-align: right; }
-.cart-items-list .item-remove { background: none; border: none; color: #999; cursor: pointer; padding: 4px 8px; border-radius: 4px; font-size: 18px; line-height: 1; }
-.cart-items-list .item-remove:hover { color: #c3392f; background: #fdf0ef; }
-/* C24(裁决): 勾选框给足 16px 可见样式；accent 从警示红归 blush-ink（红只留售罄） */
-.cart-items-list .item-checkbox { width: 16px; height: 16px; accent-color: var(--candy-blush-ink); cursor: pointer; }
+/* B6: 商品名两行截断（line-clamp 按整行截，不截半个字） */
+.cart-items-list .item-name {
+  font-size: 14px; font-weight: 500; color: var(--ink); margin: 0;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; line-height: 1.4;
+}
+/* B5+C28: 价格行锁 Condensed 600 15px——qty>1 单行算术"¥259 × 2 = ¥518"，qty=1 只显单价 */
+.cart-items-list .item-price-line {
+  font-family: var(--font-numeric); font-size: 15px; color: var(--ink); font-weight: 600;
+  margin: 0; font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.cart-items-list .item-remove { background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 4px 8px; border-radius: 4px; font-size: 18px; line-height: 1; }
+.cart-items-list .item-remove:hover { color: var(--error); background: var(--error-light); }
+.cart-items-list .item-remove:focus-visible { outline: 2px solid var(--focus-ring-color); outline-offset: var(--focus-ring-offset); }

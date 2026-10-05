@@ -1,5 +1,5 @@
 /**
- * home-products.js — 首页精选商品 bento 陈列（P4 接数据 · F7 bento 改造）
+ * home-products.js — 首页精选商品 bento 陈列（P4 接数据 · F7 bento 改造 · M4 A1 入口）
  *
  * 用途：拉取 /api/products 渲染 #home-product-grid 为 bento 网格——
  *       1 条 2×1 主打条 + 其余单格卡；选品 pickFeatured：
@@ -10,19 +10,28 @@
  * 依赖文件：js/utils/escape-html.js（全局 escapeHtml，先于本文件加载）、
  *           js/wishlist.js（渲染后重绑收藏事件）、heart-icon.svg、
  *           images/products/*、css/components/bento.css（布局与联动样式）
- * 冻结契约（消费方 cart.js getProductDataFromElement / wishlist.js bindEvents）：
- *   article 根类 .reich-product-card（与 .bento-card 并存）+ [data-product-id] 8 位零填充 +
- *   .reich-product-name（h3——站内层级卡片一律 h3）+ .reich-product-price 内 [itemprop=price] +
- *   .reich-product-image（落 <img>，width=800 height=1067 loading=lazy decoding=async itemprop=image）+
- *   .reich-product-action（心 pill，内含 heart-icon.svg <img width=14 height=14>）+ .reich-heart-pill +
- *   按钮级 [data-add-to-cart]+data-product-sku-id/name/price/pic 全套（name/pic encodeURIComponent）+
- *   .stagger-item（每张 article）+ schema.org Product 微数据（itemscope +
- *   itemprop name/price/priceCurrency/availability/brand/description/category/image）。
- * 有意行为变化（F7，如实标注）：
- *   1) article 根级 data-add-to-cart 摘除——整卡暗加购改为显式 .btn-bag 按钮（按钮级全套 data-* 原样保留）；
- *   2) 旧卡底部「来看看 + 加入购物袋」双控件由 bento 版式（徽章/标题/描述/价格+按钮）取代；
- *   3) 回退卡图片路径统一为 /images/ 绝对路径（原为页面相对）。
- * 作者：UI 施工组 · F7 实施席（丙）
+ *
+ * 冻结契约（M4 改写版 · 消费方 cart.js / wishlist.js / product.html 链接）：
+ *   ① article 根类 .reich-product-card（与 .bento-card 并存）+ [data-product-id] 8 位零填充；
+ *   ② .reich-product-name（h3，站内层级卡片一律 h3）+ .reich-product-price 内 [itemprop=price]；
+ *   ③ .reich-product-image（落 <img>，width=800 height=1067 loading=lazy decoding=async itemprop=image）；
+ *   ④ .reich-product-action（心 pill，内含 heart-icon.svg <img>——wishlist.js 冻结选择器
+ *     img[src*="heart-icon"]）+ .reich-heart-pill；
+ *     M4 心形拆雷（罗马 P1-2，唯一窗口）：心形不再携带任何加购 data-*，
+ *     只留 data-product-id——心形点击从此与购物袋契约彻底绝缘；
+ *   ⑤ .btn-bag 按钮级 [data-add-to-cart]+data-product-id/sku-id/name/price/pic 全套
+ *     （name/pic encodeURIComponent）——cart.js capture 委托 + fly-to-cart 源；
+ *   ⑥ M4 双锚不包卡：.card-fig 内 <a class="card-link"> 绝对定位拉伸（aria-label=品名）
+ *     + h3 内联 <a>，双锚均 href=product.html?id={id8}；整卡不包链接（bag/心形不被锚包）；
+ *   ⑦ .stagger-item（每张 article）+ schema.org Product 微数据。
+ *
+ * 有意行为变化（M4，如实标注）：
+ *   1) 卡图与品名可点入 PDP（双锚），bag/心形 stopPropagation 隔离互不误触；
+ *   2) featured 卡挂社会证明双数（sales/favorites 实时，零值态见 bento.css 注）；
+ *   3) 单格卡价格行上方挂品质行（specifications 材质·工艺，ink-soft 12px）；
+ *   4) "各一只"歧义（香港 P2）显示层改"两色可选"（仅展示文案，schema meta 仍随 API 原文）；
+ *   5) 列表滚动快照：点卡入 PDP 前存 sessionStorage，返回时兜底回位（双保险之 stash 半）。
+ * 作者：UI 施工组 · F7 实施席（丙）· M4 A 席续修
  * 时间：2026-10-05
  */
 
@@ -31,6 +40,8 @@
 
   var GRID_ID = 'home-product-grid';
   var FETCH_TIMEOUT_MS = 6000;
+  var SCROLL_STASH_KEY = 'reich_list_scroll';
+  var SCROLL_STASH_TTL_MS = 5 * 60 * 1000; // 快照 5 分钟内有效（逛太久回来重置也合理）
 
   // 徽标池（voice-sheet：本季 / 新到 / 心头好——不用促销词）
   var BADGES = ['新到', '心头好', '经典款'];
@@ -42,9 +53,19 @@
   var WEBP_EXT = '.w' + 'ebp';
 
   /**
+   * "各一只"歧义消解（香港 P2 → v1.1 挂位 M4 卡片文案域）：双色款描述里
+   * "各一只"读作"可能拿到两只"——显示层替换为"两色可选"四字明示单只价。
+   * 只改可见文案；schema.org description 仍随 API 原文（机器面不篡改数据源）。
+   */
+  function deAmbiguate(text) {
+    return String(text).replace(/各一只/g, '两色可选');
+  }
+
+  /**
    * 商品字段公共抽取（featured/cell 双模板共用，防止两份模板字段漂移）。
    * 图片：mainImage 为 .jpg 时输出 <picture>（webp 优先 + jpg 回退），其余格式直出 <img>；
    *       无 mainImage 时回退 DEFAULT_IMAGE（回退分支保留）。
+   * M4 增补：specs 品质行素材（材质·工艺）+ 社会证明双数（sales/favorites 实时）。
    */
   function commonFields(p, index) {
     var name = escapeHtml(String(p.name || 'Reich 单品'));
@@ -63,6 +84,13 @@
       ? '<picture><source srcset="' + escapeHtml(webp) + '" type="image/webp">' + imgTag + '</picture>'
       : imgTag;
 
+    // 品质行素材：规格表的 材质/工艺 两键（缺哪键跳哪键，不硬编码）
+    var specs = p.specifications && typeof p.specifications === 'object' ? p.specifications : {};
+    var quality = ['材质', '工艺']
+      .filter(function (k) { return specs[k]; })
+      .map(function (k) { return escapeHtml(String(specs[k])); })
+      .join(' · ');
+
     return {
       name: name,
       id8: id8,
@@ -71,17 +99,37 @@
       inStock: inStock,
       jpg: jpg,
       picture: picture,
+      quality: quality,
+      sales: Number(p.sales) || 0,
+      favorites: Number(p.favorites) || 0,
       badge: (Array.isArray(p.tags) && p.tags.length && escapeHtml(String(p.tags[0]))) || BADGES[index % BADGES.length],
       badgeCls: (function (b) { return BADGE_CLASS[b] || 'badge-blush'; })(
         (Array.isArray(p.tags) && p.tags.length && String(p.tags[0])) || BADGES[index % BADGES.length]
       ),
       category: escapeHtml(String((Array.isArray(p.tags) && p.tags[1]) || '手袋')),
-      descVisible: escapeHtml(String(p.description || (name + '，本季上新，慢慢挑。'))),
+      descVisible: escapeHtml(deAmbiguate(p.description || (name + '，本季上新，慢慢挑。'))),
       descMeta: escapeHtml(String(p.description || (name + '，本季上新，慢慢挑。')).slice(0, 120))
     };
   }
 
-  /* 加入购物袋 pill（bento 版式的显式加购入口；按钮级 data-* 全套为冻结契约） */
+  /**
+   * M4 社会证明语（v1.1 裁决 2 合璧版）：
+   * featured 卡 "N 人的心头好 · M 只已去新家"；favorites=0 → "来做第一个心动的人"
+   * （零值反社会证明禁令）；sales=0 隐藏销量分句；views 不上。实时读 API 禁硬编码。
+   */
+  function socialText(f) {
+    if (f.favorites === 0) {
+      return f.sales > 0
+        ? f.sales + ' 只已去新家 · 来做第一个心动的人'
+        : '来做第一个心动的人';
+    }
+    var parts = [];
+    if (f.sales > 0) parts.push(f.sales + ' 只已去新家');
+    parts.push(f.favorites + ' 人的心头好');
+    return parts.join(' · ');
+  }
+
+  /* 加入购物袋 pill（bento 版式的显式加购入口；按钮级 data-* 全套为冻结契约⑤） */
   function bagButton(f) {
     return '<button class="btn-bag" type="button" aria-label="将' + f.name + '加入购物袋" data-add-to-cart="true"' +
       ' data-product-id="' + f.id8 + '" data-product-sku-id="' + f.id8 + '"' +
@@ -89,14 +137,19 @@
       ' data-product-pic="' + encodeURIComponent(f.jpg) + '">加入购物袋</button>';
   }
 
-  /* 心愿单小 pill（wishlist.js 冻结选择器：.reich-product-action 内 img[src*="heart-icon"]）；
-     位置由 main.css .reich-heart-pill 系规则锚定卡图右上（css/components/bento.css Ⓞ1 留证） */
+  /* 心愿单小 pill（wishlist.js 冻结选择器：.reich-product-action 内 img[src*="heart-icon"]）。
+     M4 心形拆雷（罗马 P1-2 唯一窗口）：删 data-add-to-cart/sku-id/name/price/pic 五件，
+     只留 data-product-id——加购契约与心形彻底解绑，时序变化不再有入袋地雷；
+     C6：图标 14→16px（触达区不动，pill 尺寸不变） */
   function heartButton(f) {
     return '<button class="reich-product-action reich-heart-pill" type="button" aria-label="收藏' + f.name + '"' +
-      ' data-add-to-cart="true" data-product-id="' + f.id8 + '" data-product-sku-id="' + f.id8 + '"' +
-      ' data-product-name="' + encodeURIComponent(f.name) + '" data-product-price="' + f.priceNum + '"' +
-      ' data-product-pic="' + encodeURIComponent(f.jpg) + '">' +
-      '<img src="heart-icon.svg" alt="" width="14" height="14"></button>';
+      ' data-product-id="' + f.id8 + '">' +
+      '<img src="heart-icon.svg" alt="" width="16" height="16"></button>';
+  }
+
+  /* M4 双锚之一：卡图拉伸链接（绝对定位 inset:0，bento.css 压层）——图区整面可点入 PDP */
+  function cardLink(f) {
+    return '<a class="card-link" href="product.html?id=' + f.id8 + '" aria-label="' + f.name + '——查看详情"></a>';
   }
 
   /* 价格 + schema.org Offer（.reich-product-price 与内层 [itemprop=price] 为冻结契约） */
@@ -118,6 +171,7 @@
   /**
    * 主打条模板（2×1）：横排左图右文 / 竖排图上文下由 bento.css 容器查询接管。
    * source ∈ featured | publishedAt | firstImage | first（pickFeatured 判定，卡根标注）。
+   * M4：图区拉伸锚（card-link）+ 品名内联锚（双锚不包卡）+ 社会证明双数（v1.1 裁决 2）。
    */
   function featuredHtml(p, index, source) {
     var f = commonFields(p, index);
@@ -130,11 +184,13 @@
       '<span class="badge ' + f.badgeCls + '">' + f.badge + '</span>' +
       f.picture +
       heartButton(f) +
+      cardLink(f) +
       '</figure>' +
       '<div class="featured-body">' +
       '<p class="featured-kicker">本期主打</p>' +
-      '<h3 class="featured-name reich-product-name" itemprop="name">' + f.name + '</h3>' +
+      '<h3 class="featured-name reich-product-name" itemprop="name"><a href="product.html?id=' + f.id8 + '">' + f.name + '</a></h3>' +
       '<p class="featured-desc">' + f.descVisible + '</p>' +
+      '<p class="featured-social">' + escapeHtml(socialText(f)) + '</p>' +
       '<div class="featured-meta">' + priceOffer(f) + bagButton(f) + '</div>' +
       metaTail(f) +
       '</div>' +
@@ -143,7 +199,8 @@
     );
   }
 
-  /** 单格卡模板：@container≥280 横排图左文右，<280 竖排图上文下。 */
+  /** 单格卡模板：@container≥280 横排图左文右，<280 竖排图上文下。
+      M4：双锚 + 品质行（材质·工艺，specifications 实时，ink-soft 12px 禁 faint）。 */
   function cellHtml(p, index) {
     var f = commonFields(p, index);
     return (
@@ -154,10 +211,12 @@
       '<span class="badge ' + f.badgeCls + '">' + f.badge + '</span>' +
       f.picture +
       heartButton(f) +
+      cardLink(f) +
       '</figure>' +
       '<div class="cell-body">' +
-      '<h3 class="cell-name reich-product-name" itemprop="name">' + f.name + '</h3>' +
+      '<h3 class="cell-name reich-product-name" itemprop="name"><a href="product.html?id=' + f.id8 + '">' + f.name + '</a></h3>' +
       '<p class="cell-desc">' + f.descVisible + '</p>' +
+      (f.quality ? '<p class="cell-quality">' + f.quality + '</p>' : '') +
       '<div class="cell-meta">' + priceOffer(f) + bagButton(f) + '</div>' +
       metaTail(f) +
       '</div>' +
@@ -211,7 +270,7 @@
     { id: 2, name: '黑皮波士顿包', price: 259, stock: 42, mainImage: '/images/products/product-2.jpg',
       tags: ['心头好', '手提包'], publishedAt: '2026-10-03T10:05:00',
       description: '黑色粒面皮革，双提手加一道皮带扣，精神又稳当。装得下手机、口红和一句俏皮话，通勤路上的老搭档。' },
-    { id: 3, name: '湖蓝凯莉手提包', price: 189, stock: 66, mainImage: '/images/products/product-3.jpg',
+    { id: 3, name: '湖蓝锁扣手提包', price: 189, stock: 66, mainImage: '/images/products/product-3.jpg',
       tags: ['经典款', '手提包'], publishedAt: '2026-10-03T10:04:00',
       description: '湖蓝色光面皮革，白色矩形锁扣配一点金色五金。拎在手上，像拎着一小片晴天。' }
   ];
@@ -224,6 +283,52 @@
     grid.innerHTML = html;
     grid.setAttribute('aria-busy', 'false');
     rebindWishlist();
+    bindCardInteractions(grid);
+    restoreScrollAfterPdp(grid);
+  }
+
+  /**
+   * M4 卡面交互隔离（蓝图风险 checklist：bag/心形连点互不误触）：
+   * - .btn-bag 冒泡阶段 stopPropagation——与卡内双锚及任何未来的卡级监听绝缘；
+   *   cart.js 的加购委托在 document capture 阶段先行，不受冒泡截断影响（M3 预埋）。
+   * - 心形已有 wishlist.js:34 stopPropagation（冻结行为，不重绑）。
+   * - 双锚点击 → 存列表滚动快照（sessionStorage，双保险之 stash 半——
+   *   返回 index 时兜底回位；浏览器原生 scrollRestoration 是第一保险）。
+   */
+  function bindCardInteractions(grid) {
+    grid.addEventListener('click', function (e) {
+      var bag = e.target.closest('.btn-bag');
+      if (bag) {
+        e.stopPropagation();
+        return; // bag 点击与锚/卡级处理彻底无关
+      }
+      var anchor = e.target.closest('a.card-link, .reich-product-name a');
+      if (anchor) {
+        try {
+          sessionStorage.setItem(SCROLL_STASH_KEY, JSON.stringify({ y: window.scrollY, t: Date.now() }));
+        } catch (err) { /* 隐私模式 sessionStorage 不可写：静默降级为原生回位 */ }
+      }
+    });
+  }
+
+  /**
+   * 从 PDP 返回时回位（双保险之消费半）：
+   * 原生 bfcache/history 命中时本函数不执行（DOMContentLoaded 不重跑）；
+   * 命不中（新加载）时若 5 分钟内有快照且 referrer 指向 product.html → 渲染后回位。
+   */
+  function restoreScrollAfterPdp(grid) {
+    var stash;
+    try {
+      stash = JSON.parse(sessionStorage.getItem(SCROLL_STASH_KEY) || 'null');
+      sessionStorage.removeItem(SCROLL_STASH_KEY);
+    } catch (err) {
+      return;
+    }
+    if (!stash || typeof stash.y !== 'number') return;
+    if (Date.now() - stash.t > SCROLL_STASH_TTL_MS) return;
+    var ref = document.referrer || '';
+    if (ref.indexOf('product.html') === -1) return; // 非 PDP 回程不劫持滚动
+    window.scrollTo(0, stash.y);
   }
 
   /* wishlist.js 在 DOMContentLoaded 时对当时的卡片直接绑定；本脚本的 API 渲染晚于它，
