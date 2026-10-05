@@ -30,6 +30,7 @@ import {
   mergeSpecifications,
   toNumberOrNull,
 } from './product-merge.helper';
+import { runExclusiveWrite } from '../common/db-write-mutex';
 
 export interface CreateProductData {
   name: string;
@@ -593,6 +594,12 @@ export class ProductsService {
     // 参数占位由 QueryBuilder 按驱动翻译（SQLite ? / PG $n），零方言函数。
     const priceWritten = priceView.priceSubmitted;
     const originalPriceWritten = priceView.originalPriceSubmitted; // 数字值（显式 null 清除语义另行处理）
+    // M3 双盲审 P0(2026-10-05)：条件 UPDATE 写段纳入全局写互斥。两语句本身是
+    // autocommit 单语句（无显式 BEGIN），真正的风险是被并发订单/审计事务的
+    // "悬挂事务"吸入（API 报成功但随悬挂回滚丢失=幽灵写）；且"守卫条件 UPDATE
+    // +残留字段 update"作为写序不该与事务交错。与 orders/audit 同队串行后，
+    // 本段与任何显式事务互斥（根因见 common/db-write-mutex.ts 头注释）。
+    await runExclusiveWrite(async () => {
     if (priceWritten || originalPriceWritten) {
       const qb = this.productRepository.createQueryBuilder().update(Product);
       if (priceWritten && originalPriceWritten) {
@@ -656,15 +663,17 @@ export class ProductsService {
       updateData = rest as UpdateProductData;
     }
 
-    // P3（三修，fix2 §三 9）：三 findById 收敛——oldProduct 复用方法开头的存量读
-    // （缓存失效前后的两次读对"旧值快照"语义等价），删除紧贴 update 前的冗余重读。
-    const oldProduct = product;
     if (Object.keys(updateData as Record<string, unknown>).length > 0) {
       // originalPrice 类型面如实含 null（P1-3 清除语义）；QueryDeepPartialEntity
       // 按 number 声明，写边界 unknown 桥接（同一语义在上方条件 UPDATE 分支已有
       // 先例：originalPrice: null as unknown as number）
       await this.productRepository.update(id, updateData as unknown as QueryDeepPartialEntity<Product>);
     }
+    }); // ← runExclusiveWrite 写段到此为止：缓存失效/回读/事件在锁外（读与网络面不占写队列）
+
+    // P3（三修，fix2 §三 9）：三 findById 收敛——oldProduct 复用方法开头的存量读
+    // （缓存失效前后的两次读对"旧值快照"语义等价），删除紧贴 update 前的冗余重读。
+    const oldProduct = product;
 
     // 清除缓存（统一前缀与热门键集合）
     const keyPrefix = this.configService.get<string>('redis.keyPrefix') || 'caddy_shopping';

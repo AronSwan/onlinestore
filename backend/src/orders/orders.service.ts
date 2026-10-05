@@ -1,4 +1,4 @@
-import { Injectable, Inject, forwardRef, Logger } from '@nestjs/common';
+import { Injectable, Inject, forwardRef, Logger, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Order } from './entities/order.entity';
@@ -9,6 +9,7 @@ import { OrderStatus, PaymentStatus } from './entities/order.entity';
 import { MonitoringService } from '../monitoring/monitoring.service';
 import { OrderEventsService } from '../messaging/order-events.service';
 import { AuditService, AuditAction, AuditResult, AuditSeverity } from '../common/audit/audit.service';
+import { runExclusiveWrite } from '../common/db-write-mutex';
 
 
 
@@ -35,7 +36,12 @@ export class OrdersService {
     // 审计行在事务提交后落（AuditService.log 自带 dataSource.transaction，
     // sqlite 单连接下嵌套事务必败，绝不能在订单事务内调）。
     const autoUnlisted: Array<{ productId: number; productName: string; orderNumber: string }> = [];
-    const savedOrder = await this.orderRepository.manager.transaction(async trx => {
+    // M3 双盲审 P0(2026-10-05)：下单事务纳入全局写互斥。根因=TypeORM sqlite 单共享
+    // 连接上并发 manager.transaction() 交叉 BEGIN/ROLLBACK——双 500/非确定性半提交/
+    // 事务悬挂后全站幽灵写。互斥范围内不得嵌套再取锁：事务提交（回落）后才在锁外
+    // 落自动下架审计行（AuditService.log 自带一次独立的 runExclusiveWrite）。
+    const savedOrder = await runExclusiveWrite(() =>
+      this.orderRepository.manager.transaction(async trx => {
       // 生成订单号
       const orderNumber = this.generateOrderNumber();
 
@@ -54,8 +60,18 @@ export class OrdersService {
         const product = await trx.getRepository(Product).findOne({
           where: { id: item.productId },
         });
+        // P1-1（M3 双盲审 2026-10-05，X 组共中）：下单路径补 isActive 门禁——
+        // 前台列表/详情已过滤下架品，但直购 POST 可绕过。给 400"商品已下架"
+        // 而非 404：商品存在且可行动（等上架/换商品），错误信息能指路。
+        if (product && !product.isActive) {
+          throw new BadRequestException(
+            `商品已下架（productId=${item.productId}「${product.name}」暂不可购买）`,
+          );
+        }
         if (!product || product.stock < item.quantity) {
-          throw new Error(`产品 ${item.productId} 库存不足`);
+          // M3：语义化退出码——库存不足是客户端可修正的提交错误，400（与
+          // 控制器 ApiDocs "badRequest: 库存不足" 声明一致），不再裸 Error→500。
+          throw new BadRequestException(`产品 ${item.productId} 库存不足`);
         }
         const unitPrice = Number(product.price);
         const lineTotal = unitPrice * item.quantity;
@@ -103,8 +119,14 @@ export class OrdersService {
         const product = await trx.getRepository(Product).findOne({
           where: { id: item.productId },
         });
+        // P1-1：第二处 loadProduct 同样设防（同商品多行/首循环后状态可能已变）。
+        if (product && !product.isActive) {
+          throw new BadRequestException(
+            `商品已下架（productId=${item.productId}「${product.name}」暂不可购买）`,
+          );
+        }
         if (!product || product.stock < item.quantity) {
-          throw new Error(`产品 ${item.productId} 库存不足`);
+          throw new BadRequestException(`产品 ${item.productId} 库存不足`);
         }
 
         const orderItem = trx.getRepository(OrderItem).create({
@@ -131,7 +153,10 @@ export class OrdersService {
 
         // 检查是否成功更新库存
         if (updateResult.affected === 0) {
-          throw new Error(`产品 ${item.productId} 库存不足或已被其他订单修改，请重试`);
+          // M3：乐观锁冲突语义化——affected=0 是并发写竞争（库存被并发订单
+          // 扣走或版本推进），客户端可重试，409 而非裸 Error→500（双盲审 P0
+          // 验收口径：并发下单=201+201 或 201+409，绝不 500/半提交）。
+          throw new ConflictException(`产品 ${item.productId} 库存不足或已被其他订单修改，请重试`);
         }
 
         // M5(2026-10-05)：库存归零自动下架——与扣减同事务（原子），前台立刻不可见。
@@ -153,7 +178,8 @@ export class OrdersService {
       });
 
       return savedOrder;
-    });
+      }),
+    );
 
     // M5：事务已提交——自动下架事件落审计行（哈希链化走 AuditService.log 统一入口）。
     // 订单既已成立，审计失败只告警不回滚（与商品写审计同纪律）。
