@@ -2,3 +2,4 @@
 # 追加式：只增不改；改历史行=锚不符（verify exit 2）。
 # 由 npm run verify:audit -- --anchor 生成；commit 由人工执行。
 2026-10-05T07:10:39.607Z 1421 ec34fda3150f393794182a6e277001ffc8c651fc57b2be2d50019935c6256783
+2026-10-05T07:28:23.731Z 1445 488d4990d382de642febccfd7485a636cc4795008ec3a902e365616fd98a3aca
