@@ -262,7 +262,10 @@ class LoginEnhanced {
                     errorMessage = '邮箱地址不能为空';
                     isValid = false;
                 } else if (!this.isValidEmail(value)) {
-                    errorMessage = '请输入有效的邮箱地址';
+                    // C25(裁决): 原 sr-only help 文案移入错误态（占位已收为"邮箱"）
+                    errorMessage = field.id === 'login-email'
+                        ? '请输入有效的邮箱地址用于登录'
+                        : '请输入有效的邮箱地址用于注册';
                     isValid = false;
                 }
                 break;

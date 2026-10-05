@@ -412,11 +412,14 @@ class CartManager {
         productPrice = productPrice || (card.querySelector('.reich-product-price [itemprop=price], .reich-product-price') || {}).textContent || '';
         productPrice = parseFloat(String(productPrice).replace(/[^\d.]/g, '')) || 0;
         productPic = productPic || ((card.querySelector('.reich-product-image') || {}).src || '');
-        // 求真修复(2026-10-04): home-products.js 用 encodeURIComponent 存 name/pic——解码
-        try { productName = decodeURIComponent(productName); } catch(e) {}
-        try { productPic = decodeURIComponent(productPic); } catch(e) {}
       }
     }
+    // B1 修复(意大利审查裁决): home-products.js 将 name/pic 以 encodeURIComponent
+    // 写入 data-*，旧解码只写在 data-* 缺失的兜底分支（永不触发的主路径乱码根因）。
+    // 主路径与兜底路径统一在 return 前解码；decodeURIComponent 对未编码文本
+    // （textContent 来源）原样透传，仅遇非法 % 序列时 throw，由 catch 保底。
+    try { productName = decodeURIComponent(productName); } catch(e) {}
+    try { productPic = decodeURIComponent(productPic); } catch(e) {}
     return {
       productId: productId,
       productSkuId: productSkuId,
@@ -470,11 +473,15 @@ class CartUI {
       <div class="cart-panel">
         <div class="cart-header">
           <h3>购物车</h3>
-          <button class="cart-close-btn" aria-label="关闭购物车">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"/>
-            </svg>
-          </button>
+          <div class="cart-header-actions">
+            <!-- C13(裁决): 清空选中降权为面板头部文字链，底部结算钮独占 -->
+            <button class="clear-selected-btn" disabled>清空选中</button>
+            <button class="cart-close-btn" aria-label="关闭购物车">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"/>
+              </svg>
+            </button>
+          </div>
         </div>
         
         <div class="cart-body">
@@ -493,7 +500,6 @@ class CartUI {
             </div>
             <div class="cart-actions">
               <button class="checkout-btn" disabled>去结算</button>
-              <button class="clear-selected-btn" disabled>清空选中</button>
             </div>
           </div>
         </div>
@@ -578,6 +584,12 @@ class CartUI {
     this.cartManager.addListener((event, data) => {
       switch (event) {
         case 'itemAdded':
+          // B4(意大利审查裁决): 加购后面板自动打开——"面板即是确认"，省 toast；
+          // 徽章脉冲重触发给已在页面上可见的计数第二次动画
+          this.updateCartDisplay();
+          this.pulseCartBadge();
+          this.cartManager.showCart();
+          break;
         case 'itemRemoved':
         case 'quantityUpdated':
         case 'cartCleared':
@@ -586,6 +598,18 @@ class CartUI {
           this.updateCartDisplay();
           break;
       }
+    });
+  }
+
+  /**
+   * B4(裁决): 购物车徽章单次脉冲重触发——remove 类 → 强制回流(void offsetWidth)
+   * → 重新 add，第二次及以后的加购同样得到一次 0.3s 脉冲（cart.css @keyframes pulse）
+   */
+  pulseCartBadge() {
+    document.querySelectorAll('.cart-badge, .cart-count, #cart-badge, #cart-count, .site-cart-badge').forEach(el => {
+      el.classList.remove('pulse');
+      void el.offsetWidth;
+      el.classList.add('pulse');
     });
   }
 
@@ -678,7 +702,6 @@ class CartUI {
         </div>
         <div class="item-details">
           <h4 class="item-name">${escapeHtml(item.productName)}</h4>
-          <p class="item-brand">${escapeHtml(item.productBrand)}</p>
           <p class="item-price">¥${item.productPrice.toFixed(2)}</p>
         </div>
         <div class="item-quantity">
@@ -687,7 +710,7 @@ class CartUI {
           <button onclick="cartManager.updateItemQuantity('${escapeHtml(item.productSkuId)}', ${item.productQuantity + 1})">+</button>
         </div>
         <div class="item-total">
-          ¥${(item.productPrice * item.productQuantity).toFixed(2)}
+          ${item.productQuantity > 1 ? `¥${(item.productPrice * item.productQuantity).toFixed(2)}` : ''}
         </div>
         <button class="item-remove" onclick="cartManager.removeItem('${escapeHtml(item.productSkuId)}')">
           ×
@@ -700,7 +723,11 @@ class CartUI {
    * 更新购物车摘要
    */
   updateCartSummary() {
-    const selectedItems = this.cartManager.cart.filter(item => item.selected).length;
+    // B3 修复(意大利审查裁决): 已选件数按 productQuantity 求和——原按行数计数，
+    // 同款加 3 件面板仍说"已选 1 件"（计数说谎）
+    const selectedItems = this.cartManager.cart
+      .filter(item => item.selected)
+      .reduce((total, item) => total + item.productQuantity, 0);
     const totalValue = this.cartManager.getSelectedTotalPrice();
     
     if (this.elements.selectedCount) {

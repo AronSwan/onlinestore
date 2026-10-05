@@ -40,7 +40,9 @@
   position: absolute;
   top: -2px;
   right: -2px;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  /* C15(裁决): 警示红/渐变退场——数量徽章统一 candy-blush 底白字（红只留售罄）；
+     渐变改纯色、overshoot 贝塞尔改 ease-in-out（宪法禁回弹） */
+  background: var(--candy-blush);
   color: white;
   font-size: 11px;
   font-weight: 600;
@@ -53,7 +55,7 @@
   padding: 0 4px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transform: scale(0);
-  transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  transition: transform var(--dur-fast) var(--ease-lux);
 }
 
 .cart-badge:not(:empty) {
@@ -61,9 +63,8 @@
 }
 
 /* P2 · B3 加购脉冲：徽章数量变化时的单次脉冲。
-   cart.js（冻结）只改 textContent 与 display——徽章由 display:none 重现为
-   block/flex 时 animation 简写会重新触发，即得到一次 0.3s 脉冲；
-   需要更强效果时可手动追加 .pulse 类（同名同效）。 */
+   B4(裁决): cart.js pulseCartBadge() 以 remove/void offsetWidth/add 重触发——
+   选择器扩到全族徽章，第二次及以后的加购同样脉冲一次。 */
 @keyframes pulse {
   0% { scale: 1; }
   50% { scale: 1.15; }
@@ -74,7 +75,9 @@
   animation: pulse 0.3s var(--ease-lux);
 }
 
-.site-cart-badge.pulse {
+.site-cart-badge.pulse,
+.cart-badge.pulse,
+.cart-count.pulse {
   animation: pulse 0.3s var(--ease-lux);
 }
 
@@ -130,6 +133,13 @@
   position: sticky;
   top: 0;
   z-index: 10;
+}
+
+/* C13(裁决): 头部右侧"关闭 + 清空选中文字链"组合 */
+.cart-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
 }
 
 .cart-header h3 {
@@ -214,20 +224,29 @@
   border-color: var(--primary);
 }
 
+/* C13(裁决): 清空选中降权——从底部描边按钮改为头部文字链，hover blush-ink */
 .clear-selected-btn {
-  padding: 6px 12px;
-  border: 1px solid var(--border-color);
-  background: var(--background-primary);
+  padding: var(--spacing-1) var(--spacing-2);
+  border: none;
+  background: none;
   color: var(--text-secondary);
-  font-size: 13px;
-  border-radius: 6px;
+  font-size: var(--text-small);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--line-strong);
   cursor: pointer;
-  transition: all 0.2s ease;
+  border-radius: var(--radius-sm);
+  transition: color var(--dur-fast) var(--ease-lux), text-decoration-color var(--dur-fast) var(--ease-lux);
 }
 
 .clear-selected-btn:hover:not(:disabled) {
-  border-color: var(--error);
-  color: var(--error);
+  color: var(--candy-blush-ink);
+  text-decoration-color: var(--candy-blush-ink);
+}
+
+.clear-selected-btn:focus-visible {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .clear-selected-btn:disabled {
@@ -504,8 +523,10 @@
 }
 
 .total-price {
-  font-size: 18px;
-  font-weight: 700;
+  /* C2(裁决): 金额锁 Barlow Condensed（--font-numeric）600；18→20px 补偿窄身 */
+  font-family: var(--font-numeric);
+  font-size: 20px;
+  font-weight: 600;
   color: var(--primary);
 }
 
@@ -518,20 +539,23 @@
 .checkout-btn {
   flex: 1;
   padding: 14px 24px;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  /* C3(裁决): CTA 层级归位——radius-pill + 纯 ink 底 + 0.2s 色彩互换；
+     渐变底/translateY/投影三促销残留全删 */
+  background: var(--ink);
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 16px;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-body);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
+  transition:
+    background var(--dur-fast) var(--ease-lux),
+    color var(--dur-fast) var(--ease-lux);
 }
 
 .checkout-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.4);
+  background: var(--candy-blush);
+  color: #fff;
 }
 
 .checkout-btn:disabled {
@@ -684,7 +708,11 @@
 .cart-item-image { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; }
 .cart-items-list .item-details { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .cart-items-list .item-name { font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cart-items-list .item-price { font-size: 14px; color: #1a1a1a; font-weight: 600; }
+/* C2(裁决): 面板单价锁 Barlow Condensed 600，14→16px 补偿窄身 */
+.cart-items-list .item-price { font-family: var(--font-numeric); font-size: 16px; color: var(--ink); font-weight: 600; }
+/* C28(裁决): 小计列仅 qty>1 时有内容；样式与单价同锁数字字体 */
+.cart-items-list .item-total { font-family: var(--font-numeric); font-size: 16px; color: var(--ink); font-weight: 600; text-align: right; }
 .cart-items-list .item-remove { background: none; border: none; color: #999; cursor: pointer; padding: 4px 8px; border-radius: 4px; font-size: 18px; line-height: 1; }
 .cart-items-list .item-remove:hover { color: #c3392f; background: #fdf0ef; }
-.cart-items-list .item-checkbox { width: 18px; height: 18px; accent-color: #c3392f; cursor: pointer; }
+/* C24(裁决): 勾选框给足 16px 可见样式；accent 从警示红归 blush-ink（红只留售罄） */
+.cart-items-list .item-checkbox { width: 16px; height: 16px; accent-color: var(--candy-blush-ink); cursor: pointer; }

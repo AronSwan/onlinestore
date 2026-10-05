@@ -34,8 +34,9 @@
 
   // 徽标池（voice-sheet：本季 / 新到 / 心头好——不用促销词）
   var BADGES = ['新到', '心头好', '经典款'];
-  // 徽章 soft 底映射（css/components/bento.css：新到→blush / 心头好→sun / 经典款→mint / 其他→blush）
-  var BADGE_CLASS = { '新到': 'badge-blush', '心头好': 'badge-sun', '经典款': 'badge-mint' };
+  // C10(裁决): 徽章三色轮转归一——状态徽章 blush-soft 底、玩笑徽章（心头好）ink 描边白底；
+  // sun 退门面只留跑马灯、mint 只留订阅带（css/components/bento.css 同步改写）
+  var BADGE_CLASS = { '新到': 'badge-blush', '心头好': 'badge-outline', '经典款': 'badge-blush' };
   var DEFAULT_IMAGE = '/images/default-product.png';
   // webp 扩展名拆开写，避免被 scripts/check-frontend-assets.py 当作本地路径字面量
   var WEBP_EXT = '.w' + 'ebp';

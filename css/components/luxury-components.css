@@ -4,10 +4,11 @@
 .luxury-card {
     background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
     border-radius: var(--radius-xl);
-    box-shadow: 
+    box-shadow:
         0 20px 25px -5px rgba(0, 0, 0, 0.1),
         0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    border: 1px solid rgba(212, 175, 55, 0.1);
+    /* C1(裁决): 金幽灵 rgba(212, 175, 55, ×) 清除——描边换 line 令牌 */
+    border: 1px solid var(--line);
     position: relative;
     overflow: hidden;
 }
@@ -40,12 +41,11 @@
 }
 
 .luxury-input input:focus {
-    outline: none;
-    border-color: var(--brand-gold);
-    box-shadow: 
-        0 0 0 4px rgba(212, 175, 55, 0.1),
-        0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    transform: translateY(-2px);
+    /* C1(裁决): 金幽灵 focus ring rgba(212, 175, 55, ×) 清除——换 blush-ink 令牌环；
+       C20(裁决): 删 translateY 位移 */
+    outline: 2px solid var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset);
+    border-color: var(--candy-blush-ink);
 }
 
 /* 奢华按钮增强 */

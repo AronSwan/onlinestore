@@ -25,17 +25,33 @@
  *   searchBtn/cart-badge）与类（site-tools/site-burger 等）逐字保留。
  */
 
+/** 主导航项（C11 裁决：假门收敛——女士/男士/配饰 → 手袋（锚点）/品牌故事（锚点）/订单） */
+const NAV_ITEMS = [
+  { label: '手袋', href: 'index.html#featured-collections' },
+  { label: '品牌故事', href: 'index.html#brand-story' },
+  { label: '订单', href: 'orders.html' },
+];
+
+/** 移动菜单项（C11 裁决：补"首页"；锚点项与主导航同源） */
+const MOBILE_ITEMS = [
+  { label: '首页', href: 'index.html' },
+  { label: '手袋', href: 'index.html#featured-collections' },
+  { label: '品牌故事', href: 'index.html#brand-story' },
+  { label: '订单', href: 'orders.html' },
+  { label: '登录 / 注册', href: 'login.html' },
+];
+
 /** 页级差异矩阵（逐字对齐归一前四页各自的静态拷贝） */
 const PAGE_CONFIG = {
   index: {
-    navCurrent: '女士',            // 主导航 aria-current 所在项（null=无当前页）
+    navCurrent: null,              // 主导航 aria-current 所在项（null=无当前页）
     searchBtn: { label: '打开搜索', expanded: true, controls: 'searchBar' },
     user: { id: 'userProfileBtn', label: '用户登录', href: 'login.html', current: false },
     back: false,                   // orders 独有：返回个人中心钮
-    mobileCurrent: null,           // 移动菜单 aria-current 所在项
+    mobileCurrent: '首页',         // 移动菜单 aria-current 所在项
   },
   orders: {
-    navCurrent: null,
+    navCurrent: '订单',
     searchBtn: { label: '搜索', expanded: false, controls: null },
     user: { id: null, label: '账户', href: 'login.html', current: false },
     back: true,
@@ -68,13 +84,17 @@ const currentAttr = (isCurrent) => (isCurrent ? ' aria-current="page"' : '');
 function renderHeader() {
   const s = cfg.searchBtn;
   const u = cfg.user;
+  // C8(裁决): 头部内容收进与页面同规的 container（Tailwind .container+mx-auto+px-4），
+  // 起点与主内容列逐像素会合（原 clamp(1rem,4vw,3rem) 与 container 差 48px@1440）
+  const navItems = NAV_ITEMS.map(
+    (item) => `      <li><a href="${item.href}"${currentAttr(cfg.navCurrent === item.label)}>${item.label}</a></li>`
+  ).join('\n');
   return `
 <header class="site-header" id="siteHeader">
+  <div class="container mx-auto px-4 site-header-inner">
   <nav aria-label="主导航">
     <ul class="site-nav">
-      <li><a href="index.html"${currentAttr(cfg.navCurrent === '女士')}>女士</a></li>
-      <li><a href="index.html"${currentAttr(cfg.navCurrent === '男士')}>男士</a></li>
-      <li><a href="index.html"${currentAttr(cfg.navCurrent === '配饰')}>配饰</a></li>
+${navItems}
     </ul>
   </nav>
 
@@ -113,18 +133,18 @@ ${cfg.back ? `        <!-- 返回个人中心（orders 页独有，原独立返�
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
         </button>
   </div>
+  </div>
 </header>`;
 }
 
 function renderMobileMenu() {
+  const items = MOBILE_ITEMS.map(
+    (item) => `    <li><a href="${item.href}"${currentAttr(cfg.mobileCurrent === item.label)}>${item.label}</a></li>`
+  ).join('\n');
   return `
 <nav class="site-mobile-menu" id="mobileMenu" aria-label="移动导航">
   <ul>
-    <li><a href="index.html"${currentAttr(cfg.mobileCurrent === '女士')}>女士</a></li>
-    <li><a href="index.html"${currentAttr(cfg.mobileCurrent === '男士')}>男士</a></li>
-    <li><a href="index.html"${currentAttr(cfg.mobileCurrent === '配饰')}>配饰</a></li>
-    <li><a href="orders.html"${currentAttr(cfg.mobileCurrent === '订单')}>订单</a></li>
-    <li><a href="login.html"${currentAttr(cfg.mobileCurrent === '登录 / 注册')}>登录 / 注册</a></li>
+${items}
   </ul>
 </nav>`;
 }
@@ -145,6 +165,22 @@ function mount() {
   anchor.after(menuFrag);
 
   bindBehaviors(header);
+  markLoggedInUser(header);
+}
+
+/** C12(裁决): 回头官认脸——登录态下用户钮 aria-label 改"我的账户"，
+    叠一枚 candy blush 小圆点（一枚足矣，样式见 site-header.css .site-user-dot） */
+function markLoggedInUser(header) {
+  const userBtn = header?.querySelector('.site-user-btn');
+  const isLoggedIn =
+    localStorage.getItem('userLoggedIn') === 'true' ||
+    sessionStorage.getItem('userLoggedIn') === 'true';
+  if (!userBtn || !isLoggedIn) return;
+  userBtn.setAttribute('aria-label', '我的账户');
+  const dot = document.createElement('span');
+  dot.className = 'site-user-dot';
+  dot.setAttribute('aria-hidden', 'true');
+  userBtn.appendChild(dot);
 }
 
 /** 行为归一（原四页四份：mobileMenu 开合 + scrolled 阴影） */

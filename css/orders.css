@@ -46,47 +46,34 @@
 .order-filter-btn {
     padding: var(--spacing-2) var(--spacing-4);
     border: 1px solid var(--border-light);
-    border-radius: var(--radius-full);
+    /* C21(裁决): 过滤钮 pill 化 13px/600 */
+    border-radius: var(--radius-pill);
     background: var(--bg-white);
     color: var(--text-secondary);
-    font-size: var(--text-sm);
-    font-weight: var(--font-medium);
+    font-size: var(--text-small);
+    font-weight: var(--font-weight-semibold);
     cursor: pointer;
-    transition: all var(--transition-normal);
+    transition:
+        background var(--dur-fast) var(--ease-lux),
+        color var(--dur-fast) var(--ease-lux),
+        border-color var(--dur-fast) var(--ease-lux);
     position: relative;
     overflow: hidden;
 }
 
 /* 筛选按钮悬停效果 */
 .order-filter-btn:hover {
-    border-color: var(--gold-standard);
-    color: var(--gold-standard);
-    background: rgba(212, 175, 55, 0.05);
-    transform: translateY(-1px);
+    border-color: var(--candy-blush);
+    color: var(--candy-blush-ink);
+    background: var(--bg-soft);
 }
 
 /* 筛选按钮激活状态 */
 .order-filter-btn.active {
-    background: var(--gold-standard);
+    background: var(--ink);
     color: var(--text-white);
-    border-color: var(--gold-standard);
-    font-weight: var(--font-semibold);
-}
-
-/* 筛选按钮光泽效果 */
-.order-filter-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left var(--transition-slow);
-}
-
-.order-filter-btn:hover::before {
-    left: 100%;
+    border-color: var(--ink);
+    font-weight: var(--font-weight-semibold);
 }
 
 /* 搜索框容器 */
@@ -110,10 +97,10 @@
 
 /* 搜索框聚焦状态 */
 .order-search-input:focus {
-    outline: none;
-    border-color: var(--gold-standard);
-    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1), var(--shadow-md);
-    transform: translateY(-1px);
+    /* C1(裁决): 金幽灵 rgba(212, 175, 55, ×) 清除 + C20(裁决): 删 translateY/shadow 双重奏 */
+    outline: 2px solid var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset);
+    border-color: var(--candy-blush-ink);
 }
 
 /* 搜索图标 */
@@ -151,14 +138,14 @@
 .order-card:hover {
     box-shadow: var(--shadow-lg);
     transform: translateY(-2px);
-    border-color: var(--gold-standard);
+    border-color: var(--candy-blush); /* C4(裁决): hover 收敛 border-color blush */
 }
 
 /* 订单卡片头部 */
 .order-card-header {
     padding: var(--spacing-6);
     border-bottom: 1px solid var(--border-light);
-    background: linear-gradient(135deg, var(--bg-white) 0%, rgba(212, 175, 55, 0.02) 100%);
+    background: var(--bg-white); /* C4(裁决): 卡头金渐变改纯白 */
 }
 
 /* 订单卡片内容 */
@@ -194,44 +181,43 @@
     display: inline-flex;
     align-items: center;
     padding: var(--spacing-1) var(--spacing-3);
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-sm); /* C21(裁决): 50% 圆徽章→radius-sm 4px */
     font-size: var(--text-xs);
-    font-weight: var(--font-semibold);
-    text-transform: uppercase;
+    font-weight: var(--font-weight-semibold);
     letter-spacing: 0.05em;
     position: relative;
     overflow: hidden;
 }
 
-/* 订单状态颜色变体 */
+/* 订单状态颜色变体（C4 裁决：五状态全部从令牌派生，细描边淡底 color-mix 式） */
 .order-status.pending {
-    background: rgba(245, 158, 11, 0.1);
+    background: color-mix(in srgb, var(--warning) 10%, transparent);
     color: var(--warning);
-    border: 1px solid rgba(245, 158, 11, 0.2);
+    border: 1px solid color-mix(in srgb, var(--warning) 25%, transparent);
 }
 
 .order-status.processing {
-    background: rgba(59, 130, 246, 0.1);
-    color: var(--info);
-    border: 1px solid rgba(59, 130, 246, 0.2);
+    background: color-mix(in srgb, var(--ink-soft) 10%, transparent);
+    color: var(--ink-soft);
+    border: 1px solid color-mix(in srgb, var(--ink-soft) 25%, transparent);
 }
 
 .order-status.shipped {
-    background: rgba(168, 85, 247, 0.1);
-    color: #8b5cf6;
-    border: 1px solid rgba(168, 85, 247, 0.2);
+    background: color-mix(in srgb, var(--candy-mint-ink) 10%, transparent);
+    color: var(--candy-mint-ink);
+    border: 1px solid color-mix(in srgb, var(--candy-mint-ink) 25%, transparent);
 }
 
 .order-status.delivered {
-    background: rgba(16, 185, 129, 0.1);
+    background: color-mix(in srgb, var(--success) 10%, transparent);
     color: var(--success);
-    border: 1px solid rgba(16, 185, 129, 0.2);
+    border: 1px solid color-mix(in srgb, var(--success) 25%, transparent);
 }
 
 .order-status.cancelled {
-    background: rgba(239, 68, 68, 0.1);
+    background: color-mix(in srgb, var(--error) 10%, transparent);
     color: var(--error);
-    border: 1px solid rgba(239, 68, 68, 0.2);
+    border: 1px solid color-mix(in srgb, var(--error) 25%, transparent);
 }
 
 /* ==========================================================================
@@ -260,7 +246,7 @@
 /* 订单项悬停效果 */
 .order-item:hover {
     background: var(--bg-hover);
-    transform: translateX(4px);
+    /* C4(裁决): 删 translateX 位移 */
 }
 
 /* 订单项图片 */
@@ -302,10 +288,11 @@
 
 /* 订单项价格 */
 .order-item-price {
-    font-size: var(--text-lg);
-    font-weight: var(--font-semibold);
-    color: var(--gold-standard);
-    font-family: var(--brand-font-secondary);
+    /* C2(裁决): 金额锁 Barlow Condensed 600，18→20px 补偿窄身；价格永远 ink */
+    font-family: var(--font-numeric);
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-semibold);
+    color: var(--ink);
 }
 
 /* 更多商品提示 */
@@ -335,10 +322,11 @@
 
 /* 订单总价 */
 .order-total {
-    font-size: var(--text-xl);
-    font-weight: var(--font-weight-bold);
+    /* C2(裁决): 金额锁 Barlow Condensed 600，20→22px 补偿窄身 */
+    font-family: var(--font-numeric);
+    font-size: var(--text-2xl);
+    font-weight: var(--font-weight-semibold);
     color: var(--text-primary);
-    font-family: var(--brand-font-secondary);
 }
 
 /* 订单操作按钮组 */
@@ -463,10 +451,10 @@
 
 /* 分页按钮悬停效果 */
 .pagination-btn:hover:not(:disabled) {
-    border-color: var(--gold-standard);
-    color: var(--gold-standard);
-    background: rgba(212, 175, 55, 0.05);
-    transform: translateY(-1px);
+    /* C1(裁决): 金幽灵 rgba(212, 175, 55, ×) 清除——换 blush 系；删 translateY */
+    border-color: var(--candy-blush);
+    color: var(--candy-blush-ink);
+    background: var(--bg-soft);
 }
 
 /* 分页按钮激活状态 */
@@ -528,7 +516,7 @@
 .order-modal-header {
     padding: var(--spacing-6);
     border-bottom: 1px solid var(--border-light);
-    background: linear-gradient(135deg, var(--bg-white) 0%, rgba(212, 175, 55, 0.02) 100%);
+    background: var(--bg-white); /* C4(裁决): 卡头金渐变改纯白 */
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -613,7 +601,7 @@
 /* 订单详情标签 */
 .order-detail-label {
     font-size: var(--text-sm);
-    font-weight: var(--font-medium);
+    font-weight: var(--font-weight-semibold); /* C22(裁决): caps 微标签层字重统一 600 */
     color: var(--text-tertiary);
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -652,8 +640,7 @@
 
 .order-detail-item-row:hover {
     background: var(--bg-hover);
-    border-color: var(--gold-standard);
-    transform: translateX(4px);
+    border-color: var(--candy-blush); /* C4(裁决): hover 收敛 blush；删 translateX */
 }
 
 /* 订单详情商品图片 */
@@ -694,10 +681,11 @@
 
 /* 订单详情商品价格 */
 .order-detail-item-price {
-    font-size: var(--text-lg);
-    font-weight: var(--font-semibold);
-    color: var(--gold-standard);
-    font-family: var(--brand-font-secondary);
+    /* C2(裁决): 金额锁 Barlow Condensed 600，18→20px 补偿窄身 */
+    font-family: var(--font-numeric);
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-semibold);
+    color: var(--ink);
 }
 
 /* ==========================================================================
@@ -752,7 +740,8 @@
 .order-timeline-dot.completed {
     background: var(--gold-standard);
     border-color: var(--gold-standard);
-    box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.1);
+    /* C1(裁决): 金幽灵 rgba(212, 175, 55, ×) 清除——光晕换 blush 系 */
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--candy-blush) 15%, transparent);
 }
 
 /* 时间线图标 */

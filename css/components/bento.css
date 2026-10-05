@@ -1,6 +1,6 @@
 /** bento.css — F7 首页商品区 bento 陈列：参数表一次定死；锚定 .bento-grid/.bento-card 禁裸类；卡图容器 3:4；Ⓞ=作用域覆盖 */
 
-.bento-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: var(--gutter-grid); align-items: stretch; }
+.bento-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: var(--gutter-grid); align-items: start; } /* C9(裁决): stretch→start——首行小卡不再被主打卡拉出 200px 空白 */
 @media (max-width:1023px) { .bento-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 .bento-card {
   background: var(--bg-base); border: 1px solid var(--line); border-radius: var(--radius-md);
@@ -14,11 +14,13 @@
   font-size: .75rem; font-weight: 600; line-height: 1; padding: 6px 10px;
   border-radius: var(--radius-sm); color: var(--ink);
 }
+/* C10(裁决): 徽章三色轮转归一——状态徽章 blush-soft 底；玩笑徽章（心头好）ink 描边白底；
+   sun 退门面只留跑马灯、mint 只留订阅带（宪法"sun/mint 仅营销区块"严格执行） */
 .bento-grid .badge-blush { background: var(--candy-blush-soft); }
-.bento-grid .badge-sun { background: var(--candy-sun-soft); }
-.bento-grid .badge-mint { background: var(--candy-mint-soft); }
-.bento-card .reich-product-price { margin: 0; font-size: 1rem; font-weight: 700; white-space: nowrap; }
-.bento-card.bento-featured .reich-product-price { font-size: 1.5rem; }
+.bento-grid .badge-outline { background: var(--bg-base); border: 1px solid var(--ink); }
+/* C2(裁决): 价格锁 Barlow Condensed 600；16→18 / 24→26px 补偿窄身 */
+.bento-card .reich-product-price { margin: 0; font-family: var(--font-numeric); font-size: 1.125rem; font-weight: 600; white-space: nowrap; }
+.bento-card.bento-featured .reich-product-price { font-size: 1.625rem; }
 .bento-grid .btn-bag {
   border-radius: var(--radius-pill); padding: 9px 18px;
   font-size: var(--text-small); font-weight: 600; line-height: 1; white-space: nowrap;
@@ -51,15 +53,15 @@
 .bento-grid :is(.featured-inner,.cell-inner) { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .bento-grid :is(.featured-fig,.cell-fig) { width: 100%; aspect-ratio: 3/4; }
 .bento-grid .featured-body { flex: 1; min-width: 0; padding: 20px; display: flex; flex-direction: column; justify-content: center; gap: 8px; }
-.bento-grid .featured-kicker { font-size: var(--text-caption); font-weight: 700; letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--candy-blush-ink); }
-.bento-grid .featured-name { margin: 0; font-size: clamp(1.75rem,3.2vw,2.375rem); font-weight: 700; line-height: 1.2; }
+.bento-grid .featured-kicker { font-size: var(--text-caption); font-weight: 600; letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--candy-blush-ink); } /* C22(裁决): caps 微标签层字重统一 600 */
+.bento-grid .featured-name { margin: 0; font-size: clamp(1.75rem,3vw,2rem); font-weight: 700; line-height: 1.2; } /* C6(裁决): 38px 与区块 h2 36px 拉开一档——上限收 2rem=32px */
 .bento-grid :is(.featured-desc,.cell-desc) { color: var(--ink-soft); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .bento-grid .featured-desc { max-width: 44ch; }
 .bento-grid .cell-desc { font-size: var(--text-small); }
 .bento-grid .featured-meta { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 8px; }
 .bento-grid .cell-body { flex: 1; min-width: 0; padding: 16px; display: flex; flex-direction: column; gap: 6px; }
 .bento-grid .cell-name { margin: 0; font-size: 1.125rem; font-weight: 600; line-height: 1.35; }
-.bento-grid .cell-meta { margin-top: auto; padding-top: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.bento-grid .cell-meta { margin-top: 12px; padding-top: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; } /* C9(裁决): margin-top:auto（贴底拉伸帮凶）改 12px 定距 */
 @container featured (min-width:560px) {
   .bento-grid .featured-inner { flex-direction: row; }
   .bento-grid .featured-fig { width: clamp(314px,42%,340px); align-self: flex-start; }

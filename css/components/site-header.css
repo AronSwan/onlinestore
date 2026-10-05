@@ -10,14 +10,18 @@
   left: 0;
   right: 0;
   z-index: var(--z-header);
+  background: var(--bg-base);
+  border-bottom: 1px solid var(--line);
+  transition: box-shadow var(--dur-fast) var(--ease-lux);
+}
+
+/* C8(裁决): 头部内容收进与页面同规的 container（HTML 侧 div.container.mx-auto.px-4），
+   水平起点与主内容列逐像素会合（原 clamp(1rem,4vw,3rem) padding 在 1440px 差 48px） */
+.site-header-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
   height: 72px;
-  padding: 0 clamp(1rem, 4vw, 3rem);
-  background: var(--bg-base);
-  border-bottom: 1px solid var(--line);
-  transition: box-shadow var(--dur-fast) var(--ease-lux);
 }
 
 .site-header.scrolled {
@@ -70,8 +74,8 @@
 /* 居中品牌 */
 .site-brand {
   font-size: 1.5rem;
-  font-weight: var(--font-weight-bold);
-  letter-spacing: var(--tracking-luxury);
+  font-weight: var(--font-weight-semibold); /* C16(裁决): 字标字重 600 */
+  letter-spacing: 0.18em; /* C16(裁决): 字距 0.18em */
   text-decoration: none;
   color: var(--ink);
   line-height: 1;
@@ -134,12 +138,24 @@
   display: none;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+  font-size: 11px; /* C26(裁决): 徽章 10→11px */
   font-weight: var(--font-weight-semibold);
   color: var(--bg-base);
   background: var(--candy-blush);
   border-radius: var(--radius-full);
   padding: 0 4px;
+}
+
+/* C12(裁决): 登录态用户钮 candy blush 小圆点（一枚足矣） */
+.site-user-dot {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 7px;
+  height: 7px;
+  background: var(--candy-blush);
+  border: 1.5px solid var(--bg-base);
+  border-radius: var(--radius-full);
 }
 
 /* 汉堡（移动端） */
@@ -157,7 +173,7 @@
   z-index: var(--z-nav);
   background: var(--bg-base);
   border-bottom: 1px solid var(--line);
-  padding: var(--spacing-4) clamp(1rem, 4vw, 3rem);
+  padding: var(--spacing-4); /* C8(裁决): 水平内边距与 container px-4 会合（仅移动端展示） */
   box-shadow: var(--shadow-md);
 }
 
@@ -219,7 +235,7 @@
     padding-top: 60px !important;
   }
 
-  .site-header {
+  .site-header-inner {
     height: 60px;
   }
 

@@ -35,19 +35,21 @@
          渲染+移动菜单，行为（开合/滚动阴影）也归一于该模块；noscript 静态头部兜底） -->
     <noscript>
       <header class="site-header" id="siteHeader">
+        <div class="container mx-auto px-4 site-header-inner">
         <nav aria-label="主导航">
           <ul class="site-nav">
-            <li><a href="index.html">女士</a></li>
-            <li><a href="index.html">男士</a></li>
-            <li><a href="index.html">配饰</a></li>
+            <li><a href="index.html#featured-collections">手袋</a></li>
+            <li><a href="index.html#brand-story">品牌故事</a></li>
+            <li><a href="orders.html">订单</a></li>
           </ul>
         </nav>
         <a href="index.html" class="site-brand">REICH</a>
         <div class="site-tools">
           <a href="login.html" aria-label="账户" aria-current="page" class="site-user-btn">账户</a>
         </div>
+        </div>
       </header>
-    </noscript>
+    </noscript><!-- C11(裁决): 假门收敛 + C8(裁决): container 对齐（与 site-header.js 渲染结构一致） -->
     <template data-site-header data-page="login"></template>
     <script type="module" src="js/site-header.js"></script>
     <!-- 移动菜单（id=mobileMenu 冻结契约；F4 归一由 site-header.js 紧跟 header 插入） -->
@@ -90,17 +92,17 @@
                             <!-- 邮箱输入 -->
                             <div>
                                 <label for="login-email" class="form-label">邮箱地址</label>
-                                <input 
-                                    type="email" 
-                                    id="login-email" 
+                                <input
+                                    type="email"
+                                    id="login-email"
                                     name="email"
-                                    class="form-input" 
-                                    placeholder="请输入您的邮箱"
+                                    class="form-input"
+                                    placeholder="邮箱"
                                     required
                                     autocomplete="email"
-                                    aria-describedby="login-email-help"
                                 >
-                                <div id="login-email-help" class="sr-only">请输入有效的邮箱地址用于登录</div>
+                                <!-- C25(裁决): 占位收为"邮箱"，"请输入有效的邮箱地址用于登录"移入错误态
+                                     （js/login-enhanced.js 邮箱校验失败时展示） -->
                                 <div id="login-email-error" class="invalid-feedback"></div>
                             </div>
 
@@ -150,8 +152,8 @@
                                 <span class="text-sm text-secondary">忘记密码？（演示站暂未开通找回）</span>
                             </div>
 
-                            <!-- 登录按钮 -->
-                            <button type="submit" class="btn-luxury btn-primary w-full">
+                            <!-- 登录按钮（C1 裁决：并入 btn-pill 形制） -->
+                            <button type="submit" class="btn-pill btn-pill-primary w-full">
                                 <svg class="mr-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 4h5a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-5"/><path d="M3 12h12"/><path d="m11 7 5 5-5 5"/></svg>
                                 登录
                             </button>
@@ -182,6 +184,8 @@
 
                     <!-- 注册表单 -->
                     <div id="register-form-container" class="hidden" role="tabpanel" aria-labelledby="register-tab">
+                        <!-- C14(裁决): 注册理由文案——voice-sheet 定调原句 -->
+                        <p class="text-sm text-[var(--ink-soft)] mb-6">注册后：订单随时看，袋子换设备也不丢。（邮箱就干这个，不发别的。）</p>
                         <form id="register-form" class="space-y-6" novalidate aria-label="用户注册表单">
                             <input type="hidden" name="_token" id="register-csrf-token">
                             
@@ -205,12 +209,12 @@
 
                             <div>
                                 <label for="register-email" class="form-label">邮箱地址</label>
-                                <input 
-                                    type="email" 
-                                    id="register-email" 
+                                <input
+                                    type="email"
+                                    id="register-email"
                                     name="email"
-                                    class="form-input" 
-                                    placeholder="请输入您的邮箱"
+                                    class="form-input"
+                                    placeholder="邮箱"
                                     required
                                     aria-describedby="register-email-help"
                                 >
@@ -286,7 +290,7 @@
                                 <div id="terms-error" class="invalid-feedback" role="alert" aria-live="polite"></div>
                             </div>
 
-                            <button type="submit" class="btn-luxury btn-primary w-full">
+                            <button type="submit" class="btn-pill btn-pill-primary w-full">
                                 <svg class="mr-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="10" cy="8" r="4"/><path d="M3 21c0-3.9 3.1-6 7-6 1.2 0 2.3.2 3.3.7"/><path d="M18 9h4"/><path d="M20 7v4"/></svg>
                                 注册账户
                             </button>

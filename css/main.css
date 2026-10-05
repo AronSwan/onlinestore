@@ -189,7 +189,8 @@ body {
     border-radius: var(--radius-pill);
     padding: 0.75rem 2rem;
     font-family: var(--font-secondary);
-    font-size: var(--text-caption);
+    /* C3(裁决): 中文 pill 13px/600 起（11px 只留全英文大写标签） */
+    font-size: var(--text-small);
     font-weight: 600;
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
@@ -207,6 +208,19 @@ body {
 
 .btn-pill:active {
     transform: scale(0.98);
+}
+
+/* C3(裁决): hero 主 pill——13px / 高≥48px / 内边距 0.85rem 2.25rem */
+.btn-pill-hero {
+    min-height: 48px;
+    padding: 0.85rem 2.25rem;
+}
+
+/* C26(裁决): 触屏 .btn-pill 触达目标 44px */
+@media (hover: none) {
+    .btn-pill {
+        min-height: 44px;
+    }
 }
 
 /* 主色版：ink 底白字，hover candy-blush 底白字（0.2s） */
@@ -361,11 +375,11 @@ body {
 .form-input:focus,
 .form-textarea:focus,
 .form-select:focus {
+    /* C20(裁决): 聚焦三重奏收敛——保 outline 令牌环与 border 变色，
+       删 box-shadow 双环与 translateY 位移 */
     outline: 2px solid var(--focus-ring-color);
     outline-offset: var(--focus-ring-offset);
     border-color: var(--candy-blush-ink);
-    box-shadow: var(--focus-shadow);
-    transform: translateY(var(--focus-translate-y));
 }
 
 .form-textarea {
@@ -581,13 +595,14 @@ body {
 .navbar-icon:hover {
     color: var(--candy-blush-ink);
     transform: scale(1.1);
-    background-color: rgba(212, 175, 55, 0.1);
+    /* C1(裁决): 金幽灵 rgba(212, 175, 55, ×) 清除——换 blush-soft 系 */
+    background-color: var(--candy-blush-soft);
     border-radius: 50%;
 }
 
 .navbar-icon.active {
     color: var(--candy-blush-ink);
-    background-color: rgba(212, 175, 55, 0.15);
+    background-color: var(--candy-blush-soft);
     border-radius: 50%;
 }
 
@@ -2354,9 +2369,10 @@ body {
 }
 
 .reich-product-price {
-    font-family: var(--font-secondary);
-    font-size: var(--text-xl);
-    font-weight: var(--font-weight-bold);
+    /* C2(裁决): 价格锁 Barlow Condensed 600，20→22px 补偿窄身 */
+    font-family: var(--font-numeric);
+    font-size: var(--text-2xl);
+    font-weight: var(--font-weight-semibold);
     color: var(--ink);
     margin-bottom: var(--spacing-4);
 }
@@ -2435,7 +2451,8 @@ body {
     position: absolute;
     top: -8px;
     right: -8px;
-    background: var(--error-color);
+    /* C15(裁决): 警示红 → candy-blush 底白字（红只留售罄） */
+    background: var(--candy-blush);
     color: white;
     border-radius: 50%;
     width: 20px;
@@ -2544,9 +2561,10 @@ body {
 }
 
 .cart-item-price {
-    font-family: var(--font-secondary);
-    font-size: var(--text-lg);
-    font-weight: var(--font-weight-bold);
+    /* C2(裁决): 金额锁 Barlow Condensed 600，18→20px 补偿窄身 */
+    font-family: var(--font-numeric);
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-semibold);
     color: var(--ink);
     margin-bottom: var(--spacing-3);
 }
@@ -2611,9 +2629,10 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: var(--spacing-4);
-    font-family: var(--font-secondary);
-    font-size: var(--text-xl);
-    font-weight: var(--font-weight-bold);
+    /* C2(裁决): 金额锁 Barlow Condensed 600，20→22px 补偿窄身 */
+    font-family: var(--font-numeric);
+    font-size: var(--text-2xl);
+    font-weight: var(--font-weight-semibold);
     color: var(--text-primary);
 }
 

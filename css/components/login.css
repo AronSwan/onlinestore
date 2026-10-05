@@ -11,8 +11,9 @@
 .login-container {
     min-height: 100vh;
     background: var(--cream-luxury);
-    background-image: 
-        radial-gradient(circle at 20% 80%, rgba(212, 175, 55, 0.05) 0%, transparent 50%),
+    /* C1(裁决): 金幽灵 rgba(212, 175, 55, ×) 清除——淡金光晕换 blush-ink 系 */
+    background-image:
+        radial-gradient(circle at 20% 80%, rgba(209, 77, 103, 0.05) 0%, transparent 50%),
         radial-gradient(circle at 80% 20%, rgba(26, 26, 26, 0.03) 0%, transparent 50%);
     display: flex;
     align-items: center;
@@ -21,16 +22,7 @@
     position: relative;
 }
 
-.login-container::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="0.5" fill="%23d4af37" opacity="0.02"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
-    pointer-events: none;
-}
+/* C26(裁决): 原 ::before 金色颗粒 SVG 纹理（%23d4af37 残金）删除 */
 
 /* ==========================================================================
    登录卡片 - Reich经典设计
@@ -38,7 +30,7 @@
 
 .login-card {
     background: var(--brand-white);
-    border-radius: 2px; /* Reich品牌的方正设计 */
+    border-radius: var(--radius-md); /* C1(裁决): 2px 方正旧世界 → 三档圆角归位（卡=md） */
     /* F6.5：25px 静置装饰阴影删，改 hairline 边界定卡（宪法禁卡片浮起感） */
     border: 1px solid var(--line);
     padding: var(--spacing-16);
@@ -65,7 +57,7 @@
 .login-card h1 {
     font-family: var(--font-display);
     font-size: 2rem;
-    font-weight: var(--font-weight-light);
+    font-weight: var(--font-weight-semibold); /* C1(裁决): 300 细体换季 → 600 */
     color: var(--dark-elegant);
     text-align: center;
     margin-bottom: var(--spacing-sm);
@@ -99,18 +91,18 @@
     border: none;
     font-family: var(--font-family-serif);
     font-size: var(--text-sm);
-    font-weight: var(--font-weight-light);
+    /* C1(裁决): tab 去 uppercase（中文标签无效形制）；light → medium */
+    font-weight: var(--font-weight-medium);
     color: var(--text-secondary);
     cursor: pointer;
-    transition: all 0.3s ease;
-    text-transform: uppercase;
+    transition: color var(--dur-fast) var(--ease-lux);
     letter-spacing: var(--letter-spacing-wide);
     position: relative;
 }
 
 .auth-tab.active {
     color: var(--dark-elegant);
-    font-weight: var(--font-weight-normal);
+    font-weight: var(--font-weight-semibold);
 }
 
 .auth-tab::after {
@@ -122,7 +114,7 @@
     height: 2px;
     background: var(--candy-blush-ink);
     transform: scaleX(0);
-    transition: transform 0.3s ease;
+    transition: transform var(--dur-fast) var(--ease-lux);
 }
 
 .auth-tab.active::after {
@@ -137,7 +129,7 @@
     display: block;
     font-family: var(--font-family-serif);
     font-size: var(--text-xs);
-    font-weight: var(--font-weight-normal);
+    font-weight: var(--font-weight-semibold); /* C22(裁决): caps 微标签层字重统一 600 */
     color: var(--dark-elegant);
     margin-bottom: var(--spacing-2);
     text-transform: uppercase;
@@ -148,23 +140,30 @@
     width: 100%;
     padding: var(--spacing-md) var(--spacing-sm);
     border: 1px solid var(--border-light);
-    border-radius: 2px;
+    border-radius: var(--radius-md); /* C1(裁决): 输入框=md 档 */
     font-family: var(--font-family-serif);
     font-size: var(--text-sm);
     color: var(--dark-elegant);
     background: var(--brand-white);
-    transition: all 0.3s ease;
-    outline: none;
+    transition: border-color var(--dur-fast) var(--ease-lux);
+    /* B2(裁决): 删 outline:none——其与 tokens.css 全局 :focus-visible 同特异性、
+       后加载反杀，键盘焦点环整页断裂的根因；焦点环回归令牌体系 */
 }
 
+/* B2(裁决): 键盘焦点 2px 令牌环（tokens.css 全局 :focus-visible 同款，此处显式落位） */
+.form-input:focus-visible {
+    outline: 2px solid var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset);
+}
+
+/* C20(裁决): 聚焦三重奏收敛——保 border 变色，删 box-shadow 双环 */
 .form-input:focus {
     border-color: var(--candy-blush-ink);
-    box-shadow: 0 0 0 2px rgba(209, 77, 103, 0.1);
 }
 
 .form-input::placeholder {
-    color: var(--text-muted);
-    font-style: italic;
+    /* C1(裁决): 斜体占位换正体；色锁 --ink-faint 弱化档 */
+    color: var(--ink-faint);
 }
 
 .form-input.is-invalid {
@@ -211,11 +210,15 @@
 
 .btn-luxury {
     font-family: var(--font-display);
-    font-weight: var(--font-weight-light);
+    font-weight: var(--font-weight-semibold); /* C1(裁决): 300 细体 → 600 */
     letter-spacing: var(--letter-spacing-wide);
     text-transform: uppercase;
-    border-radius: 2px;
-    transition: all 0.4s ease;
+    border-radius: var(--radius-pill); /* C1(裁决): 并入 pill 形制 */
+    /* C1(裁决): transition all 0.4s → 按属性 var(--dur-fast) */
+    transition:
+        background var(--dur-fast) var(--ease-lux),
+        color var(--dur-fast) var(--ease-lux),
+        border-color var(--dur-fast) var(--ease-lux);
     position: relative;
     overflow: hidden;
 }
@@ -231,22 +234,23 @@
     gap: var(--spacing-sm);
     padding: var(--spacing-md) var(--spacing-lg);
     border: 1px solid var(--border-light);
-    border-radius: 2px;
+    border-radius: var(--radius-sm); /* C1(裁决): 小件=sm 档 */
     background: var(--brand-white);
     color: var(--dark-elegant);
     text-decoration: none;
     cursor: pointer; /* P5：casdoor 按钮由 a 改为 button，补指针样式 */
     font-family: var(--font-family-serif);
     font-size: var(--text-sm);
-    font-weight: var(--font-weight-light);
-    transition: all 0.3s ease;
+    font-weight: var(--font-weight-semibold); /* C1(裁决): 300 细体 → 600 */
+    transition:
+        border-color var(--dur-fast) var(--ease-lux),
+        background var(--dur-fast) var(--ease-lux);
     position: relative;
 }
 
 .social-btn:hover {
     border-color: var(--candy-blush-ink);
     background: var(--cream-luxury);
-    transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
@@ -320,16 +324,8 @@
    复选框样式 - Reich定制设计
    ========================================================================== */
 
-/* 复选框调试样式 - 临时用于排查问题 */
-#remember-me {
-    outline: 1px solid red !important;
-    background: rgba(255, 0, 0, 0.1) !important;
-}
-
-#remember-me:checked {
-    outline: 1px solid green !important;
-    background: rgba(0, 255, 0, 0.3) !important;
-}
+/* B2(裁决): 原 #remember-me 红绿调试块（红色描边 + 淡红/淡绿底 !important）
+   整段删除——键盘走查时的"红色调试环"残留 */
 
 /* 复选框样式 - 增强特异性 */
 .login-card input[type="checkbox"],
@@ -341,11 +337,11 @@
     width: 16px;
     height: 16px;
     border: 1px solid var(--line-strong, #d1d5db);
-    border-radius: 2px;
+    border-radius: var(--radius-sm); /* C1(裁决): 小件=sm 档 */
     background: var(--brand-white, #FFFFFF);
     cursor: pointer;
     position: relative;
-    transition: all 0.3s ease;
+    transition: background var(--dur-fast) var(--ease-lux), border-color var(--dur-fast) var(--ease-lux);
     margin-right: 8px;
     vertical-align: middle;
     display: inline-block;
@@ -394,19 +390,23 @@
    链接样式 - Reich品牌
    ========================================================================== */
 
-a {
+/* C19(裁决): 原 login.css 全局 a{} 收窄为 .login-card a——本文件是 login 页
+   最后加载的组件层，全局选择器会命中页头/返回首页等卡外链接 */
+.login-card a {
     color: var(--candy-blush-ink);
     text-decoration: none;
     font-family: var(--font-family-serif);
-    transition: all 0.3s ease;
+    transition: color var(--dur-fast) var(--ease-lux);
     position: relative;
 }
 
-a:hover {
+.login-card a:hover {
     color: var(--dark-elegant);
 }
 
-a:hover::after {
+/* C19(裁决): 下划线动画可逆化——keyframes 单向 animation 改 transition，
+   移入划出（scaleX 0→1→0）双向都走补间 */
+.login-card a::after {
     content: '';
     position: absolute;
     bottom: -2px;
@@ -414,12 +414,13 @@ a:hover::after {
     right: 0;
     height: 1px;
     background: var(--candy-blush-ink);
-    animation: underlineExpand 0.3s ease;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform var(--dur-fast) var(--ease-lux);
 }
 
-@keyframes underlineExpand {
-    from { transform: scaleX(0); }
-    to { transform: scaleX(1); }
+.login-card a:hover::after {
+    transform: scaleX(1);
 }
 
 /* ==========================================================================
@@ -434,13 +435,13 @@ a:hover::after {
     padding: var(--spacing-md) var(--spacing-lg);
     background: var(--brand-white);
     border: 1px solid var(--border-light);
-    border-radius: 2px;
+    border-radius: var(--radius-sm); /* C1(裁决): 小件=sm 档 */
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
     font-family: var(--font-family-serif);
     font-size: var(--text-sm);
     z-index: var(--z-toast);
     transform: translateX(100%);
-    transition: transform 0.3s ease;
+    transition: transform var(--dur-fast) var(--ease-lux);
 }
 
 .notification.show {
@@ -474,7 +475,7 @@ a:hover::after {
 .security-notice {
     background: rgba(209, 77, 103, 0.08);
     border: 1px solid rgba(209, 77, 103, 0.2);
-    border-radius: 2px;
+    border-radius: var(--radius-sm); /* C1(裁决): 小件=sm 档 */
     padding: var(--spacing-sm) var(--spacing-md);
     margin-bottom: var(--spacing-lg);
     font-family: var(--font-family-serif);
@@ -495,7 +496,7 @@ a:hover::after {
     gap: var(--spacing-sm);
     padding: var(--spacing-sm);
     border: 1px solid var(--border-light);
-    border-radius: 2px;
+    border-radius: var(--radius-sm); /* C1(裁决): 小件=sm 档 */
     background: var(--cream-luxury);
 }
 
@@ -612,29 +613,30 @@ a:hover::after {
 @media (prefers-color-scheme: dark) {
     .login-container {
         background: var(--dark-elegant);
-        background-image: 
-            radial-gradient(circle at 20% 80%, rgba(212, 175, 55, 0.08) 0%, transparent 50%),
+        /* C1(裁决): 金幽灵 rgba(212, 175, 55, ×) 清除——换 blush-ink 系 */
+        background-image:
+            radial-gradient(circle at 20% 80%, rgba(209, 77, 103, 0.08) 0%, transparent 50%),
             radial-gradient(circle at 80% 20%, rgba(245, 245, 220, 0.05) 0%, transparent 50%);
     }
-    
+
     .login-card {
         background: rgba(26, 26, 26, 0.95);
         color: var(--cream-luxury);
     }
-    
+
     .login-card h1 {
         color: var(--cream-luxury);
     }
-    
+
     .form-input {
         background: rgba(245, 245, 220, 0.05);
-        border-color: rgba(212, 175, 55, 0.2);
+        border-color: rgba(209, 77, 103, 0.2);
         color: var(--cream-luxury);
     }
-    
+
     .social-btn {
         background: rgba(245, 245, 220, 0.05);
-        border-color: rgba(212, 175, 55, 0.2);
+        border-color: rgba(209, 77, 103, 0.2);
         color: var(--cream-luxury);
     }
 }

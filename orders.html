@@ -87,7 +87,7 @@
     </script>
 </head>
 
-<body class="bg-[var(--cream-luxury)] text-[var(--text-primary)]" style="padding-top: 72px">
+<body class="text-[var(--text-primary)]" style="padding-top: 72px"><!-- C7(裁决): cream-luxury 底删除回落白 -->
     <!-- 跳转到主内容链接 (无障碍性) -->
     <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-[var(--ink)] text-white px-4 py-2 rounded z-50">跳转到主内容</a>
 
@@ -95,11 +95,12 @@
          渲染（含 .site-tools-back 返回钮）+移动菜单；JS 关闭时 noscript 静态头部兜底） -->
     <noscript>
       <header class="site-header" id="siteHeader">
+        <div class="container mx-auto px-4 site-header-inner">
         <nav aria-label="主导航">
           <ul class="site-nav">
-            <li><a href="index.html">女士</a></li>
-            <li><a href="index.html">男士</a></li>
-            <li><a href="index.html">配饰</a></li>
+            <li><a href="index.html#featured-collections">手袋</a></li>
+            <li><a href="index.html#brand-story">品牌故事</a></li>
+            <li><a href="orders.html" aria-current="page">订单</a></li>
           </ul>
         </nav>
         <a href="index.html" class="site-brand">REICH</a>
@@ -110,8 +111,9 @@
           </a>
           <a href="login.html" aria-label="登录">登录</a>
         </div>
+        </div>
       </header>
-    </noscript>
+    </noscript><!-- C11(裁决): 假门收敛 + C8(裁决): container 对齐（与 site-header.js 渲染结构一致） -->
     <template data-site-header data-page="orders"></template>
     <script type="module" src="js/site-header.js"></script>
     <!-- 移动菜单（id=mobileMenu 冻结契约；F4 归一由 site-header.js 紧跟 header 插入） -->
@@ -215,7 +217,7 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-12">
                 <!-- 品牌信息 -->
                 <div>
-                    <h3 class="text-2xl font-bold mb-6">REICH</h3>
+                    <h3 class="text-2xl font-semibold tracking-[0.18em] mb-6">REICH</h3><!-- C16(裁决): 字标字距 0.18em/字重 600 -->
                     <p class="mb-6">慢慢挑，不着急——好东西都在店里等你。</p>
                     <div class="flex space-x-4" role="list" aria-label="社交媒体链接">
                         <a href="https://instagram.com/reich" 
