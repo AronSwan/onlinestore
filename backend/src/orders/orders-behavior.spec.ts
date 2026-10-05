@@ -46,7 +46,8 @@ describe('订单详情行为锁(反诈组量刑)', () => {
       findAndCount: jest.fn().mockResolvedValue([[JSON.parse(JSON.stringify(raw))], 1]),
     } as any;
     const monitoring = { observeDbQuery: jest.fn() } as any;
-    const svc = new OrdersService(repo, {} as any, {} as any, monitoring, {} as any);
+    // M5：新增第 6 参 AuditService——本测只走 findById/findAll，桩不触达
+    const svc = new OrdersService(repo, {} as any, {} as any, monitoring, {} as any, { log: jest.fn() } as any);
 
     const one = await svc.findById(1);
     expect(one?.user).not.toHaveProperty('password'); // findById 剥离

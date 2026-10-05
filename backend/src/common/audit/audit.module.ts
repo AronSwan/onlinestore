@@ -10,6 +10,9 @@ import { TracingModule } from '../tracing/tracing.module';
 /**
  * 审计模块
  * 提供完整的审计日志功能，包括自动记录、查询、统计和清理
+ * M6(2026-10-05)：摘除构造器里的启动 cleanupLogs——链式台账删行即断链，
+ * 启动即删更会在每次重启时制造 UNCHAINED/BREAK。保留 AuditService.cleanupLogs
+ * 方法壳（带链化守卫），使 POST /audit/cleanup 与每日 cron 成为诚实 no-op。
  */
 @Global()
 @Module({
@@ -18,18 +21,4 @@ import { TracingModule } from '../tracing/tracing.module';
   controllers: [AuditController],
   exports: [AuditService, AuditInterceptor],
 })
-export class AuditModule {
-  constructor(private readonly auditService: AuditService) {
-    // 启动时清理过期日志
-    this.cleanupExpiredLogs();
-  }
-
-  private async cleanupExpiredLogs(): Promise<void> {
-    try {
-      const deletedCount = await this.auditService.cleanupLogs(90); // 保留 90 天
-      console.log(`Cleaned up ${deletedCount} expired audit logs on startup`);
-    } catch (error) {
-      console.error('Failed to cleanup expired audit logs on startup:', error);
-    }
-  }
-}
+export class AuditModule {}

@@ -832,6 +832,16 @@ describe('ProductsService', () => {
       expect(mockQueryBuilder.execute).not.toHaveBeenCalled();
       expect(mockProductRepository.update).toHaveBeenCalledWith(1, { name: '新名字' });
     });
+
+    // M5(2026-10-05)：补货不自动上架——库归零自动下架后，管理员只 PATCH stock
+    // 补货时不得连带 isActive=true（重新上架是人工决定，走 admin「上架」按钮）。
+    // 锁在载荷形状：stock-only PATCH 的写库载荷不得出现 isActive 键。
+    it('M5：补货只传 stock → 写库载荷不含 isActive（重新上架是人工决定）', async () => {
+      await expect(service.update(1, { stock: 50 } as any)).resolves.toBeDefined();
+      expect(mockProductRepository.update).toHaveBeenCalledWith(1, { stock: 50 });
+      const payload = (mockProductRepository.update as any).mock.calls[0][1];
+      expect('isActive' in payload).toBe(false);
+    });
   });
 
   // ─────────────────────────────────────────────────────────────

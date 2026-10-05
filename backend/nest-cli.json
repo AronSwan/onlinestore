@@ -6,7 +6,10 @@
     "deleteOutDir": true,
     "watchAssets": true,
     "assets": [
-      "**/*.json",
+      {
+        "include": "**/*.json",
+        "exclude": "common/audit/package.json"
+      },
       "**/*.md",
       { "include": "logging/openobserve-transport.js", "outDir": "dist/src" }
     ],

@@ -1,0 +1,4 @@
+# 台账哈希链 git 锚——每行钉住一个链头（UTC时间 seq recordHash）。
+# 追加式：只增不改；改历史行=锚不符（verify exit 2）。
+# 由 npm run verify:audit -- --anchor 生成；commit 由人工执行。
+2026-10-05T07:10:39.607Z 1421 ec34fda3150f393794182a6e277001ffc8c651fc57b2be2d50019935c6256783

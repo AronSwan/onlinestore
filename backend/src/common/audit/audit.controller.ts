@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { DataSource } from 'typeorm';
 import {
   AuditService,
   AuditAction,
@@ -22,6 +23,7 @@ import {
   AuditStatistics,
 } from './audit.service';
 import { AuditLogEntity } from './entities/audit-log.entity';
+import { verifyChain } from './audit-chain';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Roles } from '../../auth/decorators/roles.decorator';
@@ -39,7 +41,44 @@ import { Role } from '../../auth/enums/role.enum';
 @Controller('audit')
 @ApiBearerAuth()
 export class AuditController {
-  constructor(private readonly auditService: AuditService) {}
+  constructor(
+    private readonly auditService: AuditService,
+    private readonly dataSource: DataSource,
+  ) {}
+
+  /**
+   * 校验台账哈希链完整性（M6，2026-10-05）
+   * 复用 common/audit/audit-chain.ts 的 verifyChain 纯函数（与离线脚本同一字节）。
+   * 只做全链校验；git 锚比对只留在 scripts/verify-audit-chain.mjs——锚文件在
+   * git 工作区，容器化后端不该假设仓库路径（设计十决策 #7）。
+   * 话术遵守 §2.3 立法：不说"密码学防篡改/不可篡改"。
+   */
+  @Get('verify')
+  @ApiOperation({ summary: '校验台账哈希链完整性' })
+  @ApiResponse({ status: 200, description: '校验完成（valid 标志链完整与否）' })
+  async verifyAuditChain() {
+    const rows: Array<Record<string, unknown>> = await this.dataSource.query(
+      `SELECT id, seq, prevHash, recordHash, createTime, userId, userName, operation,
+              module, method, url, ip, userAgent, requestParams, responseData,
+              duration, status, errorMessage
+       FROM audit_logs`,
+    );
+    const result = verifyChain(rows);
+
+    const message = result.valid
+      ? `台账链完整：${result.length} 条记录首尾相扣，头哈希 ${result.headHash.slice(0, 8)}…。git 锚比对请跑 npm run verify:audit。`
+      : `台账链在第 ${result.problems.find(p => p.seq !== null)?.seq ?? '?'} 条断裂——绕过管理页直接改过库。跑 npm run verify:audit 看逐行报告。`;
+
+    return {
+      valid: result.valid,
+      length: result.length,
+      headSeq: result.headSeq,
+      headHash: result.headHash,
+      problemsTotal: result.problems.length,
+      problems: result.problems.slice(0, 20),
+      message,
+    };
+  }
 
   /**
    * 查询审计日志（兼容原有接口）

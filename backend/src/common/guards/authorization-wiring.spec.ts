@@ -161,6 +161,16 @@ describe('授权接线锁（装饰器元数据断言）', () => {
       expect(guardsOf(ctrl)).toContain(RolesGuard);
       expect(rolesOf(ctrl)).toContain(Role.ADMIN);
     });
+
+    // M6(2026-10-05)：台账校验端点 GET /audit/verify 的接线锁——端点存在且
+    // 不带任何方法级守卫/角色元数据（继承类级 JwtAuthGuard+RolesGuard+ADMIN，
+    // 零新增授权面）。若有人在方法上另挂豁免装饰器，此锁即红。
+    it('AuditController.verifyAuditChain 存在且无方法级守卫覆盖（吃类级 admin 锁）', () => {
+      const c = AuditController.prototype;
+      expect(typeof (c as any).verifyAuditChain).toBe('function');
+      expect(guardsOf(c, 'verifyAuditChain')).toEqual([]);
+      expect(rolesOf(c, 'verifyAuditChain')).toEqual([]);
+    });
   });
 
   // M1/M2(2026-10-04)：商品写面授权锁——无 token 401（JwtAuthGuard）、

@@ -1,9 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, In } from 'typeorm';
+import { Repository, Between, In, DataSource, Not, IsNull } from 'typeorm';
 import { Request } from 'express';
 import { AuditLogEntity } from './entities/audit-log.entity';
 import { TracingService } from '../tracing/tracing.service';
+import { computeRecordHash, ZERO_HASH } from './audit-chain';
 
 export enum AuditAction {
   // 用户操作
@@ -22,6 +23,8 @@ export enum AuditAction {
   PRODUCT_ADD_TO_CART = 'PRODUCT_ADD_TO_CART',
   PRODUCT_REMOVE_FROM_CART = 'PRODUCT_REMOVE_FROM_CART',
   PRODUCT_ADD_TO_WISHLIST = 'PRODUCT_ADD_TO_WISHLIST',
+  // M5(2026-10-05)：订单扣减归零触发的系统自动下架事件（orders.service 事务提交后落审计行）
+  PRODUCT_AUTO_UNLIST = 'PRODUCT_AUTO_UNLIST',
 
   // 订单操作
   ORDER_CREATE = 'ORDER_CREATE',
@@ -139,10 +142,19 @@ export interface AuditStatistics {
 export class AuditService {
   private readonly logger = new Logger(AuditService.name);
 
+  /**
+   * M6：进程内链写串行锁。TypeORM sqlite 驱动全库共享单连接，两个事务并发
+   * BEGIN 会以 "cannot start a transaction within a transaction" 全体失败；
+   * 链写按 promise 队列排队后，低频管理写（现网活跃调用方=4 处）互不踩踏。
+   * seq 唯一索引仍是并发最后防线（多实例/MySQL 生产），冲突即整笔回滚不留分叉。
+   */
+  private chainTail: Promise<unknown> = Promise.resolve();
+
   constructor(
     @InjectRepository(AuditLogEntity)
     private auditLogRepository: Repository<AuditLogEntity>,
     private readonly tracingService: TracingService,
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -193,7 +205,26 @@ export class AuditService {
         });
 
         try {
-          const savedLog = await this.auditLogRepository.save(auditLog);
+          // M6：持久化段统一链化——事务内 读头→插入→回读原生行→补链列。
+          // 回读原生行（而非复用实体对象）保证哈希输入与验侧（node:sqlite 只读
+          // 原生行）是同一字节，根治 Date 往返漂移。
+          const savedLog = await this.enqueueChainWrite(() =>
+            this.dataSource.transaction(async em => {
+              const [head] = await em.query(
+                `SELECT seq, recordHash FROM audit_logs WHERE seq IS NOT NULL ORDER BY seq DESC LIMIT 1`,
+              );
+              const seq = head ? Number(head.seq) + 1 : 1;
+              const prevHash = head ? String(head.recordHash) : ZERO_HASH;
+
+              const inserted = await em.save(AuditLogEntity, auditLog);
+              const [rawRow] = await em.query(`SELECT * FROM audit_logs WHERE id = ?`, [
+                inserted.id,
+              ]);
+              const recordHash = computeRecordHash(prevHash, seq, rawRow);
+              await em.update(AuditLogEntity, { id: inserted.id }, { seq, prevHash, recordHash });
+              return { ...inserted, seq, prevHash, recordHash };
+            }),
+          );
 
           // 计算风险分数
           const riskScore = context.riskScore || this.calculateRiskScore(action, context);
@@ -401,8 +432,21 @@ export class AuditService {
 
   /**
    * 清理过期日志
+   * M6(2026-10-05)：链式台账不参与滚动清理——删行即断链。只要存在链化行
+   * （seq 非空）即拒绝并告警返回 0，使 POST /audit/cleanup 成为诚实的 no-op
+   * 而非 500；无链化行的库（全新库/未跑 backfill）保留原行为。
    */
   async cleanupLogs(daysToKeep: number = 90): Promise<number> {
+    const chainedCount = await this.auditLogRepository.count({
+      where: { seq: Not(IsNull()) },
+    });
+    if (chainedCount > 0) {
+      this.logger.warn(
+        `链式台账不参与滚动清理（在册 ${chainedCount} 条链化行，保留 ${daysToKeep} 天策略不适用于 audit_logs）`,
+      );
+      return 0;
+    }
+
     return this.tracingService.trace(
       'audit-cleanup',
       async span => {
@@ -426,6 +470,19 @@ export class AuditService {
       },
       { 'business.domain': 'audit' },
     );
+  }
+
+  /**
+   * 链写排队：前一笔回落（无论成败）才放行下一笔。
+   * 失败被吞在队尾上（不阻断后续写），真实错误仍由调用方拿到。
+   */
+  private enqueueChainWrite<T>(write: () => Promise<T>): Promise<T> {
+    const run = this.chainTail.then(write, write);
+    this.chainTail = run.then(
+      () => undefined,
+      () => undefined,
+    );
+    return run;
   }
 
   // 私有方法

@@ -16,6 +16,7 @@ import { Product } from '../products/entities/product.entity';
 import { OrderStatus, PaymentStatus } from './entities/order.entity';
 import { MonitoringService } from '../monitoring/monitoring.service';
 import { OrderEventsService } from '../messaging/order-events.service';
+import { AuditService } from '../common/audit/audit.service';
 import { createMockedFunction } from '../../test/utils/typed-mock-factory';
 
 // Mock entities
@@ -125,6 +126,11 @@ const mockOrderEventsService = {
   getMessageHistory: createMockedFunction<(orderId: number) => Promise<any[]>>(),
 };
 
+// M5(2026-10-05)：OrdersService 新增 AuditService 依赖——自动下架审计行 mock。
+const mockAuditService = {
+  log: createMockedFunction<(...args: any[]) => Promise<any>>(),
+};
+
 // Mock QueryBuilder
 const mockQueryBuilder = {
   update: jest.fn().mockReturnThis(),
@@ -171,6 +177,10 @@ describe('OrdersService', () => {
         {
           provide: OrderEventsService,
           useValue: mockOrderEventsService,
+        },
+        {
+          provide: AuditService,
+          useValue: mockAuditService,
         },
       ],
     }).compile();
@@ -312,6 +322,116 @@ describe('OrdersService', () => {
         productSnapshot: { name: '测试产品', image: '', specifications: {} },
       });
       expect(mockOrderEventsService.publishOrderCreated).toHaveBeenCalled();
+    });
+
+    // ─────────────────────────────────────────────────────────────
+    // M5(2026-10-05)：库存归零自动下架——扣减成功且算术归零 → 同事务
+    // isActive=false + 事务提交后落 'auto: stock=0' 审计行。
+    // ─────────────────────────────────────────────────────────────
+    it('M5：下单扣到 0 → 同事务置 isActive=false + 提交后落 PRODUCT_AUTO_UNLIST 审计行', async () => {
+      const productRepo = {
+        findOne: jest.fn().mockResolvedValue({ ...mockProduct, stock: 2, version: 1 }),
+        createQueryBuilder: jest.fn().mockReturnValue({
+          update: jest.fn().mockReturnThis(),
+          set: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          andWhere: jest.fn().mockReturnThis(),
+          execute: jest.fn().mockResolvedValue({ affected: 1 }),
+        }),
+        update: jest.fn().mockResolvedValue({ affected: 1 }),
+      };
+      const orderRepo = {
+        create: jest.fn().mockReturnValue(mockOrder),
+        save: jest.fn().mockResolvedValue(mockOrder),
+      };
+      const orderItemRepo = {
+        create: jest.fn().mockReturnValue(mockOrderItem),
+        save: jest.fn().mockResolvedValue(mockOrderItem),
+      };
+      mockTransactionManager.getRepository.mockImplementation((entity: any) => {
+        if (entity === Order) return orderRepo;
+        if (entity === OrderItem) return orderItemRepo;
+        if (entity === Product) return productRepo;
+        return mockOrderRepository;
+      });
+      mockAuditService.log.mockResolvedValue({} as any);
+
+      await service.create(createOrderData); // quantity=2, stock=2 → 归零
+
+      // 下架与扣减同事务（trx 的 Product repo 上执行）
+      expect(productRepo.update).toHaveBeenCalledWith({ id: 1 }, { isActive: false });
+      // 审计行：系统事件形状 + 'auto: stock=0' 事实载荷
+      expect(mockAuditService.log).toHaveBeenCalledTimes(1);
+      const [action, result, context, description, , , newValues] = mockAuditService.log.mock.calls[0];
+      expect(action).toBe('PRODUCT_AUTO_UNLIST');
+      expect(result).toBe('SUCCESS');
+      expect(context).toMatchObject({ resourceType: 'products', resourceId: '1', httpMethod: 'AUTO' });
+      expect(String(description)).toContain('auto: stock=0');
+      expect(newValues).toMatchObject({ event: 'auto: stock=0', productId: 1, stockAfter: 0, isActive: false });
+    });
+
+    it('M5：扣减后仍有余量（stock>quantity）→ 不下架不落审计行', async () => {
+      const productRepo = {
+        findOne: jest.fn().mockResolvedValue({ ...mockProduct, stock: 50, version: 1 }),
+        createQueryBuilder: jest.fn().mockReturnValue({
+          update: jest.fn().mockReturnThis(),
+          set: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          andWhere: jest.fn().mockReturnThis(),
+          execute: jest.fn().mockResolvedValue({ affected: 1 }),
+        }),
+        update: jest.fn(),
+      };
+      const orderRepo = {
+        create: jest.fn().mockReturnValue(mockOrder),
+        save: jest.fn().mockResolvedValue(mockOrder),
+      };
+      const orderItemRepo = {
+        create: jest.fn().mockReturnValue(mockOrderItem),
+        save: jest.fn().mockResolvedValue(mockOrderItem),
+      };
+      mockTransactionManager.getRepository.mockImplementation((entity: any) => {
+        if (entity === Order) return orderRepo;
+        if (entity === OrderItem) return orderItemRepo;
+        if (entity === Product) return productRepo;
+        return mockOrderRepository;
+      });
+
+      await service.create(createOrderData); // quantity=2, stock=50
+
+      expect(productRepo.update).not.toHaveBeenCalled();
+      expect(mockAuditService.log).not.toHaveBeenCalled();
+    });
+
+    it('M5：审计行写入失败 → 订单仍成立（已提交事务不因旁路审计回滚）', async () => {
+      const productRepo = {
+        findOne: jest.fn().mockResolvedValue({ ...mockProduct, stock: 2, version: 1 }),
+        createQueryBuilder: jest.fn().mockReturnValue({
+          update: jest.fn().mockReturnThis(),
+          set: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          andWhere: jest.fn().mockReturnThis(),
+          execute: jest.fn().mockResolvedValue({ affected: 1 }),
+        }),
+        update: jest.fn().mockResolvedValue({ affected: 1 }),
+      };
+      const orderRepo = {
+        create: jest.fn().mockReturnValue(mockOrder),
+        save: jest.fn().mockResolvedValue(mockOrder),
+      };
+      const orderItemRepo = {
+        create: jest.fn().mockReturnValue(mockOrderItem),
+        save: jest.fn().mockResolvedValue(mockOrderItem),
+      };
+      mockTransactionManager.getRepository.mockImplementation((entity: any) => {
+        if (entity === Order) return orderRepo;
+        if (entity === OrderItem) return orderItemRepo;
+        if (entity === Product) return productRepo;
+        return mockOrderRepository;
+      });
+      mockAuditService.log.mockRejectedValue(new Error('链写暂时失败'));
+
+      await expect(service.create(createOrderData)).resolves.toBe(mockOrder);
     });
 
     it('should throw error when product is not found', async () => {

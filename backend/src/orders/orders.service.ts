@@ -1,4 +1,4 @@
-import { Injectable, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, Inject, forwardRef, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Order } from './entities/order.entity';
@@ -8,11 +8,14 @@ import { Product } from '../products/entities/product.entity';
 import { OrderStatus, PaymentStatus } from './entities/order.entity';
 import { MonitoringService } from '../monitoring/monitoring.service';
 import { OrderEventsService } from '../messaging/order-events.service';
+import { AuditService, AuditAction, AuditResult, AuditSeverity } from '../common/audit/audit.service';
 
 
 
 @Injectable()
 export class OrdersService {
+  private readonly logger = new Logger(OrdersService.name);
+
   constructor(
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
@@ -24,10 +27,15 @@ export class OrdersService {
     private readonly monitoring: MonitoringService,
     @Inject(forwardRef(() => OrderEventsService))
     private readonly orderEventsService: OrderEventsService,
+    private readonly auditService: AuditService,
   ) {}
 
   async create(orderData: CreateOrderData): Promise<Order> {
-    return await this.orderRepository.manager.transaction(async trx => {
+    // M5(2026-10-05)：扣减归零自动下架的收集器——事务内只置位，
+    // 审计行在事务提交后落（AuditService.log 自带 dataSource.transaction，
+    // sqlite 单连接下嵌套事务必败，绝不能在订单事务内调）。
+    const autoUnlisted: Array<{ productId: number; productName: string; orderNumber: string }> = [];
+    const savedOrder = await this.orderRepository.manager.transaction(async trx => {
       // 生成订单号
       const orderNumber = this.generateOrderNumber();
 
@@ -125,6 +133,18 @@ export class OrdersService {
         if (updateResult.affected === 0) {
           throw new Error(`产品 ${item.productId} 库存不足或已被其他订单修改，请重试`);
         }
+
+        // M5(2026-10-05)：库存归零自动下架——与扣减同事务（原子），前台立刻不可见。
+        // 扣减守卫 stock >= quantity 且此处为新鲜读，归零判定用算术值即可精确等于 0。
+        // 重新上架走 admin.html 既有「上架」按钮（PATCH isActive=true），补货不自动上架。
+        if (product.stock - item.quantity === 0) {
+          await trx.getRepository(Product).update({ id: item.productId }, { isActive: false });
+          autoUnlisted.push({
+            productId: item.productId,
+            productName: product.name,
+            orderNumber,
+          });
+        }
       }
 
       // 发布订单创建事件
@@ -134,6 +154,33 @@ export class OrdersService {
 
       return savedOrder;
     });
+
+    // M5：事务已提交——自动下架事件落审计行（哈希链化走 AuditService.log 统一入口）。
+    // 订单既已成立，审计失败只告警不回滚（与商品写审计同纪律）。
+    for (const p of autoUnlisted) {
+      try {
+        await this.auditService.log(
+          AuditAction.PRODUCT_AUTO_UNLIST,
+          AuditResult.SUCCESS,
+          {
+            userId: orderData.userId != null ? String(orderData.userId) : undefined,
+            resourceType: 'products',
+            resourceId: String(p.productId),
+            httpMethod: 'AUTO',
+          },
+          `auto: stock=0（订单 ${p.orderNumber} 扣减归零，商品自动下架 productId=${p.productId}）`,
+          AuditSeverity.LOW,
+          undefined,
+          { event: 'auto: stock=0', productId: p.productId, productName: p.productName, orderNumber: p.orderNumber, stockAfter: 0, isActive: false },
+        );
+      } catch (error) {
+        this.logger.warn(
+          `auto: stock=0 审计行写入失败（productId=${p.productId}, order=${p.orderNumber}）: ${(error as Error).message}`,
+        );
+      }
+    }
+
+    return savedOrder;
   }
 
   async findById(id: number): Promise<Order | null> {

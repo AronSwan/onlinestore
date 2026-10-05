@@ -15,6 +15,22 @@ python3 scripts/check-frontend-assets.py
 
 依赖审计：`cd backend && npm audit --package-lock-only --omit=dev`（当前：22 项 / 0 critical / 8 high）。
 
+## 台账哈希链（M6，2026-10-05）
+
+`audit_logs` 每行带 `seq / prevHash / recordHash` 三列，逐行首尾相扣成链：记录哈希是整行内容按固定键序（16 字段）canonical 序列化后与前驱哈希拼接的 SHA-256，链核单一实现于 `backend/src/common/audit/audit-chain.ts`（写侧、离线校验脚本、管理页校验端点三处共用同一字节）。链列由 `AuditService.log` 在事务内统一补写；`seq` 唯一索引兜底并发双写（冲突即整笔回滚，不留分叉）。链式台账不参与滚动清理（删行即断链），`POST /audit/cleanup` 成为诚实的 no-op。
+
+任何人可跑的校验（只读开库，退出码 `0` 完整 / `1` 链问题 / `2` 锚不符 / `3` 环境错）：
+
+```bash
+npm run verify:audit                       # 校验默认 dev 库
+npm run verify:audit -- --db 副本.sqlite   # 校验指定库（篡改复现请在仓外副本上做）
+npm run verify:audit -- --anchor           # 全链校验通过后把链头追加进 docs/audit-chain-head.txt（打印 git 命令，人工执行）
+```
+
+管理端另有 `GET /api/audit/verify`（ADMIN，`admin.html` 列表页「台账校验」按钮）行内看绿/红两态。
+
+锚定与信任边界：`docs/audit-chain-head.txt` 把链头（seq+哈希）钉进 git 历史，使"改库不留痕"需要同时改库和改锚文件两处才可能瞒过事后比对。这是纵深防御的一层，不是封印——它与 QLDB / Certificate Transparency 采用的数据结构相同，但信任模型不同：CT/QLDB 依赖多方独立见证或托管硬件的不可抵赖性，本仓库的锚只在 git 历史里，能改 git 历史的人原则上仍能重写两者。诚实的说法是"篡改需要越过应用层、留下双处物证"，不是"密码学防篡改"，更不是"不可篡改"。生产环境重锚（MySQL 方言 backfill）与 CI 自动挂账见 `docs/BACKLOG.md`。
+
 ## 当前状态
 
 | 模块 | 状态 | 说明 |

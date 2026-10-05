@@ -12,6 +12,7 @@
     "test:e2e": "cross-env NODE_OPTIONS='--no-warnings' playwright test --config=e2e.config.js",
     "test:perf": "cross-env NODE_OPTIONS='--no-warnings' playwright test --config=perf.config.js",
     "test:coverage": "cross-env NODE_OPTIONS='--no-warnings' playwright show-report",
+    "verify:audit": "node --experimental-strip-types --no-warnings --experimental-sqlite scripts/verify-audit-chain.mjs",
     "build:secure": "node scripts/deploy-security.js build",
     "deploy:secure": "node scripts/deploy-security.js deploy",
     "security:report": "node scripts/deploy-security.js report",

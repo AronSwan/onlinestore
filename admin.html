@@ -85,6 +85,15 @@
       .link-btn:hover { color: var(--candy-blush-ink); }
       .link-btn.off { color: var(--success); text-decoration: none; }
 
+      /* ── 台账校验（M6）：次级按钮 + 行内结果条 ───────────── */
+      .view-head-actions { display: flex; gap: 10px; align-items: center; }
+      .audit-verify-bar {
+        margin: 0 0 16px; padding: 10px 14px; border-radius: var(--radius-sm);
+        font-size: var(--text-small); line-height: 1.6; border: 1px solid var(--line);
+      }
+      .audit-verify-bar.ok { color: var(--success); background: var(--success-bg, #E6F2EC); border-color: var(--success); }
+      .audit-verify-bar.bad { color: var(--error); background: var(--error-light, #F9E8E8); border-color: var(--error); font-weight: 600; }
+
       /* ── 列表表格 ────────────────────────────────────────── */
       .product-table { width: 100%; border-collapse: collapse; background: var(--bg-base); }
       .product-table th {
@@ -296,8 +305,14 @@
         <h1>在售与下架</h1>
         <div class="sub" id="list-count">读取中…</div>
       </div>
-      <button type="button" class="btn btn-primary" id="btn-new">新包入住</button>
+      <div class="view-head-actions">
+        <!-- M6(2026-10-05)：台账校验次级按钮——不动「新包入住」主按钮层级 -->
+        <button type="button" class="btn" id="btn-audit-verify">台账校验</button>
+        <button type="button" class="btn btn-primary" id="btn-new">新包入住</button>
+      </div>
     </div>
+    <!-- M6：台账校验结果条（绿=链完整 / 红=断裂，文案由后端 §2.3 话术单源下发） -->
+    <div class="audit-verify-bar hidden" id="audit-verify-bar" role="status" aria-live="polite"></div>
     <table class="product-table">
       <thead>
         <tr>
