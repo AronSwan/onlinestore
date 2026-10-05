@@ -21,7 +21,7 @@
  * 断言两者深度相等以防漂移。加词流程见 docs/voice-rules-manual.md。
  */
 
-export const INTEGRITY_RULES_VERSION = '1.0.0';
+export const INTEGRITY_RULES_VERSION = '1.1.0';
 
 // ─────────────────────────────────────────────────────────────
 // 一、语音表禁用词（voice-sheet.md「禁用词表」机器可读镜像）
@@ -258,41 +258,58 @@ function findBagGroup(factBag) {
 const FIELD_LABEL = { name: '标题', description: '描述' };
 
 /**
- * 匹配用规范化（R3·二次修复 2026-10-05 → P1·三修重构，fix2 §三 2）：
- *  ① NFKC 归一化——全角英文（ＢＯＳＴＯＮ→BOSTON，全角包型词规避）、CJK
- *    兼容变体（U+F900-FaFF 族，如 U+F90A→金）、全角标点（！→!）等兼容
- *    形态全部折回规范形；
- *  ② 剥 \p{Cf} Unicode 属性类（三修主修）：Y1 系统枚举的 160 个 Cf 码位
- *    （零宽族 200B-200F、双定向控制 202A-202E、LRI/PDI 族 2066-2069、
- *    阿拉伯记号 061C、词连接 2060-2064、BOM FEFF、行内注记 FFF9-FFFB、
- *    语言标签族 E0000-…）一条属性类全覆盖——替代二次修复的逐段枚举
- *    （打地鼠升级版）；另保留 NFKC 不消的两处 Mn 残余（组合字连接符
- *    U+034F、变体选择符 U+FE00-FE0F）显式剥离；
- *  ③ \p{White_Space} 折叠为单空格后去空格比对（三修）：解决"托 特"式
- *    可见分隔符拆词——比对视图无空格，原文不动。二次修复仅枚举了隐形
- *    拆词（X1/X2 各实锤不同码位），可见空格类拆词是 Y2 指出的无法枚举面，
- *    本条按属性类一次收口。
- * 仅用于匹配：不改变存库原文；violations/warnings/blockers 的 index/word
- * 均指向规范化+去空格后的比对视图——word 报文可能脱离原文（原文"限 时"，
- * 报文"限时"；原文 ＢＯＳＴＯＮ，报文 BOSTON），管理界面高亮按比对视图
- * 对齐，属既有契约的延伸（如实声明，见三修汇报已知限制段）。
- * 已知限制（三修显式挂账）：
- *   - 可见分隔符盲区未全消——中点 U+00B7（·，Po 类）不在 \p{Cf} 也不在
- *     \p{White_Space}，"限·时" 仍拆词过关；同族可见标点分隔（顿号等）同理；
+ * 匹配用规范化（R3·二次修复 → P1·三修属性类 → P1-1·四修白名单折叠）：
+ *  ① NFKC 归一化——全角英文（ＢＯＳＴＯＮ→BOSTON）、CJK 兼容变体
+ *    （U+F900-FAFF 族，如 U+F90A→金）、全角标点（！→!）等折回规范形；
+ *  ② 白名单折叠（四修主修，fix3 裁定）：只保留 \p{L}（字母）与 \p{N}（数字），
+ *    其余字符【一律剥除】——Cf/Mn/Me/Mc/Co/Cn/Cs/So/Sk/Po/Pd/Pi/Pf/Pc 全部
+ *    标点/符号/组合记号/私有区/未赋码位/代理对，及 White_Space/Zs/Zl/Zp 全部
+ *    空白分隔，白名单法不需要枚举黑名单。三修的"Cf 属性类 + White_Space 折叠"
+ *    仍属黑名单法（枚举哪些类要剥），X 组共中实证 Co/Cn/Mn 余码位/Emoji/Pd
+ *    属性类外拆词族可绕名实红拦（"波[U+E000]士顿"+凯莉卡 201 落库）——本条
+ *    一次收口全部属性类，中点 U+00B7/顿号 U+3001 等三修挂账的可见标点分隔
+ *    盲区随之消灭；
+ *  ③ 例外集：U+115F/U+1160/U+3164（Hangul 填充符；半角 U+FFA0 经 NFKC 折到
+ *    U+1160）属 \p{L}（Lo 类）但视觉空白、可拆词可做空名，白名单内显式剥除
+ *    ——\p{L} 内唯一需要枚举的例外族（Unicode 官方 filler 码位）。
+ * 单 pass 实现（四修 P2"三连 pass 收单 pass"）：NFKC 后一次 replace 完成
+ * 折叠+剥除，不再有 FORMAT_AND_MARK/ANY_WHITESPACE/去空格三连链。
+ * 仅用于匹配：不改变存库原文；词表层（word 面）violations 的 index/word 与
+ * checkNameImage 的定位词均指向本比对视图——word 报文可能脱离原文（原文
+ * "限·时"，报文"限时"；原文 ＢＯＳＴＯＮ，报文 BOSTON），管理界面高亮按
+ * 比对视图对齐，属既有契约的延伸（如实声明，承三修汇报）。
+ * 已知限制（四修显式挂账）：
+ *   - \p{L} 内其余视觉近似分隔符（片假名长音符 U+30FC「ー」，Lm 类）不在
+ *     剥除集——剥它会误伤合法日文假名文本（比对视图会丢字），挂账待裁；
  *   - 跨书写系统同形字（西里尔 о ↔ 拉丁 o、希腊 Β ↔ 拉丁 B）NFKC 不折——
  *     需 confusable 映射表（Unicode confusables.txt），挂账不引库；
  *   - 不做繁简归一（NFKC 不做简繁转换，"限時搶購"仍会过——需专门映射表，
  *     挂账产品决策，承二次修复汇报）。
+ * 单源声明：STRIP_PATTERN 字符串与 js/shared/normalize-pattern.json 的
+ * stripPattern 必须逐字符一致（integrity-rules.test.js 一致性用例守门）。
+ * 不直接 import JSON 的原因：本模块被浏览器原生 ESM（js/admin/gates.js，
+ * 无构建链）与后端闸的 new Function 源码求值装载链（product-integrity.gate.ts
+ * 第三级）同时消费——import 属性语法/JSON 模块在两条链上都不成立。
  * @private
  */
-const FORMAT_AND_MARK = /[\p{Cf}\u034F\uFE00-\uFE0F]/gu;
-const ANY_WHITESPACE = /\p{White_Space}+/gu;
+const STRIP_PATTERN = '[^\\p{L}\\p{N}]|[\\u115F\\u1160\\u3164]';
+const COMPARE_VIEW_STRIP = new RegExp(STRIP_PATTERN, 'gu');
 function normalizeForMatch(text) {
-  return text
-    .normalize('NFKC')
-    .replace(FORMAT_AND_MARK, '')
-    .replace(ANY_WHITESPACE, ' ')
-    .replace(/ /g, '');
+  return text.normalize('NFKC').replace(COMPARE_VIEW_STRIP, '');
+}
+
+/**
+ * 轻归一（正则条目专用的"原文面"，四修 P1-1 两层分离）：NFKC 后仅剥
+ * 不可见家族（\p{Cf} 属性类 + NFKC 不消的 Mn 残余 U+034F/U+FE00-FE0F）与
+ * 全部空白——标点（！! · — 、）原样保留。供含 Po 类字符的 pattern 条目
+ * （如多个感叹号 '[!！]{2,}'）匹配：这类条目在白名单比对视图里会被剥成
+ * 空串，必须在保留标点的面上跑。与 normalizeForMatch 分工：词表（word 面，
+ * 全 \p{L} 构成）走比对视图；正则（pattern 面，可含标点）走本轻归一视图。
+ * @private
+ */
+const INVISIBLE_AND_SPACE = /[\p{Cf}\u034F\uFE00-\uFE0F\p{White_Space}]/gu;
+function normalizeLightForPattern(text) {
+  return text.normalize('NFKC').replace(INVISIBLE_AND_SPACE, '');
 }
 
 // ═════════════════════════════════════════════════════════════
@@ -307,27 +324,35 @@ function normalizeForMatch(text) {
  *   词表；缺省用内嵌镜像 VOICE_RULES.banned。传入自定义词表时完全替换默认（不叠加），
  *   后端闸如需与前端共用，直接读 js/shared/voice-rules.json 传入即可（双闸同源）。
  * @returns {{violations: Array<{word:string,index:number,suggestion:string,reason:string}>}}
- *   violations 按出现位置升序；index 为词首字符在原文中的下标（可用于管理界面高亮）。
+ *   violations 按出现位置升序；index 为词首字符在匹配视图中的下标（词表层=
+ *   白名单比对视图、正则表层=轻归一原文面，可用于管理界面按视图对齐高亮）。
  *   同一文本命中多个词各记一条；「宝贝」不会被「宝」重复计数（长词优先、命中区间不重叠）。
  */
 export function lintCopy(text, rules) {
   if (typeof text !== 'string' || text.length === 0) return { violations: [] };
-  // 匹配前规范化（NFKC+剥不可见，R3·二次修复）——防"限␈时"式隐形走私与
-  // 全角/兼容变体规避；存库原文不动，index/word 指规范化文本
-  text = normalizeForMatch(text);
-  if (text.length === 0) {
+  // 两层分离（四修 P1-1，fix3 裁定）：
+  //  - 词表层（word 面）跑比对视图 normalizeForMatch（NFKC+白名单折叠）——
+  //    词表全由 \p{L} 构成（测试守门断言），任何属性类外拆词走私被折叠收口；
+  //  - 正则表层（pattern 面）跑轻归一原文面 normalizeLightForPattern——
+  //    感叹号条目 '[!！]{2,}' 是 Po 类字符，在白名单视图里会被剥掉，必须在
+  //    保留标点的面上跑（隐形字/空白走私仍收口：Cf/Mn 残余/空白已剥）。
+  // 存库原文不动；两类报文的 index/word 分别指向各自视图（既有契约：按视图
+  // 对齐，不按存库原文）。
+  const literalView = normalizeForMatch(text);
+  const patternView = normalizeLightForPattern(text);
+  if (literalView.length === 0 && patternView.length === 0) {
     return { violations: [] };
   }
   const entries = normalizeRules(rules);
 
   const literalMatches = [];
   for (const entry of entries.filter((e) => !e.pattern)) {
-    let i = text.indexOf(entry.word);
+    let i = literalView.indexOf(entry.word);
     while (i !== -1) {
-      if (!isExcepted(text, i, entry.word, entry.exceptions)) {
+      if (!isExcepted(literalView, i, entry.word, entry.exceptions)) {
         literalMatches.push({ start: i, end: i + entry.word.length, entry });
       }
-      i = text.indexOf(entry.word, i + 1);
+      i = literalView.indexOf(entry.word, i + 1);
     }
   }
   // 长词优先解决重叠（宝 vs 宝贝），同长按位置
@@ -339,25 +364,29 @@ export function lintCopy(text, rules) {
     taken.push(m);
     accepted.push(m);
   }
-  // 正则条目（多个感叹号等）
+  // 正则条目（多个感叹号等）：在轻归一原文面上匹配，重叠裁决与词表层独立
+  // （两视图各自计数，word 面 L/N 与 pattern 面标点不可能语义重叠）
+  const patternTaken = [];
   for (const entry of entries.filter((e) => e.pattern)) {
     const re = new RegExp(entry.pattern, entry.flags || 'g');
-    let mm = re.exec(text);
+    let mm = re.exec(patternView);
     while (mm !== null) {
       const start = mm.index;
       const end = start + mm[0].length;
       if (mm[0].length === 0) { re.lastIndex += 1; } // 防零宽死循环
-      else if (!taken.some((t) => start < t.end && t.start < end)) {
-        taken.push({ start, end });
-        accepted.push({ start, end, entry, text: mm[0] });
+      else if (!patternTaken.some((t) => start < t.end && t.start < end)) {
+        patternTaken.push({ start, end });
+        accepted.push({ start, end, entry, text: mm[0], surface: 'pattern' });
       }
-      mm = re.exec(text);
+      mm = re.exec(patternView);
     }
   }
   accepted.sort((a, b) => a.start - b.start);
   return {
     violations: accepted.map((m) => ({
-      word: m.text !== undefined ? m.text : text.slice(m.start, m.end),
+      // 词表层取词面自比对视图（start/end 是视图下标，不是原文下标）；
+      // 正则表层用命中原文（mm[0]，轻归一视图的字面）
+      word: m.text !== undefined ? m.text : literalView.slice(m.start, m.end),
       index: m.start,
       suggestion: typeof m.entry.suggestion === 'string' ? m.entry.suggestion : '',
       reason: typeof m.entry.reason === 'string' ? m.entry.reason : '',

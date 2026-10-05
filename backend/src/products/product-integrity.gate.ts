@@ -134,8 +134,11 @@ export function hasFactCard(specifications: unknown): specifications is Record<s
  *   - factCard.colorGroup / factCard.bagType 键存在但非字符串（且非 null）→ 400
  *     带字段名（P2-4·三修，fix2 §三 4：X 组共中——数字/数组形状静默按"缺字段"
  *     处理，事实卡比对被无声跳过）；null 视为未填（合法的空四选结果）；
+ *   - colorGroup/bagType 超过 50 字符 → 400（四修 P2 长度上限：看图四选是
+ *     下单选词不是自由文本，超长值只会是注入载荷/脏数据，词表比对面同步收口）；
  *   - plain object → 原样返回。
  */
+const FACT_CARD_FIELD_MAX_LENGTH = 50;
 function extractFactCard(specifications: unknown): Record<string, unknown> | undefined {
   if (
     typeof specifications !== 'object' ||
@@ -156,6 +159,11 @@ function extractFactCard(specifications: unknown): Record<string, unknown> | und
     if (v !== undefined && v !== null && typeof v !== 'string') {
       throw new BadRequestException(
         `specifications.factCard.${field} 必须是字符串（看图四选结果），不接受 ${Array.isArray(v) ? '数组' : typeof v}`,
+      );
+    }
+    if (typeof v === 'string' && v.length > FACT_CARD_FIELD_MAX_LENGTH) {
+      throw new BadRequestException(
+        `specifications.factCard.${field} 不能超过 ${FACT_CARD_FIELD_MAX_LENGTH} 字符（看图四选是选词，不是自由文本）`,
       );
     }
   }

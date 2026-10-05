@@ -62,6 +62,14 @@ const mockProduct = {
   version: 1,
 };
 
+/** 四修 P2：create 面最小合法载荷（specifications 大小用例的基线） */
+const createValidData = {
+  name: '测试产品',
+  description: '测试产品描述',
+  price: 100,
+  stock: 50,
+};
+
 const mockProductImage = {
   id: 1,
   product: mockProduct,
@@ -1018,6 +1026,110 @@ describe('ProductsService', () => {
       await expect(service.update(1, { price: null } as any)).rejects.toBeInstanceOf(
         BadRequestException,
       );
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────
+  // P1-2（四修，fix3 裁定）：事件载荷快照——updateDataForEvent 必须在价格
+  // 剥离【之前】取样。三修放在剥离后，纯价格 PATCH 的更新事件丢 price 字段
+  // （publishProductUpdatedEvent 读 updateData.price=undefined，注释却写
+  // "按提交意图报文"，Y1/Y2 源码级实证注释与代码相反）。上轮无测试覆盖
+  // 事件载荷的 price——本块即防回归断言。
+  // 存量基线：mockProduct.price=100 / originalPrice=120。
+  // ─────────────────────────────────────────────────────────────
+  describe('Update Product P1-2 事件载荷快照（价格剥离前取样）', () => {
+    beforeEach(() => {
+      mockCacheManager.get.mockResolvedValue(null);
+      mockProductRepository.findOne.mockResolvedValue(mockProduct);
+      mockProductRepository.update.mockResolvedValue({ affected: 1 });
+      mockCacheManager.del.mockResolvedValue(true);
+      mockProductEventsService.publishProductUpdated.mockResolvedValue(undefined);
+      mockSearchManagerService.indexProduct.mockResolvedValue(undefined);
+      restoreQbChain();
+      mockQueryBuilder.execute.mockResolvedValue({ affected: 1 });
+    });
+
+    it('纯价格 PATCH：事件载荷含 price（新价）与 oldPrice（存量价）——快照不被键剥离吃掉', async () => {
+      await expect(service.update(1, { price: 110 } as any)).resolves.toBeDefined();
+      expect(mockProductEventsService.publishProductUpdated).toHaveBeenCalledTimes(1);
+      const event = mockProductEventsService.publishProductUpdated.mock.calls[0][0];
+      expect(event.price).toBe(110); // 三修缺陷面：此处曾为 undefined
+      expect(event.oldPrice).toBe(100);
+      expect(event.productId).toBe(1);
+      expect(typeof event.timestamp).toBe('string');
+    });
+
+    it('branch2（抬价+清划线）：事件载荷含 price=150（意图完整报文）', async () => {
+      await expect(service.update(1, { price: 150, originalPrice: null } as any)).resolves.toBeDefined();
+      const event = mockProductEventsService.publishProductUpdated.mock.calls[0][0];
+      expect(event.price).toBe(150);
+      expect(event.oldPrice).toBe(100);
+    });
+
+    it('混合载荷（price+name）：事件含 price 与 name，普通写载荷已剥离 price（两层各司其职）', async () => {
+      await expect(service.update(1, { price: 90, name: '并发安全' } as any)).resolves.toBeDefined();
+      const event = mockProductEventsService.publishProductUpdated.mock.calls[0][0];
+      expect(event.price).toBe(90);
+      expect(event.name).toBe('并发安全');
+      // 写路径：价格走条件 UPDATE，普通 update 载荷无 price（P1-1 语义不回退）
+      expect(mockProductRepository.update).toHaveBeenCalledWith(1, { name: '并发安全' });
+    });
+
+    it('不涉价格的 PATCH：事件 price 为 undefined（无价格提交，与旧契约一致）', async () => {
+      await expect(service.update(1, { name: '新名字' } as any)).resolves.toBeDefined();
+      const event = mockProductEventsService.publishProductUpdated.mock.calls[0][0];
+      expect(event.price).toBeUndefined();
+      expect(event.name).toBe('新名字');
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────
+  // 四修 P2：specifications 序列化 ≤10KB（service 层 400）。
+  // create 按提交校验；update 按浅合并后的落库形状校验（合并视图才是真值）。
+  // ─────────────────────────────────────────────────────────────
+  describe('Update Product 四修 P2 specifications 10KB 上限', () => {
+    beforeEach(() => {
+      mockCacheManager.get.mockResolvedValue(null);
+      mockProductRepository.findOne.mockResolvedValue(mockProduct);
+      mockProductRepository.update.mockResolvedValue({ affected: 1 });
+      mockCacheManager.del.mockResolvedValue(true);
+      mockProductEventsService.publishProductUpdated.mockResolvedValue(undefined);
+      mockSearchManagerService.indexProduct.mockResolvedValue(undefined);
+    });
+
+    it('create：>10KB 规格 → 400 fail-clean（不落库）', async () => {
+      await expect(
+        service.create({ ...createValidData, specifications: { blob: 'x'.repeat(10 * 1024) } } as any),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(mockProductRepository.create).not.toHaveBeenCalled();
+    });
+
+    it('create：恰好 10KB 边界放行（≤10240 字符）', async () => {
+      mockProductRepository.save.mockResolvedValue({ ...mockProduct, id: 2 });
+      await expect(
+        service.create({ ...createValidData, specifications: { blob: 'x'.repeat(10 * 1024 - 15) } } as any),
+      ).resolves.toBeDefined();
+    });
+
+    it('update：浅合并后超限 → 400（提交小增量+存量近限=落库形状超限）', async () => {
+      // 存量 10KB-50，提交增量 100 字符 → 合并后 10KB+50 → 400
+      mockProductRepository.findOne.mockResolvedValue({
+        ...mockProduct,
+        specifications: { blob: 'x'.repeat(10 * 1024 - 50) },
+      } as any);
+      await expect(
+        service.update(1, { specifications: { extra: 'y'.repeat(100) } } as any),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(mockProductRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('update：显式 null（整体清空）不校验大小——清空语义优先', async () => {
+      mockProductRepository.findOne.mockResolvedValue({
+        ...mockProduct,
+        specifications: { blob: 'x'.repeat(11 * 1024) }, // 超限存量被显式清空
+      } as any);
+      await expect(service.update(1, { specifications: null } as any)).resolves.toBeDefined();
+      expect(mockProductRepository.update).toHaveBeenCalledWith(1, { specifications: null });
     });
   });
 

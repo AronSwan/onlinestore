@@ -331,4 +331,82 @@ describe('M4 第二闸服务端侧：integrity 同源复检', () => {
       ).rejects.toBeInstanceOf(BadRequestException);
     });
   });
+
+  // ─────────────────────────────────────────────────────────────
+  // 四修 P1-1：白名单折叠——X 组共中"属性类外拆词击穿名实红拦"的闸级回归。
+  // 引擎侧（js/shared）24 码位全谱见 integrity-rules.test.js；此处锁
+  // "闸消费的引擎确实是修复后行为"（动态加载链防漂移）。
+  // ─────────────────────────────────────────────────────────────
+  describe('四修 P1-1：属性类外拆词走私（闸级）', () => {
+    it('主案：「波[U+E000]士顿」+凯莉卡 → 400 BAG_SILHOUETTE_MISMATCH（X1 实锤 201 落库的回归）', async () => {
+      let caught: any;
+      try {
+        await enforceProductIntegrityGate({
+          name: '波\uE000士顿',
+          description: '',
+          specifications: { factCard: { colorGroup: '黑', bagType: '凯莉' } },
+        });
+        throw new Error('应当被 400 拦下');
+      } catch (e: any) {
+        caught = e;
+      }
+      expect(caught).toBeInstanceOf(BadRequestException);
+      const blockers = (caught.getResponse() as any).details.integrity.blockers;
+      expect(blockers.some((b: any) => b.code === 'BAG_SILHOUETTE_MISMATCH' && b.word === '波士顿')).toBe(true);
+    });
+
+    it('禁用词面同样收口：「限[U+00B7]时」（Po 中点，三修挂账）→ 400', async () => {
+      await expect(
+        enforceProductIntegrityGate({ name: '限\u00B7时特惠水桶包', description: '' }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('视觉空名姿势不进闸（DTO 层已 400）——含真实文字+走私字符的名不误拦（拦截看词表）', async () => {
+      const r = await enforceProductIntegrityGate({
+        name: '波\u{1F600}士顿手提包',
+        description: '',
+        specifications: { factCard: { colorGroup: '黑', bagType: '波士顿' } },
+      });
+      expect(r).toEqual({ warnings: [] });
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────
+  // 四修 P2：factCard.colorGroup/bagType 长度上限 50（看图四选是选词面）
+  // ─────────────────────────────────────────────────────────────
+  describe('四修 P2：factCard 字段长度上限 50', () => {
+    it('colorGroup 51 字 → 400 报文含 colorGroup 与上限说明', async () => {
+      let caught: any;
+      try {
+        await enforceProductIntegrityGate({
+          name: '托特包',
+          description: '',
+          specifications: { factCard: { colorGroup: '黑'.repeat(51), bagType: '托特' } },
+        });
+        throw new Error('应当被 400 拦下');
+      } catch (e: any) {
+        caught = e;
+      }
+      expect(caught).toBeInstanceOf(BadRequestException);
+      const msg = String((caught.getResponse() as any).message);
+      expect(msg).toContain('colorGroup');
+      expect(msg).toContain('50');
+    });
+
+    it('bagType 51 字 → 400；恰好 50 字放行（边界）', async () => {
+      await expect(
+        enforceProductIntegrityGate({
+          name: '托特包',
+          description: '',
+          specifications: { factCard: { colorGroup: '黑', bagType: '托'.repeat(51) } },
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      const r = await enforceProductIntegrityGate({
+        name: '托特包',
+        description: '',
+        specifications: { factCard: { colorGroup: '黑', bagType: '托'.repeat(50) } },
+      });
+      expect(r).toBeDefined();
+    });
+  });
 });

@@ -10,7 +10,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like, Between, In, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
+import { Repository, In, QueryDeepPartialEntity, DeepPartial } from 'typeorm';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Inject } from '@nestjs/common';
 import { Cache } from 'cache-manager';
@@ -35,7 +35,8 @@ export interface CreateProductData {
   name: string;
   description: string;
   price: number;
-  originalPrice?: number;
+  /** 四修 P1-3：显式 null=无划线价（落库 NULL），与清除语义对齐 */
+  originalPrice?: number | null;
   stock: number;
   categoryId?: number;
   mainImage?: string;
@@ -47,7 +48,8 @@ export interface UpdateProductData {
   name?: string;
   description?: string;
   price?: number;
-  originalPrice?: number;
+  /** 四修 P1-3：显式 null=清除划线价（HTTP 面经 DTO 原样透传到达此处） */
+  originalPrice?: number | null;
   stock?: number;
   categoryId?: number;
   mainImage?: string;
@@ -106,6 +108,32 @@ export class ProductsService {
   private cacheTtlMs(configKey: string, defaultSeconds: number): number {
     const seconds = this.configService.get<number>(configKey) || defaultSeconds;
     return seconds * 1000;
+  }
+
+  /**
+   * 四修 P2：specifications JSON 序列化上限（10KB）——超长规格在写库前 400
+   * fail-clean（长度缺口收口：词表匹配/JSON 列存储都不设防的超长载荷面）。
+   * null（整体清空）/ undefined（未提交）不校验；循环引用等无法序列化的形状
+   * 同样 400（HTTP 面 JSON 天然无环，此处兜直接调用面）。
+   */
+  private assertSpecificationsWithinLimit(specifications: unknown): void {
+    if (specifications === undefined || specifications === null) return;
+    let serialized: string;
+    try {
+      serialized = JSON.stringify(specifications);
+    } catch (e) {
+      throw new BadRequestException({
+        message: `specifications 无法序列化为 JSON（${(e as Error).message}）`,
+        details: { field: 'specifications' },
+      });
+    }
+    const limit = 10 * 1024;
+    if (serialized.length > limit) {
+      throw new BadRequestException({
+        message: `specifications 序列化后 ${serialized.length} 字符，超过 ${limit}（10KB）上限`,
+        details: { field: 'specifications', size: serialized.length, limit },
+      });
+    }
   }
 
   private async invalidateListCache() {
@@ -172,11 +200,17 @@ export class ProductsService {
       category = found;
     }
 
+    // 四修 P2：specifications 序列化上限（create 面：提交什么校验什么）
+    this.assertSpecificationsWithinLimit(productData.specifications);
+
+    // originalPrice 类型面如实含 null（P1-3：null=无划线价，落库 NULL）；
+    // DeepPartial 按 number 声明，写边界 unknown 桥接（运行时 TypeORM 对
+    // nullable 列写 null 是认可值，update 分支同款桥接）
     const product = this.productRepository.create({
       ...productData,
       category,
       publishedAt: new Date(),
-    });
+    } as unknown as DeepPartial<Product>);
 
     const saved = await this.productRepository.save(product);
 
@@ -540,7 +574,16 @@ export class ProductsService {
         ...updateData,
         specifications: mergeSpecifications(updateData.specifications, product.specifications),
       } as UpdateProductData;
+      // 四修 P2：specifications 序列化上限（合并视图=实际落库形状，按合并后校验）
+      this.assertSpecificationsWithinLimit(updateData.specifications);
     }
+
+    // P1-2（四修，fix3 裁定）：事件载荷快照必须在价格剥离【之前】取样——
+    // 三修把赋值放在剥离后，纯价格 PATCH 的事件丢失 price 字段（注释写"按
+    // 提交意图报文"而代码相反，Y1/Y2 源码级实证）。价格剥离只影响普通写载荷，
+    // 不得影响事件报文；本行之后对 updateData 的任何重赋值（键剥离）都只在
+    // 写路径生效，快照引用保持"本次提交意图"完整视图。
+    const updateDataForEvent = updateData;
 
     // P1-1（三修 2026-10-05，fix2 §三 1）：并发 TOCTOU 修复——价格写入改单条
     // 条件 UPDATE（check-then-act 无事务，X1 4/5、X2 10/10 并发实锤 DB 倒挂）。
@@ -613,14 +656,14 @@ export class ProductsService {
       updateData = rest as UpdateProductData;
     }
 
-    // P1-1 剥离前留事件载荷快照——发布事件按"本次提交意图"报文（价格剥离只影响二次写）
-    const updateDataForEvent = updateData;
-
     // P3（三修，fix2 §三 9）：三 findById 收敛——oldProduct 复用方法开头的存量读
     // （缓存失效前后的两次读对"旧值快照"语义等价），删除紧贴 update 前的冗余重读。
     const oldProduct = product;
     if (Object.keys(updateData as Record<string, unknown>).length > 0) {
-      await this.productRepository.update(id, updateData);
+      // originalPrice 类型面如实含 null（P1-3 清除语义）；QueryDeepPartialEntity
+      // 按 number 声明，写边界 unknown 桥接（同一语义在上方条件 UPDATE 分支已有
+      // 先例：originalPrice: null as unknown as number）
+      await this.productRepository.update(id, updateData as unknown as QueryDeepPartialEntity<Product>);
     }
 
     // 清除缓存（统一前缀与热门键集合）

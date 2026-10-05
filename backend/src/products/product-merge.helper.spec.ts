@@ -28,6 +28,56 @@ describe('三修 P1-3 toNumberOrNull（Number() 强转归一，null 保持 null�
     expect(toNumberOrNull(Infinity)).toBeNull();
     expect(toNumberOrNull({})).toBeNull();
   });
+
+  // ─────────────────────────────────────────────────────────────
+  // 四修 P2 收紧：旧实现借用宽松 Number() 语义——''/' '/数组/布尔/0x 前缀
+  // 被静默"猜"成数字（Number('')=0、Number([5])=5、Number(true)=1、
+  // Number('0x10')=16），invalid* 甄别对这些形状失效（Y1 直调面共中）。
+  // 仅十进制字面量形态放行（PG decimal 串 '100.00' 天然在形态内）。
+  // ─────────────────────────────────────────────────────────────
+  it('四修收紧：空串/纯空白 → null（旧实现静默归 0——直调面危险形状）', () => {
+    expect(toNumberOrNull('')).toBeNull();
+    expect(toNumberOrNull('   ')).toBeNull();
+    expect(toNumberOrNull('\t\n')).toBeNull();
+  });
+
+  it('四修收紧：数组/布尔/对象 → null（Number([5])=5、Number(true)=1 的静默猜数面关闭）', () => {
+    expect(toNumberOrNull([5])).toBeNull();
+    expect(toNumberOrNull([100, 200])).toBeNull();
+    expect(toNumberOrNull(true)).toBeNull();
+    expect(toNumberOrNull(false)).toBeNull();
+    expect(toNumberOrNull([])).toBeNull();
+  });
+
+  it('四修收紧：0x/0b/0o 前缀与非严格小数形态 → null', () => {
+    expect(toNumberOrNull('0x10')).toBeNull();
+    expect(toNumberOrNull('0b101')).toBeNull();
+    expect(toNumberOrNull('0o17')).toBeNull();
+    expect(toNumberOrNull('.5')).toBeNull();
+    expect(toNumberOrNull('5.')).toBeNull();
+    expect(toNumberOrNull('+5')).toBeNull();
+    expect(toNumberOrNull('1e')).toBeNull();
+    expect(toNumberOrNull('Infinity')).toBeNull();
+  });
+
+  it('四修收紧后放行面不缩水：整数/小数/科学计数/PG decimal 串/前后空白照常归一', () => {
+    expect(toNumberOrNull(100)).toBe(100);
+    expect(toNumberOrNull(-3.5)).toBe(-3.5);
+    expect(toNumberOrNull('100.00')).toBe(100);
+    expect(toNumberOrNull('150')).toBe(150);
+    expect(toNumberOrNull('1e5')).toBe(100000);
+    expect(toNumberOrNull('-2.5E-2')).toBe(-0.025);
+    expect(toNumberOrNull(' 99 ')).toBe(99);
+  });
+
+  it('四修收紧落到 mergePriceView：price=\'\' → invalidPrice（fail-clean 400 素材）', () => {
+    const v = mergePriceView({ price: '' }, { price: 100, originalPrice: 120 });
+    expect(v.priceSubmitted).toBe(true);
+    expect(v.invalidPrice).toBe(true);
+    expect(v.price).toBeNull();
+    const v2 = mergePriceView({ originalPrice: '0x10' }, { price: 100 });
+    expect(v2.invalidOriginalPrice).toBe(true);
+  });
 });
 
 describe('三修 P1-3 mergePriceView（存量字符串/提交数字的合并视图）', () => {

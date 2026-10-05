@@ -8,15 +8,27 @@
 // 作者：三次修复席（2026-10-05）
 
 /**
- * 数值归一（P1-3 PG 可移植）：null/undefined → null；数字原样；数字型字符串
- * （PG decimal 列返回 '100.00'）→ Number 强转；其余形状（NaN/非数字串/对象）→ null。
- * 注意：本函数不区分"非法提交"与"缺失"——非法形状的甄别由 mergePriceView 的
- * invalid* 标记承接（提交了非空值但归一失败 → invalid，fail-clean 400）。
+ * 数值归一（P1-3 PG 可移植 → 四修 P2 收紧为严格数字形态）：
+ *   - null/undefined → null（缺失语义，交 invalid* 标记区分）；
+ *   - number 原样（仅有限数：NaN/Infinity → null）；
+ *   - 字符串仅放行十进制字面量形态 /^\s*-?\d+(\.\d+)?([eE][+-]?\d+)?\s*$/
+ *     （PG decimal 列返回的 '100.00' 天然在形态内）；
+ *   - 其余一律 null：''/'  '（空串——旧实现 Number('')=0 静默归零，直调面
+ *     危险）、数组（Number([5])=5）、布尔（Number(true)=1）、'0x10'（=16）、
+ *     '.5'/'5.'/'+5'/'1e' 等非严格形态、对象/其他类型。
+ * 收紧动机：旧实现借用 JS 宽松 Number() 语义，非数字形状被静默"猜"成数字
+ * （空串变 0、布尔变 1、十六进制串变 16），mergePriceView 的 invalid* 甄别
+ * 对这些形状失效（Y1 直调面共中）。归一失败的形状由调用方 400 fail-clean。
  */
+const STRICT_NUMERIC_SHAPE = /^\s*-?\d+(\.\d+)?([eE][+-]?\d+)?\s*$/;
 export function toNumberOrNull(value: unknown): number | null {
   if (value === null || value === undefined) return null;
-  const n = typeof value === 'number' ? value : Number(value);
-  return Number.isFinite(n) ? n : null;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value === 'string' && STRICT_NUMERIC_SHAPE.test(value)) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
 }
 
 /** 价格合并视图（R1 不变式 originalPrice>=price 的唯一裁决形状） */

@@ -575,7 +575,147 @@ test('三修 P1：去空格后例外词仍生效（「亲 切」不因折叠误�
 });
 
 test('三修已知限制（如实锁定）：中点 U+00B7（Po 类）不在 Cf/White_Space，拆词仍过——挂账待裁', () => {
-  // 本用例锁定的是【当前声明的盲区现状】，修复（可见标点分隔符治理）后应删改本断言
+  // 四修 P1-1 白名单折叠后本挂账已消：U+00B7 属 Po 类被剥除，"限·时"收口命中。
+  // 断言随之反转（原断言锁定的盲区现状不再成立），保留用例名作修复轨迹注记。
   const r = lintCopy('限\u00B7时');
-  assert.equal(r.violations.length, 0, 'U+00B7 中点拆词仍属声明盲区（fix2 §三 2 已知限制）');
+  assert.equal(r.violations.length, 1, 'U+00B7 中点拆词已被白名单折叠收口（三修挂账消灭）');
+  assert.equal(r.violations[0].word, '限时');
+});
+
+// ─────────────────────────────────────────────────────────────
+// 四修 P1-1：白名单折叠（只保留 \p{L}+\p{N}）——X1/X2 属性类外拆词族
+// 共中击穿名实红拦（"波[U+E000]士顿"+凯莉卡 201 落库）的根治性收口。
+// 覆盖两席清单代表码位（16+15 姿势的类代表全谱）≥20 码位。
+// ─────────────────────────────────────────────────────────────
+test('四修 P1-1：属性类外拆词全谱收口——Co/Cn/Mn/Me/Mc/So/Sk/Po/Pd/Cf/空白/Hangul 填充符 24 码位拆「限时」全命中', () => {
+  const postures = [
+    // [码位, 类别注记]——每类至少一名代表，两席清单码位全覆盖
+    ['E000', 'Co 私有区（X1 实锤主案）'],
+    ['0378', 'Cn 未赋码位（X2）'],
+    ['0301', 'Mn 组合尖音符（X2）'],
+    ['034F', 'Mn 组合字连接符（三修已收）'],
+    ['FE0F', 'Mn 变体选择符（三修已收）'],
+    ['E0100', 'Mn 变体选择符增补区（X2）'],
+    ['20E0', 'Me 组合封闭上圈'],
+    ['0900', 'Mc 天城文依赖元音记号'],
+    ['3164', 'Lo Hangul 填充符（NFKC→1160，白名单例外集）'],
+    ['FFA0', 'Lm 半角 Hangul 填充符（NFKC→1160）'],
+    ['2800', 'So 盲文空白（X1 视觉空名姿势）'],
+    ['1F600', 'So Emoji（X1/X2 共中）'],
+    ['00B7', 'Po 中点（三修挂账，本修消灭）'],
+    ['3001', 'Po 顿号'],
+    ['FF01', 'Po 全角感叹号'],
+    ['2010', 'Pd 连字符（X2）'],
+    ['2019', 'Pf 右单引号'],
+    ['200B', 'Cf 零宽空格（三修已收）'],
+    ['FEFF', 'Cf BOM（三修已收）'],
+    ['00AD', 'Cf 软连字符（三修已收）'],
+    ['2060', 'Cf 词连接符（三修已收）'],
+    ['202E', 'Cf 反向覆盖 RLO（三修已收）'],
+    ['00A0', 'Zs 不换行空格（三修已收）'],
+    ['3000', 'Zs 全角空格（三修已收）'],
+  ];
+  for (const [cp, label] of postures) {
+    const ch = String.fromCodePoint(parseInt(cp, 16));
+    const r = lintCopy(`限${ch}时`);
+    assert.ok(
+      r.violations.some((v) => v.word === '限时'),
+      `U+${cp}（${label}）拆词应被白名单折叠收口命中「限时」`,
+    );
+  }
+});
+
+test('四修 P1-1：主案复刻——「波[U+E000]士顿」+凯莉卡 → BAG_SILHOUETTE_MISMATCH 红拦（X1 名实红拦可绕实证的回归）', () => {
+  const r = checkNameImage({
+    name: '波\uE000士顿',
+    description: '',
+    factCard: { mainColor: '黑', bagType: '凯莉' },
+  });
+  const blockers = r.blockers.filter((b) => b.code === 'BAG_SILHOUETTE_MISMATCH');
+  assert.equal(blockers.length, 1, '私有区拆词的波士顿与凯莉卡结构冲突红拦');
+  assert.equal(blockers[0].word, '波士顿');
+  // 反向：名实相符（波士顿卡）不误拦
+  const ok = checkNameImage({
+    name: '波\uE000士顿',
+    description: '',
+    factCard: { mainColor: '黑', bagType: '波士顿' },
+  });
+  assert.equal(ok.blockers.length, 0);
+});
+
+test('四修 P1-1：Hangul 填充符（U+3164/U+1160）拆词收口——Lo 类例外集', () => {
+  // Lo 类字母白名单本会保留，但 Unicode 官方 filler 三码位视觉空白可拆词——显式剥除
+  assert.ok(lintCopy('波\u3164士顿手提包').violations.length === 0, '填充符剥除后无禁用词（正控）');
+  const r = checkNameImage({
+    name: '波\u3164士顿',
+    description: '',
+    factCard: { mainColor: '黑', bagType: '凯莉' },
+  });
+  assert.ok(
+    r.blockers.some((b) => b.code === 'BAG_SILHOUETTE_MISMATCH' && b.word === '波士顿'),
+    'U+3164（NFKC→U+1160，Lo 类）拆词仍被例外集收口',
+  );
+  const r2 = checkNameImage({
+    name: '波ᅠ士顿', // U+1160 直书
+    description: '',
+    factCard: { mainColor: '黑', bagType: '凯莉' },
+  });
+  assert.ok(r2.blockers.some((b) => b.code === 'BAG_SILHOUETTE_MISMATCH'), 'U+1160 直书同样收口');
+});
+
+test('四修 P1-1：感叹号规则（Po 类）在轻归一原文面仍拦——全角/半角/混合/零宽插入', () => {
+  assert.equal(lintCopy('上新了！！！').violations[0].word, '!!!');
+  assert.equal(lintCopy('速来!！').violations.length, 1, '半角+全角混合');
+  assert.equal(lintCopy('速来!\u200B!').violations[0].word, '!!', '零宽插入');
+  assert.equal(lintCopy('速来!\uFE0F!').violations[0].word, '!!', '变体选择符插入');
+  assert.equal(lintCopy('速来! !').violations[0].word, '!!', '空格插入');
+  assert.deepEqual(lintCopy('来！真的值！').violations, [], '单个感叹号放行（正控）');
+  // 已知边界（如实声明）：感叹号之间的可见标点（Po/Pd 类）保留在轻归一面，
+  // 「！·！」不折叠——与三修行为一致，非回归
+  assert.equal(lintCopy('！\u00B7！').violations.length, 0, '可见标点隔断感叹号属声明边界');
+});
+
+test('四修 P1-1：词表纯度守门——非 pattern 条目的 word/exceptions 与颜色/包型词表全由 \\p{L}\\p{N} 构成', () => {
+  // 白名单折叠的成立前提：词面字符在比对视图中不会被剥除。若未来加词带标点
+  // （如"5折！"），该词在比对视图永不可能命中——本用例强制加词者显式改用
+  // pattern 条目或先扩白名单契约，防静默失效。
+  const pure = (s) => ![...s].some((ch) => !/\p{L}|\p{N}/u.test(ch));
+  for (const entry of VOICE_RULES.banned) {
+    if (entry.pattern !== undefined) continue; // pattern 条目走轻归一原文面，不受此限
+    assert.ok(pure(entry.word), `禁用词「${entry.word}」含非 \\p{L}\\p{N} 字符`);
+    for (const ex of entry.exceptions ?? []) assert.ok(pure(ex), `例外词「${ex}」含非 \\p{L}\\p{N} 字符`);
+  }
+  for (const words of Object.values(COLOR_FAMILIES)) {
+    for (const w of words) assert.ok(pure(w), `颜色词「${w}」含非 \\p{L}\\p{N} 字符`);
+  }
+  for (const g of [...BAG_SILHOUETTES, ...BAG_CARRY_STYLES]) {
+    for (const w of g.words) assert.ok(pure(w), `包型词「${w}」含非 \\p{L}\\p{N} 字符`);
+  }
+});
+
+test('四修 P1-1：normalize-pattern.json 单源一致性——JS 内嵌 / TS 内嵌（create-product.dto.ts）三处逐字符相等', () => {
+  const singleSource = JSON.parse(
+    readFileSync(new URL('./normalize-pattern.json', import.meta.url), 'utf8'),
+  );
+  assert.ok(typeof singleSource.stripPattern === 'string' && singleSource.stripPattern.length > 0);
+  assert.equal(singleSource.flags, 'gu');
+  // 单源字符串本身可编译且行为符合设计（剥非 L/N + Hangul 填充符，保字母数字）
+  const re = new RegExp(singleSource.stripPattern, singleSource.flags);
+  assert.equal('波a1'.replace(re, ''), '波a1');
+  assert.equal('波\uE000士\u3164顿·！ '.replace(re, ''), '波士顿');
+  // JS 内嵌字面量与单源一致（源码级比对：字面量里的 \\ 是双写字符）
+  const jsSource = readFileSync(new URL('./integrity-rules.js', import.meta.url), 'utf8');
+  const escaped = singleSource.stripPattern.replace(/\\/g, '\\\\');
+  assert.ok(
+    jsSource.includes(`'${escaped}'`),
+    'integrity-rules.js 的 STRIP_PATTERN 字面量与 normalize-pattern.json 漂移（两处必须同步）',
+  );
+  // TS 内嵌字面量（DTO normalizeNameInput）与单源一致
+  const tsSource = readFileSync(
+    new URL('../../backend/src/products/dto/create-product.dto.ts', import.meta.url), 'utf8',
+  );
+  assert.ok(
+    tsSource.includes(`'${escaped}'`),
+    'create-product.dto.ts 的 MATCH_VIEW_STRIP_PATTERN 字面量与 normalize-pattern.json 漂移（两处必须同步）',
+  );
 });

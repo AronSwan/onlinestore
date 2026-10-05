@@ -7,9 +7,16 @@
 // 约束 / specifications 对象形状）——PATCH 部分字段时只校验所传字段。
 
 import { ApiProperty, PartialType } from '@nestjs/swagger';
-import { CreateProductDto } from './create-product.dto';
+import { Transform } from 'class-transformer';
+import { IsOptional } from 'class-validator';
+import { CreateProductDto, nullToUndefined } from './create-product.dto';
 
 export class UpdateProductDto extends PartialType(CreateProductDto) {
+  // 四修 P2：isActive 的 null→undefined 在本类显式重申（CreateProductDto 的
+  // @Transform 经原型链继承对 PartialType 生效，但本字段被子类重声明——
+  // 装饰器就地重挂，不依赖继承细节）。NOT NULL 列的 500 面，同 price/stock。
+  @Transform(nullToUndefined)
   @ApiProperty({ description: '是否上架', required: false })
+  @IsOptional()
   isActive?: boolean;
 }
