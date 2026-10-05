@@ -2451,8 +2451,10 @@ body {
     position: absolute;
     top: -8px;
     right: -8px;
-    /* C15(裁决): 警示红 → candy-blush 底白字（红只留售罄） */
-    background: var(--candy-blush);
+    /* C15(裁决): 警示红 → candy 系（红只留售罄）
+       ⑤审 P2-1: 底用 blush-ink 档——白字压 blush 主档仅 2.74:1 不及格,
+       blush-ink #B93A54 白字 5.53:1 过线 */
+    background: var(--candy-blush-ink);
     color: white;
     border-radius: 50%;
     width: 20px;

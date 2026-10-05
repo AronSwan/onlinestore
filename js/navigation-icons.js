@@ -194,51 +194,19 @@ class NavigationIconManager {
   }
 
   /**
-   * 绑定心愿单图标点击事件
+   * 绑定心愿单图标点击事件（⑤审 P2-4：B4 闭环后心愿单入口走 site-header.js 渲染的
+   * profile.html#wishlist 深链，本方法与旧 showWishlistModal 同族休眠——选择器匹配旧 img
+   * 结构在 SVG 头部下永不命中。整段退役，防止未来 DOM 变动意外复活死路径）
    */
   bindWishlistIconClick() {
-    // 尝试多种可能的选择器来找到心愿单图标
-    const wishlistIcon = document.querySelector('button img[src="heart-icon.svg"]') || 
-                         document.querySelector('.wishlist-icon img') ||
-                         document.querySelector('[data-wishlist-icon] img') ||
-                         document.querySelector('.action-btn img[alt*="心愿单"]') ||
-                         document.querySelector('.action-btn img[alt*="收藏"]');
-    
-    if (wishlistIcon) {
-      console.log('NavigationIconManager: 找到心愿单图标，绑定点击事件');
-      const wishlistButton = wishlistIcon.parentElement;
-      wishlistButton.addEventListener('click', (e) => {
-        e.preventDefault();
-        this.handleWishlistIconClick();
-      });
-    } else {
-      console.warn('NavigationIconManager: 未找到心愿单图标');
-    }
+    // 已退役（2026-10-05）：入口深链化，无绑定逻辑
   }
 
   /**
-   * 处理心愿单图标点击事件
+   * 处理心愿单图标点击事件（已退役，同 bindWishlistIconClick——深链化后无调用方）
    */
   handleWishlistIconClick() {
-    // 如果已存在心愿单管理器实例，则调用其方法
-    if (window.wishlistManager && typeof window.wishlistManager.showWishlistModal === 'function') {
-      window.wishlistManager.showWishlistModal();
-    } else {
-      // 如果wishlistManager尚未初始化，等待一段时间后再次尝试
-      let attempts = 0;
-      const maxAttempts = 10;
-      const checkInterval = setInterval(() => {
-        attempts++;
-        if (window.wishlistManager && typeof window.wishlistManager.showWishlistModal === 'function') {
-          clearInterval(checkInterval);
-          window.wishlistManager.showWishlistModal();
-        } else if (attempts >= maxAttempts) {
-          clearInterval(checkInterval);
-          // 心愿单页面不存在：回到首页（首页加载了 wishlist.js，可打开收藏弹层）
-          window.location.href = '/';
-        }
-      }, 100);
-    }
+    // 已退役（2026-10-05）
   }
 
   /**

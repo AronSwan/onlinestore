@@ -196,17 +196,24 @@
   transition: color var(--dur-fast) var(--ease-lux), text-decoration-color var(--dur-fast) var(--ease-lux);
 }
 
-.clear-selected-btn:hover:not(:disabled) {
+.clear-bag-btn:hover:not(:disabled) {
   color: var(--candy-blush-ink);
   text-decoration-color: var(--candy-blush-ink);
 }
 
-.clear-selected-btn:focus-visible {
+/* ⑤审 P3-1：armed 态视觉（两步清空首点后的警示态——原先只有文字变化零视觉） */
+.clear-bag-btn.armed {
+  color: var(--error-color);
+  text-decoration-color: var(--error-color);
+  font-weight: var(--font-weight-bold);
+}
+
+.clear-bag-btn:focus-visible {
   outline: 2px solid var(--focus-ring-color);
   outline-offset: var(--focus-ring-offset);
 }
 
-.clear-selected-btn:disabled {
+.clear-bag-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }

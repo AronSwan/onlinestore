@@ -172,28 +172,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    const wishlistBtn = document.querySelector('.site-wishlist-btn');
-    if (wishlistBtn) {
-        wishlistBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (window.wishlistManager && typeof window.wishlistManager.showWishlistModal === 'function') {
-                window.wishlistManager.showWishlistModal();
-                return;
-            }
-            // wishlistManager 未就绪时短暂等待（模块 defer 加载）
-            let attempts = 0;
-            const checkInterval = setInterval(() => {
-                attempts++;
-                if (window.wishlistManager && typeof window.wishlistManager.showWishlistModal === 'function') {
-                    clearInterval(checkInterval);
-                    window.wishlistManager.showWishlistModal();
-                } else if (attempts >= 10) {
-                    clearInterval(checkInterval);
-                    window.location.href = '/';
-                }
-            }, 100);
-        });
-    }
+    // 心愿单入口：B4 已闭环为 profile.html#wishlist 深链（site-header.js 渲染 href），
+    // 此处不再拦截——⑤审工程维 P1：旧 bind 轮询的 showWishlistModal 已随 M6 孤儿模态删除，
+    // 拦截后 1s 只能 fallback 原地重载（首页死链）。放行锚点即深链可达。
 
     // 全局变量存储Casdoor可用性状态
     let casdoorAvailable = false;

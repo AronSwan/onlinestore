@@ -141,7 +141,8 @@
   font-size: 11px; /* C26(裁决): 徽章 10→11px */
   font-weight: var(--font-weight-semibold);
   color: var(--bg-base);
-  background: var(--candy-blush);
+  /* ⑤审 P2-1: 底 blush 主档→blush-ink 档——白字压主档 2.74:1 不及格, ink 档 5.53:1 */
+  background: var(--candy-blush-ink);
   border-radius: var(--radius-full);
   padding: 0 4px;
 }
