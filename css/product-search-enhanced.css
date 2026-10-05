@@ -140,6 +140,35 @@
 }
 
 /* 无搜索结果提示 */
+/* M7·香港挂位: 搜索空态推荐词两枚（把人领回去，不让空白吃掉一次搜索） */
+.no-search-results-suggest {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: var(--text-small, 0.8125rem);
+  color: var(--ink-soft);
+}
+
+.no-search-results-chip {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill, 999px);
+  background: var(--bg-base);
+  color: var(--ink);
+  font-size: var(--text-small, 0.8125rem);
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: border-color var(--dur-fast, 0.2s) var(--ease-lux, ease-in-out), color var(--dur-fast, 0.2s) var(--ease-lux, ease-in-out);
+}
+
+.no-search-results-chip:hover,
+.no-search-results-chip:focus-visible {
+  border-color: var(--candy-blush-ink);
+  color: var(--candy-blush-ink);
+  outline: none;
+}
+
 .no-search-results {
   padding: 30px;
   text-align: center;

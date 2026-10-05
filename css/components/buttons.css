@@ -108,7 +108,7 @@
   box-shadow: 0 8px 25px rgba(245, 245, 220, 0.2);
 }
 
-/* 3. 金色按钮 .btn-gold 已删除（P2：HTML/JS 零引用，金系促销感清理） */
+/* 3. 金色按钮（金映射名类）已删除（P2：HTML/JS 零引用，金系促销感清理） */
 
 /* 4. 危险按钮 - 红色样式 */
 .btn-danger {
@@ -144,7 +144,7 @@
 
 /* ==========================================================================
    按钮特殊效果（P2 清理：以下 8 组动效库存类 HTML/JS 零引用，整块删除——
-   .btn-gold / .btn-pulse-glow / .btn-glow / .btn-ripple / .btn-borderGradient
+   金钮 / .btn-pulse-glow / .btn-glow / .btn-ripple / .btn-borderGradient
    （btn-gradient-border） / .btn-3d-hover / .btn-bounce（btn-icon-bounce）
    / .btn-icon-animate）
    ========================================================================== */

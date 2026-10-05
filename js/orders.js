@@ -298,7 +298,7 @@ class OrderManager {
         const products = [
             { name: '渐变褶皱手袋', price: 299, image: 'images/products/product-1.jpg' },
             { name: '黑皮波士顿包', price: 259, image: 'images/products/product-2.jpg' },
-            { name: '湖蓝凯莉手提包', price: 189, image: 'images/products/product-3.jpg' },
+            { name: '湖蓝锁扣手提包', price: 189, image: 'images/products/product-3.jpg' },
             { name: '双色糖果链条包', price: 168, image: 'images/products/product-4.jpg' },
             { name: '花语皮革手提包', price: 229, image: 'images/products/product-5.jpg' }
         ];
@@ -328,8 +328,10 @@ class OrderManager {
                 });
             }
             
+            // M7·香港挂位: mock 日期线对齐序号——序号越大越新（隔 3 天一单），
+            // 消除"ORD-000013 早于 000008"的做数穿帮；与尾部 sort(date desc) 自洽。
             const orderDate = new Date();
-            orderDate.setDate(orderDate.getDate() - Math.floor(Math.random() * 90));
+            orderDate.setDate(orderDate.getDate() - (26 - i) * 3);
             
             orders.push({
                 id: `ORD-${String(i).padStart(6, '0')}`,
