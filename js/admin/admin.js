@@ -218,6 +218,33 @@ async function loadList() {
   }
 }
 
+/**
+ * M6(2026-10-05)：台账哈希链校验——GET /api/audit/verify（ADMIN 面专用）。
+ * 结果条文案由后端单源下发（§2.3 立法话术），前端只负责绿/红两态与请求错误兜底；
+ * 401 由 apiFetch 静默续期处理，403/5xx 在条内如实展示。
+ */
+async function runAuditVerify() {
+  const bar = $('audit-verify-bar');
+  const btn = $('btn-audit-verify');
+  bar.classList.remove('hidden', 'ok', 'bad');
+  bar.textContent = '台账校验中…';
+  btn.disabled = true;
+  try {
+    const resp = await apiFetch('/api/audit/verify');
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    bar.classList.add(data.valid ? 'ok' : 'bad');
+    bar.textContent = data.message || (data.valid ? '台账链完整。' : '台账链断裂。');
+  } catch (e) {
+    bar.classList.add('bad');
+    bar.textContent = String(e.message).includes('登录')
+      ? '登录已过期，请重新登录后再校验。'
+      : `台账校验请求失败（${e.message}）。稍后再试，或跑 npm run verify:audit 看逐行报告。`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 async function toggleActive(id, activate) {
   try {
     if (activate) {
@@ -665,6 +692,8 @@ function showBackendErrors(status, data) {
 
 function bindEvents() {
   $('btn-new').addEventListener('click', () => openEditor(null));
+  // M6：台账校验次级按钮（列表视图）
+  $('btn-audit-verify').addEventListener('click', runAuditVerify);
   $('btn-back').addEventListener('click', () => {
     showView('list');
     loadList();
