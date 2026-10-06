@@ -868,15 +868,19 @@ class CartUI {
   updateEmptyState(isEmpty) {
     const emptyElement = this.elements.cartBody.querySelector('.cart-empty');
     const itemsList = this.elements.cartItemsList;
-    
+
     if (isEmpty) {
       if (emptyElement) emptyElement.style.display = 'flex';
       if (itemsList) itemsList.style.display = 'none';
       if (this.elements.cartFooter) this.elements.cartFooter.style.display = 'none';
+      /* 国际批 A14+Y2 复核 P2-1：空袋态"清空袋子"隐藏（原仅 disabled 视觉仍在——
+         对空袋显示清空动作是逻辑与视觉双噪音；非空态恢复显示） */
+      if (this.elements.clearBagBtn) this.elements.clearBagBtn.style.display = 'none';
     } else {
       if (emptyElement) emptyElement.style.display = 'none';
       if (itemsList) itemsList.style.display = 'block';
       if (this.elements.cartFooter) this.elements.cartFooter.style.display = 'block';
+      if (this.elements.clearBagBtn) this.elements.clearBagBtn.style.display = '';
     }
   }
 
