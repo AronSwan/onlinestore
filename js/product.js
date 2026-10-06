@@ -89,10 +89,12 @@ import { registerOverlayEscape } from './shared/overlay-escape.js';
   }
 
   /** A 档 4：灯箱大图源——本地商品图取 1600 档 webp，其余回落 mainImage 原址
-      （扩展名拆写，避免被 scripts/check-frontend-assets.py 当作本地路径字面量） */
+      （扩展名拆写，避免被 scripts/check-frontend-assets.py 当作本地路径字面量）
+      X2 P2-4：无图商品与主图同款回退 default——原实现空串会解析为页面 URL 开破图 */
   function lightboxSource(src) {
     var base = productImageBase(src);
-    return base ? base + '-1600.w' + 'ebp' : String(src || '');
+    if (base) return base + '-1600.w' + 'ebp';
+    return String(src || '/images/default-product.png');
   }
 
   /**
@@ -174,8 +176,8 @@ import { registerOverlayEscape } from './shared/overlay-escape.js';
       ? atcButton(p, 'atc-btn pdp-atc', '加入购物袋')
       : '<button type="button" class="atc-btn pdp-atc" disabled>暂时没货了</button>';
     var stickyAtc = inStock
-      ? atcButton(p, 'atc-btn pdp-atc pdp-atc-bar-btn', '加入购物袋')
-      : '<button type="button" class="atc-btn pdp-atc pdp-atc-bar-btn" disabled>暂时没货了</button>';
+      ? atcButton(p, 'atc-btn pdp-atc-bar-btn', '加入购物袋')
+      : '<button type="button" class="atc-btn pdp-atc-bar-btn" disabled>暂时没货了</button>';
 
     return (
       '<nav class="pdp-breadcrumb" aria-label="面包屑">' +

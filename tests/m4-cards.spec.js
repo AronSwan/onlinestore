@@ -147,6 +147,7 @@ test('滚动快照回位：卡点入 PDP → 返回回到原滚动位（stash �
   await gridReady(page);
   await page.evaluate(() => window.scrollTo(0, 900));
   await page.waitForTimeout(300);
+  const clickY = await page.evaluate(() => window.scrollY); // 点击瞬间的实际滚动位
   await page.locator('.bento-card').nth(2).locator('a.card-link').click();
   await page.waitForURL(/product\.html/);
   await page.waitForSelector('.pdp-layout');
@@ -156,7 +157,9 @@ test('滚动快照回位：卡点入 PDP → 返回回到原滚动位（stash �
   await page.waitForFunction(() => document.querySelectorAll('.bento-card').length >= 3);
   await page.waitForTimeout(1000); // 并行负载下布局/回位写窗加宽
   const y = await page.evaluate(() => window.scrollY);
-  expect(Math.abs(y - 900)).toBeLessThan(150); // 双保险合力：原生 or stash
+  // F1c(X2 归因)：注脚行使 nth(2) 卡越折叠线、Playwright 点击前自动滚卡入视，
+  // stash 存的就是实际点击位——契约是'回到点入时所在位'，断言对象改为实测 clickY
+  expect(Math.abs(y - clickY)).toBeLessThan(150); // 双保险合力：原生 or stash
 });
 
 test('hero 终裁：下划线零残留 + 标题纯文本（用户裁决覆盖蓝图波浪项）', async ({ page }) => {

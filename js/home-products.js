@@ -185,7 +185,7 @@
    */
   function featuredHtml(p, index, source) {
     // A 档 4 sizes：桌面 featured 跨 2/3 列 ≈66vw；<1024 双列网格跨满 ≈100vw
-    var f = commonFields(p, index, '(min-width:1024px) 66vw, 100vw');
+    var f = commonFields(p, index, '(min-width:1024px) 66vw, (min-width:640px) 100vw, 92vw');
     return (
       '<article class="bento-card bento-featured reich-product-card stagger-item"' +
       ' data-product-id="' + f.id8 + '" data-featured-source="' + source + '" aria-label="本期主打：' + f.name + '"' +
@@ -216,7 +216,7 @@
       M4：双锚 + 品质行（材质·工艺，specifications 实时，ink-soft 12px 禁 faint）。 */
   function cellHtml(p, index) {
     // A 档 4 sizes：桌面单格 ≈1/3 列 34vw；<1024 双列网格 ≈50vw
-    var f = commonFields(p, index, '(min-width:1024px) 34vw, 50vw');
+    var f = commonFields(p, index, '(min-width:1024px) 34vw, (min-width:640px) 50vw, 92vw');
     return (
       '<article class="bento-card bento-cell reich-product-card stagger-item"' +
       ' data-product-id="' + f.id8 + '" itemscope itemtype="https://schema.org/Product">' +

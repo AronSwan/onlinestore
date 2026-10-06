@@ -43,9 +43,10 @@ function ensureStyle() {
   #${CONTAINER_ID} { right: 16px; left: 16px; bottom: 16px; max-width: none; }
 }
 .reich-toast {
-  /* 国际挑剔用户批 A 档 13（PM P2-4 实伤）：主体 pointer-events:none——toast 不再
-     盖死下层按钮（结算钮/页内控件点击穿透）；两钮区 auto（hover 暂停经按钮冒泡仍生效） */
-  pointer-events: none;
+  /* X1+X2 双席共中 F1a 终修：body 回退 auto——pointer-events:none 杀死 hover 暂停
+     冻结契约(m3:89 红)且属二次压症状（盖钮根因已由开袋 dismissAllToasts 根治）；
+     容器保持 none(标准 toast 模式, 容器自身不挡下层) */
+  pointer-events: auto;
   display: flex;
   align-items: center;
   gap: 12px;
