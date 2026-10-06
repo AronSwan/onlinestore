@@ -66,8 +66,15 @@ class CartManager {
   
   // 保留现有方法
   loadCartSync() {
-    const cartData = localStorage.getItem('reich_cart');
-    return cartData ? JSON.parse(cartData) : [];
+    // ⑥审续修(2026-10-06·X2 F1)：损坏 JSON 裸 parse 会抛穿构造器——整模块死亡
+    // （徽章死/加购委托永不绑定）。损坏按空袋自愈，清掉坏数据防反复抛。
+    try {
+      const cartData = localStorage.getItem('reich_cart');
+      return cartData ? JSON.parse(cartData) : [];
+    } catch (e) {
+      try { localStorage.removeItem('reich_cart'); } catch (e2) { /* 隐私模式 */ }
+      return [];
+    }
   }
   
   async initAsync() {
@@ -97,10 +104,9 @@ class CartManager {
           const serverCart = Array.isArray(data.cart) ? data.cart : null;
           let localCart = [];
           try { localCart = JSON.parse(localStorage.getItem('reich_cart') || '[]'); } catch (e) { /* 损坏按空袋 */ }
-          // 形状守卫：仅当首项带本地族字段才采用——后端 DTO 形状（无 productSkuId）不吞
+          // 形状守卫：全项带本地族字段才采用——首项制会让混合数组半生吞（徽章 NaN）
           const shapeOk = serverCart && serverCart.length > 0 &&
-            serverCart[0] && typeof serverCart[0] === 'object' &&
-            ('productSkuId' in serverCart[0]);
+            serverCart.every(it => it && typeof it === 'object' && 'productSkuId' in it);
           if (shapeOk && localCart.length === 0) {
             localStorage.setItem('reich_cart', JSON.stringify(serverCart));
             return serverCart;
@@ -111,9 +117,9 @@ class CartManager {
         console.error('加载购物车数据出错:', error);
       }
     }
-    
-    const cartData = localStorage.getItem('reich_cart');
-    return cartData ? JSON.parse(cartData) : [];
+
+    // 兜底（游客/非 ok/网络异常）：同 loadCartSync 的损坏自愈口径
+    return this.loadCartSync();
   }
 
   // 增强的UI初始化方法
