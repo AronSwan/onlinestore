@@ -278,7 +278,7 @@ function validateRegisterForm() {
     
   // 验证密码
   if (!validatePassword(password)) {
-    showError("register-password", "密码不能为空，且需至少8位并包含大写字母、小写字母、数字和特殊字符");
+    showError("register-password", "密码不能为空，且需至少8位并包含大写字母、小写字母、数字和特殊字符（特殊字符限 @ $ ! % * ? & 六类，与后端一致）");
     isValid = false;
   } else {
     hideError("register-password");

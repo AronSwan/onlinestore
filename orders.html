@@ -125,8 +125,9 @@
             </div>
         </section>
 
-        <!-- 订单筛选和搜索（⑥审移交批1⑩：游客引导态下隐藏——对无订单可搜者是假交互面） -->
-        <section id="orderControls" class="bg-white py-6 border-b border-[var(--border-default)] hidden">
+        <!-- 订单筛选和搜索（⑥审批1⑩：游客引导态由 js 动态隐藏——html 不带默认 hidden，
+             回炉@2026-10-07：旧写烤死 hidden 砸中登录态 100%，求真务实组四席共中 P1） -->
+        <section id="orderControls" class="bg-white py-6 border-b border-[var(--border-default)]">
             <div class="container mx-auto px-4">
                 <div class="flex flex-col md:flex-row gap-4 items-center">
                     <!-- 搜索框 -->

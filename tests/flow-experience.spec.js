@@ -50,9 +50,9 @@ test.afterEach(async ({ page }) => {
  * validatePassword 已逐字符类对齐，2026-10-07 批1①修复后口径），
  * 登出后必须能用同一密码登录成功。工况（2026-10-06）：真实 Nest 后端 /api/auth/*
  * 经 vite 代理；后端节流 register 3/min、login 5/min——本件每跑一次各一次，勿高频重跑。
- * 断言口径：B1/B2（裁决 B 档，润滑席已落地）后注册/登录成功 toast 均 400ms 一闪即走
- * （随后即跳转）——闪现文案不做断言（满载下轮询必漏采，2026-10-06 实测两见），
- * 改锁用户可见结果：注册→登录态直进首页；登出→登录态清空；同密码登录→登录态重建。
+ * 断言口径：B1/B2（裁决 B 档，润滑席已落地）注册→登录态直进首页；登出→登录态
+ * 清空；同密码登录→登录态重建。（回炉批注@2026-10-07：正题批批1⑪ 已删两处
+ * 成功 toast——旧文"400ms 一闪即走不做断言"的场景不复存在，改锁跳转结果不变。）
  * 已知限制（2026-10-07 止血后）：本件末尾经 DELETE /api/users/me 自删测试号——
  * 自删失败（网络级）时最多留一个号/跑；历史累积残留的清库见 BACKLOG 移交项。 */
 test('A1 注册合法密码 → 登出 → 同密码登录成功', async ({ page }) => {
@@ -246,6 +246,24 @@ test('A9 游客订单引导态：CTA 可见带 returnUrl → 演示数据折叠'
   const href = await cta.getAttribute('href');
   expect(href).toMatch(/returnUrl=[^&]*orders/);
   await expect(page.locator('#ordersList')).toBeHidden(); // 演示折叠态：默认不展开
+  // ⑥审批1⑩行为面补锁（回炉@2026-10-07，求真务实组四席共中）：游客态搜索/筛选区
+  // 隐藏（假交互面收起）——与 a-lane 匿名位同锁此处强化为显式契约；
+  // "登录态该区可见"由 A9b 锁（本件测不了登录态）。
+  await expect(page.locator('#orderControls')).toBeHidden();
+});
+
+/* A9b 登录态订单控件可见（回炉批新增 2026-10-07）：正题批曾把 hidden 烤死在
+ * html 默认态——登录用户搜索/筛选 100% 蒸发且四席审查前无人能抓（a-lane 旧
+ * attached 锁失明）。本锁用 seed 登录态直接断言控件区可见——防同类回归。 */
+test('A9b 登录态订单控件可见：seed 登录态 → #orderControls 不被隐藏', async ({ page }) => {
+  await page.addInitScript(() => {
+    sessionStorage.setItem('userLoggedIn', 'true');
+    sessionStorage.setItem('token', 'seed-fake-token-for-visibility-lock');
+    sessionStorage.setItem('userId', '1');
+  });
+  await page.goto(BASE + 'orders.html', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(1200); // 等 fetch 失败回退/空态落定（假 token → 401 路径）
+  await expect(page.locator('#orderControls')).toBeVisible();
 });
 
 /* ── B8 连击合并（裁决：加购连点同 SKU 500ms 合并） ──────────────────

@@ -757,7 +757,9 @@ class CartUI {
           } else {
             // ⑥审移交批1②（Y1 实锤）：异 SKU 新窗时旧写只 clearTimeout 不
             // flush——前一只的 toast 整条被吞（180ms 间隔两只仅 1 条）。
-            // 先冲刷旧窗（旧 toast 照常发出）再开新窗。
+            // 先冲刷旧窗（旧 toast 照常发出）再开新窗。120ms=burstFlush 同款出场
+            // 缓冲（进队节流，与首窗一致）；两窗 toast 将共存叠放（各 ≥5.2s 存活、
+            // 队列上限 2 最老让位——务实席实测三 SKU 连点峰值恒 2 不刷屏）。
             if (this._toastBurst) {
               clearTimeout(this._toastBurst.timer);
               const old = this._toastBurst;
