@@ -299,9 +299,16 @@ class OrderManager {
             // formatDate/formatDateTime/order.date.getTime() 永远拿到合法 Date。
             const parsedDate = new Date(raw.date || raw.createdAt || raw.created_at || Date.now());
 
+            // 双盲验收P1×2同根修（2026-10-07，X1/X2共中）：后端自增id为数值——
+            // 旧写保留数值导致两条死路：搜索 order.id.toLowerCase 抛 TypeError
+            // （列表永不过滤+pageerror）；动作钮内联 onclick 传字符串与
+            // o.id === orderId 严格等值失配（详情/再购/发票/退货/取消五处静默
+            // 死钮）。归一边界统一 String，两条路径一并救活。
+            const rawId = raw.id || raw.orderId || raw.orderNumber;
+            const fallbackId = `ORD-${String(index + 1).padStart(6, '0')}`;
             return {
-                id: raw.id || raw.orderId || raw.orderNumber || `ORD-${String(index + 1).padStart(6, '0')}`,
-                reference: raw.reference || raw.orderRef || raw.id || '',
+                id: rawId != null ? String(rawId) : fallbackId,
+                reference: String(raw.reference || raw.orderRef || raw.id || ''),
                 date: isNaN(parsedDate.getTime()) ? new Date() : parsedDate,
                 status: raw.status || 'pending',
                 total: total,

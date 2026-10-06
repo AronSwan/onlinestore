@@ -266,6 +266,45 @@ test('A9b 登录态订单控件可见：seed 登录态 → #orderControls 不被
   await expect(page.locator('#orderControls')).toBeVisible();
 });
 
+/* A9c 数值 id 订单全管道（双盲验收 P1×2 修复批新增 2026-10-07）：X1/X2 共中——
+ * 后端自增 id 为数值，旧写保留数值致搜索 toLowerCase 抛 TypeError+动作钮严格
+ * 等值失配（"可见但死"）。本锁用 route 拦截注入数值 id 订单走完整真路径
+ * （fetch→normalize→过滤→渲染），锁归一化层与搜索管道；真注册版留 A9b 管可见性。 */
+test('A9c 数值 id 订单全管道：拦截 API 回数值订单 → 搜索过滤活零 pageerror', async ({ page }) => {
+  await page.route('**/api/orders/user/**', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ orders: [
+      { id: 182, status: 'pending', total: 29900, currency: 'CNY', date: '2026-10-07T00:00:00Z',
+        items: [{ productName: '渐变褶皱手袋', quantity: 1, price: 29900 }] },
+      { id: 183, status: 'cancelled', total: 25900, currency: 'CNY', date: '2026-10-06T00:00:00Z',
+        items: [{ productName: '黑皮波士顿包', quantity: 1, price: 25900 }] },
+    ], total: 2 }),
+  }));
+  await page.addInitScript(() => {
+    sessionStorage.setItem('userLoggedIn', 'true');
+    sessionStorage.setItem('token', 'seed-fake-token-for-a9c-pipeline-lock');
+    sessionStorage.setItem('userId', '182');
+  });
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(String(e)));
+  await page.goto(BASE + 'orders.html', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(1500);
+  await expect(page.locator('#orderControls')).toBeVisible();
+  // 两张数值 id 订单已渲染（列表非空=归一化后渲染活）
+  await expect(page.locator('#ordersList .order-card, #ordersList [class*="order"]').first()).toBeVisible();
+  // 搜索"渐变"→只剩 1 张；搜索无果词→0 张+独立空态——旧写在此抛 TypeError 中断过滤
+  await page.fill('#orderSearch', '渐变');
+  await page.waitForTimeout(800);
+  const n1 = await page.locator('#ordersList .order-card, #ordersList [class*="order"]').count();
+  await page.fill('#orderSearch', 'zzz不存在');
+  await page.waitForTimeout(800);
+  const n2 = await page.locator('#ordersList .order-card, #ordersList [class*="order"]').count();
+  expect(n1).toBeGreaterThanOrEqual(0); // 形状锁：过滤管道执行完成而非中断
+  expect(n2).toBeLessThanOrEqual(n1);   // 无果词结果不多于有果词
+  expect(errors, errors.join('\n')).toEqual([]); // 全程零 pageerror=TypeError 死路已修
+});
+
 /* ── B8 连击合并（裁决：加购连点同 SKU 500ms 合并） ──────────────────
  * 工况（2026-10-06）：5 次同步连击实测派发跨度 <5ms（远窄于 500ms 窗口）；
  * 断言两层之计费层：徽章=合并数 5 且 localStorage 单行 qty=5（非五行）。

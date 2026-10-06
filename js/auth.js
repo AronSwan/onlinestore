@@ -278,7 +278,7 @@ function validateRegisterForm() {
     
   // 验证密码
   if (!validatePassword(password)) {
-    showError("register-password", "密码不能为空，且需至少8位并包含大写字母、小写字母、数字和特殊字符（特殊字符限 @ $ ! % * ? & 六类，与后端一致）");
+    showError("register-password", "密码至少 8 位，需包含大写字母、小写字母和数字，符号可用 @ $ ! % * ? &（其余符号暂不支持）");
     isValid = false;
   } else {
     hideError("register-password");
@@ -312,7 +312,7 @@ function validateEmail(email) {
 /**
  * 验证密码
  * 与后端注册规则对齐（auth.dto.ts @Matches）：至少8位，同时含大小写、数字，
- * 特殊字符限 [@$!%*?&] 六类——旧写 [^A-Za-z0-9] 认任意符号（"Reich2026#" 前端
+ * 特殊字符限 [@$!%*?&]（七个符号）——旧写 [^A-Za-z0-9] 认任意符号（"Reich2026#" 前端
  * 过后端 400），⑥审批1①+求真席 P2-4 对齐
  */
 function validatePassword(password) {
