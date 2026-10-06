@@ -109,8 +109,10 @@ class WishlistManager {
   }
 
   removeFromWishlist(productId) {
-    // B11（东京 P2-5·流程体验官终版裁决）：取消收藏纯通知——分量轻于添加
-    //（无按钮/同短时长档；纯通知 2.5s 分语态属 C 档记档未实装，走组件默认）。
+    // B11（东京 P2-5·流程体验官终版裁决）：取消收藏纯通知——分量轻于添加。
+    // 无按钮已兑现；"时长短"要素与 toast 组件 5000ms 下限红线（罗马：移动端单手
+    // 4s 不够，js/shared/toast.js:178 Math.max 强制）冲突——⑥审修复循环裁定红线胜，
+    // 时长走组件默认 5.2s，冲突记 BACKLOG 待用户裁决是否破例。
     // "小本本"隐喻按术语锚同框纪律：主句+副句（心头好清单所在）同框出现
     const removed = this.wishlist.find(item => item.id === productId);
     this.wishlist = this.wishlist.filter(item => item.id !== productId);

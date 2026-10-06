@@ -348,16 +348,17 @@
     if (target === null) return;
     /* m4 诊断修复：referrer 守门在回退导航下常为空串（Playwright/隐私策略），
        兜底半因此永不触发。改以 Navigation Type 为主判（back_forward=回退），
-       referrer 降为旧浏览器二级证据。卡点击快照（stash）写于 PDP 导航瞬间，
-       天然只来自 PDP 路径，直接放行。 */
+       referrer 降为旧浏览器二级证据。
+       ⑥审修复(2026-10-06·X2 P2)：stash 写于卡点击瞬间但 TTL 5 分钟内任何
+       index 加载都能读到——旧写对 stash 半直接放行，菜单直入（卡点击→PDP→
+       他页→品牌链回 index）会被陈旧快照劫持。两半统一走同一来源守门：
+       仅回退/PDP 来源消费，菜单直入不劫持。 */
     var navEntry = (performance.getEntriesByType &&
       performance.getEntriesByType('navigation')[0]) || null;
     var isBack = !!(navEntry && navEntry.type === 'back_forward');
     var refFromPdp = (document.referrer || '').indexOf('product.html') !== -1;
-    if (fresh(stash)) {
-      window.scrollTo(0, target); // 卡点击快照：PDP 回程确证
-    } else if (isBack || refFromPdp) {
-      window.scrollTo(0, target); // pagehide 快照：仅回退/PDP 来源消费（菜单直入不劫持）
+    if (isBack || refFromPdp) {
+      window.scrollTo(0, target);
     }
   }
 

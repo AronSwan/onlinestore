@@ -90,9 +90,22 @@ class CartManager {
         
         const data = await response.json();
         if (response.ok) {
-          const cart = data.cart || [];
-          localStorage.setItem('reich_cart', JSON.stringify(cart));
-          return cart;
+          /* 本地优先修复(2026-10-06·⑥审 X2 P1)：两个后端（NestJS 分页 DTO / mock
+             {items,total,message}）均无 cart 键，旧写 data.cart||[] 恒得 [] ——
+             登录态每次页面加载把本地袋覆写为空。reich_cart 始终是真相源：
+             服务端仅在返回合法非空数组且本地为空时才允许补水，其余一律保本地。 */
+          const serverCart = Array.isArray(data.cart) ? data.cart : null;
+          let localCart = [];
+          try { localCart = JSON.parse(localStorage.getItem('reich_cart') || '[]'); } catch (e) { /* 损坏按空袋 */ }
+          // 形状守卫：仅当首项带本地族字段才采用——后端 DTO 形状（无 productSkuId）不吞
+          const shapeOk = serverCart && serverCart.length > 0 &&
+            serverCart[0] && typeof serverCart[0] === 'object' &&
+            ('productSkuId' in serverCart[0]);
+          if (shapeOk && localCart.length === 0) {
+            localStorage.setItem('reich_cart', JSON.stringify(serverCart));
+            return serverCart;
+          }
+          return localCart;
         }
       } catch (error) {
         console.error('加载购物车数据出错:', error);
@@ -306,9 +319,11 @@ class CartManager {
   }
 
   // 保留现有方法：同步到服务端
-  // A5：返回值语义化（true=成功或无需同步；false=失败，供后台重试判定）——
-  // 网络级失败仍留 console 痕迹；HTTP 非 2xx（本地优先模式下 /api/cart 根路由
-  // 404 属常态）按原口径静默，不污染 console（A 档 18 纪律）
+  // A5：返回值语义化（true=成功/无需同步/确定性失败；false=可重试的瞬时失败，
+  // 供后台重试判定）——网络级失败仍留 console 痕迹；HTTP 非 2xx（本地优先模式下
+  // /api/cart 根路由 404 属常态）按原口径静默，不污染 console（A 档 18 纪律）。
+  // ⑥审修复(2026-10-06·X1/X2 共中)：4xx 是确定性失败（路由不存在/鉴权拒绝），
+  // 重试必再败——只对网络异常与 5xx 返回 false 触发重试，404 不再死重试翻倍。
   async syncToServer() {
     // 审计标注(2026-10-03): 本方法调用的 GET/POST /api/cart 根路由在后端不存在(只有
     // /api/cart/items/:customerUserId 参数化路由)——服务端同步是静默降级的本地优先模式, 详见 README 已知限制
@@ -328,7 +343,8 @@ class CartManager {
         },
         body: JSON.stringify({ cart: this.cart })
       });
-      return !!response.ok;
+      if (response.ok) return true;
+      return response.status >= 500 ? false : true; // 5xx 瞬时可重试；4xx 确定失败不重试
     } catch (error) {
       console.error('同步购物车到服务端失败:', error);
       return false;
@@ -676,7 +692,9 @@ class CartUI {
         case 'itemAdded': {
           // M3(B1 v1.1 终裁)：反馈三件套——
           // ① 数据刷新；② 徽章脉冲即刻（解耦于飞行 onfinish，反馈延迟归零）；
-          // ③ 飞行克隆（源在点击现场解析）+ 落点脉冲后 120ms 出 toast 双选。
+          // ③ 飞行克隆（源在点击现场解析）+ toast。B8 连击合并(2026-10-06)后
+          // toast 走 500ms 合并窗+120ms 缓冲（单发到场 ≈620ms），原"m3 落点后
+          // 120ms"口径仅徽章脉冲仍成立——行动语态 5.2s 时长未动。
           // 不自动开面板（M2 已去 showCart：抽屉留主动点击，四席裁决）
           this.updateCartDisplay();
           this.pulseCartBadge();

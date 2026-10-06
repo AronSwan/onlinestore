@@ -735,10 +735,15 @@
   }
 }
 /* 审计整改(2026-10-03)沿革 + M2(C5 终裁)改写：CartUI 条目级类名(.item-*)别名对齐——
-   新列序 [缩略 72px][名称两行+价格行][步进器][×]，勾选框/独立小计列已随模型砍除（C24 消解） */
-.item-image { grid-area: image; }
+   新列序 [缩略 72px][名称两行+价格行][步进器][×]，勾选框/独立小计列已随模型砍除（C24 消解）。
+   ⑥审修复(2026-10-06·Y1 P1)：.cart-item 用列宽模板（72px minmax auto auto，无
+   grid-template-areas），旧 grid-area:image 别名悬空会把缩略图甩进隐式末列——
+   删除别名规则，四个子项按 DOM 序自动落四列；并补 .item-image img 约束（旧
+   .cart-item-image img 选择器不达条目别名节点，曾渲成 72×96 溢出）。 */
 .cart-items-list .item-image,
-.cart-item-image { width: 72px; height: 72px; object-fit: cover; border-radius: var(--radius-md); }
+.cart-item-image { width: 72px; height: 72px; border-radius: var(--radius-md); overflow: hidden; background: var(--background-secondary); }
+.cart-items-list .item-image img,
+.cart-item-image img { width: 100%; height: 100%; object-fit: cover; }
 .cart-items-list .item-details { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 /* B6: 商品名两行截断（line-clamp 按整行截，不截半个字） */
 .cart-items-list .item-name {

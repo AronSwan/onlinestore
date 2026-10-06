@@ -307,11 +307,9 @@ test('B9 连击焦点：袋内 + 连击 5 次 → 每次采样 activeElement 在
  * dev 下 bfcache 常不可用（vite dev 无缓存策略——A3 修法已删 main.js beforeunload，
  * persisted 路径仍不命中）——按会话定稿走"回位路径"断言：goBack 后 load 完成
  * 观察点起 150ms 内 rAF 采样 scrollY≥1150（目标 1200，25px 容差=设备像素圆整）。
- * ⚠ 已知红（2026-10-06 帧采样实测）：非 bfcache 回位被 html{scroll-behavior:smooth}
- * 动画化——scrollY 18→1200 历时 ≈576ms，site-header.js pageshow 两帧 auto 覆盖
- * 不了动画全程（覆盖窗内起滚、交还 CSS 后余程继续 smooth）。此红=产品侧 A3
- * 修法未达 ≤150ms 达标态的诚实信号（交润滑席/⑥双盲审），非测试抖动；修复后
- * 本锁自动转绿。与 m5 回位基线锁同向不冲突：m5 锁"回位发生"（600ms 窗，绿），
+ * ✅ 已转绿（2026-10-06 修复闭环）：site-header.js 改"首次用户滚动或 1s 超时交还
+ * scroll-behavior"+home-products.js pagehide 快照/back_forward 主判后，⑥审 X1 席
+ * 帧采样实测回位 1ms。与 m5 回位基线锁同向不冲突：m5 锁"回位发生"（600ms 窗，绿），
  * 本锁"回位时效"达标态（150ms 窗）。 */
 test('A3 bfcache/回位：首页滚位 → PDP → goBack → persisted 或 ≤150ms 回位', async ({ page }) => {
   // 暖缓存预热（2026-10-06）：满载并行下回退页图片迟到 → 回位时页高不足被钳到
