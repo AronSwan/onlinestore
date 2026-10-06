@@ -18,7 +18,10 @@ for (const p of PAGES) {
     await page.goto(BASE + p.path, { waitUntil: 'networkidle' });
     await page.waitForTimeout(800);
     for (const sel of p.probe) {
-      await expect(page.locator(sel).first()).toBeVisible();
+      // ⑥审批1⑩行为变化重锚（2026-10-07）：orders 搜索/筛选区游客态隐藏
+      // （#orderControls hidden）——本回归锁"结构不塌"（attached），可见性
+      // 归 flow-experience A9 行为锁管，不再用 toBeVisible
+      await expect(page.locator(sel).first()).toBeAttached();
     }
     // 容忍 favicon 404 类噪声，只断言真 JS/CSS 错
     const real = errors.filter((e) => !/favicon|net::ERR_FAILED.*favicon/i.test(e));

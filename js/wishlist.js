@@ -29,7 +29,18 @@ const boundButtons = new WeakSet();
 
 class WishlistManager {
   constructor() {
-    this.wishlist = JSON.parse(localStorage.getItem('reich_wishlist')) || [];
+    // ⑥审终验移交①（X1）：裸 parse 抛穿构造器=心形全站死钮（与 cart 所修同族同型）
+    // ——损坏按空册自愈并清坏数据，防反复抛
+    try {
+      this.wishlist = JSON.parse(localStorage.getItem('reich_wishlist')) || [];
+      if (!Array.isArray(this.wishlist)) {
+        this.wishlist = [];
+        try { localStorage.removeItem('reich_wishlist'); } catch (e) { /* 隐私模式 */ }
+      }
+    } catch (e) {
+      this.wishlist = [];
+      try { localStorage.removeItem('reich_wishlist'); } catch (e2) { /* 隐私模式 */ }
+    }
     this.initWishlistUI();
     this.bindEvents();
   }

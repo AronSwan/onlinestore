@@ -311,7 +311,9 @@ function validateEmail(email) {
 
 /**
  * 验证密码
- * 与后端注册规则对齐：至少8位，且需同时包含大写字母、小写字母、数字和特殊字符
+ * 与后端注册规则对齐（auth.dto.ts @Matches）：至少8位，同时含大小写、数字，
+ * 特殊字符限 [@$!%*?&] 六类——旧写 [^A-Za-z0-9] 认任意符号（"Reich2026#" 前端
+ * 过后端 400），⑥审批1①+求真席 P2-4 对齐
  */
 function validatePassword(password) {
   return (
@@ -320,7 +322,7 @@ function validatePassword(password) {
     /[A-Z]/.test(password) &&
     /[a-z]/.test(password) &&
     /[0-9]/.test(password) &&
-    /[^A-Za-z0-9]/.test(password)
+    /[@$!%*?&]/.test(password)
   );
 }
 
@@ -481,9 +483,9 @@ async function login(email, password, rememberMe) {
         }
       }
       
-      // 登录成功
-      showSuccessMessage("登录成功，即将跳转...");
-      
+      // 登录成功——⑥审移交批1⑪（Y1 P3-6）：400ms 跳转下成功 toast 腰斩不可读
+      // （冗余反馈），跳转本身即成功反馈，不再发 toast
+
       // 确保使用绝对路径跳转，避免相对路径问题。
       // M3(2026-10-04) 管理页登录分流守卫：登录页带 ?returnUrl= 时回到来处
       // （如 admin.html）；仅接受站内相对路径，防开放重定向。默认行为不变（回首页）。
@@ -577,8 +579,7 @@ async function register(username, email, password) {
 
       // B1（流程体验官终版裁决）：注册即登录直进——注册接口已发令牌（上面已随
       // "记住我"同规则写入会话），不再送登录页重输一遍密码；与登录同速（400ms）
-      // 跳 returnUrl/首页，toast 文案"注册成功"
-      showSuccessMessage("注册成功");
+      // 跳 returnUrl/首页。⑥审移交批1⑪：同登录侧删腰斩 toast，直进即成功反馈
 
       const returnParam = new URLSearchParams(window.location.search).get("returnUrl");
       const isSafeReturn = isSafeReturnUrl(returnParam);

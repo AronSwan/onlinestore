@@ -46,7 +46,8 @@ test.afterEach(async ({ page }) => {
 
 /* ── A1 密码一致 e2e ───────────────────────────────────────────────
  * 锁的是两端不变量：注册端接受的合法密码（8 位非弱：大小写+数字+特殊字符，
- * 前后端同规则，backend RegisterDto @Matches 与 js/auth.js validatePassword 一致），
+ * 特殊字符限 [@$!%*?&] 六类——backend RegisterDto @Matches 与 js/auth.js
+ * validatePassword 已逐字符类对齐，2026-10-07 批1①修复后口径），
  * 登出后必须能用同一密码登录成功。工况（2026-10-06）：真实 Nest 后端 /api/auth/*
  * 经 vite 代理；后端节流 register 3/min、login 5/min——本件每跑一次各一次，勿高频重跑。
  * 断言口径：B1/B2（裁决 B 档，润滑席已落地）后注册/登录成功 toast 均 400ms 一闪即走

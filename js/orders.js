@@ -187,12 +187,17 @@ class OrderManager {
         this.elements.ordersList.classList.add('hidden');
         this.elements.pagination.classList.add('hidden');
         if (this.elements.searchEmptyState) this.elements.searchEmptyState.classList.add('hidden');
+        // ⑥审移交批1⑩（Y1 P3-3）：游客态收起搜索框+筛选标签——对无订单可搜的
+        // 游客是假交互面/视觉噪音；展开演示数据时恢复（演示数据可搜可筛）
+        const controls = document.getElementById('orderControls');
+        if (controls) controls.classList.add('hidden');
 
         const expandBtn = document.getElementById('demoExpandBtn');
         if (expandBtn && !expandBtn.dataset.bound) {
             expandBtn.dataset.bound = '1';
             expandBtn.addEventListener('click', () => {
                 guest.classList.add('hidden');
+                if (controls) controls.classList.remove('hidden');
                 this.loadDemoData();
             });
         }

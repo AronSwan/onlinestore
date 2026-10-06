@@ -755,7 +755,23 @@ class CartUI {
             clearTimeout(this._toastBurst.timer);
             this._toastBurst.timer = window.setTimeout(burstFlush, 500);
           } else {
-            if (this._toastBurst) clearTimeout(this._toastBurst.timer);
+            // ⑥审移交批1②（Y1 实锤）：异 SKU 新窗时旧写只 clearTimeout 不
+            // flush——前一只的 toast 整条被吞（180ms 间隔两只仅 1 条）。
+            // 先冲刷旧窗（旧 toast 照常发出）再开新窗。
+            if (this._toastBurst) {
+              clearTimeout(this._toastBurst.timer);
+              const old = this._toastBurst;
+              this._toastBurst = null;
+              window.setTimeout(() => {
+                showCartToast({
+                  name: old.name,
+                  merged: old.merged,
+                  quantity: old.quantity,
+                  burstCount: old.count,
+                  onCheckout: () => this.cartManager.showCart(),
+                });
+              }, 120);
+            }
             this._toastBurst = {
               sku,
               name: item ? item.productName : '',
