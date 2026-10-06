@@ -441,7 +441,7 @@
     width: 44px;
     height: 44px;
   }
-  .cart-items-list .item-quantity span {
+  .cart-items-list .item-quantity span:not(.qty-hint) {
     min-width: 36px;
   }
   .cart-items-list .item-remove {
@@ -471,8 +471,11 @@
   outline-offset: -2px;
 }
 
-/* 数量读数锁 Condensed（与价格行同族数字） */
-.cart-items-list .item-quantity span {
+/* 数量读数锁 Condensed（与价格行同族数字）。
+   ⑥审终验收口(2026-10-06·Y1/Y2 共中)：旧写无 :not 排除，特异性 (0,3,0) 压过
+   .qty-hint (0,1,0)——hint 实渲 15px/600 深墨抢戏，与"11px 安静小字"设计意图直接
+   冲突；排除后 hint 归 11px muted，19px 让位预算（按 11px 编列）同步归位。 */
+.cart-items-list .item-quantity span:not(.qty-hint) {
   min-width: 28px;
   text-align: center;
   font-family: var(--font-numeric);

@@ -66,11 +66,20 @@ class CartManager {
   
   // 保留现有方法
   loadCartSync() {
-    // ⑥审续修(2026-10-06·X2 F1)：损坏 JSON 裸 parse 会抛穿构造器——整模块死亡
-    // （徽章死/加购委托永不绑定）。损坏按空袋自愈，清掉坏数据防反复抛。
+    /* ⑥审续修(2026-10-06·X2 F1)：损坏 JSON 裸 parse 会抛穿构造器——整模块死亡
+       （徽章死/加购委托永不绑定）。损坏按空袋自愈，清掉坏数据防反复抛。
+       终验收口(同日·X1/X2)：错型 JSON（"abc"/null/{}——parse 合法但非数组）
+       同入口致死；合法数组混异族项（跨标签覆写/旧版残留）→徽章 NaN+僵尸行
+       UI 不可删——非数组按空袋，异族项逐件滤除（本地数据部分打捞优于整袋 nuked）。 */
     try {
       const cartData = localStorage.getItem('reich_cart');
-      return cartData ? JSON.parse(cartData) : [];
+      const parsed = cartData ? JSON.parse(cartData) : [];
+      if (!Array.isArray(parsed)) {
+        try { localStorage.removeItem('reich_cart'); } catch (e2) { /* 隐私模式 */ }
+        return [];
+      }
+      return parsed.filter(it => it && typeof it === 'object' &&
+        'productSkuId' in it && typeof it.productQuantity === 'number');
     } catch (e) {
       try { localStorage.removeItem('reich_cart'); } catch (e2) { /* 隐私模式 */ }
       return [];
@@ -104,9 +113,11 @@ class CartManager {
           const serverCart = Array.isArray(data.cart) ? data.cart : null;
           let localCart = [];
           try { localCart = JSON.parse(localStorage.getItem('reich_cart') || '[]'); } catch (e) { /* 损坏按空袋 */ }
-          // 形状守卫：全项带本地族字段才采用——首项制会让混合数组半生吞（徽章 NaN）
+          // 形状守卫：全项带本地族字段才采用——首项制会让混合数组半生吞（徽章 NaN）；
+          // 算术字段同验（有 sku 无 qty 的变异 DTO 也致 NaN，终验 X1 补枪）
           const shapeOk = serverCart && serverCart.length > 0 &&
-            serverCart.every(it => it && typeof it === 'object' && 'productSkuId' in it);
+            serverCart.every(it => it && typeof it === 'object' &&
+              'productSkuId' in it && typeof it.productQuantity === 'number');
           if (shapeOk && localCart.length === 0) {
             localStorage.setItem('reich_cart', JSON.stringify(serverCart));
             return serverCart;
