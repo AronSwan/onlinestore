@@ -346,18 +346,16 @@
     var fresh = function (s) { return s && typeof s.y === 'number' && now - s.t <= SCROLL_STASH_TTL_MS; };
     var target = fresh(stash) ? stash.y : (fresh(leave) ? leave.y : null);
     if (target === null) return;
-    /* m4 诊断修复：referrer 守门在回退导航下常为空串（Playwright/隐私策略），
-       兜底半因此永不触发。改以 Navigation Type 为主判（back_forward=回退），
-       referrer 降为旧浏览器二级证据。
-       ⑥审修复(2026-10-06·X2 P2)：stash 写于卡点击瞬间但 TTL 5 分钟内任何
-       index 加载都能读到——旧写对 stash 半直接放行，菜单直入（卡点击→PDP→
-       他页→品牌链回 index）会被陈旧快照劫持。两半统一走同一来源守门：
-       仅回退/PDP 来源消费，菜单直入不劫持。 */
+    /* m4 沿革：referrer 守门在回退导航下常为空串（Playwright/隐私策略），
+       改以 Navigation Type 为主判（back_forward=回退）。
+       ⑥审修复(2026-10-06·X2 P2)：stash 半补守门，经他页菜单直入不劫持。
+       ⑥审终判(2026-10-06·用户裁决A)：referrer 二级证据退役——PDP 页内点品牌链
+       直回 index 属全局导航（"回首页"语义强），快照两半统一只认 back_forward；
+       旧 refFromPdp 放行路径曾落列表中段，且图片未载完时钳位 873≠1200（X1 实测）。 */
     var navEntry = (performance.getEntriesByType &&
       performance.getEntriesByType('navigation')[0]) || null;
     var isBack = !!(navEntry && navEntry.type === 'back_forward');
-    var refFromPdp = (document.referrer || '').indexOf('product.html') !== -1;
-    if (isBack || refFromPdp) {
+    if (isBack) {
       window.scrollTo(0, target);
     }
   }
