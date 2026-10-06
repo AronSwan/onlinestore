@@ -37,6 +37,10 @@ import { registerOverlayEscape } from './shared/overlay-escape.js';
 // 国际挑剔用户批 A 档 7/8（2026-10-06）：埋点（AddToCart/CartOpened/CheckoutClicked/
 // CheckoutIntercepted）——结算拦截从死胡同 toast 升级为 waitlist 邮箱捕获模态
 import { track } from './shared/track.js';
+// A4（流程体验官终版裁决·纽约案）：本模块会被 site-header 在未静态挂经典
+// <script src="utils/escape-html.js"> 的四页动态 import——渲染层转义的全局
+// 依赖在此显式兜底（该文件经典/module 双语境通用，见其头注；已挂页面幂等）
+import './utils/escape-html.js';
 
 /**
  * 购物车管理器类 - 增强版
@@ -190,18 +194,15 @@ class CartManager {
 
       // 添加到购物车
       this.cart.push(newItem);
-      
-      // 保存到本地存储
+
+      // A5（东京 P1·流程体验官终版裁决 2026-10-06，修法按苏黎世精化版）：
+      // 登录态乐观反馈——本地落袋/徽章刷新/监听器通知全部前移，服务端同步
+      // 改后台静默（syncToServerBackground 不 await）。原序 await syncToServer
+      // 把 47ms 级本地反馈拖到数百 ms（热态口径；冷态/大袋 698ms 属另一工况）。
       this.saveCart();
-      
-      // 同步到服务端
-      await this.syncToServer();
-      
-      // 更新UI
       await this.initCartUI();
-      
-      // 通知监听器
       this.notifyListeners('itemAdded', { item: newItem });
+      this.syncToServerBackground();
 
       // A 档 7：加购埋点（新袋路径）
       track('AddToCart', {
@@ -233,19 +234,13 @@ class CartManager {
     
     const oldQuantity = item.productQuantity;
     item.productQuantity = quantity;
-    
-    // 保存到本地存储
+
+    // A5 同病同修：改量路径同序——本地先落（save+UI+监听器），同步后台静默
     this.saveCart();
-    
-    // 同步到服务端
-    await this.syncToServer();
-    
-    // 更新UI
     await this.initCartUI();
-    
-    // 通知监听器
     this.notifyListeners('quantityUpdated', { item, oldQuantity, newQuantity: quantity });
-    
+    this.syncToServerBackground();
+
     return item;
   }
 
@@ -257,19 +252,13 @@ class CartManager {
     }
     
     const removedItem = this.cart.splice(itemIndex, 1)[0];
-    
-    // 保存到本地存储
+
+    // A5 同病同修：删除路径同序——本地先落，同步后台静默
     this.saveCart();
-    
-    // 同步到服务端
-    await this.syncToServer();
-    
-    // 更新UI
     await this.initCartUI();
-    
-    // 通知监听器
     this.notifyListeners('itemRemoved', { item: removedItem });
-    
+    this.syncToServerBackground();
+
     return removedItem;
   }
 
@@ -308,33 +297,30 @@ class CartManager {
   async clearCart() {
     const removedItems = [...this.cart];
     this.cart = [];
-    
-    // 保存到本地存储
+
+    // A5 同病同修：清空路径同序——本地先落，同步后台静默
     this.saveCart();
-    
-    // 同步到服务端
-    await this.syncToServer();
-    
-    // 更新UI
     await this.initCartUI();
-    
-    // 通知监听器
     this.notifyListeners('cartCleared', { removedItems });
+    this.syncToServerBackground();
   }
 
   // 保留现有方法：同步到服务端
+  // A5：返回值语义化（true=成功或无需同步；false=失败，供后台重试判定）——
+  // 网络级失败仍留 console 痕迹；HTTP 非 2xx（本地优先模式下 /api/cart 根路由
+  // 404 属常态）按原口径静默，不污染 console（A 档 18 纪律）
   async syncToServer() {
     // 审计标注(2026-10-03): 本方法调用的 GET/POST /api/cart 根路由在后端不存在(只有
     // /api/cart/items/:customerUserId 参数化路由)——服务端同步是静默降级的本地优先模式, 详见 README 已知限制
     const isLoggedIn = localStorage.getItem('userLoggedIn') === 'true' || sessionStorage.getItem('userLoggedIn') === 'true';
-    
+
     if (!isLoggedIn) {
-      return; // 未登录用户不同步到服务端
+      return true; // 未登录用户不同步到服务端
     }
-    
+
     try {
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-      await fetch('/api/cart', {
+      const response = await fetch('/api/cart', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -342,9 +328,24 @@ class CartManager {
         },
         body: JSON.stringify({ cart: this.cart })
       });
+      return !!response.ok;
     } catch (error) {
       console.error('同步购物车到服务端失败:', error);
+      return false;
     }
+  }
+
+  /**
+   * A5（流程体验官终版裁决）：后台静默同步——不阻塞调用方（乐观反馈已先行）；
+   * 失败隔 1.2s 静默重试一次，仍败则止（本地优先模式既有口径：reich_cart
+   * 始终是真相源，下次任意袋变更自然再试）
+   */
+  syncToServerBackground() {
+    Promise.resolve(this.syncToServer()).then((ok) => {
+      if (!ok) {
+        setTimeout(() => { this.syncToServer(); }, 1200);
+      }
+    }).catch(() => { /* syncToServer 自吞网络错误，此处仅防御 */ });
   }
 
   // 保留现有方法：更新SVG购物车图标
@@ -530,7 +531,10 @@ class CartUI {
           <!-- B6(罗马位置裁决): 信任行在总价行下方、结算钮上方——最后一眼犹豫的位置 -->
           <p class="cart-trust-line"><a href="returns.html" title="退换与售后（30 天可退，来回运费我们担）">含运费 · 30 天可退</a></p>
           <div class="cart-actions">
-            <button class="checkout-btn" disabled>去结算</button>
+            <!-- B12（东京 P2-7·流程体验官终版裁决）："去结算"一词三义收敛——面板
+                 按钮诚实化两行式（主行"结算暂未开放"/副行"留邮箱等开业"），与
+                 waitlist 模态标题同批呼应；点击行为不变（拦截→waitlist 捕获邮箱） -->
+            <button class="checkout-btn" disabled><span class="checkout-btn-main">结算暂未开放</span><span class="checkout-btn-sub">留邮箱等开业</span></button>
           </div>
         </div>
       </div>
@@ -683,25 +687,79 @@ class CartUI {
           }
           const item = data && data.item;
           const merged = !!(data && data.merged);
-          window.setTimeout(() => {
-            showCartToast({
+          // B8（纽约 P2-5·流程体验官终版裁决）：同 SKU 连点 500ms 窗口合并成
+          // 一条 toast（增量文案"已加入 N 件"）——窗内再击重置计时并累计件数；
+          // 徽章每击即更新（计费层零丢帧，与连击/焦点两层表述的计费层同源）
+          const sku = item ? item.productSkuId : '';
+          const burstFlush = () => {
+            const burst = this._toastBurst;
+            this._toastBurst = null;
+            if (!burst) return;
+            window.setTimeout(() => {
+              showCartToast({
+                name: burst.name,
+                merged: burst.merged,
+                quantity: burst.quantity,
+                burstCount: burst.count,
+                onCheckout: () => this.cartManager.showCart(), // "去结算"=打开面板（罗马裁决）
+              });
+            }, 120);
+          };
+          if (sku && this._toastBurst && this._toastBurst.sku === sku) {
+            this._toastBurst.count += 1;
+            this._toastBurst.quantity = item.productQuantity;
+            clearTimeout(this._toastBurst.timer);
+            this._toastBurst.timer = window.setTimeout(burstFlush, 500);
+          } else {
+            if (this._toastBurst) clearTimeout(this._toastBurst.timer);
+            this._toastBurst = {
+              sku,
               name: item ? item.productName : '',
               merged,
+              count: 1,
               quantity: item ? item.productQuantity : 1,
-              onCheckout: () => this.cartManager.showCart(), // "去结算"=打开面板（罗马裁决）
-            });
-          }, 120);
+              timer: 0
+            };
+            this._toastBurst.timer = window.setTimeout(burstFlush, 500);
+          }
           break;
         }
-        case 'itemRemoved':
+        case 'itemRemoved': {
+          // 步进器/移除只刷新数据——不触发加购 toast/fly（出口验收项）
+          this.updateCartDisplay();
+          this.disarmClearBag();
+          // B6（苏黎世 P2-7·流程体验官终版裁决）：删除袋内品给回执——撤销钮 5s
+          //（内存回插+徽章/面板同步）；两步清空（cartCleared）不在此列（其回执
+          //是两步确认本身）
+          const removed = data && data.item;
+          if (removed) {
+            showToast({
+              message: `「${removed.productName}」从袋里拿出来了。`,
+              confirmText: '撤销',
+              onConfirm: () => this.restoreRemovedItem(removed),
+              dismissText: null
+            });
+          }
+          break;
+        }
         case 'quantityUpdated':
         case 'cartCleared':
-          // 步进器/移除/清空只刷新数据——不触发加购 toast/fly（出口验收项）
           this.updateCartDisplay();
           this.disarmClearBag();
           break;
       }
     });
+  }
+
+  /** B6：撤销删除——同件回插（addedAt 保序）+本地保存+徽章/面板刷新；同步后台静默 */
+  restoreRemovedItem(item) {
+    if (this.cartManager.cart.some((it) => it.productSkuId === item.productSkuId)) return;
+    this.cartManager.cart.push(item);
+    this.cartManager.cart.sort((a, b) => (a.addedAt || 0) - (b.addedAt || 0));
+    this.cartManager.saveCart();
+    this.cartManager.initCartUI();
+    this.updateCartDisplay();
+    this.cartManager.syncToServerBackground();
   }
 
   /**
@@ -780,6 +838,10 @@ class CartUI {
         count: this.cartManager.getTotalItems(),
         total: this.cartManager.getTotalPrice()
       });
+      // A6（流程体验官终版裁决·双席共中）：开袋锁底层滚动——与 waitlist 模态
+      // 同法（body overflow hidden，锁住 scrollY）；overscroll-behavior:contain
+      // 由 cart.css 挂 .cart-body（滚动链不外泄），show/hide 对称
+      document.body.style.overflow = 'hidden';
       // 批一(4)：记忆焦点来处（hide 时还原），遮罩后 main 内容 inert（不可聚焦/不可交互）
       this.lastFocused = document.activeElement;
       this.setMainInert(true);
@@ -811,6 +873,11 @@ class CartUI {
       // 若等动画结束才置 false，下方"焦点还原触发钮"会被 focusin 拦截拉回面板
       this.isVisible = false;
       this.elements.cartOverlay.classList.remove('visible');
+      // A6：对称解锁——waitlist 模态还开在上方时（modalAbove）滚动锁主权归模态
+      //（其 close 负责最终还原），否则袋面板即最上层，由本行解锁
+      if (!this.modalAbove) {
+        document.body.style.overflow = '';
+      }
       // 批一(4)：解除 main inert，焦点还原触发钮（.site-cart-btn 冻结类；
       // 无头部购物袋钮的极端场景回落记忆来处）
       this.setMainInert(false);
@@ -900,6 +967,18 @@ class CartUI {
     if (!this.elements.cartItemsList) return;
     const prevSkus = this._renderedSkus || new Set();
 
+    // B9（纽约 P3-1·流程体验官终版裁决，焦点层——机制=innerHTML 重渲销毁旧钮）：
+    // 重渲前记焦点若在列表内钮上（sku+aria-label 定位），重渲后按同位钮还焦，
+    // 键盘连续 +/- 不丢焦（计费层零丢帧是另一层，两者各自断言）
+    const activeEl = document.activeElement;
+    let restoreFocus = null;
+    if (activeEl && activeEl.tagName === 'BUTTON' && this.elements.cartItemsList.contains(activeEl)) {
+      const row = activeEl.closest('.cart-item');
+      if (row && row.dataset.skuId) {
+        restoreFocus = { sku: row.dataset.skuId, label: activeEl.getAttribute('aria-label') || '' };
+      }
+    }
+
     // F7 渲染层转义：购物车数据来自 localStorage/后端同步，
     // 所有字符串字段插值统一包 escapeHtml()（js/utils/escape-html.js，
     // 由页面在 cart.js 之前加载）；数量/价格为数字，无需转义
@@ -937,6 +1016,20 @@ class CartUI {
     `;}).join('');
 
     this._renderedSkus = new Set(cart.map(item => item.productSkuId));
+
+    // B9：重渲后还焦——按 data-sku-id + aria-label 找回同位钮（999 顶格 disabled
+    // 时同位 + 钮不可焦，回落行内另一颗步进钮；都没有则不抢焦点）
+    if (restoreFocus) {
+      const list = this.elements.cartItemsList;
+      const esc = (v) => (window.CSS && CSS.escape ? CSS.escape(v) : v);
+      let btn = list.querySelector(
+        `.cart-item[data-sku-id="${esc(restoreFocus.sku)}"] button[aria-label="${esc(restoreFocus.label)}"]`
+      );
+      if (!btn || btn.disabled) {
+        btn = list.querySelector(`.cart-item[data-sku-id="${esc(restoreFocus.sku)}"] .item-quantity button:not([disabled])`);
+      }
+      if (btn && !btn.disabled) btn.focus();
+    }
   }
 
   /**
@@ -1011,7 +1104,8 @@ class CartUI {
       overlay.innerHTML = `
         <div class="waitlist-panel" role="dialog" aria-modal="true" aria-labelledby="waitlist-title">
           <button type="button" class="waitlist-close" aria-label="关闭">&times;</button>
-          <h3 id="waitlist-title">结算还没开门</h3>
+          <!-- B12：模态标题与面板按钮主行同词（"结算暂未开放"）——同一语义不换说法 -->
+          <h3 id="waitlist-title">结算暂未开放</h3>
           <p class="waitlist-sub">演示环境暂未开通下单。留个邮箱，开业第一个告诉你——不发别的。</p>
           <form class="waitlist-form" novalidate>
             <label for="waitlist-email" class="sr-only">您的电子邮箱</label>
@@ -1036,7 +1130,9 @@ class CartUI {
 
       const close = () => {
         overlay.classList.remove('open');
-        document.body.style.overflow = '';
+        // A6：模态关了，但袋面板若仍在其下开着（modalAbove 场景的常规收场），
+        // 滚动锁交还袋面板；袋也关了才真正解锁
+        document.body.style.overflow = self.isVisible ? 'hidden' : '';
         self.modalAbove = false; // A 档 8：袋面板焦点圈禁/ESC 恢复主权
         if (self.waitlistTrigger && typeof self.waitlistTrigger.focus === 'function') {
           self.waitlistTrigger.focus();
@@ -1100,7 +1196,11 @@ class CartUI {
 let cartManager;
 
 // 页面加载完成后初始化
-document.addEventListener('DOMContentLoaded', () => {
+// A4（流程体验官终版裁决·纽约案）：site-header 袋钮会在未静态加载本模块的
+// 四页动态 import('./cart.js')——此时 DOMContentLoaded 早已打过，原监听器
+// 永不触发（死钮复发）。readyState 守卫：文档仍在解析走事件（静态页原时序
+// 不变：defer 模块执行时 readyState=interactive，事件随后照发），已完成则立即建。
+function initCartModule() {
   cartManager = new CartManager();
   window.cartManager = cartManager;
 
@@ -1118,4 +1218,10 @@ document.addEventListener('DOMContentLoaded', () => {
   try {
     if (localStorage.getItem('debug')) console.log('统一购物车模块初始化完成');
   } catch (e) { /* 隐私模式静默 */ }
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initCartModule);
+} else {
+  initCartModule();
+}

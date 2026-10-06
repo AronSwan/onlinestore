@@ -9,9 +9,8 @@
 // 作者：AI助手
 // 时间：2025-09-25 16:02:15
 // 用途：提供导航栏交互效果，包括悬停、点击、触摸和滚动响应
-// 依赖文件：无（navigation-state-manager.js 已移出工作树，见 git 历史）
-// 导入触摸优化模块
-import { cleanupTouchOptimization } from './touch-optimization.js';
+// 依赖文件：无（navigation-state-manager.js 已移出工作树，见 git 历史；
+// touch-optimization.js 的 import 已随 A3 beforeunload 块删除一并退役）
 
 function setupNavigation() {
   // 配置选项
@@ -323,9 +322,7 @@ if (document.readyState === 'loading') {
 // 时间：2025-09-25 16:02:15
 // 用途：页面卸载时清理触摸优化
 // 依赖文件：无
-
-window.addEventListener('beforeunload', () => {
-  if (typeof cleanupTouchOptimization === 'function') {
-    cleanupTouchOptimization();
-  }
-});
+// A3（流程体验官终版裁决 2026-10-06）：beforeunload 块整段删除——注册即杀
+// bfcache（回程从 <100ms 变 1.9-2.5s 全量重载），而清理函数随页面销毁自动
+// 释放，本块零功能损失。历史导航恢复瞬间禁 smooth（纽约 P3-7 漂移 77px
+// 连修）在 js/site-header.js（全站单一位）pageshow 挂。

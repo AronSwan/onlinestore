@@ -197,7 +197,84 @@ function mount() {
 
   bindBehaviors(header);
   bindSearch();
+  bindCartButton(header);
+  lightBadgeFromStorage();
   markLoggedInUser(header);
+  bindHistoryScrollRestore();
+}
+
+/* ── A4（流程体验官终版裁决·纽约案，最先手）：购物袋三合一 ── */
+
+/** 袋钮点击：全站单一位绑定。cart.js 已加载的页面直接开面板；未加载的四页
+    （login/profile/privacy/returns，原死钮）动态 import('./cart.js') 兜底——
+    cart.js 自带 readyState 守卫，动态注入后即建 cartManager。
+    原 index(home-page.js)/orders(页内脚本)/PDP(product.js) 三份同义绑定
+    随本归一删除（双绑会双发 CartOpened 埋点）。 */
+function bindCartButton(header) {
+  const cartBtn = (header && header.querySelector('.site-cart-btn')) ||
+    document.querySelector('[data-cart-icon]');
+  if (!cartBtn) return;
+  cartBtn.addEventListener('click', async () => {
+    if (window.cartManager && typeof window.cartManager.showCart === 'function') {
+      window.cartManager.showCart();
+      return;
+    }
+    try {
+      await import('./cart.js');
+      if (window.cartManager && typeof window.cartManager.showCart === 'function') {
+        window.cartManager.showCart();
+      }
+    } catch (error) {
+      console.error('购物袋模块加载失败:', error);
+    }
+  });
+}
+
+/** A4 第二合（纽约补全）：徽章初始渲染同步读 localStorage reich_cart——
+    未加载 cart.js 的四页首点前徽章即点亮（"修完死钮留半个信任残缺"）。
+    口径与 cart.js updateCartBadge 一致：件数=productQuantity 求和；本读取
+    无 try 外抛（隐私模式/坏 JSON 保持隐藏，静默）。 */
+function lightBadgeFromStorage() {
+  const badge = document.getElementById('cart-badge');
+  if (!badge) return;
+  try {
+    const saved = JSON.parse(localStorage.getItem('reich_cart') || '[]');
+    const total = Array.isArray(saved)
+      ? saved.reduce((sum, item) => sum + (Number(item && item.productQuantity) || 0), 0)
+      : 0;
+    if (total > 0) {
+      badge.textContent = String(total);
+      badge.style.display = 'flex';
+    }
+  } catch (error) {
+    /* 坏 JSON/隐私模式：徽章保持隐藏 */
+  }
+}
+
+/* ── A3 连修（纽约 P3-7）：历史导航恢复瞬间禁 smooth ──
+    html{scroll-behavior:smooth}（main.css）让 bfcache 回生/回退/锚点直入的
+    滚动恢复变成动画（实测漂移 77px；测试升级席复测非 bfcache 回退动画 ≈576ms）。
+    pageshow（含 bfcache 回生）瞬间把根元素 scroll-behavior 压成 auto，
+    直到恢复动画窗口结束——两帧不够（动画 576ms），改为「首次真实用户滚动
+    或 1s 超时」二者先到交还 CSS 权；显式 scrollTo({behavior:'smooth'})
+    （main.js 导航点击）不受内联覆盖影响。 */
+function bindHistoryScrollRestore() {
+  window.addEventListener('pageshow', () => {
+    const root = document.documentElement;
+    let restored = false;
+    const release = () => {
+      if (restored) return;
+      restored = true;
+      root.style.scrollBehavior = '';
+      window.removeEventListener('wheel', release, true);
+      window.removeEventListener('touchmove', release, true);
+      clearTimeout(timer);
+    };
+    const timer = setTimeout(release, 1000);
+    root.style.scrollBehavior = 'auto';
+    window.addEventListener('wheel', release, { capture: true, once: true });
+    window.addEventListener('touchmove', release, { capture: true, once: true });
+  });
 }
 
 /* ── 批一(1) 搜索钮全站化：搜索条渲染 + toggleSearch + 懒初始化 ── */
@@ -314,6 +391,23 @@ window.toggleSearch = async function (show) {
     if (!enhancedSearchComponent) {
       await ensureSearchComponent();
     }
+
+    // B13（东京 P2-3·终版裁决）：焦点兜底从 100ms setTimeout 改挂组件 init
+    // 完成的 promise 链——上面 await ensureSearchComponent() 已保证输入框建成。
+    // B5a（苏黎世 P2-5 行级）：toggleSearch(false) 从不清输入框，重开时已输入
+    // 词随开随在（ESC 关闭→重开不丢词）
+    requestAnimationFrame(() => {
+      let searchInputElement = null;
+      if (enhancedSearchComponent && enhancedSearchComponent.elements && enhancedSearchComponent.elements.searchInput) {
+        searchInputElement = enhancedSearchComponent.elements.searchInput;
+      } else {
+        searchInputElement = document.getElementById('search-input');
+      }
+      if (searchInputElement) {
+        searchInputElement.focus();
+      }
+    });
+
     if (enhancedSearchComponent) {
       try {
         await enhancedSearchComponent.showPopularSearches();
@@ -321,21 +415,6 @@ window.toggleSearch = async function (show) {
         console.error('显示热门搜索失败:', error);
       }
     }
-
-    setTimeout(() => {
-      // 尝试通过增强搜索组件获取搜索输入框
-      let searchInputElement = null;
-      if (enhancedSearchComponent && enhancedSearchComponent.elements && enhancedSearchComponent.elements.searchInput) {
-        searchInputElement = enhancedSearchComponent.elements.searchInput;
-      } else {
-        // 如果通过组件获取失败，则尝试直接通过ID获取
-        searchInputElement = document.getElementById('search-input');
-      }
-
-      if (searchInputElement) {
-        searchInputElement.focus();
-      }
-    }, 100);
   } else {
     searchBar.classList.add('hidden');
     searchBtn.setAttribute('aria-expanded', 'false');

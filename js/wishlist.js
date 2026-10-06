@@ -109,8 +109,20 @@ class WishlistManager {
   }
 
   removeFromWishlist(productId) {
+    // B11（东京 P2-5·流程体验官终版裁决）：取消收藏纯通知——分量轻于添加
+    //（无按钮/同短时长档；纯通知 2.5s 分语态属 C 档记档未实装，走组件默认）。
+    // "小本本"隐喻按术语锚同框纪律：主句+副句（心头好清单所在）同框出现
+    const removed = this.wishlist.find(item => item.id === productId);
     this.wishlist = this.wishlist.filter(item => item.id !== productId);
     this.saveWishlist();
+    if (removed) {
+      showToast({
+        message: `「${removed.name}」从小本本上划掉了。`,
+        sub: '你的心头好清单在个人中心·我的心头好里，随时在看',
+        confirmText: null,
+        dismissText: null
+      });
+    }
   }
 
   isInWishlist(productId) {

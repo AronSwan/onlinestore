@@ -271,26 +271,29 @@
                     </nav>
                 </div>
 
-                <!-- 客户服务（P5：/contact 等路由演示站未开通，降为纯文字；批五(15): "退换政策"死文本→活链"退换与售后"，删"敬请期待"行） -->
+                <!-- 客户服务（P5：/contact 等路由演示站未开通，降为纯文字；批五(15): "退换政策"死文本→活链"退换与售后"，删"敬请期待"行）
+                     B10（流程体验官终版裁决·纽约 P3-11）：死文本去列表样式改纯说明文字——
+                     纯文字灰无 hover；真链接"退换与售后"保下划线+text-secondary（站内下划线
+                     链唯一令牌，与 login 条款链同典），可点/不可点一眼可分 -->
                 <div>
                     <h4 class="text-lg font-medium mb-6">客户服务</h4>
-                    <ul class="space-y-3 text-[var(--ink-soft)]" aria-label="客户服务（演示站未开通）">
-                        <li>联系我们</li>
-                        <li>配送信息</li>
-                        <li><a href="returns.html" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">退换与售后</a></li>
-                        <li>常见问题</li>
-                    </ul>
+                    <div class="space-y-3 text-sm leading-relaxed" aria-label="客户服务（演示站未开通）">
+                        <p class="text-[var(--ink-soft)]">联系我们</p>
+                        <p class="text-[var(--ink-soft)]">配送信息</p>
+                        <p><a href="returns.html" class="text-secondary underline underline-offset-4 hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">退换与售后</a></p>
+                        <p class="text-[var(--ink-soft)]">常见问题</p>
+                    </div>
                 </div>
 
-                <!-- 法律信息（P5：同上，降为纯文字） -->
+                <!-- 法律信息（P5：同上，降为纯文字；B10：同去列表样式） -->
                 <div>
                     <h4 class="text-lg font-medium mb-6">法律信息</h4>
-                    <ul class="space-y-3 text-[var(--ink-soft)]" aria-label="法律信息（演示站未开通）">
-                        <li>隐私政策</li>
-                        <li>使用条款</li>
-                        <li>Cookie政策</li>
-                        <li>知识产权</li>
-                    </ul>
+                    <div class="space-y-3 text-sm leading-relaxed" aria-label="法律信息（演示站未开通）">
+                        <p class="text-[var(--ink-soft)]">隐私政策</p>
+                        <p class="text-[var(--ink-soft)]">使用条款</p>
+                        <p class="text-[var(--ink-soft)]">Cookie政策</p>
+                        <p class="text-[var(--ink-soft)]">知识产权</p>
+                    </div>
                     <!-- 批五(15): "敬请期待"行删——与客户服务栏同批（演示口径的诚实清单已在栏 aria 内） -->
                 </div>
             </div>

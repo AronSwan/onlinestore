@@ -20,6 +20,7 @@
 - ~~**28 条 SPA 死链**~~（**已下账 2026-10-06 收官审计**：第四轮 C11 假门收敛+M7 footer 死链降纯文字+returns.html 真链落成，问题不复存在）
 - ~~**首页"加入购物袋"按钮无数据源**~~（**已下账 2026-10-06 收官审计**：F7 bento+M3 后第四轮施工，按钮挂 API 渲染卡片与 FALLBACK 双路，加购反馈系统 B1 全链实测）
 - **前端 Playwright 套件**：5 个 spec 端口漂移（5173 vs 4173）+ 标题断言过期，弃管
+- **nav-button 僵尸三件退役（2026-10-06 Playwright 测试升级席）**：nav-button-hover-test-optimized(294 行)/nav-button-smooth-hover-test(758 行)/nav-button-state-fix-test(617 行)整体删除（git 历史即归档，fe12d55 为删除前最后存活版）。考古结论：三件针对已退役的 .navbar-luxury/.nav-link-luxury/data-state 旧导航体系（腕表珠宝/香水/手袋），其中两件已带 2026-10-03 skip 标记、state-fix 件仍在跑=烂尾红×4（退役前基线实测 6 failed）；存活行为（hover 态切换语义→site-header.js 的 .site-nav a 下划线 scaleX + aria-current）已重锚为 tests/site-header-nav.spec.js（41 行）。同批退役的还有 cart-refresh.spec.js 的 Blob URL 释放断言域（[data-cart-icon] 图标 svgBlobUrl 切换机制已随 F4 归一消亡，全仓 grep 零命中）
 - **依赖残留**：生产树 22 项（0 critical / 8 high，全为间接依赖）；swagger 内嵌 js-yaml@5.3.0（dump-only 路径不可达）
 - **JWT_SECRET 开发回退为已知固定值**：生产黑名单拒启，开发共钥风险已知
 - **Casdoor 前端直连未启用**（后端代理链路在）；邮箱验证为本地降级；AI 助手未接线

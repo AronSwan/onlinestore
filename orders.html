@@ -177,6 +177,22 @@
                     <a href="index.html" class="btn-pill btn-pill-primary">去逛逛</a>
                 </div>
 
+                <!-- A9（流程体验官终版裁决·三席共中）：游客引导态——未登录默认
+                     "登录看真实订单"（CTA 挂 returnUrl 回跳），演示数据折进
+                     "先看看长什么样"（js/orders.js showGuestState；展开后黄条
+                     demoDataBadge 随演示列表保持可见） -->
+                <div id="guestState" class="text-center py-12 hidden">
+                    <svg class="mx-auto mb-4 h-14 w-14 text-[var(--text-muted)] opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><circle cx="12" cy="10" r="2.2"/><path d="M8.5 16.5c.8-1.8 2-2.5 3.5-2.5s2.7.7 3.5 2.5"/></svg>
+                    <h3 class="text-xl font-medium mb-2">登录看真实订单</h3>
+                    <p class="text-[var(--text-muted)] mb-6">你的订单、物流和退换记录都在账户里——登录就能看。</p>
+                    <!-- returnUrl 带前导斜杠：return-url-guard 白名单（冻结安全契约）只放行
+                         单 / 开头的站内路径，裸 "orders.html" 会被拒而回落首页 -->
+                    <a href="login.html?returnUrl=/orders.html" class="btn-pill btn-pill-primary">去登录</a>
+                    <div class="mt-8">
+                        <button type="button" id="demoExpandBtn" class="text-sm text-[var(--ink-soft)] underline underline-offset-4 hover:text-[var(--candy-blush-ink)] transition-colors">先看看长什么样</button>
+                    </div>
+                </div>
+
                 <!-- 批四(11) 搜索无果独立空态：有订单、只是这个词没命中——不再借
                      "还没有订单"指责用户记忆；一键清空换词再试（js/orders.js showSearchEmptyState） -->
                 <div id="searchEmptyState" class="text-center py-12 hidden">
@@ -229,26 +245,28 @@
                     </nav>
                 </div>
 
-                <!-- 客户服务（P5：/contact 等路由演示站未开通，降为纯文字；批五(15): "退换政策"死文本→活链"退换与售后"，删"敬请期待"行） -->
+                <!-- 客户服务（P5：/contact 等路由演示站未开通，降为纯文字；批五(15): "退换政策"死文本→活链"退换与售后"，删"敬请期待"行）
+                     B10（流程体验官终版裁决·纽约 P3-11）：死文本去列表样式改纯说明文字——
+                     纯文字灰无 hover；真链接"退换与售后"保下划线+蓝系，可点/不可点一眼可分 -->
                 <div>
                     <h4 class="text-lg font-medium mb-6">客户服务</h4>
-                    <ul class="space-y-3 text-[var(--ink-soft)]" aria-label="客户服务（演示站未开通）">
-                        <li>联系我们</li>
-                        <li>配送信息</li>
-                        <li><a href="returns.html" class="hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">退换与售后</a></li>
-                        <li>常见问题</li>
-                    </ul>
+                    <div class="space-y-3 text-sm leading-relaxed" aria-label="客户服务（演示站未开通）">
+                        <p class="text-[var(--ink-soft)]">联系我们</p>
+                        <p class="text-[var(--ink-soft)]">配送信息</p>
+                        <p><a href="returns.html" class="text-secondary underline underline-offset-4 hover:text-[var(--candy-blush-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--candy-blush-ink)] rounded">退换与售后</a></p>
+                        <p class="text-[var(--ink-soft)]">常见问题</p>
+                    </div>
                 </div>
 
-                <!-- 法律信息（P5：同上，降为纯文字） -->
+                <!-- 法律信息（P5：同上，降为纯文字；B10：同去列表样式） -->
                 <div>
                     <h4 class="text-lg font-medium mb-6">法律信息</h4>
-                    <ul class="space-y-3 text-[var(--ink-soft)]" aria-label="法律信息（演示站未开通）">
-                        <li>隐私政策</li>
-                        <li>使用条款</li>
-                        <li>Cookie政策</li>
-                        <li>知识产权</li>
-                    </ul>
+                    <div class="space-y-3 text-sm leading-relaxed" aria-label="法律信息（演示站未开通）">
+                        <p class="text-[var(--ink-soft)]">隐私政策</p>
+                        <p class="text-[var(--ink-soft)]">使用条款</p>
+                        <p class="text-[var(--ink-soft)]">Cookie政策</p>
+                        <p class="text-[var(--ink-soft)]">知识产权</p>
+                    </div>
                     <!-- 批五(15): "敬请期待"行删——与客户服务栏同批（演示口径的诚实清单已在栏 aria 内） -->
                 </div>
             </div>
@@ -318,41 +336,15 @@
     <!-- 基础交互（移动菜单开合 + header 滚动阴影已随 F4 归一迁入 js/site-header.js） -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // 购物车数量更新（P3：新模板徽章为内联 style="display:none"，与 cart.js 的
-            // style.display 管理方式对齐；旧 'hidden' class 切换对内联样式无效）
-            function updateCartCount(count) {
-                const cartBadge = document.getElementById('cart-badge');
-
-                if (cartBadge) {
-                    if (count > 0) {
-                        cartBadge.textContent = count > 99 ? '99+' : count;
-                        cartBadge.style.display = 'flex';
-                    } else {
-                        cartBadge.style.display = 'none';
-                    }
-                }
-            }
-
-            // 购物车图标点击 → 打开购物车浮层（原由 navigation-icons.js 经
-            // '[data-cart-icon] img' 绑定；新模板为内联 SVG 无 img，改在此直接绑定）
-            const cartBtn = document.querySelector('.site-tools [data-cart-icon]');
-            if (cartBtn) {
-                cartBtn.addEventListener('click', function() {
-                    if (window.cartManager && typeof window.cartManager.showCart === 'function') {
-                        window.cartManager.showCart();
-                    } else {
-                        window.location.href = '/';
-                    }
-                });
-            }
+            // A4（流程体验官终版裁决·纽约案三合一，2026-10-06，同病同修）：
+            // updateCartCount(0) 打架行与购物袋钮直绑块删除（与 index/home-page.js
+            // 同根）——徽章首屏点亮归 site-header.js 同步读 localStorage，袋钮点击
+            // 归 site-header.js 动态 import cart.js 兜底（本页双绑会双发 CartOpened 埋点）。
 
             // 初始化导航
             if (typeof setupNavigation === 'function') {
                 setupNavigation();
             }
-
-            // 初始化购物车数量
-            updateCartCount(0);
         });
     </script>
 </body>

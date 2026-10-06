@@ -446,27 +446,9 @@ import { registerOverlayEscape } from './shared/overlay-escape.js';
   }
 
   ready(function () {
-    // PDP 页头购物袋钮开面板（index 页此绑定在 home-page.js；PDP 自绑同语义——
-    // cartManager 未就绪时轮询 100ms×10，超时回首页，与 navigation-icons 同策略）
-    var cartBtn = document.querySelector('.site-tools [data-cart-icon], .site-cart-btn');
-    if (cartBtn) {
-      cartBtn.addEventListener('click', function () {
-        if (window.cartManager && typeof window.cartManager.showCart === 'function') {
-          window.cartManager.showCart();
-          return;
-        }
-        var tries = 0;
-        var t = setInterval(function () {
-          tries++;
-          if (window.cartManager && typeof window.cartManager.showCart === 'function') {
-            clearInterval(t);
-            window.cartManager.showCart();
-          } else if (tries >= 10) {
-            clearInterval(t);
-          }
-        }, 100);
-      });
-    }
+    // A4（流程体验官终版裁决·纽约案）：PDP 页头购物袋钮绑定删除（连同 100ms×10
+    // 轮询）——同职责归一 site-header.js bindCartButton（动态 import cart.js
+    // 兜底后开面板）；本页再绑会双发 CartOpened 埋点。
 
     var id = parseId();
     if (id === null) {

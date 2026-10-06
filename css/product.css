@@ -374,6 +374,15 @@
   .pdp-atc-bar { display: none; } /* 桌面行内钮在场，吸底条退场 */
 }
 
+/* A7（流程体验官终版裁决·双席共中，2026-10-06）：移动 toast 避让吸底条——
+   shared/toast.js 容器 bottom 读 --toast-lift-below 抬升。本页吸底条在场档
+   （<1024px）定义变量 = 条高（10+48+10=68px）+ 安全区；桌面条退场归零，
+   非 PDP 页变量缺省（toast 原位不变）。io-ready 时条隐藏瞬间小幅过抬属
+   已知取舍（宁可高让不可重叠） */
+@media (max-width: 1023.98px) {
+  :root { --toast-lift-below: calc(68px + env(safe-area-inset-bottom, 0px)); }
+}
+
 /* ── print 样式（orders 先例）：一栏黑白，价格/规格/描述留档，交互件全退 ── */
 @media print {
   .site-header,

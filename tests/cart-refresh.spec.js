@@ -1,149 +1,112 @@
 import { test, expect } from '@playwright/test';
 
-// 购物车刷新与 Blob URL 释放验证
-// - 在运行中的预览页（http://localhost:5173/）执行
-// - 点击“加入购物车”或直接调用 cartManager.addItem
-// - 验证 .cart-count 文本是否 +1
-// - 验证 [data-cart-icon] 图标的 blob: URL 切换，旧 URL 不可再访问（被 revoke）
+// 购物车刷新验证（2026-10-06 测试升级席修漂移版）
+// 漂移修复：addItem→addToCart（M2 冻结契约 API）；.btn-add-to-cart→.btn-bag
+// （[data-add-to-cart] 文档委托）；Blob URL 释放断言域整体退役（svgBlobUrl 机制
+// 已随 F4 归一消亡，见 docs/BACKLOG.md 2026-10-06 退役记录）。
+// 本件补 M2 新列序锁：[缩略][名称两行（名称+价格行）][步进器][×]。
+const BASE = process.env.A_LANE_BASE || 'http://localhost:5173/';
 
-test.describe('购物车图标刷新与 Blob URL 释放', () => {
-  const BASE_URL = process.env.BASE_URL || 'http://localhost:5173/';
+const SEED_ITEM = {
+  productId: '1', productSkuId: '00000001', productName: '渐变褶皱手袋',
+  productBrand: 'Reich', productPrice: 299, productQuantity: 1,
+  productPic: '/images/products/product-1.jpg', selected: true,
+};
 
-  async function getCartCount(page) {
-    const counts = await page.$$eval('.cart-count', els => els.map(e => e.textContent?.trim()).filter(Boolean));
-    // 取第一个可解析数字的计数
-    for (const txt of counts) {
-      const num = parseInt(txt, 10);
-      if (!Number.isNaN(num)) return num;
+async function ready(page) {
+  await page.goto(BASE + 'index.html', { waitUntil: 'networkidle' });
+  await page.waitForFunction(() => !!window.cartManager && !!window.cartManager.cartUI, null, { timeout: 8000 });
+}
+
+async function badgeCount(page) {
+  return page.evaluate(() => {
+    const el = document.querySelector('.site-cart-badge, #cart-badge');
+    return el ? parseInt(el.textContent.trim(), 10) : null;
+  });
+}
+
+test.describe('购物车计数刷新与 API 漂移修复', () => {
+  test.afterEach(async ({ page }) => {
+    await page.evaluate(() => localStorage.removeItem('reich_cart')).catch(() => {});
+  });
+
+  test('加购后徽章计数即时 +1，二次加购再 +1（addToCart 活路）', async ({ page }) => {
+    await ready(page);
+    const prev = (await badgeCount(page)) ?? 0;
+
+    const bags = page.locator('.btn-bag');
+    if (await bags.count()) {
+      await bags.first().click();
+    } else {
+      // Fallback：直接调冻结契约 API（addToCart——旧 addItem 已不存在）
+      await page.evaluate(async () => {
+        await window.cartManager.addToCart({
+          productId: 't1', productSkuId: 'test-1', productName: '测试商品',
+          productBrand: 'Reich', productPrice: 99, productQuantity: 1, productPic: '',
+        });
+      });
     }
-    return null;
-  }
+    await page.waitForFunction((n) => {
+      const el = document.querySelector('.site-cart-badge, #cart-badge');
+      return el && parseInt(el.textContent.trim(), 10) === n + 1;
+    }, prev, { timeout: 5000 });
+    expect(await badgeCount(page)).toBe(prev + 1);
 
-  async function getCartIconStates(page) {
-    return await page.$$eval('[data-cart-icon]', (imgs) => {
-      return imgs.map(img => ({
-        currentSrc: img.src,
-        blobUrl: img.dataset.svgBlobUrl || '',
-        isBlob: (img.dataset.svgBlobUrl || img.src || '').startsWith('blob:'),
-      }));
+    // 再次加购（同路重复验证）
+    if (await bags.count()) {
+      await bags.first().click();
+    } else {
+      await page.evaluate(async () => {
+        await window.cartManager.addToCart({
+          productId: 't2', productSkuId: 'test-2', productName: '测试商品2',
+          productBrand: 'Reich', productPrice: 199, productQuantity: 1, productPic: '',
+        });
+      });
+    }
+    await page.waitForFunction((n) => {
+      const el = document.querySelector('.site-cart-badge, #cart-badge');
+      return el && parseInt(el.textContent.trim(), 10) === n + 2;
+    }, prev, { timeout: 5000 });
+    expect(await badgeCount(page)).toBe(prev + 2);
+  });
+
+  test('M2 新列序：缩略 → 名称两行（名称+价格行）→ 步进器 → ×，DOM 序与结构', async ({ page }) => {
+    await ready(page);
+    await page.evaluate((item) => localStorage.setItem('reich_cart', JSON.stringify([item])), SEED_ITEM);
+    await page.reload({ waitUntil: 'networkidle' });
+    await page.waitForFunction(() => !!window.cartManager && !!window.cartManager.cartUI, null, { timeout: 8000 });
+    await page.click('.site-cart-btn');
+    await expect(page.locator('.cart-overlay')).toHaveClass(/visible/);
+
+    const row = page.locator('.cart-item').first();
+    await expect(row.locator('.item-image img')).toHaveAttribute('alt', '渐变褶皱手袋'); // 缩略
+    await expect(row.locator('.item-details .item-name')).toHaveText('渐变褶皱手袋');   // 名称行
+    await expect(row.locator('.item-details .item-price-line')).toHaveText('¥299');      // 价格行（qty=1 单价只显一次）
+    // 步进器：− span + 三件套
+    await expect(row.locator('.item-quantity button[aria-label="减少数量"]')).toBeVisible();
+    await expect(row.locator('.item-quantity button[aria-label="增加数量"]')).toBeVisible();
+    await expect(row.locator('.item-quantity span').first()).toHaveText('1');
+
+    // DOM 列序四段：image → details → quantity → remove（M2 C5 终裁）
+    const order = await row.evaluate((el) => {
+      const seq = (sel) => {
+        const child = el.querySelector(sel);
+        return child ? Array.from(el.children).indexOf(child) : -1;
+      };
+      return {
+        image: seq('.item-image'), details: seq('.item-details'),
+        quantity: seq('.item-quantity'), remove: seq('.item-remove'),
+        nameBeforePrice: (() => {
+          const d = el.querySelector('.item-details');
+          const n = d?.querySelector('.item-name'); const p = d?.querySelector('.item-price-line');
+          return !!(n && p && (n.compareDocumentPosition(p) & Node.DOCUMENT_POSITION_FOLLOWING));
+        })(),
+      };
     });
-  }
-
-  async function waitForCartCountIncrease(page, prevCount) {
-    await page.waitForFunction((oldCount) => {
-      const els = Array.from(document.querySelectorAll('.cart-count'));
-      for (const e of els) {
-        const n = parseInt(e.textContent?.trim() || '', 10);
-        if (!Number.isNaN(n) && (oldCount == null || n > oldCount)) {
-          return true;
-        }
-      }
-      return false;
-    }, prevCount, { timeout: 5000 });
-  }
-
-  async function waitForIconsUpdated(page, prevStates) {
-    await page.waitForFunction((prev) => {
-      const imgs = Array.from(document.querySelectorAll('[data-cart-icon]'));
-      // 至少有一个图标的 blobUrl 或 src 发生变化
-      return imgs.some((img, idx) => {
-        const prevState = prev[idx];
-        const curBlob = img.dataset.svgBlobUrl || '';
-        const curSrc = img.src || '';
-        return (prevState && (prevState.blobUrl !== curBlob || prevState.currentSrc !== curSrc));
-      });
-    }, prevStates, { timeout: 5000 });
-  }
-
-  async function verifyOldBlobRevoked(page, oldBlobUrls) {
-    // 只验证 blob: URL；非 blob 的初始 SVG 路径不在验证范围内
-    const candidate = oldBlobUrls.filter(u => typeof u === 'string' && u.startsWith('blob:'));
-    if (candidate.length === 0) return; // 无可验证项时跳过
-
-    const results = await page.evaluate(async (urls) => {
-      const out = [];
-      for (const u of urls) {
-        try {
-          const res = await fetch(u);
-          // 某些浏览器可能允许 fetch blob: URL，但 revoke 后通常会失败或返回非 2xx
-          out.push({ url: u, ok: res?.ok === true });
-        } catch (e) {
-          out.push({ url: u, ok: false, error: String(e) });
-        }
-      }
-      return out;
-    }, candidate);
-
-    // 期望所有旧 blob URL 都不可访问（ok 为 false）
-    for (const r of results) {
-      expect(r.ok, `旧 Blob URL 应该被 revoke：${r.url}（结果: ${JSON.stringify(r)}）`).toBeFalsy();
-    }
-  }
-
-  test('点击加入购物车后，购物袋图标数字与计数即时更新，旧 Blob URL 被释放', async ({ page }) => {
-    await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
-
-    // 等待全局 cartManager 就绪
-    await page.waitForFunction(() => !!window.cartManager, null, { timeout: 5000 });
-
-    const prevCount = await getCartCount(page);
-    const prevIconStates = await getCartIconStates(page);
-    const prevBlobUrls = prevIconStates.map(s => s.blobUrl).filter(Boolean);
-
-    // 优先点击 UI 的“加入购物车”按钮；若不存在则直接调用 cartManager.addItem
-    const addButtons = await page.$$('.btn-add-to-cart');
-    if (addButtons.length > 0) {
-      await addButtons[0].click();
-    } else {
-      // Fallback：直接调用业务方法，保证可验证
-      await page.evaluate(() => {
-        window.cartManager.addItem({ id: 'test-1', name: '测试商品', price: 99, image: '', quantity: 1 });
-      });
-    }
-
-    // 等待 .cart-count +1 或任意图标发生更新
-    if (prevCount != null) {
-      await waitForCartCountIncrease(page, prevCount);
-    } else {
-      await waitForIconsUpdated(page, prevIconStates);
-    }
-
-    const newCount = await getCartCount(page);
-    if (prevCount != null && newCount != null) {
-      expect(newCount).toBeGreaterThan(prevCount);
-    }
-
-    // 校验图标 blob URL 切换与旧 URL revoke
-    const newIconStates = await getCartIconStates(page);
-    const newBlobUrls = newIconStates.map(s => s.blobUrl).filter(Boolean);
-
-    // 至少应当出现 blob: URL（首次渲染可能是静态 SVG，更新后为 blob:）
-    expect(newBlobUrls.length, '更新后至少一个图标应当使用 blob: URL').toBeGreaterThanOrEqual(1);
-
-    // 旧 blob URL 不可访问
-    await verifyOldBlobRevoked(page, prevBlobUrls);
-
-    // 再次触发一次添加，重复验证（确保多次更新不会泄露 Blob URL）
-    if (addButtons.length > 0) {
-      await addButtons[0].click();
-    } else {
-      await page.evaluate(() => {
-        window.cartManager.addItem({ id: 'test-2', name: '测试商品2', price: 199, image: '', quantity: 1 });
-      });
-    }
-
-    const prev2IconStates = newIconStates;
-    const prev2BlobUrls = prev2IconStates.map(s => s.blobUrl).filter(Boolean);
-    if (newCount != null) {
-      await waitForCartCountIncrease(page, newCount);
-    } else {
-      await waitForIconsUpdated(page, prev2IconStates);
-    }
-
-    const new2IconStates = await getCartIconStates(page);
-    const new2BlobUrls = new2IconStates.map(s => s.blobUrl).filter(Boolean);
-
-    expect(new2BlobUrls.length).toBeGreaterThanOrEqual(1);
-    await verifyOldBlobRevoked(page, prev2BlobUrls);
+    expect(order.image).toBe(0);
+    expect(order.details).toBe(1);
+    expect(order.quantity).toBe(2);
+    expect(order.remove).toBe(3);
+    expect(order.nameBeforePrice).toBe(true);
   });
 });

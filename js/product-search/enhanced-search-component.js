@@ -10,6 +10,26 @@
 // M7·B5: 价格格式单一来源（整数直出 ¥299 非整两位）——A 席 M0 组件复用
 import { formatPrice } from '../shared/format-price.js';
 
+// B4（苏黎世 P2-4·流程体验官终版裁决 2026-10-06）：搜索同义词小表——手袋域
+// 四词互认（建议层 filterSuggestionPool 与查询层 performSearch 两处同表）。
+// 上新词（如"腰包"）只改此一处。
+const SYNONYM_GROUPS = [
+  ['手袋', '包', '提包', '挎包']
+];
+
+// 离线建议词表（原 getMockSuggestions 内联表提取为模块常量——A8 词池拉取
+// 失败时的回落源；getMockSuggestions 过滤逻辑不变）
+const ALL_MOCK_SUGGESTIONS = [
+  '皮革手袋', '帆布包', '迷你包', '托特包', '斜挎包',
+  '锁扣手提包', '波士顿包', '褶皱手袋', '迷你链条包', '翻盖链条包',
+  '链条包', '手提包', '单肩包', '信封包', '水桶包',
+  '马鞍包', '云朵包', '腋下包', '法棍包', '手拿包',
+  '粒面皮', '光面皮', '印花皮革', '糖果色', '渐变褶皱',
+  '通勤包', '约会包', '银色链条', '粉色链条包', '湖蓝手提包',
+  '花语手提包', '复古包', '漆皮包', '编织包', '小方包',
+  '双肩包', '帆布托特', '迷你斜挎', '心形扣', '圆环扣'
+];
+
 class EnhancedSearchComponent {
   /**
    * 构造函数
@@ -50,40 +70,53 @@ class EnhancedSearchComponent {
     this.elements = {};
     this.debounceTimer = null;
     this.debounceDelay = 300; // 300ms防抖延迟
+
+    // A8（流程体验官终版裁决·双席共中）：建议词池——随 /api/products 一次拉全，
+    // 内存过滤（逐键 fetch /api/products/suggestions 段整体退役）
+    this.suggestionPool = null;        // 词条池（品名+标签去重）
+    this.productPool = null;           // 原始商品数组（B4 查询层同义词补齐用）
+    this.suggestionPoolPromise = null; // 池加载 promise（缓存，失败回落离线词表）
+    // B5b（苏黎世 P2-5·终版）：combobox 键盘导航——建议项 activeIndex 状态
+    this.activeIndex = -1;
   }
 
   /**
- * 初始化搜索组件
- */
-async init() {
+   * 初始化搜索组件
+   * B13（东京 P2-3·流程体验官终版裁决）：bindEvents 前移到 loadPopularSearches
+   * 之前（首开即有监听，不与热门搜索 fetch 竞速）；loadPopularSearches 不再
+   * await——init 即回（site-header 焦点挂 init promise 链），热门异步补位
+   */
+  async init() {
   if (this.state.initialized) {
-    console.warn('EnhancedSearchComponent: 组件已经初始化');
-    return;
+      console.warn('EnhancedSearchComponent: 组件已经初始化');
+      return;
   }
 
   try {
     // 创建搜索界面结构
     this.createSearchInterface();
-    
+
     // 获取DOM元素
     this.getElements();
-    
+
     // 加载搜索历史
     this.loadSearchHistory();
-    
-    // 加载热门搜索
-    await this.loadPopularSearches();
-    
-    // 绑定事件
+
+    // 绑定事件（B13 前移）
     this.bindEvents();
-    
+
+    // A8：建议词池后台起拉（不阻塞首开；首查时 await 就绪）
+    this.ensureSuggestionPool();
+
+    // 加载热门搜索（B13：异步补位，其完成时自行调 showPopularSearches）
+    this.loadPopularSearches();
+
     // 设置初始化状态
     this.state.initialized = true;
-    console.log('EnhancedSearchComponent: 初始化完成');
   } catch (error) {
     console.error('EnhancedSearchComponent: 初始化失败', error);
   }
-}
+  }
 
   /**
    * 创建搜索界面结构
@@ -113,6 +146,12 @@ async init() {
     searchInput.className = 'w-full py-3 pl-12 pr-4 border border-[var(--border-default)] rounded-none focus:outline-none focus:border-[var(--candy-blush-ink)] focus:ring-2 focus:ring-[var(--ink)] focus:ring-opacity-20 text-lg';
     searchInput.autocomplete = 'off';
     searchInput.spellcheck = 'false';
+    // B5b（流程体验官终版裁决）：combobox 语义——输入框即 combo，建议列表为
+    // listbox（aria-activedescendant 跟随 activeIndex，见 showSearchSuggestions）
+    searchInput.setAttribute('role', 'combobox');
+    searchInput.setAttribute('aria-expanded', 'false');
+    searchInput.setAttribute('aria-autocomplete', 'list');
+    searchInput.setAttribute('aria-controls', this.options.searchSuggestionsId);
 
     // 创建搜索图标
     const searchIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -244,6 +283,12 @@ async init() {
     clearTimeout(this.debounceTimer);
     this.debounceTimer = setTimeout(() => {
       if (query.length > 0) {
+        // A8（流程体验官终版裁决·双席共中）：防抖触发即有回音——词池在途（首开
+        // 首查）先出"找找…"占位兜空窗（三点动画，CSS 随件在本组件样式表）；
+        // 池已就绪则同步内存过滤零空窗，不出闪一帧的假占位
+        if (!this.suggestionPool) {
+          this.showSearchingPlaceholder();
+        }
         // 获取搜索建议
         this.fetchSearchSuggestions(query);
       } else {
@@ -251,6 +296,27 @@ async init() {
         this.hideSearchSuggestions();
       }
     }, this.debounceDelay);
+  }
+
+  /** A8：防抖触发即占位行——"找找…" + 三点动画（aria-live 播报查找中） */
+  showSearchingPlaceholder() {
+    const box = this.elements.searchSuggestions;
+    if (!box) return;
+    box.innerHTML = '';
+    const row = document.createElement('div');
+    row.className = 'search-suggestion-item search-suggestion-loading';
+    row.setAttribute('aria-live', 'polite');
+    const label = document.createElement('span');
+    label.className = 'search-loading-label';
+    label.textContent = '找找…';
+    row.appendChild(label);
+    const dots = document.createElement('span');
+    dots.className = 'search-loading-dots';
+    dots.setAttribute('aria-hidden', 'true');
+    for (let i = 0; i < 3; i++) dots.appendChild(document.createElement('i'));
+    row.appendChild(dots);
+    box.appendChild(row);
+    box.style.display = 'block';
   }
 
   /**
@@ -283,14 +349,84 @@ async init() {
 
   /**
    * 处理搜索按键
+   * B5b（苏黎世 P2-5·流程体验官终版裁决）：建议列表 combobox 键盘导航——
+   * ↑↓ 移动高亮（aria-selected 跟随）、Enter 选中高亮项（未高亮=原词搜索）、
+   * ESC 分层（先收建议层，stopPropagation 不让本键再收搜索条——下一次 ESC 才收）
    * @param {Event} event - 按键事件
    */
   handleSearchKeydown(event) {
     const query = event.target.value.trim();
-    
-    // 回车键执行搜索
-    if (event.key === 'Enter' && query.length > 0) {
-      this.performSearch(query);
+    const suggestionsOpen = !!(this.elements.searchSuggestions &&
+      this.elements.searchSuggestions.style.display !== 'none' &&
+      this.elements.searchSuggestions.children.length > 0);
+
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      if (!suggestionsOpen) return;
+      event.preventDefault();
+      const count = this.state.searchSuggestions.slice(0, this.options.maxSuggestions).length;
+      if (!count) return;
+      // 环形移动：-1（无高亮）↓ 到 0；0 ↑ 回 -1（收高亮，Enter 走原词）
+      if (event.key === 'ArrowDown') {
+        this.activeIndex = this.activeIndex + 1 >= count ? -1 : this.activeIndex + 1;
+      } else {
+        this.activeIndex = this.activeIndex - 1 < -1 ? count - 1 : this.activeIndex - 1;
+      }
+      this.updateSuggestionActive();
+      return;
+    }
+
+    if (event.key === 'Enter') {
+      if (suggestionsOpen && this.activeIndex >= 0) {
+        const picked = this.state.searchSuggestions[this.activeIndex];
+        if (picked) {
+          event.preventDefault();
+          if (this.elements.searchInput) {
+            this.elements.searchInput.value = typeof picked === 'string' ? picked : (picked.text || '');
+          }
+          this.performSearch(this.elements.searchInput ? this.elements.searchInput.value.trim() : query);
+        }
+        return;
+      }
+      if (query.length > 0) {
+        this.performSearch(query);
+      }
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      // B5a（苏黎世 P2-5 行级·根因）：input type="search" 的原生 ESC 默认行为
+      // 是清空输入框——"ESC 关条再开丢已输入词"即此。preventDefault 阻断原生清词
+      //（关闭搜索条由 overlay-escape 分发器负责，本键不 stopPropagation）
+      event.preventDefault();
+      if (suggestionsOpen) {
+        event.stopPropagation(); // B5 分层：建议层开着时本键只收建议层，搜索条留给下一次 ESC
+        this.hideSearchSuggestions();
+      }
+    }
+  }
+
+  /** B5b：高亮项同步——class/aria-selected/aria-activedescendant 三处一体 */
+  updateSuggestionActive() {
+    const box = this.elements.searchSuggestions;
+    if (!box) return;
+    const items = box.querySelectorAll('.search-suggestion-item');
+    items.forEach((item, index) => {
+      const active = index === this.activeIndex;
+      item.classList.toggle('active', active);
+      item.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    const input = this.elements.searchInput;
+    if (input) {
+      const activeItem = items[this.activeIndex];
+      if (activeItem && activeItem.id) {
+        input.setAttribute('aria-activedescendant', activeItem.id);
+      } else {
+        input.removeAttribute('aria-activedescendant');
+      }
+    }
+    const activeEl = items[this.activeIndex];
+    if (activeEl && typeof activeEl.scrollIntoView === 'function') {
+      activeEl.scrollIntoView({ block: 'nearest' });
     }
   }
 
@@ -322,85 +458,125 @@ async init() {
   }
 
   /**
- * 获取搜索建议
- * @param {string} query - 搜索查询
- */
-async fetchSearchSuggestions(query) {
-  try {
-    // 检查缓存
-    const cacheKey = `suggestions:${query}`;
-    const cachedResult = this.state.searchCache.get(cacheKey);
-    
-    if (cachedResult && Date.now() - cachedResult.timestamp < this.options.cacheTTL) {
-      this.state.searchSuggestions = cachedResult.data;
-      this.showSearchSuggestions();
+   * 获取搜索建议
+   * A8（流程体验官终版裁决）：建议本地出——词池随 /api/products 一次拉全，
+   * 内存前缀/包含过滤（前缀优先），逐键 fetch 段退役；池在途时上方占位行兜
+   * 空窗，就绪即替换。与既有 suggestions API 的兼容口径=本地优先，API 不可用
+   * （池拉取失败）回落离线词表（getMockSuggestions 全表）。
+   * @param {string} query - 搜索查询
+   */
+  async fetchSearchSuggestions(query) {
+    const pool = await this.ensureSuggestionPool();
+    // 查询已清空（用户在池就绪前删光了词）：不再弹建议
+    if (!this.elements.searchInput || this.elements.searchInput.value.trim() !== query) {
+      if (this.elements.searchInput && this.elements.searchInput.value.trim() === '') {
+        this.hideSearchSuggestions();
+      }
       return;
     }
-
-    // 如果没有提供API端点，使用模拟数据
-    if (!this.options.suggestionsApiEndpoint) {
-      this.state.searchSuggestions = this.getMockSuggestions(query);
-      this.showSearchSuggestions();
-      return;
-    }
-
-    // 从API获取搜索建议
-    const response = await fetch(`${this.options.suggestionsApiEndpoint}?q=${encodeURIComponent(query)}`);
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const rawData = await response.json();
-    // 求真修复(2026-10-04): 后端返回数组或 {suggestions:[...]}——兼容两形状
-    const data = { suggestions: Array.isArray(rawData) ? rawData : (rawData.suggestions || rawData.items || []) };
-    
-    // 更新状态
-    this.state.searchSuggestions = data.suggestions || [];
-    
-    // 缓存结果
-    this.state.searchCache.set(cacheKey, {
-      data: this.state.searchSuggestions,
-      timestamp: Date.now()
-    });
-    
-    // 显示搜索建议
-    this.showSearchSuggestions();
-  } catch (error) {
-    console.warn('EnhancedSearchComponent: 获取搜索建议失败', error.message);
-    // 使用模拟数据作为后备
-    this.state.searchSuggestions = this.getMockSuggestions(query);
+    this.state.searchSuggestions = this.filterSuggestionPool(query, pool);
+    this.activeIndex = -1; // B5b：新词重置高亮
     this.showSearchSuggestions();
   }
-}
+
+  /** A8：词池加载（promise 缓存）——品名+标签去重入池；失败回落离线词表 */
+  ensureSuggestionPool() {
+    if (this.suggestionPool) return Promise.resolve(this.suggestionPool);
+    if (!this.suggestionPoolPromise) {
+      this.suggestionPoolPromise = fetch('/api/products?limit=50', {
+        headers: { Accept: 'application/json' }
+      })
+        .then((response) => {
+          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+          return response.json();
+        })
+        .then((data) => {
+          const products = Array.isArray(data && data.products) ? data.products : [];
+          const entries = [];
+          products.forEach((p) => {
+            if (p && p.name) entries.push(String(p.name));
+            (Array.isArray(p && p.tags) ? p.tags : []).forEach((t) => {
+              if (t) entries.push(String(t));
+            });
+          });
+          this.productPool = products;   // B4 查询层同义词补齐用（原始商品）
+          this.suggestionPool = Array.from(new Set(entries));
+          return this.suggestionPool;
+        })
+        .catch((error) => {
+          console.warn('EnhancedSearchComponent: 建议词池拉取失败，回落离线词表', error.message);
+          this.suggestionPool = ALL_MOCK_SUGGESTIONS.slice();
+          return this.suggestionPool;
+        });
+    }
+    return this.suggestionPoolPromise;
+  }
+
+  /**
+   * B4（苏黎世 P2-4·流程体验官终版裁决）：手袋域同义词小表——建议与查询两处互认。
+   * 查询词命中组内任一词 → 全组互认（搜"包"也提示"手袋/提包/挎包"系词条）
+   */
+  expandQuery(query) {
+    const q = String(query || '').trim();
+    const terms = [q];
+    SYNONYM_GROUPS.forEach((group) => {
+      if (group.indexOf(q) !== -1) {
+        group.forEach((word) => {
+          if (word !== q) terms.push(word);
+        });
+      }
+    });
+    return terms;
+  }
+
+  /** A8：内存过滤——前缀（查询词）> 前缀（同义词）> 包含（查询词）> 包含（同义词），
+      同分字典序；上限 maxSuggestions */
+  filterSuggestionPool(query, pool) {
+    const q = String(query || '').trim().toLowerCase();
+    if (!q) return [];
+    const terms = this.expandQuery(query).map((t) => t.toLowerCase());
+    const scored = [];
+    (pool || []).forEach((entry) => {
+      const e = String(entry).toLowerCase();
+      let score = 0;
+      if (e.indexOf(q) === 0) score = 4;
+      else if (terms.some((t) => e.indexOf(t) === 0)) score = 3;
+      else if (e.indexOf(q) !== -1) score = 2;
+      else if (terms.some((t) => e.indexOf(t) !== -1)) score = 1;
+      if (score > 0) scored.push({ entry: String(entry), score });
+    });
+    scored.sort((a, b) => (b.score - a.score) || a.entry.localeCompare(b.entry, 'zh'));
+    return scored.slice(0, this.options.maxSuggestions).map((s) => s.entry);
+  }
 
 /**
- * 获取模拟的搜索建议数据
+ * 获取模拟的搜索建议数据（A8：表体已提取为 ALL_MOCK_SUGGESTIONS 模块常量）
  * @param {string} query - 搜索查询
  * @returns {Array} 模拟的搜索建议数据
  */
 getMockSuggestions(query) {
-  const allSuggestions = [
-    '皮革手袋', '帆布包', '迷你包', '托特包', '斜挎包',
-    '锁扣手提包', '波士顿包', '褶皱手袋', '迷你链条包', '翻盖链条包',
-    '链条包', '手提包', '单肩包', '信封包', '水桶包',
-    '马鞍包', '云朵包', '腋下包', '法棍包', '手拿包',
-    '粒面皮', '光面皮', '印花皮革', '糖果色', '渐变褶皱',
-    '通勤包', '约会包', '银色链条', '粉色链条包', '湖蓝手提包',
-    '花语手提包', '复古包', '漆皮包', '编织包', '小方包',
-    '双肩包', '帆布托特', '迷你斜挎', '心形扣', '圆环扣'
-  ];
-
   // 根据查询过滤建议
-  return allSuggestions
+  return ALL_MOCK_SUGGESTIONS
     .filter(item => item.toLowerCase().includes(query.toLowerCase()))
     .slice(0, 5); // 最多返回5个建议
 }
 
   /**
- * 加载热门搜索
- */
-async loadPopularSearches() {
+   * 加载热门搜索
+   * B13：init 不再 await 本方法——存 promise 供 showPopularSearches 判"在途"
+   *（完成后清标记：真空数据仍能渲染"暂无热门搜索"诚实态）
+   */
+  async loadPopularSearches() {
+    const pending = this._fetchPopularSearches();
+    this._popularLoadPromise = pending;
+    try {
+      await pending;
+    } finally {
+      if (this._popularLoadPromise === pending) this._popularLoadPromise = null;
+    }
+  }
+
+  async _fetchPopularSearches() {
   try {
     // 检查缓存
     const cacheKey = 'popular-searches';
@@ -556,15 +732,19 @@ async performSearch(query) {
 
     // 从API执行搜索
     const response = await fetch(`${this.options.searchApiEndpoint}?${searchParams}`);
-    
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
+
     const data = await response.json();
-    
+
     // 更新状态
     this.state.searchResults = data.products || [];
+    // B4（流程体验官终版裁决）：查询层同义词互认——API 主词结果之外，用
+    // /api/products 词池同源数据补齐同义词命中（搜"手袋"也见 波士顿包/提包），
+    // 按 id 去重、API 序在前（同义词补齐不打乱主词相关性）
+    await this.mergeSynonymResults(this.state.searchQuery);
     this.state.lastSearchTime = Date.now();
     
     // 缓存结果
@@ -580,15 +760,15 @@ async performSearch(query) {
     this.displaySearchResults();
   } catch (error) {
     console.error('EnhancedSearchComponent: 执行搜索失败', error);
-    
+
     // 使用模拟数据作为后备
     const mockResults = this.getMockSearchResults(this.state.searchQuery);
     this.state.searchResults = mockResults;
     this.state.lastSearchTime = Date.now();
-    
+
     // 添加到搜索历史
     this.addToSearchHistory(this.state.searchQuery);
-    
+
     // 显示搜索结果
     this.displaySearchResults();
   } finally {
@@ -596,6 +776,26 @@ async performSearch(query) {
     this.setLoadingState(false);
   }
 }
+
+  /**
+   * B4：查询层同义词补齐——词池（/api/products 同源）按同义词组匹配，去重后
+   * 追加在 API 主词结果之后；词池不可用（productPool null）静默跳过
+   */
+  async mergeSynonymResults(query) {
+    const terms = this.expandQuery(query);
+    if (terms.length <= 1 || !Array.isArray(this.productPool)) return;
+    const seen = new Set(this.state.searchResults.map((p) => String(p && p.id)));
+    const synonyms = terms.slice(1).map((t) => t.toLowerCase());
+    const extra = this.productPool.filter((p) => {
+      if (!p || seen.has(String(p.id))) return false;
+      const haystack = [
+        p.name, p.description,
+        Array.isArray(p.tags) ? p.tags.join(' ') : ''
+      ].join(' ').toLowerCase();
+      return synonyms.some((t) => haystack.indexOf(t) !== -1);
+    });
+    if (extra.length) this.state.searchResults = this.state.searchResults.concat(extra);
+  }
 
   /**
    * 添加到搜索历史
@@ -622,31 +822,41 @@ async performSearch(query) {
 
   /**
    * 显示搜索建议
+   * B5b：listbox/option 语义 + activeIndex 状态渲染（aria-selected）；鼠标
+   * 悬停同步高亮（与键盘高亮同一状态源，不另起一套 hover 样式）
    */
   showSearchSuggestions() {
     if (!this.elements.searchSuggestions) return;
-    
+
     // 清空容器
     this.elements.searchSuggestions.innerHTML = '';
-    
+
     // 如果没有搜索建议，隐藏容器
     if (this.state.searchSuggestions.length === 0) {
-      this.elements.searchSuggestions.style.display = 'none';
+      this.hideSearchSuggestions();
       return;
     }
-    
-    // 显示容器
+
+    // 显示容器（B5b：listbox 语义）
+    this.elements.searchSuggestions.setAttribute('role', 'listbox');
+    this.elements.searchSuggestions.setAttribute('aria-label', '搜索建议');
     this.elements.searchSuggestions.style.display = 'block';
-    
+    if (this.elements.searchInput) {
+      this.elements.searchInput.setAttribute('aria-expanded', 'true');
+    }
+
     // 创建建议项（实战检验修复: 后端建议形如 {text,highlight,popularity},
     // 兼容字符串与对象两种形状, 此前直接赋值对象渲染成 [object Object]）
-    this.state.searchSuggestions.slice(0, this.options.maxSuggestions).forEach(suggestion => {
+    this.state.searchSuggestions.slice(0, this.options.maxSuggestions).forEach((suggestion, index) => {
       const suggestionText = typeof suggestion === 'string'
         ? suggestion
         : (suggestion && suggestion.text) || '';
       if (!suggestionText) return;
       const item = document.createElement('div');
       item.className = 'search-suggestion-item';
+      item.id = `${this.options.searchSuggestionsId}-option-${index}`;
+      item.setAttribute('role', 'option');
+      item.setAttribute('aria-selected', 'false');
       item.textContent = suggestionText;
 
       // 添加点击事件
@@ -656,9 +866,17 @@ async performSearch(query) {
         }
         this.performSearch(suggestionText);
       });
-      
+
+      // B5b：鼠标悬停与键盘高亮同源（不抢占键盘焦点）
+      item.addEventListener('mouseenter', () => {
+        this.activeIndex = index;
+        this.updateSuggestionActive();
+      });
+
       this.elements.searchSuggestions.appendChild(item);
     });
+
+    this.updateSuggestionActive();
   }
 
   /**
@@ -667,6 +885,12 @@ async performSearch(query) {
   hideSearchSuggestions() {
     if (this.elements.searchSuggestions) {
       this.elements.searchSuggestions.style.display = 'none';
+    }
+    // B5b：combobox 状态收口
+    this.activeIndex = -1;
+    if (this.elements.searchInput) {
+      this.elements.searchInput.setAttribute('aria-expanded', 'false');
+      this.elements.searchInput.removeAttribute('aria-activedescendant');
     }
   }
 
@@ -724,6 +948,13 @@ async performSearch(query) {
     // 求真修复(2026-10-04): loadPopularSearches → showPopularSearches →
     // 空数据时再调 loadPopularSearches = 无限互调至栈溢出。
     // load 调用方已保证有数据(或 mock); 空数据显示提示即可, 不再回调 load。
+
+    // B13：数据还在途（init 已不 await load）——此刻不渲染"暂无热门搜索"
+    // 假空态，加载完成时 _fetchPopularSearches 会自行重渲
+    if ((!this.state.popularSearches || this.state.popularSearches.length === 0)
+        && this._popularLoadPromise) {
+      return;
+    }
 
     // 清空容器
     this.elements.popularSearches.innerHTML = '';
@@ -1101,16 +1332,18 @@ getMockSearchResults(query, filters = {}) {
     }
   ];
 
-  // 根据查询过滤产品
+  // 根据查询过滤产品（B4：同义词互认——"手袋/包/提包/挎包"同组词全命中）
   let filteredProducts = allProducts;
-  
+
   if (query) {
-    const queryLower = query.toLowerCase();
-    filteredProducts = allProducts.filter(product => 
-      product.name.toLowerCase().includes(queryLower) ||
-      product.description.toLowerCase().includes(queryLower) ||
-      product.category.toLowerCase().includes(queryLower) ||
-      product.tags.some(tag => tag.toLowerCase().includes(queryLower))
+    const queryTerms = this.expandQuery(query).map((t) => t.toLowerCase());
+    filteredProducts = allProducts.filter(product =>
+      queryTerms.some(term =>
+        product.name.toLowerCase().includes(term) ||
+        product.description.toLowerCase().includes(term) ||
+        product.category.toLowerCase().includes(term) ||
+        product.tags.some(tag => tag.toLowerCase().includes(term))
+      )
     );
   }
 

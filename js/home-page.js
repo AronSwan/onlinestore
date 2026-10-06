@@ -16,33 +16,13 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    // 购物车数量更新（P3：新模板徽章为内联 style="display:none"，与 cart.js 的
-    // style.display 管理方式对齐；旧 'hidden' class 切换对内联样式无效）
-    function updateCartCount(count) {
-        const cartBadge = document.getElementById('cart-badge');
-
-        if (cartBadge) {
-            if (count > 0) {
-                cartBadge.textContent = count > 99 ? '99+' : count;
-                cartBadge.style.display = 'flex';
-            } else {
-                cartBadge.style.display = 'none';
-            }
-        }
-    }
-
-    // 购物车/心愿单图标点击绑定（原由 navigation-icons.js 经 img 选择器绑定；
-    // 新模板为内联 SVG 无 img，改在此直接绑定）
-    const cartBtn = document.querySelector('.site-tools [data-cart-icon]');
-    if (cartBtn) {
-        cartBtn.addEventListener('click', function() {
-            if (window.cartManager && typeof window.cartManager.showCart === 'function') {
-                window.cartManager.showCart();
-            } else {
-                window.location.href = '/';
-            }
-        });
-    }
+    // A4（流程体验官终版裁决·纽约案三合一，2026-10-06）：
+    //   ① updateCartCount(0) 打架行删除——DOMContentLoaded 零写徽章，把带袋
+    //     用户的首屏徽章点亮交给 site-header.js lightBadgeFromStorage（同步读
+    //     localStorage）与 cart.js（后续增量）；
+    //   ② 购物袋钮点击绑定删除——同职责已归一 site-header.js bindCartButton
+    //     （动态 import cart.js 兜底；此处再绑会双发 CartOpened 埋点）。
+    // 原两段连同仅被它们调用的 updateCartCount 一并退役。
 
     // 心愿单入口：B4 已闭环为 profile.html#wishlist 深链（site-header.js 渲染 href），
     // 此处不再拦截——⑤审工程维 P1：旧 bind 轮询的 showWishlistModal 已随 M6 孤儿模态删除，
@@ -80,8 +60,8 @@ document.addEventListener('DOMContentLoaded', function() {
         setupNavigation();
     }
 
-    // 初始化购物车数量
-    updateCartCount(0);
+    // A4：updateCartCount(0) 调用行删除（首屏徽章点亮改由 site-header.js
+    // 同步读 localStorage + cart.js 增量更新，不再被本行零写打灭）
 
     // 设置用户资料按钮（同步）
     setupUserProfileButton();

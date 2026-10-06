@@ -41,6 +41,7 @@
   var GRID_ID = 'home-product-grid';
   var FETCH_TIMEOUT_MS = 6000;
   var SCROLL_STASH_KEY = 'reich_list_scroll';
+  var SCROLL_LEAVE_KEY = 'reich_list_leave'; // m4/A3 修复：pagehide 时的列表位置（back_forward 消费）
   var SCROLL_STASH_TTL_MS = 5 * 60 * 1000; // 快照 5 分钟内有效（逛太久回来重置也合理）
 
   // 徽标池（voice-sheet：本季 / 新到 / 心头好——不用促销词）
@@ -331,18 +332,33 @@
    * 命不中（新加载）时若 5 分钟内有快照且 referrer 指向 product.html → 渲染后回位。
    */
   function restoreScrollAfterPdp(grid) {
-    var stash;
+    var stash = null;
+    var leave = null;
     try {
       stash = JSON.parse(sessionStorage.getItem(SCROLL_STASH_KEY) || 'null');
       sessionStorage.removeItem(SCROLL_STASH_KEY);
+      leave = JSON.parse(sessionStorage.getItem(SCROLL_LEAVE_KEY) || 'null');
+      sessionStorage.removeItem(SCROLL_LEAVE_KEY);
     } catch (err) {
       return;
     }
-    if (!stash || typeof stash.y !== 'number') return;
-    if (Date.now() - stash.t > SCROLL_STASH_TTL_MS) return;
-    var ref = document.referrer || '';
-    if (ref.indexOf('product.html') === -1) return; // 非 PDP 回程不劫持滚动
-    window.scrollTo(0, stash.y);
+    var now = Date.now();
+    var fresh = function (s) { return s && typeof s.y === 'number' && now - s.t <= SCROLL_STASH_TTL_MS; };
+    var target = fresh(stash) ? stash.y : (fresh(leave) ? leave.y : null);
+    if (target === null) return;
+    /* m4 诊断修复：referrer 守门在回退导航下常为空串（Playwright/隐私策略），
+       兜底半因此永不触发。改以 Navigation Type 为主判（back_forward=回退），
+       referrer 降为旧浏览器二级证据。卡点击快照（stash）写于 PDP 导航瞬间，
+       天然只来自 PDP 路径，直接放行。 */
+    var navEntry = (performance.getEntriesByType &&
+      performance.getEntriesByType('navigation')[0]) || null;
+    var isBack = !!(navEntry && navEntry.type === 'back_forward');
+    var refFromPdp = (document.referrer || '').indexOf('product.html') !== -1;
+    if (fresh(stash)) {
+      window.scrollTo(0, target); // 卡点击快照：PDP 回程确证
+    } else if (isBack || refFromPdp) {
+      window.scrollTo(0, target); // pagehide 快照：仅回退/PDP 来源消费（菜单直入不劫持）
+    }
   }
 
   /* wishlist.js 在 DOMContentLoaded 时对当时的卡片直接绑定；本脚本的 API 渲染晚于它，
@@ -390,6 +406,15 @@
         renderProducts(products);
       });
   }
+
+    /* m4/A3 根治：pagehide 时无条件记下列表位置——原生 history 恢复在矮页（图片
+       未到）会被钳制到低位且不随页高增长补恢复（实测 y=252）。back_forward
+       消费（见 restoreScrollAfterPdp），菜单/直入导航不受影响。 */
+    window.addEventListener('pagehide', function () {
+      try {
+        sessionStorage.setItem(SCROLL_LEAVE_KEY, JSON.stringify({ y: window.scrollY, t: Date.now() }));
+      } catch (err) { /* 隐私模式静默 */ }
+    });
 
   function boot() {
     loadFromApi().catch(fallback);

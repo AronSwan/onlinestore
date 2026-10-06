@@ -24,13 +24,27 @@ const registerForm = document.getElementById("register-form");
 function initAuthPage() {
   // 设置标签切换事件监听
   setupTabSwitching();
-    
+
   // 设置表单提交事件监听
   setupFormSubmissions();
-    
+
   // 添加表单输入验证
   setupFormValidations();
-    
+
+  // B3（流程体验官终版裁决 2026-10-06）：回头官认邮箱——退出不清 last_email，
+  // 登录页预填 + "记住我"勾选随 localStorage 复原（勾选留存/不勾即忘在 login() 落笔）
+  try {
+    const lastEmail = localStorage.getItem("last_email");
+    if (lastEmail) {
+      const loginEmailInput = document.getElementById("login-email");
+      if (loginEmailInput) loginEmailInput.value = lastEmail;
+    }
+    const rememberBox = document.getElementById("remember-me");
+    if (rememberBox) rememberBox.checked = localStorage.getItem("remember_me") === "1";
+  } catch (storageError) {
+    /* 隐私模式：预填是锦上添花，静默跳过 */
+  }
+
   // 应用页面加载动画
   applyPageAnimations();
 }
@@ -149,7 +163,9 @@ function setupFormValidations() {
   }
   if (loginPassword) {
     loginPassword.addEventListener("input", function() {
-      validatePassword(this.value);
+      // A1（流程体验官终版裁决）：登录端密码输入期同删四件套校验——只清错误不设新槛
+      // （注册政策 M8·C7 已放宽 8 位起步，输入期四件套拦合法密码属同一死亡路径）
+      hideError("login-password");
     });
   }
     
@@ -183,20 +199,23 @@ function setupFormValidations() {
 
 /**
  * 验证登录表单
+ * A1（流程体验官终版裁决 2026-10-06）：登录端密码删四件套校验只留非空——
+ * 凭证交后端裁（401）；旧校验把注册政策（8 位起步）下完全合法的密码拦死在
+ * 客户端，构成"注册成功→登录失败"死亡路径（全站最重 P1）
  */
 function validateLoginForm() {
   const emailElement = document.getElementById("login-email");
   const passwordElement = document.getElementById("login-password");
-  
+
   if (!emailElement || !passwordElement) {
     return false;
   }
-  
-  const email = emailElement.value;
+
+  const email = emailElement.value.trim();
   const password = passwordElement.value;
-    
+
   let isValid = true;
-    
+
   // 验证邮箱
   if (!validateEmail(email)) {
     showError("login-email", "请输入有效的电子邮箱");
@@ -204,15 +223,15 @@ function validateLoginForm() {
   } else {
     hideError("login-email");
   }
-    
-  // 验证密码
-  if (!validatePassword(password)) {
-    showError("login-password", "密码不能为空，且需至少8位并包含大写字母、小写字母、数字和特殊字符");
+
+  // 验证密码：只留非空
+  if (!password) {
+    showError("login-password", "请输入密码");
     isValid = false;
   } else {
     hideError("login-password");
   }
-    
+
   return isValid;
 }
 
@@ -323,46 +342,50 @@ function validateConfirmPassword(confirmPassword) {
 
 /**
  * 显示错误信息
+ * A2（流程体验官终版裁决）：错误单一出口——统一写专用槽 #<fieldId>-error 红字
+ * （与 login-utils/login-enhanced 同一槽位体系）；不再向父元素 append 第二套
+ * p.error-message，提交失败不再叠加双份文案。message 为空串时只亮红边不写文案
+ * （原"登录失败二连写法"的密码框高亮语义保留）
  */
 function showError(inputId, message) {
   const input = document.getElementById(inputId);
   if (!input) {
     return;
   }
-  
-  // 移除原有的错误提示
-  const existingError = input.parentElement.querySelector(".error-message");
-  if (existingError) {
-    existingError.remove();
+
+  // 错误样式（槽位体系口径：is-invalid 红边，login.css）
+  input.classList.add("is-invalid");
+  input.classList.remove("is-valid");
+
+  const errorElement = document.getElementById(inputId + "-error");
+  if (!errorElement) {
+    return;
   }
-    
-  // 添加错误样式
-  input.classList.add("border-red-500");
-    
-  // 创建错误提示元素
-  const errorElement = document.createElement("p");
-  errorElement.className = "error-message text-red-500 text-xs mt-1";
-  errorElement.textContent = message;
-    
-  // 添加到父元素
-  input.parentElement.appendChild(errorElement);
+
+  if (message) {
+    errorElement.textContent = message;
+    errorElement.style.display = "block";
+  } else {
+    errorElement.textContent = "";
+    errorElement.style.display = "none";
+  }
 }
 
 /**
- * 隐藏错误信息
+ * 隐藏错误信息（A2：槽位清空——校验通过清空，不写绿字）
  */
 function hideError(inputId) {
   const input = document.getElementById(inputId);
   if (!input) {
     return;
   }
-  
-  input.classList.remove("border-red-500");
-    
-  // 移除错误提示
-  const errorElement = input.parentElement.querySelector(".error-message");
+
+  input.classList.remove("is-invalid");
+
+  const errorElement = document.getElementById(inputId + "-error");
   if (errorElement) {
-    errorElement.remove();
+    errorElement.textContent = "";
+    errorElement.style.display = "none";
   }
 }
 
@@ -396,6 +419,20 @@ async function login(email, password, rememberMe) {
   loginButton.innerHTML = '<svg class="icon-spin mr-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9"/></svg> 登录中...';
     
   try {
+    // B3（流程体验官终版裁决）："记住我"随 localStorage——勾选留存邮箱供下次预填
+    // （退出登录的五键清理不含 last_email，预填跨会话保留）；不勾即忘
+    try {
+      if (rememberMe) {
+        localStorage.setItem("last_email", email);
+        localStorage.setItem("remember_me", "1");
+      } else {
+        localStorage.removeItem("last_email");
+        localStorage.setItem("remember_me", "0");
+      }
+    } catch (storageError) {
+      /* 隐私模式：偏好留存是锦上添花，静默跳过 */
+    }
+
     // 调用后端登录API
     const response = await fetch('/api/auth/login', {
       method: 'POST',
@@ -459,9 +496,11 @@ async function login(email, password, rememberMe) {
       // 规范化视图白名单复检，双保险；不安全一律回首页。
       const returnParam = new URLSearchParams(window.location.search).get("returnUrl");
       const isSafeReturn = isSafeReturnUrl(returnParam);
+      // B2（流程体验官终版裁决）：登录成功跳转 1500→400ms——成功态一闪即走，
+      // 不让已通过的用户多等 1.1 秒空窗
       setTimeout(() => {
         window.location.href = isSafeReturn ? returnParam : "/";
-      }, 1500);
+      }, 400);
     } else {
       // 登录失败
       showError("login-email", data.message || "登录失败，请检查您的邮箱和密码");
@@ -536,20 +575,16 @@ async function register(username, email, password) {
         sessionStorage.setItem("userId", String(data.user.id));
       }
 
-      // 注册成功
-      showSuccessMessage("注册成功，即将登录...");
-      
-      // 切换到登录表单
+      // B1（流程体验官终版裁决）：注册即登录直进——注册接口已发令牌（上面已随
+      // "记住我"同规则写入会话），不再送登录页重输一遍密码；与登录同速（400ms）
+      // 跳 returnUrl/首页，toast 文案"注册成功"
+      showSuccessMessage("注册成功");
+
+      const returnParam = new URLSearchParams(window.location.search).get("returnUrl");
+      const isSafeReturn = isSafeReturnUrl(returnParam);
       setTimeout(() => {
-        const loginTab = document.getElementById("login-tab");
-        const loginEmail = document.getElementById("login-email");
-        if (loginTab) {
-          loginTab.click();
-        }
-        if (loginEmail) {
-          loginEmail.value = email;
-        }
-      }, 1500);
+        window.location.href = isSafeReturn ? returnParam : "/";
+      }, 400);
     } else {
       // 注册失败
       showError("register-email", data.message || "注册失败，请稍后重试");

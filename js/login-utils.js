@@ -405,17 +405,19 @@ class LoginUtils {
     }
 
     // 显示验证成功信息
-    static showValidationSuccess(fieldId, message) {
+    // A2（流程体验官终版裁决 2026-10-06）：校验通过=清空槽位，不写绿字——
+    // "这个密码，稳了"等成功文案与红字错误共用一个槽位会互相顶替/残留，
+    // 错误单一出口后成功态只留 is-invalid 摘除（绿边 is-valid 保留为轻量确认）
+    static showValidationSuccess(fieldId) {
         const field = document.getElementById(fieldId);
         const errorElement = document.getElementById(fieldId + '-error');
-        
+
         if (field && errorElement) {
             field.classList.remove('is-invalid');
             field.classList.add('is-valid');
-            errorElement.textContent = message;
-            errorElement.className = 'valid-feedback';
-            errorElement.style.display = 'block';
-            errorElement.style.color = '#28a745';
+            errorElement.textContent = '';
+            errorElement.className = 'invalid-feedback';
+            errorElement.style.display = 'none';
         }
     }
 
@@ -450,17 +452,12 @@ class LoginUtils {
             }
         });
 
-        // 登录密码字段 - 只做基本验证，不检查强度
+        // 登录密码字段 - A1（流程体验官终版裁决）：输入期不再设长度门槛
+        // （提交端已只留非空，输入期 <6 位红字属同一死亡路径的同病）；只负责清错
         const loginPasswordField = document.getElementById('login-password');
         if (loginPasswordField) {
             loginPasswordField.addEventListener('input', function() {
-                if (this.value.length === 0) {
-                    LoginUtils.clearValidationError('login-password');
-                } else if (this.value.length < 6) {
-                    LoginUtils.showValidationError('login-password', '密码长度不能少于6位');
-                } else {
-                    LoginUtils.clearValidationError('login-password');
-                }
+                LoginUtils.clearValidationError('login-password');
             });
         }
 

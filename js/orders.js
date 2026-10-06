@@ -126,45 +126,75 @@ class OrderManager {
      */
     async loadOrders() {
         this.showLoading();
-        
+
         try {
             const token = this.getAccessToken();
-            
-            if (token) {
-                const userId = this.resolveUserId(token);
-                
-                if (userId) {
-                    const response = await fetch(`/api/orders/user/${userId}`, {
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
-                    });
-                    
-                    if (response.ok) {
-                        const data = await response.json();
-                        // 后端 findByUserId 返回 { orders: [...], total }（orders.service.ts），
-                        // 兼容常见的返回形状：数组、{orders: [...]}、{items: [...]}
-                        const rawOrders = Array.isArray(data) ? data : (data.orders || data.items || []);
-                        this.orders = this.normalizeApiOrders(rawOrders);
-                        this.isDemoData = false;
-                        this.hideDemoBadge();
-                        this.filterAndDisplayOrders();
-                        return;
-                    }
-                    
-                    console.warn(`订单API返回 ${response.status}，回退到演示数据`);
-                } else {
-                    console.warn('无法确定当前用户ID（storage 与令牌均无有效 userId），使用演示数据');
-                }
+
+            // A9（流程体验官终版裁决·三席共中）：游客默认引导态——未登录不再
+            // 直铺演示数据（"惊吓在前解释在后"）；"登录看真实订单"CTA 挂
+            // returnUrl 回跳，演示数据折进"先看看长什么样"（展开后黄条徽标保持）
+            if (!token) {
+                this.showGuestState();
+                return;
             }
-            
-            // 未登录、无法确定 userId 或API返回非2xx：回退演示数据
+
+            const userId = this.resolveUserId(token);
+
+            if (userId) {
+                const response = await fetch(`/api/orders/user/${userId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    // 后端 findByUserId 返回 { orders: [...], total }（orders.service.ts），
+                    // 兼容常见的返回形状：数组、{orders: [...]}、{items: [...]}
+                    const rawOrders = Array.isArray(data) ? data : (data.orders || data.items || []);
+                    this.orders = this.normalizeApiOrders(rawOrders);
+                    this.isDemoData = false;
+                    this.hideDemoBadge();
+                    this.filterAndDisplayOrders();
+                    return;
+                }
+
+                console.warn(`订单API返回 ${response.status}，回退到演示数据`);
+            } else {
+                console.warn('无法确定当前用户ID（storage 与令牌均无有效 userId），使用演示数据');
+            }
+
+            // 已登录但无法确定 userId 或API返回非2xx：回退演示数据
             this.loadDemoData();
         } catch (error) {
             console.warn('从API加载订单失败，回退到演示数据:', error.message);
             this.loadDemoData();
         } finally {
             this.hideLoading();
+        }
+    }
+
+    /**
+     * A9：游客引导态——"登录看真实订单"（login.html?returnUrl=orders.html 回跳）
+     * + 演示数据折叠展开。展开后 loadDemoData 照常亮黄条徽标并保持可见
+     *（苏黎世保留意见：该页唯一值得守住的资产）。
+     */
+    showGuestState() {
+        this.hideLoading();
+        const guest = document.getElementById('guestState');
+        if (guest) guest.classList.remove('hidden');
+        this.elements.emptyState.classList.add('hidden');
+        this.elements.ordersList.classList.add('hidden');
+        this.elements.pagination.classList.add('hidden');
+        if (this.elements.searchEmptyState) this.elements.searchEmptyState.classList.add('hidden');
+
+        const expandBtn = document.getElementById('demoExpandBtn');
+        if (expandBtn && !expandBtn.dataset.bound) {
+            expandBtn.dataset.bound = '1';
+            expandBtn.addEventListener('click', () => {
+                guest.classList.add('hidden');
+                this.loadDemoData();
+            });
         }
     }
     

@@ -147,19 +147,23 @@ test('滚动快照回位：卡点入 PDP → 返回回到原滚动位（stash �
   await gridReady(page);
   await page.evaluate(() => window.scrollTo(0, 900));
   await page.waitForTimeout(300);
-  const clickY = await page.evaluate(() => window.scrollY); // 点击瞬间的实际滚动位
+  const clickY = await page.evaluate(() => window.scrollY); // 点击前基线（仅参考）
   await page.locator('.bento-card').nth(2).locator('a.card-link').click();
   await page.waitForURL(/product\.html/);
   await page.waitForSelector('.pdp-layout');
+  // m4 诊断修复：Playwright click 自动滚卡入视，stash 记录的是真实点击时滚动位——
+  // 以 stash 实值为期望（契约对象="回到点入时所在位"），clickY 仅兜底对照
+  const stashedY = await page.evaluate(() => {
+    const s = JSON.parse(sessionStorage.getItem('reich_list_scroll') || 'null');
+    return s && typeof s.y === 'number' ? s.y : clickY;
+  });
   // 正常返回（可能 bfcache 原生保位，也可能全新加载走 stash）
   await page.goBack();
   await page.waitForURL(/index\.html/);
   await page.waitForFunction(() => document.querySelectorAll('.bento-card').length >= 3);
   await page.waitForTimeout(1000); // 并行负载下布局/回位写窗加宽
   const y = await page.evaluate(() => window.scrollY);
-  // F1c(X2 归因)：注脚行使 nth(2) 卡越折叠线、Playwright 点击前自动滚卡入视，
-  // stash 存的就是实际点击位——契约是'回到点入时所在位'，断言对象改为实测 clickY
-  expect(Math.abs(y - clickY)).toBeLessThan(150); // 双保险合力：原生 or stash
+  expect(Math.abs(y - stashedY)).toBeLessThan(150); // 双保险合力：原生 or stash
 });
 
 test('hero 终裁：下划线零残留 + 标题纯文本（用户裁决覆盖蓝图波浪项）', async ({ page }) => {

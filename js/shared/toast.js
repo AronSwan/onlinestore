@@ -31,7 +31,9 @@ function ensureStyle() {
 #${CONTAINER_ID} {
   position: fixed;
   right: 24px;
-  bottom: 24px;
+  /* A7（流程体验官终版裁决·双席共中）：避让 PDP 吸底条——变量由 product.css 在
+     吸底条在场档（<1024px）定义为 条高(68px)+安全区；非 PDP 页缺省 0，原位不变 */
+  bottom: calc(24px + var(--toast-lift-below, 0px));
   z-index: var(--z-toast, 600);
   display: flex;
   flex-direction: column;
@@ -40,7 +42,7 @@ function ensureStyle() {
   pointer-events: none;
 }
 @media (max-width: 639px) {
-  #${CONTAINER_ID} { right: 16px; left: 16px; bottom: 16px; max-width: none; }
+  #${CONTAINER_ID} { right: 16px; left: 16px; bottom: calc(16px + var(--toast-lift-below, 0px)); max-width: none; }
 }
 .reich-toast {
   /* X1+X2 双席共中 F1a 终修：body 回退 auto——pointer-events:none 杀死 hover 暂停
@@ -242,13 +244,18 @@ export function showToast(opts) {
 /**
  * 加购反馈专用语系（B1）——cart.js 调用；文案过 voice-sheet 禁促销词。
  * "去结算"语义 = 打开购物袋面板（罗马裁决），面板内结算钮才给"未开通"诚实提示。
+ * B8（纽约 P2-5·流程体验官终版裁决）：burstCount>1 时（同 SKU 500ms 连点窗口）
+ * 换增量文案"已加入 N 件"——一窗一条 toast，不再叠罗汉。
  */
-export function showCartToast({ name, merged, quantity, onCheckout }) {
+export function showCartToast({ name, merged, quantity, burstCount, onCheckout }) {
   const label = name ? `「${name}」` : '这只包';
+  const burst = Number(burstCount) || 1;
   return showToast({
-    message: merged
-      ? `${label}又放进一只，袋里现在 ${quantity} 只。`
-      : `${label}放进袋子了。`,
+    message: burst > 1
+      ? `${label}已加入 ${burst} 件。`
+      : (merged
+        ? `${label}又放进一只，袋里现在 ${quantity} 只。`
+        : `${label}放进袋子了。`),
     sub: '已含运费 · 30 天可退',
     confirmText: '去结算',
     onConfirm: onCheckout,
