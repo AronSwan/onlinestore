@@ -78,8 +78,17 @@ class CartManager {
         try { localStorage.removeItem('reich_cart'); } catch (e2) { /* 隐私模式 */ }
         return [];
       }
-      return parsed.filter(it => it && typeof it === 'object' &&
-        'productSkuId' in it && typeof it.productQuantity === 'number');
+      /* 求真务实轮(2026-10-07·务实席实锤)：字符串型数量（"3"，遗留/手工数据）的
+         合法件曾被 filter 整件丢弃——UI 隐身但存储残留，下次袋变更后被永久清除。
+         先归一化再过滤：救得回的不丢，救不回的（NaN）才拒。浅拷贝防原地改。 */
+      return parsed
+        .map(it => {
+          if (!it || typeof it !== 'object' || !('productSkuId' in it)) return it;
+          const q = Number(it.productQuantity);
+          return Number.isFinite(q) ? Object.assign({}, it, { productQuantity: q }) : it;
+        })
+        .filter(it => it && typeof it === 'object' &&
+          'productSkuId' in it && typeof it.productQuantity === 'number');
     } catch (e) {
       try { localStorage.removeItem('reich_cart'); } catch (e2) { /* 隐私模式 */ }
       return [];

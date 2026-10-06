@@ -52,7 +52,8 @@ test.afterEach(async ({ page }) => {
  * 断言口径：B1/B2（裁决 B 档，润滑席已落地）后注册/登录成功 toast 均 400ms 一闪即走
  * （随后即跳转）——闪现文案不做断言（满载下轮询必漏采，2026-10-06 实测两见），
  * 改锁用户可见结果：注册→登录态直进首页；登出→登录态清空；同密码登录→登录态重建。
- * 已知限制：每次运行在开发库留一个真实注册用户（演示库，不清理）。 */
+ * 已知限制（2026-10-07 止血后）：本件末尾经 DELETE /api/users/me 自删测试号——
+ * 自删失败（网络级）时最多留一个号/跑；历史累积残留的清库见 BACKLOG 移交项。 */
 test('A1 注册合法密码 → 登出 → 同密码登录成功', async ({ page }) => {
   test.setTimeout(90000);
   const stamp = Date.now().toString(36);
@@ -90,6 +91,17 @@ test('A1 注册合法密码 → 登出 → 同密码登录成功', async ({ page
   await page.waitForURL((u) => u.pathname === '/', { timeout: 15000 });
   await page.waitForFunction(() =>
     (sessionStorage.getItem('userLoggedIn') || localStorage.getItem('userLoggedIn')) === 'true', null, { timeout: 8000 });
+
+  // 求真务实轮(2026-10-07·对账席 D3)：开发库止血——本件曾每跑留一个真实注册用户
+  // （reich.a1.*，审计实测库内 118 存活号的主源）。登录态在场时自删服务端账号，
+  // 删除失败不判测试红（自愈失败只留一个号，行为锁已全部通过）。
+  await page.evaluate(async () => {
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    if (!token) return;
+    try {
+      await fetch('/api/users/me', { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+    } catch (e) { /* 网络级失败容忍：测试号残留可接受 */ }
+  }).catch(() => {});
 });
 
 /* ── A4 七页活钮（裁决 A4：site-header 动态 import 兜底） ────────── */
