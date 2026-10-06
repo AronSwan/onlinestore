@@ -319,7 +319,9 @@ class OrderManager {
         ];
         
         const orders = [];
-        for (let i = 1; i <= 25; i++) {
+        // 国际用户批冲突仲裁#6(哥本哈根极简+PM双源): 25→5——6 只包的店配
+        // 25 条演示订单是"账本比店铺隆重", 5 条一页放下, 分页器随之退场
+        for (let i = 1; i <= 5; i++) {
             const status = statuses[Math.floor(Math.random() * statuses.length)];
             const productCount = Math.floor(Math.random() * 3) + 1;
             const items = [];
@@ -379,9 +381,12 @@ class OrderManager {
      * 筛选和显示订单
      */
     filterAndDisplayOrders() {
-        // 应用筛选
+        // 应用筛选（国际用户批#6：processing 档聚合 pending/processing/shipped/delivered
+        // 四个活跃态——3 档筛选器下"进行中"覆盖未完结全谱）
         this.filteredOrders = this.orders.filter(order => {
-            const matchesFilter = this.currentFilter === 'all' || order.status === this.currentFilter;
+            const activeStatuses = ['pending', 'processing', 'shipped', 'delivered'];
+            const matchesFilter = this.currentFilter === 'all' ||
+                (this.currentFilter === 'processing' ? activeStatuses.includes(order.status) : order.status === this.currentFilter);
             const matchesSearch = !this.searchTerm || 
                 order.id.toLowerCase().includes(this.searchTerm) ||
                 order.reference.toLowerCase().includes(this.searchTerm) ||
@@ -974,7 +979,7 @@ class OrderManager {
     getStatusText(status) {
         const statusMap = {
             'pending': '待付款',
-            'processing': '处理中',
+            'processing': '进行中',
             'shipped': '已发货',
             'delivered': '已送达',
             'cancelled': '已取消'
