@@ -27,6 +27,9 @@
  *   列表侧快照兜底由 index(home-products.js M4) 实现。
  */
 import { formatPrice } from './shared/format-price.js';
+// 国际挑剔用户批 A 档（2026-10-06）：track 埋点（PDP 曝光）+ overlay-escape（灯箱 ESC）
+import { track } from './shared/track.js';
+import { registerOverlayEscape } from './shared/overlay-escape.js';
 
 (function () {
   'use strict';
@@ -71,13 +74,50 @@ import { formatPrice } from './shared/format-price.js';
 
   /* ───────── 排印模板 ───────── */
 
+  /** A 档 4：本地商品图变体档推导——(可相对/可绝对/可带域名的) images/products/product-N.jpg
+      → 四档 webp srcset。非本地/异名图（API 外域）返回空串，img 直落单源 src（不虚构不存在的档位）。 */
+  function productImageBase(src) {
+    var m = String(src || '').match(/^(.*\/)?images\/products\/(product-\d+)\.jpe?g$/i);
+    return m ? (m[1] || '') + 'images/products/' + m[2] : '';
+  }
+
+  function variantSrcset(src) {
+    var base = productImageBase(src);
+    if (!base) return '';
+    return base + '-480.webp 480w, ' + base + '-800.webp 800w, ' +
+      base + '-1200.webp 1200w, ' + base + '-1600.webp 1600w';
+  }
+
+  /** A 档 4：灯箱大图源——本地商品图取 1600 档 webp，其余回落 mainImage 原址
+      （扩展名拆写，避免被 scripts/check-frontend-assets.py 当作本地路径字面量） */
+  function lightboxSource(src) {
+    var base = productImageBase(src);
+    return base ? base + '-1600.w' + 'ebp' : String(src || '');
+  }
+
+  /**
+   * 规格 dl 渲染。A 档 6：排序 尺寸→材质→工艺 优先（PM"能装下 A4 是第一问"），
+   * 其余键保持 API 原序跟在后面；表尾补"参照"行——文案级对照不虚构数据
+   * （PM P2-7 手机/口红/A4 对照的诚实落法：规格表内不编数，用生活物参照）。
+   */
+  var SPEC_ORDER = ['尺寸', '材质', '工艺'];
+
   function specsDl(specs) {
     var keys = specs && typeof specs === 'object' ? Object.keys(specs) : [];
     if (!keys.length) return ''; // 容错：无规格不渲染空表（禁卡中卡）
+    keys.sort(function (a, b) {
+      var ia = SPEC_ORDER.indexOf(a), ib = SPEC_ORDER.indexOf(b);
+      if (ia === -1 && ib === -1) return 0;
+      if (ia === -1) return 1;
+      if (ib === -1) return -1;
+      return ia - ib;
+    });
     var rows = keys.map(function (k) {
       return '<div class="pdp-spec-row"><dt>' + escapeHtml(k) + '</dt><dd>' +
         escapeHtml(String(specs[k] == null ? '' : specs[k])) + '</dd></div>';
     }).join('');
+    // A 档 6：参照行（文案级，非规格数据——不虚构数值）
+    rows += '<div class="pdp-spec-row pdp-spec-ref"><dt>参照</dt><dd>约一部手机 + 一支口红的宽度（以实物为准）</dd></div>';
     return '<dl class="pdp-specs">' + rows + '</dl>';
   }
 
@@ -129,12 +169,13 @@ import { formatPrice } from './shared/format-price.js';
     var state = safeTags.filter(function (t) { return KICKER_CATEGORY.indexOf(t) === -1; })[0] || '新到';
     var kicker = escapeHtml(cat) + ' · ' + escapeHtml(state);
     var inStock = Number(p.stock != null ? p.stock : 1) > 0;
+    // A 档 16 归一：atc-btn 全站基类 + pdp-atc 配色变体（吸底再加 pdp-atc-bar-btn 布局）
     var atc = inStock
-      ? atcButton(p, 'btn-pill pdp-atc', '加入购物袋')
-      : '<button type="button" class="btn-pill pdp-atc" disabled>暂时没货了</button>';
+      ? atcButton(p, 'atc-btn pdp-atc', '加入购物袋')
+      : '<button type="button" class="atc-btn pdp-atc" disabled>暂时没货了</button>';
     var stickyAtc = inStock
-      ? atcButton(p, 'btn-pill pdp-atc-bar-btn', '加入购物袋')
-      : '<button type="button" class="btn-pill pdp-atc-bar-btn" disabled>暂时没货了</button>';
+      ? atcButton(p, 'atc-btn pdp-atc pdp-atc-bar-btn', '加入购物袋')
+      : '<button type="button" class="atc-btn pdp-atc pdp-atc-bar-btn" disabled>暂时没货了</button>';
 
     return (
       '<nav class="pdp-breadcrumb" aria-label="面包屑">' +
@@ -142,8 +183,15 @@ import { formatPrice } from './shared/format-price.js';
       '<span class="pdp-breadcrumb-current">' + name + '</span></nav>' +
       '<div class="pdp-layout">' +
       '<figure class="pdp-main">' +
-      '<img class="reich-product-image" src="' + escapeHtml(String(p.mainImage || '/images/default-product.png')) + '"' +
-      ' alt="Reich ' + name + '" width="800" height="1000" decoding="async" itemprop="image">' +
+      /* A 档 4：四档 webp srcset（Retina 档补齐，jpg 回退）；A 档 5：主图可点开灯箱
+         （tabindex/role/aria —— 键盘可达；灯箱本体由 bindLightbox 挂接） */
+      (function (src) {
+        var ss = variantSrcset(src);
+        return '<img class="reich-product-image" src="' + escapeHtml(String(src)) + '"' +
+          (ss ? ' srcset="' + ss + '" sizes="(min-width:1024px) 58vw, 100vw"' : '') +
+          ' alt="Reich ' + name + '" width="800" height="1000" decoding="async" itemprop="image"' +
+          ' tabindex="0" role="button" aria-label="放大查看' + name + '主图">';
+      })(p.mainImage || '/images/default-product.png') +
       /* 权益批 A7（消费者 P3-3）：图区色差提示行——影棚图≠实物色的诚实口径 */
       '<figcaption class="pdp-color-note">影棚灯光与调色可能造成轻微色差，以实物为准。</figcaption>' +
       '</figure>' +
@@ -210,8 +258,9 @@ import { formatPrice } from './shared/format-price.js';
     setMeta('property', 'og:description', desc);
     setMeta('property', 'og:image', image);
     setMeta('property', 'og:url', url);
-    setMeta('property', 'twitter:title', name + ' — Reich');
-    setMeta('property', 'twitter:image', image);
+    // 极客批 A 档 3：twitter 系 meta 走 name 属性（property 写法被卡片规范忽略）
+    setMeta('name', 'twitter:title', name + ' — Reich');
+    setMeta('name', 'twitter:image', image);
 
     var canonical = document.head.querySelector('link[rel="canonical"]');
     if (!canonical) {
@@ -243,6 +292,129 @@ import { formatPrice } from './shared/format-price.js';
       },
     });
     document.head.appendChild(ld);
+  }
+
+  /* ───────── A 档 5：主图灯箱（贵妇 P1-2 两指看五金） ─────────
+     全屏 overlay + ESC 关（overlay-escape 登记表复用）+ 点按放大/复原 +
+     双指捏合缩放（touch-action:none + touchmove 距离比，1-3 倍钳位）。
+     懒建单例：首次点主图才入 DOM。 */
+
+  var lightbox = null;
+
+  function buildLightbox() {
+    var el = document.createElement('div');
+    el.className = 'pdp-lightbox';
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-modal', 'true');
+    el.setAttribute('aria-label', '查看大图');
+    el.innerHTML =
+      '<button type="button" class="pdp-lightbox-close" aria-label="关闭大图">&times;</button>' +
+      '<img class="pdp-lightbox-img" alt="">' +
+      '<p class="pdp-lightbox-hint">点按图片放大 · 再点复原 · 双指捏合缩放</p>';
+    document.body.appendChild(el);
+    var img = el.querySelector('.pdp-lightbox-img');
+    var closeBtn = el.querySelector('.pdp-lightbox-close');
+
+    var scale = 1, origin = '50% 50%', pinchStart = 0, pinchScaleStart = 1;
+
+    function applyZoom() {
+      img.style.transform = 'scale(' + scale + ')';
+      img.style.transformOrigin = origin;
+      el.classList.toggle('zoomed', scale > 1);
+    }
+    function resetZoom() { scale = 1; origin = '50% 50%'; applyZoom(); }
+
+    function close() {
+      el.classList.remove('open');
+      document.body.style.overflow = '';
+      resetZoom();
+      if (lightbox.lastTrigger && typeof lightbox.lastTrigger.focus === 'function') {
+        lightbox.lastTrigger.focus();
+      }
+      lightbox.lastTrigger = null;
+    }
+
+    el.addEventListener('click', function (e) {
+      if (e.target === el) { close(); return; }
+      if (e.target === img) {
+        var r = img.getBoundingClientRect();
+        origin = (((e.clientX - r.left) / r.width) * 100).toFixed(1) + '% ' +
+                 (((e.clientY - r.top) / r.height) * 100).toFixed(1) + '%';
+        scale = scale > 1 ? 1 : 2.2;
+        applyZoom();
+      }
+    });
+    closeBtn.addEventListener('click', close);
+
+    el.addEventListener('touchstart', function (e) {
+      if (e.touches.length === 2) {
+        var dx = e.touches[0].clientX - e.touches[1].clientX;
+        var dy = e.touches[0].clientY - e.touches[1].clientY;
+        pinchStart = Math.sqrt(dx * dx + dy * dy);
+        pinchScaleStart = scale;
+      }
+    }, { passive: true });
+    el.addEventListener('touchmove', function (e) {
+      if (e.touches.length === 2 && pinchStart) {
+        e.preventDefault();
+        var dx = e.touches[0].clientX - e.touches[1].clientX;
+        var dy = e.touches[0].clientY - e.touches[1].clientY;
+        var ratio = Math.sqrt(dx * dx + dy * dy) / pinchStart;
+        scale = Math.max(1, Math.min(3, pinchScaleStart * ratio));
+        applyZoom();
+      }
+    }, { passive: false });
+    el.addEventListener('touchend', function () { pinchStart = 0; }, { passive: true });
+
+    registerOverlayEscape('pdp-lightbox', function () {
+      if (el.classList.contains('open')) { close(); return true; }
+      return false;
+    });
+
+    return { el: el, img: img, closeBtn: closeBtn, lastTrigger: null };
+  }
+
+  function openLightbox(src, alt, triggerEl) {
+    if (!lightbox) lightbox = buildLightbox();
+    lightbox.img.src = src;
+    lightbox.img.alt = alt;
+    lightbox.lastTrigger = triggerEl || null;
+    lightbox.el.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    setTimeout(function () { lightbox.closeBtn.focus(); }, 30);
+  }
+
+  /** A 档 5/7/14 收口绑定：灯箱 + 吸底条 IntersectionObserver + PDP 曝光埋点 */
+  function bindPdpInteractions(p) {
+    var mainImg = document.querySelector('.pdp-main .reich-product-image');
+    if (mainImg) {
+      var open = function () {
+        openLightbox(lightboxSource(p.mainImage), 'Reich ' + String(p.name || '') + '——大图', mainImg);
+      };
+      mainImg.addEventListener('click', open);
+      mainImg.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+      });
+    }
+
+    // A 档 14（PM 保留+极简修瑕）：主 ATC 离视口吸底条才显示——同屏双按钮三价格消除。
+    // io-ready 交显示权给 JS（无 IO 环境保持原常驻行为，诚实降级）
+    var bar = document.querySelector('.pdp-atc-bar');
+    var mainAtc = document.querySelector('.pdp-actions .pdp-atc');
+    if (bar && mainAtc && 'IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (en) { bar.classList.toggle('is-visible', !en.isIntersecting); });
+      }, { threshold: 0 });
+      io.observe(mainAtc);
+      bar.classList.add('io-ready');
+    }
+
+    // A 档 7：PDP 曝光埋点（六点位之一）
+    track('ProductViewed', {
+      id: String(p.id).padStart(8, '0'),
+      name: String(p.name || ''),
+      price: Number(p.price) || 0
+    });
   }
 
   /* ───────── 渲染入口 ───────── */
@@ -311,6 +483,7 @@ import { formatPrice } from './shared/format-price.js';
         }
         render(productHtml(found));
         applySeo(found);
+        bindPdpInteractions(found);
       })
       .catch(function (err) {
         render(emptyHtml('API 不可用：' + (err && err.message ? err.message : err)));

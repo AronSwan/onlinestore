@@ -63,11 +63,13 @@
 
   /**
    * 商品字段公共抽取（featured/cell 双模板共用，防止两份模板字段漂移）。
-   * 图片：mainImage 为 .jpg 时输出 <picture>（webp 优先 + jpg 回退），其余格式直出 <img>；
-   *       无 mainImage 时回退 DEFAULT_IMAGE（回退分支保留）。
+   * 图片：mainImage 为 .jpg 时输出 <picture>（webp 四档 srcset 优先 + jpg 回退），
+   *       其余格式直出 <img>；无 mainImage 时回退 DEFAULT_IMAGE（回退分支保留）。
+   * A 档 4（Retina 重取件）：source 升四档变体 srcset（480/800/1200/1600w），
+   *       sizes 由调用方按卡位传入（featured 2 列宽 / cell 单列宽）。
    * M4 增补：specs 品质行素材（材质·工艺）+ 社会证明双数（sales/favorites 实时）。
    */
-  function commonFields(p, index) {
+  function commonFields(p, index, sizes) {
     var name = escapeHtml(String(p.name || 'Reich 单品'));
     var id8 = String(p.id != null ? p.id : index + 1).padStart(8, '0');
     var priceNum = Number(p.price || 0);
@@ -76,12 +78,19 @@
 
     var jpg = String(p.mainImage || DEFAULT_IMAGE);
     var isJpg = /\.jpe?g$/i.test(jpg);
-    var webp = isJpg ? jpg.replace(/\.jpe?g$/i, WEBP_EXT) : '';
+    var base = isJpg ? jpg.replace(/\.jpe?g$/i, '') : '';
+    var isLocalProduct = /^\/?images\/products\/product-\d+$/i.test(base);
     var imgTag =
       '<img src="' + escapeHtml(jpg) + '" alt="Reich ' + name + '" class="reich-product-image"' +
       ' loading="lazy" decoding="async" itemprop="image" width="800" height="1067">';
+    // 变体 srcset 只对本地商品图管线产物挂（API 若指外域/异名图，无变体档可指——回退单源）
+    var sourceTag = isLocalProduct
+      ? '<source srcset="' + escapeHtml(base) + '-480.webp 480w, ' + escapeHtml(base) + '-800.webp 800w, ' +
+        escapeHtml(base) + '-1200.webp 1200w, ' + escapeHtml(base) + '-1600.webp 1600w"' +
+        (sizes ? ' sizes="' + sizes + '"' : '') + ' type="image/webp">'
+      : '<source srcset="' + escapeHtml(base) + '.webp" type="image/webp">';
     var picture = isJpg
-      ? '<picture><source srcset="' + escapeHtml(webp) + '" type="image/webp">' + imgTag + '</picture>'
+      ? '<picture>' + sourceTag + imgTag + '</picture>'
       : imgTag;
 
     // 品质行素材：规格表的 材质/工艺 两键（缺哪键跳哪键，不硬编码）
@@ -129,9 +138,10 @@
     return parts.join(' · ');
   }
 
-  /* 加入购物袋 pill（bento 版式的显式加购入口；按钮级 data-* 全套为冻结契约⑤） */
+  /* 加入购物袋 pill（bento 版式的显式加购入口；按钮级 data-* 全套为冻结契约⑤）。
+     A 档 16 归一：atc-btn 全站基类 + btn-bag 配色变体（同一意图一种呈现） */
   function bagButton(f) {
-    return '<button class="btn-bag" type="button" aria-label="将' + f.name + '加入购物袋" data-add-to-cart="true"' +
+    return '<button class="atc-btn btn-bag" type="button" aria-label="将' + f.name + '加入购物袋" data-add-to-cart="true"' +
       ' data-product-id="' + f.id8 + '" data-product-sku-id="' + f.id8 + '"' +
       ' data-product-name="' + encodeURIComponent(f.name) + '" data-product-price="' + f.priceNum + '"' +
       ' data-product-pic="' + encodeURIComponent(f.jpg) + '">加入购物袋</button>';
@@ -174,7 +184,8 @@
    * M4：图区拉伸锚（card-link）+ 品名内联锚（双锚不包卡）+ 社会证明双数（v1.1 裁决 2）。
    */
   function featuredHtml(p, index, source) {
-    var f = commonFields(p, index);
+    // A 档 4 sizes：桌面 featured 跨 2/3 列 ≈66vw；<1024 双列网格跨满 ≈100vw
+    var f = commonFields(p, index, '(min-width:1024px) 66vw, 100vw');
     return (
       '<article class="bento-card bento-featured reich-product-card stagger-item"' +
       ' data-product-id="' + f.id8 + '" data-featured-source="' + source + '" aria-label="本期主打：' + f.name + '"' +
@@ -204,7 +215,8 @@
   /** 单格卡模板：@container≥280 横排图左文右，<280 竖排图上文下。
       M4：双锚 + 品质行（材质·工艺，specifications 实时，ink-soft 12px 禁 faint）。 */
   function cellHtml(p, index) {
-    var f = commonFields(p, index);
+    // A 档 4 sizes：桌面单格 ≈1/3 列 34vw；<1024 双列网格 ≈50vw
+    var f = commonFields(p, index, '(min-width:1024px) 34vw, 50vw');
     return (
       '<article class="bento-card bento-cell reich-product-card stagger-item"' +
       ' data-product-id="' + f.id8 + '" itemscope itemtype="https://schema.org/Product">' +

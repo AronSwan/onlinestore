@@ -3,6 +3,14 @@
 // 时间: 2025-09-25 16:02:15
 // 用途：优化移动设备上的触摸交互体验
 // 依赖文件：无
+//
+// 国际挑剔用户批 A 档 20（2026-10-06）：桌面门控——module 顶层守卫，
+// 仅 pointer:coarse（触屏/混合粗指针）设备才挂 DOMContentLoaded 初始化；
+// 桌面零效果零绑定（147KB 模块照常被 vite 打包，但运行时为纯导出空转）。
+// A 档 18 同批：初始化 log 收 localStorage.debug 开关。
+
+const IS_COARSE_POINTER = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+const debugLog = (() => { try { return localStorage.getItem('debug') ? console.log.bind(console) : () => {}; } catch (e) { return () => {}; } })();
 
 // 存储事件监听器引用，以便后续移除
 const touchListeners = new Map();
@@ -12,7 +20,7 @@ const touchListeners = new Map();
  */
 function initTouchOptimization() {
     try {
-        console.log('初始化触摸优化功能');
+        debugLog('初始化触摸优化功能');
         
         // 添加触摸监听器
         addTouchListeners();
@@ -36,7 +44,7 @@ function initTouchOptimization() {
 // 清理函数
 function cleanupTouchOptimization() {
     removeTouchListeners();
-    console.log('触摸优化功能已清理');
+    debugLog('触摸优化功能已清理');
 }
 
 /**
@@ -733,14 +741,12 @@ function addRippleEffect() {
     });
 }
 
-// DOM加载完成后初始化触摸优化功能
-// 作者：AI助手
-// 时间：2025-09-25 16:02:15
-// 用途：在页面加载完成后初始化触摸优化功能
-// 依赖文件：无
-document.addEventListener('DOMContentLoaded', function() {
-    initTouchOptimization();
-});
+// DOM加载完成后初始化触摸优化功能（A 档 20：pointer:coarse 门控——桌面不初始化）
+if (IS_COARSE_POINTER) {
+    document.addEventListener('DOMContentLoaded', function() {
+        initTouchOptimization();
+    });
+}
 
 // 导出函数供其他模块使用
 export { cleanupTouchOptimization };

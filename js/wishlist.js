@@ -15,6 +15,8 @@
 //   - 心形实心化反馈：在册态卡片心形 img 换 heart-icon-filled.svg（candy blush 实底）。
 
 import { showToast } from './shared/toast.js';
+// 国际挑剔用户批 A 档 7：心愿埋点（六点位之一）
+import { track } from './shared/track.js';
 
 const HEART_EMPTY = 'heart-icon.svg';
 const HEART_FILLED = 'heart-icon-filled.svg';
@@ -100,6 +102,8 @@ class WishlistManager {
     if (!this.isInWishlist(product.id)) {
       this.wishlist.push(product);
       this.saveWishlist();
+      // A 档 7：心愿埋点
+      track('Wishlisted', { id: String(product.id), name: String(product.name || '') });
       this.showWishlistToast(product.name);
     }
   }

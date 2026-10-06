@@ -48,31 +48,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // 此处不再拦截——⑤审工程维 P1：旧 bind 轮询的 showWishlistModal 已随 M6 孤儿模态删除，
     // 拦截后 1s 只能 fallback 原地重载（首页死链）。放行锚点即深链可达。
 
-    // 全局变量存储Casdoor可用性状态
-    let casdoorAvailable = false;
-    let casdoorCheckCompleted = false;
-
-    // 异步检测Casdoor可用性
-    async function checkCasdoorAvailability() {
-        // 求真修复(2026-10-04): fetch door.casdoor.com 跨域 CORS 拒绝 → console 红错
-        // 改走后端同源探测(后端 GET /api/auth/casdoor/login 302→Casdoor, 存在即真)
-        try {
-            const response = await fetch('/api/auth/casdoor/login', {
-                method: 'HEAD',
-                redirect: 'manual'
-            });
-            casdoorAvailable = response.status >= 200 && response.status < 400;
-        } catch (error) {
-            console.log('Casdoor服务不可用:', error.message);
-            casdoorAvailable = false;
-        }
-
-        // 存储Casdoor可用性状态
-        sessionStorage.setItem('casdoorAvailable', casdoorAvailable.toString());
-        casdoorCheckCompleted = true;
-
-        console.log('Casdoor可用性检测完成:', casdoorAvailable);
-    }
+    // 国际挑剔用户批 A 档 2（2026-10-06）：Casdoor 探测三层死管道整链删除——
+    // ① 每次加载的 /api/auth/casdoor/login HEAD 探测；② sessionStorage 恒错缓存；
+    // ③ login.html?casdoor= 状态参数（全仓 grep 无消费方）。登录页自身的统一登录
+    // 钮不受影响（那是登录通道，不是首页探测）。privacy.html 披露句同步微调。
 
     // 设置用户资料按钮
     function setupUserProfileButton() {
@@ -90,26 +69,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 || sessionStorage.getItem('userLoggedIn') === 'true';
             if (isLoggedIn) return;
 
-            // 构建登录页面URL，包含Casdoor状态信息
-            const loginUrl = new URL('login.html', window.location.origin);
-
-            // 如果Casdoor检测已完成，使用检测结果；否则使用sessionStorage中的缓存值
-            let casdoorStatus = 'unavailable';
-            if (casdoorCheckCompleted) {
-                casdoorStatus = casdoorAvailable ? 'available' : 'unavailable';
-            } else {
-                // 从sessionStorage获取之前的检测结果
-                const cachedStatus = sessionStorage.getItem('casdoorAvailable');
-                casdoorStatus = (cachedStatus === 'true') ? 'available' : 'unavailable';
-            }
-
-            loginUrl.searchParams.set('casdoor', casdoorStatus);
-
-            // 跳转到登录页面（不传递returnUrl避免信息泄露）
-            window.location.href = loginUrl.toString();
+            // 跳转到登录页面（不传 returnUrl 避免信息泄露；原 casdoor 状态参数
+            // 无消费方，随探测管道整链删除）
+            window.location.href = 'login.html';
         });
-
-        console.log('用户资料按钮设置完成');
     }
 
     // 初始化导航
@@ -122,7 +85,4 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 设置用户资料按钮（同步）
     setupUserProfileButton();
-
-    // 异步检测Casdoor可用性（不阻塞页面加载）
-    checkCasdoorAvailability();
 });

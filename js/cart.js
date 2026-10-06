@@ -31,9 +31,12 @@
 import { formatPrice } from './shared/format-price.js';
 // M3(B1)：加购反馈系统——飞行克隆 + 统一 toast（规格见两文件头注）
 import { flyToCart, resolveFlightSource } from './shared/fly-to-cart.js';
-import { showCartToast, showToast } from './shared/toast.js';
+import { showCartToast, showToast, dismissAllToasts } from './shared/toast.js';
 // 批一(7) 大师会诊：ESC 关闭走全站分发器（购物袋浮层注册回调）
 import { registerOverlayEscape } from './shared/overlay-escape.js';
+// 国际挑剔用户批 A 档 7/8（2026-10-06）：埋点（AddToCart/CartOpened/CheckoutClicked/
+// CheckoutIntercepted）——结算拦截从死胡同 toast 升级为 waitlist 邮箱捕获模态
+import { track } from './shared/track.js';
 
 /**
  * 购物车管理器类 - 增强版
@@ -158,6 +161,11 @@ class CartManager {
         // 同款二次加购只走 quantityUpdated，反馈层只挂 itemAdded 会整体静默
         // （最高频场景零反馈）。merged 标记供文案区分"放进/又放进一只"
         this.notifyListeners('itemAdded', { item: updated, merged: true });
+        // A 档 7：加购埋点（merged 场景同事件名，quantity 记净增量）
+        track('AddToCart', {
+          productId: String(productId), name: String(productName),
+          price: parseFloat(productPrice) || 0, quantity: parseInt(productQuantity) || 1, merged: true
+        });
         return updated;
       }
 
@@ -194,7 +202,13 @@ class CartManager {
       
       // 通知监听器
       this.notifyListeners('itemAdded', { item: newItem });
-      
+
+      // A 档 7：加购埋点（新袋路径）
+      track('AddToCart', {
+        productId: String(productId), name: String(productName),
+        price: parseFloat(productPrice) || 0, quantity: parseInt(productQuantity) || 1
+      });
+
       return newItem;
     } catch (error) {
       console.error('添加商品到购物车失败:', error);
@@ -483,9 +497,28 @@ class CartUI {
 
         <div class="cart-body">
           <div class="cart-items-list"></div>
+          <!-- A 档 14（PM P2-8）：空袋态升级——塞三卡缩略（fallback 数据现成：
+               品名/价格/图与 home-products.js FALLBACK_PRODUCTS 同源）+去逛逛锚精选关抽屉 -->
           <div class="cart-empty">
             <p>袋子还空着哦——去看看新朋友？</p>
-            <a href="index.html" class="continue-shopping-btn">去逛逛</a>
+            <div class="cart-empty-picks" aria-label="或许你会喜欢">
+              <a href="product.html?id=00000001" class="cart-empty-pick">
+                <img src="/images/products/product-1.jpg" srcset="/images/products/product-1-160.webp 160w, /images/products/product-1-480.webp 480w" sizes="88px" alt="渐变褶皱手袋" loading="lazy" width="88" height="117">
+                <span class="pick-name">渐变褶皱手袋</span>
+                <span class="pick-price">¥299</span>
+              </a>
+              <a href="product.html?id=00000002" class="cart-empty-pick">
+                <img src="/images/products/product-2.jpg" srcset="/images/products/product-2-160.webp 160w, /images/products/product-2-480.webp 480w" sizes="88px" alt="黑皮波士顿包" loading="lazy" width="88" height="117">
+                <span class="pick-name">黑皮波士顿包</span>
+                <span class="pick-price">¥259</span>
+              </a>
+              <a href="product.html?id=00000003" class="cart-empty-pick">
+                <img src="/images/products/product-3.jpg" srcset="/images/products/product-3-160.webp 160w, /images/products/product-3-480.webp 480w" sizes="88px" alt="湖蓝锁扣手提包" loading="lazy" width="88" height="117">
+                <span class="pick-name">湖蓝锁扣手提包</span>
+                <span class="pick-price">¥189</span>
+              </a>
+            </div>
+            <a href="index.html#featured-collections" class="continue-shopping-btn">去逛逛</a>
           </div>
         </div>
 
@@ -544,11 +577,23 @@ class CartUI {
         }
       });
     }
+
+    // A 档 14：空袋态"去逛逛"与三卡缩略点击 → 先关抽屉再走默认导航
+    // （锚精选区直达；bfcache 回程不再悬着一层遮罩）
+    if (this.elements.cartBody) {
+      this.elements.cartBody.addEventListener('click', (e) => {
+        const go = e.target.closest('.cart-empty a[href]');
+        if (go) this.hide();
+      });
+    }
     
     // 批一(7) 大师会诊：ESC 关闭走 overlay-escape 全站分发器
     //（替代本文件原自挂的 document keydown——与用户菜单/移动菜单/订单弹窗同一位分发者）
+    // A 档 8 补：waitlist 模态开在袋面板之上时，ESC 让给最上层（分发器按注册序，
+    // cart-panel 先注册先被问——此处主动 defer：查 .waitlist-overlay.open 在开即放行）
     registerOverlayEscape('cart-panel', () => {
       if (this.isVisible) {
+        if (document.querySelector('.waitlist-overlay.open')) return false;
         this.hide();
         return true;
       }
@@ -562,10 +607,17 @@ class CartUI {
     this.bindFocusTrap();
 
     // 去结算按钮：此前只管理 disabled 态、零点击绑定（纯装饰）。
-    // 演示环境未开通结算/下单后端，诚实提示，不做假跳转
+    // 演示环境未开通结算/下单后端——国际挑剔用户批 A 档 8（PM 增长级）：
+    // 漏斗意向峰值不再死胡同 toast，升级为 waitlist 邮箱捕获模态
+    // （"结算还没开门"+邮箱+成功态；A/B 计数 CheckoutIntercepted 带 arm 字段，
+    // 本期单臂 B 部署，arm 预留给下一期 A/B）
     if (this.elements.checkoutBtn) {
       this.elements.checkoutBtn.addEventListener('click', () => {
-        this.showNotification('结算功能未开通：演示环境暂不支持下单');
+        track('CheckoutClicked', {
+          count: this.cartManager.getTotalItems(),
+          total: this.cartManager.getTotalPrice()
+        });
+        this.showCheckoutWaitlist();
       });
     }
 
@@ -666,13 +718,16 @@ class CartUI {
 
   /**
    * 批一(4) 焦点圈禁双通道绑定（一次绑定，常驻判 isVisible）
+   * A 档 8 补：waitlist 模态开在袋面板之上时（this.modalAbove），圈禁让位——
+   * 焦点归模态表单，Tab 在模态内走（模态自带 ESC/关闭回收）
    */
   bindFocusTrap() {
     const panel = () => this.elements.cartPanel;
+    const suppressed = () => !!this.modalAbove;
 
     // ① focusin 拦截：面板打开时，焦点落到面板外（含遮罩/页面残留）→ 拉回面板
     document.addEventListener('focusin', (e) => {
-      if (!this.isVisible) return;
+      if (!this.isVisible || suppressed()) return;
       const p = panel();
       if (p && !p.contains(e.target)) {
         const closeBtn = p.querySelector('.cart-close-btn');
@@ -682,7 +737,7 @@ class CartUI {
 
     // ② Tab 首尾循环：面板内第一个/最后一个可聚焦元素之间循环
     document.addEventListener('keydown', (e) => {
-      if (e.key !== 'Tab' || !this.isVisible) return;
+      if (e.key !== 'Tab' || !this.isVisible || suppressed()) return;
       const p = panel();
       if (!p) return;
       const focusables = this.getPanelFocusables(p);
@@ -712,13 +767,19 @@ class CartUI {
   }
 
   /**
-   * 显示购物车
+   * 显示购物车（A 档 7/13 补：开袋埋点 + 清场存活 toast——toast(600) 压袋面板(400)，
+   * 不清场会盖住袋底结算钮）
    */
   show() {
     if (this.elements.cartOverlay) {
       // 打开前先按当前购物车状态渲染：浮层可能是刚懒创建的，
       // 不先渲染会误显示"购物车为空"
       this.updateCartDisplay();
+      dismissAllToasts();
+      track('CartOpened', {
+        count: this.cartManager.getTotalItems(),
+        total: this.cartManager.getTotalPrice()
+      });
       // 批一(4)：记忆焦点来处（hide 时还原），遮罩后 main 内容 inert（不可聚焦/不可交互）
       this.lastFocused = document.activeElement;
       this.setMainInert(true);
@@ -928,6 +989,107 @@ class CartUI {
   showNotification(message) {
     showToast({ message, confirmText: null, dismissText: null });
   }
+
+  /**
+   * A 档 8 · 结算拦截 waitlist 模态（PM 预立判据：提交率≥8% 保留）。
+   * 懒建单例 overlay；邮箱校验（input type=email + 正则双保险）；
+   * localStorage 'reich_waitlist' 追加 {email, t, arm}；
+   * A/B 计数：track CheckoutIntercepted {arm}（本期单臂 B，arm 字段预留）；
+   * 成功态"收到，开业第一个告诉你"。ESC 关闭走 overlay-escape 登记表。
+   */
+  showCheckoutWaitlist() {
+    const WAITLIST_KEY = 'reich_waitlist';
+    const ARM = 'B'; // 本期单臂 B 部署（A 档 8 裁决原文）
+
+    if (!this.waitlistOverlay) {
+      const overlay = document.createElement('div');
+      overlay.className = 'waitlist-overlay';
+      overlay.innerHTML = `
+        <div class="waitlist-panel" role="dialog" aria-modal="true" aria-labelledby="waitlist-title">
+          <button type="button" class="waitlist-close" aria-label="关闭">&times;</button>
+          <h3 id="waitlist-title">结算还没开门</h3>
+          <p class="waitlist-sub">演示环境暂未开通下单。留个邮箱，开业第一个告诉你——不发别的。</p>
+          <form class="waitlist-form" novalidate>
+            <label for="waitlist-email" class="sr-only">您的电子邮箱</label>
+            <input type="email" id="waitlist-email" name="email" placeholder="您的电子邮箱"
+                   autocomplete="email" required>
+            <button type="submit" class="waitlist-submit">开业叫我</button>
+            <p class="waitlist-error" role="alert" aria-live="polite"></p>
+          </form>
+          <p class="waitlist-done hidden">收到，开业第一个告诉你。</p>
+          <p class="waitlist-privacy">邮箱只存在你的浏览器里（本地 localStorage），清除站点数据即删。</p>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+
+      const panel = overlay.querySelector('.waitlist-panel');
+      const form = overlay.querySelector('.waitlist-form');
+      const input = overlay.querySelector('#waitlist-email');
+      const errEl = overlay.querySelector('.waitlist-error');
+      const doneEl = overlay.querySelector('.waitlist-done');
+      const closeBtn = overlay.querySelector('.waitlist-close');
+      const self = this;
+
+      const close = () => {
+        overlay.classList.remove('open');
+        document.body.style.overflow = '';
+        self.modalAbove = false; // A 档 8：袋面板焦点圈禁/ESC 恢复主权
+        if (self.waitlistTrigger && typeof self.waitlistTrigger.focus === 'function') {
+          self.waitlistTrigger.focus();
+        }
+        self.waitlistTrigger = null;
+      };
+
+      closeBtn.addEventListener('click', close);
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+      registerOverlayEscape('checkout-waitlist', () => {
+        if (overlay.classList.contains('open')) { close(); return true; }
+        return false;
+      });
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = String(input.value || '').trim();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+          errEl.textContent = '这个邮箱好像不太对，再看一眼？';
+          input.focus();
+          return;
+        }
+        try {
+          const list = JSON.parse(localStorage.getItem(WAITLIST_KEY) || '[]');
+          if (!Array.isArray(list) || list.some((x) => x && x.email === email)) {
+            // 已在册：不重复入列，直接成功态（去重对用户无感）
+          } else {
+            list.push({ email, t: Date.now(), arm: ARM });
+            localStorage.setItem(WAITLIST_KEY, JSON.stringify(list));
+          }
+        } catch (err) { /* 隐私模式：提交反馈照常给（本地不可存是已知限制） */ }
+        track('WaitlistSubmitted', { arm: ARM });
+        form.classList.add('hidden');
+        doneEl.classList.remove('hidden');
+      });
+
+      this.waitlistOverlay = overlay;
+      this.waitlistPanel = panel;
+      this.waitlistInput = input;
+      this.waitlistClose = close;
+    }
+
+    // 每次打开重置到表单态（上次成功态不粘滞）
+    this.waitlistOverlay.querySelector('.waitlist-form').classList.remove('hidden');
+    this.waitlistOverlay.querySelector('.waitlist-done').classList.add('hidden');
+    this.waitlistOverlay.querySelector('.waitlist-error').textContent = '';
+    this.waitlistOverlay.querySelector('#waitlist-email').value = '';
+
+    this.waitlistTrigger = this.elements.checkoutBtn || null;
+    this.modalAbove = true; // A 档 8：模态压袋面板之上——袋的圈禁/ESC 让位
+    this.waitlistOverlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    // 曝光计数（A/B 桶：本期单臂 B）
+    track('CheckoutIntercepted', { arm: ARM });
+    setTimeout(() => this.waitlistInput && this.waitlistInput.focus(), 30);
+  }
 }
 
 // 全局购物车管理器实例
@@ -937,7 +1099,7 @@ let cartManager;
 document.addEventListener('DOMContentLoaded', () => {
   cartManager = new CartManager();
   window.cartManager = cartManager;
-  
+
   // 为现有购物车按钮添加点击事件
   const cartButtons = document.querySelectorAll('[data-cart-button]');
   cartButtons.forEach(button => {
@@ -947,6 +1109,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
-  
-  console.log('统一购物车模块初始化完成');
+
+  // A 档 18（console 纪律）：初始化 log 收 localStorage.debug 开关（默认静默）
+  try {
+    if (localStorage.getItem('debug')) console.log('统一购物车模块初始化完成');
+  } catch (e) { /* 隐私模式静默 */ }
 });

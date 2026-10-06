@@ -44,17 +44,28 @@ const onlyArg = (args.find((a) => a.startsWith('--only=')) || '').split('=')[1];
 const TREATMENTS = {
   // 旗舰：已近暖白，仅轻微归一（L210→~228）
   'product-1': { modulate: { saturation: 0.95 }, linear: [1.0, 8], softlight: [252, 248, 240], multiply: [255, 252, 246] },
-  // 黄荧光黑棚（L113→~194，违宪最重）：强脱饱和（黑包无可失）+大幅提亮+暖米双染；q82 压体积
-  'product-2': { modulate: { saturation: 0.16 }, linear: [0.95, 66], softlight: [250, 242, 228], multiply: [255, 250, 240], jpegQuality: 82 },
-  // 青绿冷棚（L157→~227）：中度脱饱和+提亮+暖染（尖峰 p3-sat30 案）
-  'product-3': { modulate: { saturation: 0.3 }, linear: [0.97, 40], softlight: [249, 238, 220], multiply: [255, 249, 238] },
+  // 黄荧光黑棚（L113→~194，违宪最重）：提亮+暖米双染；q82 压体积。
+  // 国际挑剔用户批 A 档 4（2026-10-06，巴黎贵妇"饱和 0.16 是漂白"）：调色幅度砍半——
+  // 脱饱和幅度按"偏离中性 1.0 的距离减半"折算：0.16 → 0.58（黑包本体保真优先）
+  'product-2': { modulate: { saturation: 0.58 }, linear: [0.95, 66], softlight: [250, 242, 228], multiply: [255, 250, 240], jpegQuality: 82 },
+  // 青绿冷棚（L157→~227）：中度脱饱和+提亮+暖染。
+  // 同批砍半：0.30 → 0.65
+  'product-3': { modulate: { saturation: 0.65 }, linear: [0.97, 40], softlight: [249, 238, 220], multiply: [255, 249, 238] },
   // 近纯白棚：极轻归一
   'product-4': { modulate: { saturation: 0.94 }, linear: [1.0, 4], softlight: [252, 248, 240], multiply: [255, 252, 246] },
-  // 深棕黑棚（L127→~206，违宪最重）：保饱和提亮为主（蓝花本体不褪色）+暖染；q80 压体积
-  'product-5': { modulate: { saturation: 1.02 }, linear: [0.92, 62], softlight: [248, 240, 226], multiply: [255, 250, 240], jpegQuality: 80 },
+  // 深棕黑棚（L127→~206，违宪最重）：保饱和提亮为主（蓝花本体不褪色）+暖染；q80 压体积。
+  // 同批砍半：1.02 → 1.01（过饱和分句本就极轻，砍半后近中性）
+  // 同批砍半：1.02 → 1.01（过饱和分句本就极轻，砍半后近中性）；
+  // A 档 4 重跑后 800w jpg 123.0KB 轻超 120 软预算 → q80→78 压回（M1 先例同法）
+  'product-5': { modulate: { saturation: 1.01 }, linear: [0.92, 62], softlight: [248, 240, 226], multiply: [255, 250, 240], jpegQuality: 78 },
   // 鹅黄近白棚：轻归一
   'product-6': { modulate: { saturation: 0.93 }, linear: [1.0, 4], softlight: [251, 246, 236], multiply: [255, 251, 244] },
 };
+
+// 国际挑剔用户批 A 档 4：Retina 变体档位（webp）——480/800/1200/1600 四档 srcset
+// + 160 缩略档（订单/袋内 72px 缩略用，DPR2 亦覆盖）。product-N.webp = 800 档同字节
+// 副本（旧引用路径不 404）。
+const VARIANT_WIDTHS = [160, 480, 800, 1200, 1600];
 
 const FLAGSHIP = 'product-1';
 const FLAGSHIP_JPG_BUDGET = 120 * 1024;
@@ -63,14 +74,23 @@ const solid = ([r, g, b], width, height) => ({
   create: { width, height, channels: 3, background: { r, g, b } },
 });
 
-async function buildPipeline(t, srcPath) {
+/** 同一处理管线在目标宽度下重建（sharp 操作序恒为 resize→composite——缩放必须
+    在建管线时给定，solid 层随之按目标尺寸生成，不能先 composite 再 resize） */
+async function buildPipeline(t, srcPath, width) {
   const meta = await sharp(srcPath).metadata();
   let img = sharp(srcPath);
+  let w = meta.width;
+  let h = meta.height;
+  if (width && width < meta.width) {
+    img = img.resize({ width });
+    w = width;
+    h = Math.round(meta.height * (width / meta.width));
+  }
   if (t.modulate) img = img.modulate(t.modulate);
   if (t.linear) img = img.linear(t.linear[0], t.linear[1]);
   const layers = [];
-  if (t.softlight) layers.push({ input: solid(t.softlight, meta.width, meta.height), blend: 'soft-light' });
-  if (t.multiply) layers.push({ input: solid(t.multiply, meta.width, meta.height), blend: 'multiply' });
+  if (t.softlight) layers.push({ input: solid(t.softlight, w, h), blend: 'soft-light' });
+  if (t.multiply) layers.push({ input: solid(t.multiply, w, h), blend: 'multiply' });
   if (layers.length) img = img.composite(layers);
   return img;
 }
@@ -113,9 +133,16 @@ async function main() {
     const beforeStats = await statsOf(await sharp(srcPath(name)).toBuffer());
     const beforeKB = statSync(srcPath(name)).size;
 
-    const img = await buildPipeline(t, srcPath(name));
-    const jpgBuf = await img.clone().jpeg({ quality: t.jpegQuality ?? 85, mozjpeg: true }).toBuffer();
-    const webpBuf = await img.clone().webp({ quality: 82 }).toBuffer();
+    // A 档 4：jpg 回退档 = 800w（旗舰 120KB 预算按 800w 校准；现代浏览器走
+    // srcset webp 变体，jpg 只服务无 srcset 老浏览器，800w 回退够用且不破体积闸）
+    const jpgPipe = await buildPipeline(t, srcPath(name), 800);
+    const jpgBuf = await jpgPipe.jpeg({ quality: t.jpegQuality ?? 85, mozjpeg: true }).toBuffer();
+    const variants = {};
+    for (const w of VARIANT_WIDTHS) {
+      const pipe = await buildPipeline(t, srcPath(name), w);
+      variants[w] = await pipe.webp({ quality: 82 }).toBuffer();
+    }
+    const webpBuf = variants[800]; // product-N.webp = 800 档（旧引用兼容）
     const afterStats = await statsOf(jpgBuf);
 
     rows.push({
@@ -124,6 +151,7 @@ async function main() {
       beforeKB,
       jpgKB: jpgBuf.length,
       webpKB: webpBuf.length,
+      variantKB: VARIANT_WIDTHS.map((w) => variants[w].length),
       before: `rgb(${beforeStats.r},${beforeStats.g},${beforeStats.b}) L${beforeStats.lum}`,
       after: `rgb(${afterStats.r},${afterStats.g},${afterStats.b}) L${afterStats.lum}`,
       dim: `${afterStats.w}x${afterStats.h}`,
@@ -132,14 +160,27 @@ async function main() {
     if (APPLY) {
       writeFileSync(resolve(IMG_DIR, `${name}.jpg`), jpgBuf);
       writeFileSync(resolve(IMG_DIR, `${name}.webp`), webpBuf);
+      for (const w of VARIANT_WIDTHS) {
+        writeFileSync(resolve(IMG_DIR, `${name}-${w}.webp`), variants[w]);
+      }
     }
   }
 
   console.log(`\n== M1 商品图二次批处理 ${APPLY ? '【APPLY 实写】' : '【DRY-RUN 预演】'} ==`);
-  console.log('图          源         尺寸      棚向(处理前)              棚向(处理后)              jpg(前→后)        webp');
+  console.log('图          源         尺寸        棚向(处理前)              棚向(处理后)              jpg(前→后)        webp800');
   for (const r of rows) {
     console.log(
-      `${r.name.padEnd(11)} ${r.src.padEnd(10)} ${r.dim.padEnd(9)} ${r.before.padEnd(25)} ${r.after.padEnd(25)} ${kb(r.beforeKB).padEnd(6)}→${kb(r.jpgKB).padEnd(7)} ${kb(r.webpKB)}`
+      `${r.name.padEnd(11)} ${r.src.padEnd(10)} ${r.dim.padEnd(12)} ${r.before.padEnd(25)} ${r.after.padEnd(25)} ${kb(r.beforeKB).padEnd(6)}→${kb(r.jpgKB).padEnd(7)} ${kb(r.webpKB)}`
+    );
+  }
+  // A 档 4：四档变体 + 160 缩略档 KB 对照表（验收物）
+  console.log('\n变体 KB 对照（webp q82）:');
+  console.log('图          ' + VARIANT_WIDTHS.map((w) => `${w}w`.padEnd(9)).join('') + 'jpg800');
+  for (const r of rows) {
+    console.log(
+      `${r.name.padEnd(11)} ` +
+      r.variantKB.map((n) => kb(n).padEnd(9)).join('') +
+      kb(r.jpgKB)
     );
   }
   const flagship = rows.find((r) => r.name === FLAGSHIP);

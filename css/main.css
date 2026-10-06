@@ -251,6 +251,44 @@ body {
 }
 
 /* ==========================================================================
+   国际挑剔用户批 A 档 16（极简"同一意图一种呈现"）：ATC 按钮基类——
+   "加入购物袋"动作的全站唯一形制（尺寸/圆角/字重/焦点）；
+   btn-bag（bento 卡）/ pdp-atc（PDP 行内+吸底）变体只留配色差异。
+   ========================================================================== */
+.atc-btn {
+    min-height: 48px;               /* M5 蓝图 ATC 48px 触达（≥44px 触控下限同档满足） */
+    padding: 0 var(--spacing-6);
+    border: none;
+    border-radius: var(--radius-pill);
+    font-size: var(--text-body);
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.atc-btn:focus-visible {
+    outline: 2px solid var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset);
+}
+
+.atc-btn:active:not(:disabled) {
+    transform: scale(0.98); /* 批四(13) 按下态同典 */
+}
+
+/* ==========================================================================
+   国际挑剔用户批 A 档 20（触控目标 44px）：页脚链接/面包屑行高补 padding——
+   仅粗指针设备生效（桌面 hover 设备不受影响）；行内文本链的触达区扩到 44px 档
+   ========================================================================== */
+@media (pointer: coarse) {
+    footer ul a,
+    nav[aria-label="面包屑导航"] a {
+        display: inline-block;
+        padding-block: 10px; /* ~21px 文本行 + 20px 上下 padding ≈ 44px 触控目标 */
+    }
+}
+
+/* ==========================================================================
    跑马灯公告条（P2 · B1：CSS-only 无限横向滚动）
    ========================================================================== */
 .marquee {
@@ -281,9 +319,76 @@ body {
     animation: marquee 24s linear infinite;
 }
 
+/* 国际挑剔用户批 A 档 19（贵妇 P3-14 防断词）：段为原子单元，段尾呼吸 padding——
+   循环接缝处同样有间隔，词不在边界断开 */
+.marquee-seg {
+    flex-shrink: 0;
+    padding-right: 1.5em;
+}
+
 @keyframes marquee {
     from { transform: translateX(0); }
     to { transform: translateX(-100%); }
+}
+
+/* ==========================================================================
+   国际挑剔用户批 A 档 11/19：hero 副标下徽标行（PM 信任行）+ 次 CTA 文字链
+   ========================================================================== */
+.hero-trust-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-4);
+    margin: 0 0 var(--spacing-8);
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-small);
+    color: var(--ink-soft);
+}
+
+.hero-trust-badges li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+}
+
+.hero-trust-badges li::before {
+    content: "✓";
+    color: var(--candy-blush-ink);
+    font-weight: var(--font-weight-semibold);
+}
+
+.hero-trust-badges a {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: var(--line-strong);
+    text-underline-offset: 3px;
+    border-radius: var(--radius-sm);
+}
+
+.hero-trust-badges a:hover {
+    color: var(--candy-blush-ink);
+    text-decoration-color: var(--candy-blush-ink);
+}
+
+.hero-trust-badges a:focus-visible,
+.hero-secondary-link:focus-visible {
+    outline: 2px solid var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset);
+}
+
+/* 次 CTA 文字链（A 档 19）：hero 单主钮，品牌故事为行内链接 */
+.hero-secondary-link {
+    color: var(--ink);
+    font-size: var(--text-body);
+    text-decoration: underline;
+    text-decoration-color: var(--line-strong);
+    text-underline-offset: 4px;
+    transition: color var(--dur-fast) var(--ease-lux), text-decoration-color var(--dur-fast) var(--ease-lux);
+}
+
+.hero-secondary-link:hover {
+    color: var(--candy-blush-ink);
+    text-decoration-color: var(--candy-blush-ink);
 }
 
 /* ==========================================================================
@@ -2440,6 +2545,13 @@ body {
 .reich-heart-pill:focus-visible {
     opacity: 1;
     transform: none;
+}
+
+/* 国际挑剔用户批 A 档 17（极客 P2-6 焦点隐身）：心形 pill 补 focus-visible 环——
+   原规则只亮不环，键盘焦点落在心形上时视觉不可见 */
+.reich-heart-pill:focus-visible {
+    outline: 2px solid var(--focus-ring-color);
+    outline-offset: 2px;
 }
 
 .reich-heart-pill:hover {

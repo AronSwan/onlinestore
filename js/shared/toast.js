@@ -43,7 +43,9 @@ function ensureStyle() {
   #${CONTAINER_ID} { right: 16px; left: 16px; bottom: 16px; max-width: none; }
 }
 .reich-toast {
-  pointer-events: auto;
+  /* 国际挑剔用户批 A 档 13（PM P2-4 实伤）：主体 pointer-events:none——toast 不再
+     盖死下层按钮（结算钮/页内控件点击穿透）；两钮区 auto（hover 暂停经按钮冒泡仍生效） */
+  pointer-events: none;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -64,6 +66,7 @@ function ensureStyle() {
 .reich-toast-message { margin: 0; font-size: var(--text-body, 0.9375rem); font-weight: 500; line-height: 1.45; }
 .reich-toast-sub { margin: 2px 0 0; font-size: var(--text-xs, 0.75rem); color: var(--text-secondary); line-height: 1.4; }
 .reich-toast-confirm {
+  pointer-events: auto;
   flex-shrink: 0;
   border: none;
   border-radius: var(--radius-pill, 999px);
@@ -83,6 +86,7 @@ function ensureStyle() {
   outline-offset: 2px;
 }
 .reich-toast-dismiss {
+  pointer-events: auto;
   flex-shrink: 0;
   border: none;
   background: none;
@@ -249,4 +253,16 @@ export function showCartToast({ name, merged, quantity, onCheckout }) {
     onConfirm: onCheckout,
     dismissText: '继续逛',
   });
+}
+
+/**
+ * 关闭当前所有存活 toast（优雅退场动画）。
+ * 国际挑剔用户批 A 档 13（PM P2-4）：开购物袋时清场存活 toast——
+ * toast(600) 压在袋面板(400)上，不清场会盖住袋底结算钮。
+ */
+export function dismissAllToasts() {
+  while (liveToasts.length) {
+    const t = liveToasts.shift();
+    if (t) t.destroy(false);
+  }
 }

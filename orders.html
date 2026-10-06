@@ -4,6 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 国际挑剔用户批 A 档 15（极简诚实级）：收复颜色主权——Chrome 自动加深把糖果色重绘得斑驳，整站明示 light -->
+    <meta name="color-scheme" content="light">
     
     <!-- SEO 优化 -->
     <title>我的订单 - Reich | 订单历史与详情</title>
@@ -26,7 +28,12 @@
     <!-- 关键资源预加载 -->
     <link rel="preload" href="css/tokens.css" as="style">
     <link rel="preload" href="css/main.css" as="style">
-    <link rel="preload" href="js/orders.js" as="script">
+    <!-- 极客批 A 档 3：orders.js 的 preload 双下载修复——预载链整条摘除。
+         原病灶：preload(as=script 无 crossorigin) 走 no-cors 缓存，模块请求走 cors →
+         265KB 双下载。修复取舍：modulepreload 方案在 vite 构建下会把源文件按资产
+         复制出第二份（dist/assets/orders-*.js 死重）——module script 标签本身在
+         HTML 解析期即发起（且 cors 单缓存），vite 对入口依赖已自动注入 modulepreload
+         （见构建产物），入口本体的手写预载属负资产，删除即修复。 -->
     
     <!-- CSS变量系统 - 必须在其他样式之前加载 -->
     <link rel="preload" href="fonts/barlow-variable.woff2" as="font" type="font/woff2" crossorigin>
@@ -288,23 +295,23 @@
     <script type="module" defer src="js/navigation-icons.js"></script>
     <script type="module" defer src="js/orders.js"></script>
     
-    <!-- 性能监控 -->
+    <!-- 性能监控（A 档 18 静默化：console 删，performance.mark/measure 保留；
+         错误监听保持如实上报） -->
     <script>
-        // 性能监控
-        if ('performance' in window) {
+        if ('performance' in window && performance.mark) {
             window.addEventListener('load', function() {
                 setTimeout(function() {
-                    const perfData = performance.getEntriesByType('navigation')[0];
-                    console.log('页面加载时间:', perfData.loadEventEnd - perfData.fetchStart, 'ms');
+                    performance.mark('page-load-complete');
+                    try { performance.measure('page-load', 'navigationStart', 'page-load-complete'); } catch (e) {}
                 }, 0);
             });
         }
-        
+
         // 错误监控
         window.addEventListener('error', function(e) {
             console.error('JavaScript错误:', e.error);
         });
-        
+
         // 未处理的Promise拒绝
         window.addEventListener('unhandledrejection', function(e) {
             console.error('未处理的Promise拒绝:', e.reason);

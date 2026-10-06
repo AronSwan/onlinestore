@@ -19,6 +19,13 @@
   color: var(--ink-soft);
   padding-block: var(--spacing-4);
 }
+/* A 档 20：触控目标 44px（粗指针设备）——面包屑锚点扩触达区 */
+@media (pointer: coarse) {
+  .pdp-breadcrumb a {
+    display: inline-block;
+    padding-block: 10px;
+  }
+}
 .pdp-breadcrumb a { color: var(--ink-soft); text-decoration: none; }
 .pdp-breadcrumb a:hover { color: var(--candy-blush-ink); }
 .pdp-breadcrumb span[aria-hidden] { color: var(--line-strong); }
@@ -122,6 +129,11 @@
   color: var(--ink);
   line-height: 1.5;
 }
+/* A 档 6：规格表尾参照行——文案级对照（非规格数据），弱一档以示区别 */
+.pdp-spec-row.pdp-spec-ref dt,
+.pdp-spec-row.pdp-spec-ref dd {
+  color: var(--ink-soft);
+}
 
 /* 描述：15px ink-soft 32em */
 .pdp-desc {
@@ -132,30 +144,16 @@
   max-width: 32em;
 }
 
-/* ATC：ink pill 15px/600/48px；hover blush-ink（与结算钮同典） */
+/* ATC：A 档 16 归一——形制（尺寸/圆角/字重/焦点）上收 .atc-btn 基类（main.css），
+   本变体只留配色（ink 底白字，hover blush-ink——与结算钮同典）+ PDP 布局 */
 .pdp-atc {
   width: 100%;
-  min-height: 48px;
-  padding: 0 var(--spacing-6);
   background: var(--ink);
   color: #fff;
-  border: none;
-  border-radius: var(--radius-pill);
-  font-size: var(--text-body);
-  font-weight: 600;
-  line-height: 1;
-  cursor: pointer;
   transition: background var(--dur-fast) var(--ease-lux);
 }
 .pdp-atc:hover:not(:disabled) { background: var(--candy-blush-ink); }
 .pdp-atc:disabled { opacity: 0.55; cursor: not-allowed; }
-.pdp-atc:focus-visible {
-  outline: 2px solid var(--focus-ring-color);
-  outline-offset: var(--focus-ring-offset);
-}
-@media (hover: none), (pointer: coarse) {
-  .pdp-atc { min-height: 48px; } /* 触屏 48px 触达 */
-}
 
 /* 批一(3) ATC 旁收藏心形：主行动+轻收藏同行（.pdp-actions 由 product.js 渲染——
    atc 与 .reich-heart-pill.pdp-heart 同契约钮 48px 同高）。
@@ -218,7 +216,9 @@
 }
 .pdp-trust-social { font-weight: var(--font-weight-medium); }
 
-/* 吸底 ATC 条：移动单列常驻（价格 + 第二加购入口）；桌面隐藏 */
+/* 吸底 ATC 条：移动单列常驻（价格 + 第二加购入口）；桌面隐藏。
+   A 档 14（极简自提方案）：io-ready 后显示权归 JS——主按钮在视口内时隐藏，
+   离视口（is-visible）才出现；无 IO 环境保持常驻（诚实降级） */
 .pdp-atc-bar {
   position: fixed;
   left: 0;
@@ -233,6 +233,8 @@
   border-top: 1px solid var(--line);
   box-shadow: 0 -4px 16px rgba(26, 32, 44, 0.06);
 }
+.pdp-atc-bar.io-ready { display: none; }
+.pdp-atc-bar.io-ready.is-visible { display: flex; }
 .pdp-atc-bar-price {
   font-family: var(--font-numeric);
   font-size: 1.375rem;
@@ -240,25 +242,10 @@
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
+/* A 档 16 归一：吸底条按钮 = .atc-btn 基类 + .pdp-atc 配色（product.js 双类挂载），
+   本块只留吸底布局差异 */
 .pdp-atc-bar-btn {
   flex: 1;
-  min-height: 48px;
-  padding: 0 var(--spacing-6);
-  background: var(--ink);
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-pill);
-  font-size: var(--text-body);
-  font-weight: 600;
-  line-height: 1;
-  cursor: pointer;
-  transition: background var(--dur-fast) var(--ease-lux);
-}
-.pdp-atc-bar-btn:hover:not(:disabled) { background: var(--candy-blush-ink); }
-.pdp-atc-bar-btn:disabled { opacity: 0.55; cursor: not-allowed; }
-.pdp-atc-bar-btn:focus-visible {
-  outline: 2px solid var(--focus-ring-color);
-  outline-offset: var(--focus-ring-offset);
 }
 
 /* 加载占位 / 诚实空态 */
@@ -268,6 +255,71 @@
   padding: var(--space-section) 0;
   color: var(--ink-soft);
   font-size: var(--text-body);
+}
+
+/* ── A 档 5：主图灯箱（全屏 overlay · ESC 关 · 点按放大 · 双指捏合） ── */
+.pdp-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 500; /* 面板(400)之上、toast(600)之下——反馈永远可读 */
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(26, 32, 44, 0.92);
+  touch-action: none; /* 双指缩放归灯箱，页面不抢手势 */
+}
+.pdp-lightbox.open { display: flex; }
+.pdp-lightbox-img {
+  max-width: min(1200px, 92vw);
+  max-height: 84vh;
+  object-fit: contain;
+  cursor: zoom-in;
+  transition: transform 0.25s var(--ease-lux);
+  user-select: none;
+  -webkit-user-select: none;
+}
+.pdp-lightbox.zoomed .pdp-lightbox-img { cursor: zoom-out; }
+.pdp-lightbox-close {
+  position: absolute;
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  right: 16px;
+  width: 44px;           /* 触控 44px 目标（A 档 18 同典） */
+  height: 44px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+.pdp-lightbox-close:hover { background: rgba(255, 255, 255, 0.28); }
+.pdp-lightbox-close:focus-visible {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+.pdp-lightbox-hint {
+  position: absolute;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  left: 0;
+  right: 0;
+  margin: 0;
+  text-align: center;
+  font-size: var(--text-xs);
+  color: rgba(255, 255, 255, 0.72);
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pdp-lightbox-img { transition: none; }
+}
+/* 主图可点开的视觉暗示（桌面 hover 才亮，移动端点按本身即暗示） */
+@media (hover: hover) {
+  .pdp-main .reich-product-image:hover { opacity: 0.94; }
+}
+.pdp-main .reich-product-image { cursor: zoom-in; }
+.pdp-main .reich-product-image:focus-visible {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
 }
 .pdp-empty {
   display: flex;
@@ -313,6 +365,12 @@
     position: sticky;
     top: calc(72px + var(--spacing-6)); /* 72px 固定头 + 24px 呼吸 */
   }
+  /* A 档 6（贵妇 P2-7 中段空场）：右栏 info 列同挂 sticky top 96——
+     双栏并进，长图滚动中段不再单侧空场（72 头 + 24 呼吸，与左栏同典） */
+  .pdp-info {
+    position: sticky;
+    top: 96px;
+  }
   .pdp-atc-bar { display: none; } /* 桌面行内钮在场，吸底条退场 */
 }
 
@@ -325,6 +383,7 @@
   .pdp-atc-bar,
   .pdp-trust,
   .pdp-empty-back,
+  .pdp-lightbox,
   #reich-toast-container { display: none !important; }
   body { padding-top: 0 !important; }
   .product-detail { padding-block: 0; }

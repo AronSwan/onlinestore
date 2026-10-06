@@ -30,6 +30,8 @@
  *   searchBtn/searchBar/cart-badge）与类（site-tools/site-burger 等）逐字保留。
  */
 import { registerOverlayEscape } from './shared/overlay-escape.js';
+// 国际挑剔用户批 A 档 7：SearchSubmitted 埋点（增强搜索组件 search 事件）
+import { track } from './shared/track.js';
 
 /** 主导航项（C11 裁决：假门收敛——女士/男士/配饰 → 手袋（锚点）/品牌故事（锚点）/订单） */
 const NAV_ITEMS = [
@@ -251,13 +253,35 @@ async function ensureSearchComponent() {
           maxSearchHistory: 5
         });
         await component.init();
-        // 事件监听与 index 原 home-page.js 初始化段逐字对齐（仅诊断日志）
-        component.on('search', (results) => { console.log('搜索结果:', results); });
-        component.on('productClick', (product) => { console.log('点击产品:', product); });
-        component.on('addToCart', (product) => { console.log('添加到购物车:', product); });
-        component.on('addToWishlist', (product) => { console.log('添加到收藏夹:', product); });
         enhancedSearchComponent = component;
-        console.log('增强搜索组件初始化成功');
+        // A 档 7：SearchSubmitted 埋点接线（六点位之一）。组件的 emit('search')
+        // 无发射点（组件内仅 1200 行方法定义，performSearch 不调用），listener 路
+        // 恒哑——改挂容器层双路（Enter 提交/搜索钮点击），值空不计；800ms 去重
+        // 防 Enter 隐式提交与钮点击双计
+        const container = document.getElementById('enhanced-search-container');
+        if (container && !container.dataset.searchTrackBound) {
+          container.dataset.searchTrackBound = '1';
+          let lastSearchTrack = 0;
+          container.addEventListener('keydown', (e) => {
+            if (e.key !== 'Enter') return;
+            const q = e.target && e.target.value && e.target.value.trim();
+            if (q) {
+              if (Date.now() - lastSearchTrack < 800) return;
+              lastSearchTrack = Date.now();
+              track('SearchSubmitted', { query: q, via: 'enter' });
+            }
+          });
+          container.addEventListener('click', (e) => {
+            if (!e.target.closest('button')) return;
+            const input = container.querySelector('input');
+            const q = input && input.value && input.value.trim();
+            if (q) {
+              if (Date.now() - lastSearchTrack < 800) return;
+              lastSearchTrack = Date.now();
+              track('SearchSubmitted', { query: q, via: 'button' });
+            }
+          });
+        }
         return component;
       })
       .catch((error) => {

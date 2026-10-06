@@ -272,6 +272,30 @@
     gap: 20px;
 }
 
+/* A 档 12 · 游客降级提示条：本地资产照看 + 登录可同步（权益批"浏览器本地存储"口径自洽） */
+.guest-wishlist-note {
+    margin: 0 0 20px;
+    padding: 12px 16px;
+    border: 1px solid var(--line, #e9ecef);
+    border-radius: 8px;
+    background: var(--bg-soft, #faf9f7);
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--ink-soft, #6b7280);
+}
+
+.guest-wishlist-note a {
+    color: var(--candy-blush-ink, #B93A54);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    border-radius: 4px;
+}
+
+.guest-wishlist-note a:focus-visible {
+    outline: 2px solid var(--focus-ring-color, #B93A54);
+    outline-offset: 2px;
+}
+
 .wishlist-item {
     display: flex;
     align-items: center;

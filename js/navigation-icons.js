@@ -13,13 +13,17 @@
 import { showToast } from './shared/toast.js';
 import { registerOverlayEscape } from './shared/overlay-escape.js';
 
+// 国际挑剔用户批 A 档 18（console 纪律）：初始化 log 收 localStorage.debug 开关——
+// 默认静默，localStorage.setItem('debug','1') 才出诊断
+const debugLog = (() => { try { return localStorage.getItem('debug') ? console.log.bind(console) : () => {}; } catch (e) { return () => {}; } })();
+
 class NavigationIconManager {
   constructor() {
     this.init();
   }
 
   init() {
-    console.log('NavigationIconManager: 初始化中...');
+    debugLog('NavigationIconManager: 初始化中...');
     this.bindUserIconClick();
     this.bindCartIconClick();
     this.bindWishlistIconClick();
@@ -39,7 +43,7 @@ class NavigationIconManager {
       }
       return false;
     });
-    console.log('NavigationIconManager: 初始化完成');
+    debugLog('NavigationIconManager: 初始化完成');
   }
 
   /**
@@ -57,7 +61,7 @@ class NavigationIconManager {
                      document.querySelector('button img[src="user-icon.svg"]');
     
     if (userIcon) {
-      console.log('NavigationIconManager: 找到用户图标，绑定点击事件');
+      debugLog('NavigationIconManager: 找到用户图标，绑定点击事件');
       // 实战检验修复(2026-10-04): .site-user-btn 本身就是 <a> 按钮,
       // 绑 parentElement(=.site-tools 四图标容器)会冒泡劫持搜索/购物车/心愿单点击
       const userButton = userIcon;
@@ -65,9 +69,9 @@ class NavigationIconManager {
         e.preventDefault();
         this.handleUserIconClick();
       });
-    } else {
-      console.warn('NavigationIconManager: 未找到用户图标');
     }
+    // A 档 18：else 恒 miss warn 删除——旧 img 结构选择器在 SVG 头部下永不命中，
+    // 每页一条 warn 属纯噪声（绑定兜底由 home-page.js/orders.html 直绑 .site-user-btn 承担）
   }
 
   /**
@@ -213,15 +217,15 @@ class NavigationIconManager {
                      document.querySelector('.mobile-nav-btn[aria-label="购物袋"] img');
     
     if (cartIcon) {
-      console.log('NavigationIconManager: 找到购物车图标，绑定点击事件');
+      debugLog('NavigationIconManager: 找到购物车图标，绑定点击事件');
       const cartButton = cartIcon.parentElement;
       cartButton.addEventListener('click', (e) => {
         e.preventDefault();
         this.handleCartIconClick();
       });
-    } else {
-      console.warn('NavigationIconManager: 未找到购物车图标');
     }
+    // A 档 18：else 恒 miss warn 删除——SVG 头部无 img，选择器永不命中（首页/订单/PDP
+    // 的袋钮绑定由各页 data-cart-icon 直绑承担，此绑定域本就休眠）
   }
 
   /**
@@ -270,5 +274,5 @@ class NavigationIconManager {
 // 页面加载完成后初始化导航图标管理器
 document.addEventListener('DOMContentLoaded', () => {
   window.navigationIconManager = new NavigationIconManager();
-  console.log('导航图标管理器已初始化');
+  debugLog('导航图标管理器已初始化');
 });

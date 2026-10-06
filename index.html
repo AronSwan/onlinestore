@@ -4,6 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 国际挑剔用户批 A 档 15（极简诚实级）：收复颜色主权——Chrome 自动加深把糖果色重绘得斑驳，整站明示 light -->
+    <meta name="color-scheme" content="light">
     
     <!-- SEO 优化 -->
     <title>Reich — 2026 秋冬系列 | 总有一只先背</title>
@@ -16,14 +18,15 @@
     <!-- Open Graph / Facebook（M8·C7: reich.com 假域名的 url/canonical/image 绝对 URL 摘除；上线注册域名后回填） -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="Reich — 2026 秋冬系列，到货了">
-    <meta property="og:description" content="总有一只先背。手袋、斜挎包、迷你链条包——慢慢挑，不着急。">
+    <!-- 极客批 A 档 3：三套社会化描述对齐——以 meta description 为准稿（og/twitter/JSON-LD 三处同文） -->
+    <meta property="og:description" content="Reich 2026 秋冬系列到货了。手袋、斜挎包、迷你链条包——慢慢挑，不着急。">
     <meta property="og:site_name" content="Reich">
     <meta property="og:locale" content="zh_CN">
 
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:title" content="Reich — 2026 秋冬系列，到货了">
-    <meta property="twitter:description" content="总有一只先背。手袋、斜挎包、迷你链条包——慢慢挑，不着急。">
+    <!-- Twitter（极客批 A 档 3：property→name——Twitter 卡片规范读 name 属性，property 写法三页恒被忽略） -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Reich — 2026 秋冬系列，到货了">
+    <meta name="twitter:description" content="Reich 2026 秋冬系列到货了。手袋、斜挎包、迷你链条包——慢慢挑，不着急。">
     
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -32,8 +35,11 @@
     <link rel="preload" href="css/tokens.css" as="style">
     <link rel="preload" href="css/main.css" as="style">
     <!-- 批五(16): js/navigation.js preload 删——文件同批废弃（死绑定 .nav-button 全站无 DOM） -->
-    <!-- P1：hero 预加载 webp（<picture> 首选源；不支持 webp 的浏览器自动回落 jpg） -->
-    <link rel="preload" href="images/hero/hero-main.webp" as="image" type="image/webp" fetchpriority="high">
+    <!-- P1→A档4：hero 预加载 webp 变体（imagesrcset 与 <source> 同清单，浏览器按视口择档；
+         不支持 imagesrcset 的浏览器回落无 preload，不双下载） -->
+    <link rel="preload" as="image" type="image/webp" fetchpriority="high"
+          imagesrcset="images/hero/hero-main-480.webp 480w, images/hero/hero-main-800.webp 800w, images/hero/hero-main-1200.webp 1200w, images/hero/hero-main-1600.webp 1600w"
+          imagesizes="100vw">
     
     <!-- CSS变量系统 - 必须在其他样式之前加载 -->
     <link rel="preload" href="fonts/barlow-variable.woff2" as="font" type="font/woff2" crossorigin>
@@ -69,7 +75,7 @@
         "@context": "https://schema.org",
         "@type": "WebSite",
         "name": "Reich",
-        "description": "Reich 2026 秋冬系列：手袋、斜挎包、迷你链条包——慢慢挑，不着急"
+        "description": "Reich 2026 秋冬系列到货了。手袋、斜挎包、迷你链条包——慢慢挑，不着急。"
     }
     </script>
     <!-- M8·C7: 结构化数据 url/logo/searchAction 的 reich.com 假域名摘除（域名未注册；注册后回填） -->
@@ -121,11 +127,15 @@
     <main id="main-content" role="main">
         <!-- 批四(6): 本页视觉主标题是 hero h2（保留），此处补页级唯一 h1（sr-only 视觉隐藏） -->
         <h1 class="sr-only">REICH 手袋店</h1>
-        <!-- 跑马灯公告条（P2 · B1：CSS-only 无限横向滚动） -->
-        <div class="marquee" aria-label="公告：托特包的季节，新品到货">
+        <!-- 跑马灯公告条（P2 · B1：CSS-only 无限横向滚动）。
+             国际挑剔用户批冲突仲裁案 1 合成（2026-10-06）：删与 hero 逐字重复两段
+             （"总有一只先背"/"2026 秋冬到货"）+英文段，价签挪出至商品区目录注脚——
+             跑马灯回归品牌叙事（工匠一轮"杂志内页做法"），文案全部取自站内既有品牌语；
+             段间呼吸 padding 见 main.css .marquee-seg（贵妇 P3-14 防断词） -->
+        <div class="marquee" aria-label="公告：品牌承诺">
             <div class="marquee-track">
-                <span class="marquee-copy">IT'S TOTE SEASON — NEW ARRIVALS — 总有一只先背 — 2026 秋冬到货 — 本季 ¥88-299 —&nbsp;</span>
-                <span class="marquee-copy" aria-hidden="true">IT'S TOTE SEASON — NEW ARRIVALS — 总有一只先背 — 2026 秋冬到货 — 本季 ¥88-299 —&nbsp;</span>
+                <span class="marquee-copy"><span class="marquee-seg">REICH —</span><span class="marquee-seg">不赶时间的东西 —</span><span class="marquee-seg">慢慢挑，不着急 —</span><span class="marquee-seg">让它陪你久一点 —</span><span class="marquee-seg">每一只都由工匠慢慢做完 —</span></span>
+                <span class="marquee-copy" aria-hidden="true"><span class="marquee-seg">REICH —</span><span class="marquee-seg">不赶时间的东西 —</span><span class="marquee-seg">慢慢挑，不着急 —</span><span class="marquee-seg">让它陪你久一点 —</span><span class="marquee-seg">每一只都由工匠慢慢做完 —</span></span>
             </div>
         </div>
 
@@ -133,24 +143,36 @@
         <section class="relative h-[90vh] overflow-hidden" aria-labelledby="hero-heading">
             <!-- P1：真图 hero（Unsplash，见 images/CREDITS.md）——webp 优先 + jpg 回退，LCP 高优先不 lazy -->
             <picture>
-                <source srcset="images/hero/hero-main.webp" type="image/webp">
+                <source srcset="images/hero/hero-main-480.webp 480w, images/hero/hero-main-800.webp 800w, images/hero/hero-main-1200.webp 1200w, images/hero/hero-main-1600.webp 1600w" sizes="100vw" type="image/webp">
+                <!-- 批四(16): object-position 上移 8%（center 50%→42%）——文案压底部，主角让出上半幅；hero CTA 已改词，本项并批四（记档条款"已改词则并入"）；
+                     极客批修复(2026-10-06)：本注释原误写进 img 标签内部——属性串变可见乱码文本+fetchpriority/lazy 失效，移出标签（裁决书 A 档 1）；
+                     A 档 4：srcset 四档 webp 变体（480-1600w，Retina 档补齐）+ jpg 回退 -->
                 <img
                     src="images/hero/hero-main.jpg"
                     alt="Reich 2026秋冬系列——彩色墙绘前的手袋"
-                    class="absolute inset-0 w-full h-full object-cover object-[center_42%]"<!-- 批四(16): object-position 上移 8%（center 50%→42%）——文案压底部，主角让出上半幅；hero CTA 已改词，本项并批四（记档条款"已改词则并入"） -->
+                    class="absolute inset-0 w-full h-full object-cover object-[center_42%]"
                     loading="eager"
                     fetchpriority="high"
-                    width="2400"
-                    height="1600">
+                    width="1600"
+                    height="1067">
             </picture>
             <div class="absolute inset-0 bg-gradient-to-b from-transparent to-[rgba(255,255,255,0.9)]"></div><!-- C7(裁决): hero 渐变终点米色→白 -->
             <div class="relative container mx-auto px-4 h-full flex flex-col justify-end pb-20">
                 <h2 id="hero-heading" class="hero-title mb-4">总有一只先背。</h2><!-- C18(裁决): tracking-tight 删除；M4 用户终裁(2026-10-05): hero 强调 span+下划线整体删除，整句纯文本 -->
-                <p class="text-lg mb-8 max-w-2xl">2026 秋冬系列，到货了</p><!-- C26(裁决): 副标 20px 归档锁 18px -->
+                <p class="text-lg mb-4">2026 秋冬系列，到货了</p><!-- C26(裁决): 副标 20px 归档锁 18px -->
+                <!-- 国际挑剔用户批 A 档 11（PM 信任行，冲突仲裁案 1 合成）：hero 副标下
+                     徽标行——早见信任需求前移；文案复用 PDP 信任行（含运费/30 天可退/人工质检），
+                     "30 天可退"链 returns.html；北京买手"首屏价格带信号"由本行与目录注脚兑现 -->
+                <ul class="hero-trust-badges mb-8" aria-label="服务承诺">
+                    <li>含运费</li>
+                    <li><a href="returns.html" title="退换与售后（30 天可退，来回运费我们担）">30 天可退</a></li>
+                    <li>人工质检</li>
+                </ul>
                 <div class="flex flex-wrap gap-4">
                     <a href="#featured-collections" class="btn-pill btn-pill-hero btn-pill-primary" aria-describedby="hero-heading">来看看</a>
-                    <a href="#brand-story" class="btn-pill btn-pill-hero btn-pill-outline">听听品牌故事</a><!-- 批五(18): "先随便逛逛"→词与目标 #brand-story 对齐 -->
                 </div>
+                <!-- A 档 19（PM+极简双源）：次 CTA 降文字链——hero 单主钮，品牌故事走行内链接 -->
+                <p class="mt-4"><a href="#brand-story" class="hero-secondary-link">听听品牌故事</a></p>
             </div>
         </section>
 
@@ -158,7 +180,10 @@
         <section id="featured-collections" class="py-[var(--space-section)] bg-white" aria-labelledby="featured-heading">
             <div class="container mx-auto px-4">
                 <p class="text-center text-[length:var(--text-caption)] font-semibold uppercase tracking-[var(--tracking-caps)] text-[color:var(--ink-soft)] mb-3">IT'S TOTE SEASON</p>
-                <h2 id="featured-heading" class="text-3xl md:text-4xl font-bold text-center mb-16">手袋们的季节到了</h2><!-- 批五(19): "包包们"→"手袋们"（品类唯一词，术语表口径） -->
+                <h2 id="featured-heading" class="text-3xl md:text-4xl font-bold text-center mb-2">手袋们的季节到了</h2><!-- 批五(19): "包包们"→"手袋们"（品类唯一词，术语表口径） -->
+                <!-- 国际挑剔用户批冲突仲裁案 1（贵妇方案）：价签自跑马灯挪至商品区目录小字
+                     （"本季 ¥88-299"）——门童不喊价，价在目录里等你看到货之后 -->
+                <p class="text-center text-[length:var(--text-caption)] text-[color:var(--ink-soft)] mb-16">本季 ¥88–299</p>
                 <!-- P4：精选商品改由 /api/products 渲染（js/home-products.js）。
                      卡片结构/类名为冻结契约（.reich-product-card/.reich-product-action/.reich-product-name/
                      -price/-image/[data-product-id]/.reich-heart-pill/.stagger-item）；
@@ -176,14 +201,16 @@
                         <!-- P1：品牌故事区真图（Unsplash，见 images/CREDITS.md） -->
                         <picture>
                             <source srcset="images/banners/banner-promo.webp" type="image/webp">
+                            <!-- 批四(7): 图列 clamp(480,52vw,560) 右轴闭合（不追列全宽，右缘与 55% 列轴对齐）；C26(裁决): 圆角 8→12px（rounded-lg→xl）。
+                                 极客批修复(2026-10-06)：两条注释原误写进 img 标签内部（属性串可见乱码+loading=lazy 失效），移出标签（裁决书 A 档 1） -->
                             <img
                                 src="images/banners/banner-promo.jpg"
                                 alt="Reich品牌故事 - 三只本季皮具，明亮影棚里的新品们"
-                                class="w-full h-auto rounded-xl shadow-lg max-w-[clamp(480px,52vw,560px)] md:justify-self-end"<!-- 批四(7): 图列 clamp(480,52vw,560) 右轴闭合（不追列全宽，右缘与 55% 列轴对齐） -->
+                                class="w-full h-auto rounded-xl shadow-lg max-w-[clamp(480px,52vw,560px)] md:justify-self-end"
                                 loading="lazy"
                                 decoding="async"
                                 width="1200"
-                                height="800"><!-- C26(裁决): 圆角 8→12px（rounded-lg→xl） -->
+                                height="800">
                         </picture>
                     </div>
                     <div class="max-w-[30em]">
@@ -300,23 +327,23 @@
     <!-- P4：首页精选商品从 /api/products 渲染（失败回退硬编码 3 卡） -->
     <script defer src="js/home-products.js"></script>
     
-    <!-- 性能监控 -->
+    <!-- 性能监控（A 档 18 静默化：console 删，performance.mark/measure 保留——
+         数据进 performance 面板，不再刷控制台；错误监听保持如实上报） -->
     <script>
-        // 性能监控
-        if ('performance' in window) {
+        if ('performance' in window && performance.mark) {
             window.addEventListener('load', function() {
                 setTimeout(function() {
-                    const perfData = performance.getEntriesByType('navigation')[0];
-                    console.log('页面加载时间:', perfData.loadEventEnd - perfData.fetchStart, 'ms');
+                    performance.mark('page-load-complete');
+                    try { performance.measure('page-load', 'navigationStart', 'page-load-complete'); } catch (e) {}
                 }, 0);
             });
         }
-        
+
         // 错误监控
         window.addEventListener('error', function(e) {
             console.error('JavaScript错误：', e.error);
         });
-        
+
         // 未处理的Promise拒绝
         window.addEventListener('unhandledrejection', function(e) {
             console.error('未处理的Promise拒绝：', e.reason);

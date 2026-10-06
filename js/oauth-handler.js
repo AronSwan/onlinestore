@@ -179,7 +179,8 @@ class OAuthHandler {
             provider = 'google';
         } else if (buttonText.includes('GitHub')) {
             provider = 'github';
-        } else if (buttonText.includes('Casdoor')) {
+        } else if (buttonText.includes('Casdoor') || buttonText.includes('统一账号登录')) {
+            // 国际挑剔用户批 A 档 17：按钮文案改"统一账号登录"（旧 Casdoor 字样保留兼容）
             provider = 'casdoor';
         } else {
             LoginUtils.showNotification('不支持的登录方式', 'error');

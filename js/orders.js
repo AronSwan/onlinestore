@@ -478,12 +478,24 @@ class OrderManager {
     }
     
     /**
+     * 订单项缩略图（A 档 4：160w 档实载——72px 缩略此前吃整张 800w jpg，10 倍超标最刺眼）。
+     * 本地商品图管线产物挂 160w/480w srcset（DPR2 亦覆盖）；外域/异名图回落单源 src。
+     */
+    thumbImage(image, name, cls, sizes) {
+        const m = String(image || '').match(/^(.*\/)?images\/products\/(product-\d+)\.jpe?g$/i);
+        const srcset = m
+            ? ` srcset="${m[1] || ''}images/products/${m[2]}-160.webp 160w, ${m[1] || ''}images/products/${m[2]}-480.webp 480w" sizes="${sizes}"`
+            : '';
+        return `<img src="${escapeHtml(image)}"${srcset} alt="${escapeHtml(name)}" class="${cls}" loading="lazy">`;
+    }
+
+    /**
      * 创建订单项HTML
      */
     createOrderItem(item) {
         return `
             <div class="order-item">
-                <img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}" class="order-item-image" loading="lazy">
+                ${this.thumbImage(item.image, item.name, 'order-item-image', '72px')}
                 <div class="order-item-details">
                     <h4 class="order-item-name">${escapeHtml(item.name)}</h4>
                     <p class="order-item-quantity">数量: ${item.quantity}</p>
@@ -725,7 +737,7 @@ class OrderManager {
     createOrderDetailItem(item) {
         return `
             <div class="order-detail-item-row">
-                <img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}" class="order-detail-item-image" loading="lazy">
+                ${this.thumbImage(item.image, item.name, 'order-detail-item-image', '80px')}
                 <div class="order-detail-item-info">
                     <h4 class="order-detail-item-name">${escapeHtml(item.name)}</h4>
                     <p class="order-detail-item-sku">SKU: ${escapeHtml(item.sku)}</p>

@@ -202,8 +202,9 @@ function setupNavigation() {
 
   // 初始化函数
   const init = () => {
+    // 国际挑剔用户批 A 档 18（2026-10-06）：.main-nav/.nav-link-luxury 为 P3 换头后的
+    // 死选择器（全站无 DOM）——原 console.warn 每页必响，静默退场（行为不变：早退）
     if (!navContainer || navLinks.length === 0) {
-      console.warn('导航元素未找到，导航功能初始化失败');
       return;
     }
 

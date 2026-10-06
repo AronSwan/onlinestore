@@ -37,3 +37,21 @@ CDN 直链格式（下载参数）：`https://images.unsplash.com/<photo-id>?w=�
 | `product-6` | 0.93 / (1.0,+4) / (251,246,236) | L217→234 | 57.4→37.4KB | 22.7KB |
 
 旗舰体积闸：product-1 jpg 47.7KB ≤120KB 预算 PASS；LCP 复测（1440×900，5 轮取中位）：原图态 408ms → 处理后 400ms，LCP 元素恒为 `images/hero/hero-main.webp`，无劣化。
+
+## 三次处理记录（国际挑剔用户批 A 档 4 · Retina 重取件，2026-10-06）
+
+Unsplash 源重取 `?w=1600`（商品 `&h=2133&fit=crop&q=85`、hero 自然比例 1600×1067；走代理下载），`products/originals/` 与 `hero/originals/` 备份同步更新为 1600 源。管线不变（M1 同族），变更两点：
+1. **调色幅度砍半**（巴黎贵妇"饱和 0.16 是漂白"）：modulate 偏离中性 1.0 的距离减半——p2 0.16→**0.58**、p3 0.30→**0.65**、p5 1.02→**1.01**；linear/softlight 不动。
+2. **四档 srcset 变体 + 160 缩略档**：每图产出 `product-N-160/-480/-800/-1200/-1600.webp`（q82）+ `product-N.jpg` 800w 回退档 + `product-N.webp`（=800 档副本，旧引用兼容）；hero 同构 `hero-main-{480,800,1200,1600}.webp` + `hero-main.jpg`（1600w 全幅）+ `hero-main.webp`（=1600 档副本）。脚本 `scripts/reprocess-product-images.mjs`（幂等，从 originals 推导）。
+
+| 图 | 160w | 480w | 800w | 1200w | 1600w | jpg800 回退 | 棚向 L 前→后 |
+|---|---|---|---|---|---|---|---|
+| `product-1` | 2.3KB | 12.2KB | 29.0KB | 70.6KB | 162.4KB | 46.3KB | L199→224 |
+| `product-2` | 5.2KB | 41.4KB | 116.5KB | 252.8KB | 412.1KB | 108.4KB | L106→190 |
+| `product-3` | 1.6KB | 6.8KB | 13.2KB | 23.4KB | 38.2KB | 25.3KB | L147→219 |
+| `product-4` | 1.4KB | 9.8KB | 23.8KB | 45.9KB | 72.2KB | 33.9KB | L207→230 |
+| `product-5` | 7.4KB | 51.0KB | 118.9KB | 208.7KB | 308.8KB | 114.6KB（q78） | L120→202 |
+| `product-6` | 1.9KB | 10.4KB | 22.7KB | 41.2KB | 72.9KB | 33.0KB | L206→227 |
+| `hero-main` | — | 32.0KB | 70.3KB | 118.7KB | 182.7KB | 260.1KB（1600w jpg） | — |
+
+旗舰体积闸复跑：product-1 jpg800 46.3KB ≤120KB PASS（p5 123.0KB 轻超软预算 → q80→78 压至 114.6KB）。消费端接线：六商品卡（home-products.js srcset/sizes）、hero（index.html `imagesrcset` preload + `<source srcset>`）、PDP（product.js 运行时变体推导）、订单/袋内缩略（orders.js 160w 档）。

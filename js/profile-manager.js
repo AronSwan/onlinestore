@@ -15,6 +15,14 @@ class ProfileManager {
     }
 
     init() {
+        // 国际挑剔用户批 A 档 12（PM 推荐案，2026-10-06）：未登录直访
+        // profile.html#wishlist 走游客降级视图——本地 reich_wishlist 照常渲染
+        // （可移除）+"登录可同步"提示条；其余区仍守卫（checkAuth 照旧跳登录页）
+        if (!this.isLoggedIn() && window.location.hash === '#wishlist') {
+            this.initGuestWishlist();
+            return;
+        }
+
         // 登录守卫：未登录时 checkAuth() 会跳转到登录页并返回 false，
         // 此处按其现有行为接入，跳转后不再继续加载/绑定
         if (!this.checkAuth()) {
@@ -32,6 +40,46 @@ class ProfileManager {
             this.loadUserData();
             this.bindEvents();
         }
+    }
+
+    /** 登录态判定（与 checkAuth 同源，抽公共只读版供 A 档 12 游客分流） */
+    isLoggedIn() {
+        if (window.Auth && window.Auth.isLoggedIn()) {
+            return true;
+        }
+        return localStorage.getItem('userLoggedIn') === 'true' ||
+               sessionStorage.getItem('userLoggedIn') === 'true';
+    }
+
+    /**
+     * A 档 12 · 心愿单游客降级视图：心愿单是浏览器本地资产（localStorage
+     * reich_wishlist），游客本就可看可移除——未登录不再整页踢去登录页。
+     * 与隐私页"购物数据存在浏览器本地存储"声明自洽；其余区（账户数据）
+     * 由页内菜单守卫继续跳登录（见 profile.html 内联脚本）。
+     */
+    initGuestWishlist() {
+        // 只亮心愿单区（默认激活的 basic-info 属账户数据，游客不渲染）
+        document.querySelectorAll('.profile-section').forEach(s => s.classList.remove('active'));
+        const wishSection = document.getElementById('wishlist');
+        if (wishSection) wishSection.classList.add('active');
+
+        // 侧边栏当前项标心头好
+        document.querySelectorAll('.profile-menu a').forEach(l => {
+            l.classList.toggle('active', l.getAttribute('href') === '#wishlist');
+        });
+
+        // "登录可同步"提示条（幂等）
+        if (wishSection && !document.getElementById('guest-wishlist-note')) {
+            const note = document.createElement('p');
+            note.id = 'guest-wishlist-note';
+            note.className = 'guest-wishlist-note';
+            note.innerHTML = '心头好先记在这台浏览器上——<a href="login.html?returnUrl=' +
+                encodeURIComponent('/profile.html#wishlist') + '">登录可同步</a>到你的账户。';
+            wishSection.insertBefore(note, document.getElementById('wishlist-list'));
+        }
+
+        // 本地心愿单渲染（复用登录态同一渲染管线：列表+可移除）
+        this.renderWishlist();
     }
 
     checkAuth() {

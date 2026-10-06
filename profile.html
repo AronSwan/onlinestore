@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 国际挑剔用户批 A 档 15（极简诚实级）：收复颜色主权——Chrome 自动加深把糖果色重绘得斑驳，整站明示 light -->
+    <meta name="color-scheme" content="light">
     <title>个人中心 - REICH</title><!-- 批四(11): 品牌口径——"个人资料 - Reich 购物网站"退役 -->
     <!-- 权益批 A1（品牌 P1-1/P1-3b 防御）：演示站全站 noindex——七页同改 -->
     <meta name="robots" content="noindex, nofollow">
@@ -257,7 +259,12 @@
     <script>
         // 页面加载完成后初始化
         document.addEventListener('DOMContentLoaded', function() {
-            // 初始化用户资料管理器
+            // A 档 12 游客分流判定：未登录直访 #wishlist 走降级视图（菜单守卫同判）。
+            // 本页不载 auth.js，登录态以 storage 两键为准（与 ProfileManager.isLoggedIn 同源）
+            var guestMode = !(localStorage.getItem('userLoggedIn') === 'true'
+                || sessionStorage.getItem('userLoggedIn') === 'true');
+
+            // 初始化用户资料管理器（游客 #wishlist 态内部自分流，其余照旧守卫跳登录）
             if (window.ProfileManager) {
                 const profileManager = new ProfileManager();
                 profileManager.init();
@@ -272,6 +279,13 @@
                     // 批三(4): 站外页链（"我的订单"→orders.html）直接放行导航，
                     // 只拦截本页锚点切换（# 开头才走 section 切换）
                     if (!this.getAttribute('href').startsWith('#')) return;
+                    // A 档 12：游客态除 #wishlist 外的区（账户数据）保持登录守卫
+                    if (guestMode && this.getAttribute('href') !== '#wishlist') {
+                        e.preventDefault();
+                        window.location.href = 'login.html?returnUrl='
+                            + encodeURIComponent('/profile.html' + this.getAttribute('href'));
+                        return;
+                    }
                     e.preventDefault();
 
                     // 移除所有激活状态

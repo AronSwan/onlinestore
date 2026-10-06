@@ -21,15 +21,13 @@
 /* C2(裁决): 价格锁 Barlow Condensed 600；16→18 / 24→26px 补偿窄身；批四(8): tabular-nums */
 .bento-card .reich-product-price { margin: 0; font-family: var(--font-numeric); font-size: 1.125rem; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .bento-card.bento-featured .reich-product-price { font-size: 1.625rem; }
+/* A 档 16 归一：形制（尺寸/圆角/字重/焦点）上收 .atc-btn 基类（main.css），
+   本变体只留配色对——B12(M4)：blush-soft 实底 + blush-ink(#B93A54) 字，
+   文字对底 4.51:1 过 AA（M0 终审三关之一） */
 .bento-grid .btn-bag {
-  border-radius: var(--radius-pill); padding: 9px 18px;
-  /* B12(M4)：13px/68% 透明双虚 → 15px/100% blush-soft 实底 + blush-ink(#B93A54) 字——
-     文字对底 4.51:1 过 AA（M0 终审三关之一） */
-  font-size: var(--text-body); font-weight: 600; line-height: 1; white-space: nowrap;
   color: var(--candy-blush-ink); background: var(--candy-blush-soft);
   transition: background var(--dur-fast) var(--ease-lux),color var(--dur-fast) var(--ease-lux);
 }
-@media (hover:none),(pointer:coarse) { .bento-grid .btn-bag { min-height: 44px; } }
 .bento-card:is(:hover,:has(:focus-visible)) { border-color: var(--candy-blush); }
 .bento-card:is(:hover,:has(:focus-visible)) .btn-bag,
 .bento-grid .btn-bag:is(:hover,:focus-visible) { background: var(--candy-blush-ink); color: #fff; }

@@ -217,6 +217,7 @@ class LoginUtils {
                     case 'github':
                         authUrl = '/api/auth/oauth/github';
                         break;
+                    case '统一账号登录': // 国际挑剔用户批 A 档 17：文案随 login.html 改词（旧词保留兼容）
                     case 'casdoor 统一登录':
                         authUrl = '/api/auth/oauth/casdoor';
                         break;
