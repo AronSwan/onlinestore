@@ -346,6 +346,17 @@ class OrderManager {
         }[reason] || '当前展示的是演示数据，并非您的真实订单——';
         let textEl = el.querySelector('.demo-badge-text');
         if (!textEl) {
+            // N1 修复（补复审 X1）: 旧初始 span（无 class、含旧文案）先摘除——否则
+            // 徽标同时渲染两段话（默认句+三态句 DOM 实证相连）
+            Array.from(el.children).forEach(function (child) {
+                if (!child.classList.contains('demo-badge-text') && child.tagName === 'SPAN') {
+                    el.removeChild(child);
+                }
+            });
+            // 裸文本节点（旧文案直接写在徽标内的初始文字）也清掉
+            Array.from(el.childNodes).forEach(function (node) {
+                if (node.nodeType === 3 && node.textContent.trim()) node.remove();
+            });
             textEl = document.createElement('span');
             textEl.className = 'demo-badge-text';
             el.appendChild(textEl);
