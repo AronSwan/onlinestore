@@ -18,6 +18,8 @@ import { ConfigService } from '@nestjs/config';
 import { MonitoringService } from '../monitoring/monitoring.service';
 import { ProductEventsService } from '../messaging/product-events.service';
 import { SearchManagerService } from './search/search-manager.service';
+import { SearchOptions } from './search/search-strategy.interface';
+import { EmbeddingService } from './search/embedding.service';
 import { ProductIndexData } from './search/search-strategy.interface';
 
 import { Product } from './entities/product.entity';
@@ -86,6 +88,7 @@ export class ProductsService {
     private readonly monitoring: MonitoringService,
     private readonly productEventsService: ProductEventsService,
     private readonly searchManager: SearchManagerService,
+    private readonly embeddingService: EmbeddingService,
   ) {}
 
   // 缓存观测与列表键索引
@@ -324,7 +327,7 @@ export class ProductsService {
 
     try {
       // 使用搜索引擎进行全文搜索
-      const searchOptions = {
+      const searchOptions: SearchOptions = {
         filters: {
           categoryId,
           minPrice,
@@ -339,6 +342,12 @@ export class ProductsService {
         limit,
       };
 
+      // "智能且快"批（2026-10-07）：查询向量——语义混合检索；模型不可用时降级纯关键词
+      try {
+        searchOptions.queryVector = await this.embeddingService.embedOne(keyword);
+      } catch (e) {
+        // 模型不可用：退纯关键词（warn 走 logger 若在场）
+      }
       const searchResult = await this.searchManager.search(keyword, searchOptions);
 
       // 根据搜索结果从数据库获取完整的产品信息
@@ -999,6 +1008,13 @@ export class ProductsService {
         updatedAt: product.updatedAt.toISOString(),
         specifications: product.specifications,
       };
+
+      // 语义向量（2026-10-07）：name+description 预算；失败仅丢语义能力不阻塞索引
+      try {
+        indexData.embedding = await this.embeddingService.embedOne(
+          `${product.name} ${product.description || ''}`,
+        );
+      } catch (e) { /* 模型不可用：关键词索引照常 */ }
 
       await this.searchManager.indexProduct(indexData);
     } catch (error) {

@@ -535,6 +535,21 @@ class EnhancedSearchComponent {
     const q = String(query || '').trim().toLowerCase();
     if (!q) return [];
     const terms = this.expandQuery(query).map((t) => t.toLowerCase());
+    // "智能且快"批（2026-10-07）：拼音匹配——shoudai 出"手袋"（国内电商肌肉记忆）。
+    // 查询为纯 ASCII 时按首字母前缀/全拼前缀/全拼包含给分；词条拼音懒缓存。
+    const pinyinQ = /^[a-z]+$/.test(q) ? q : null;
+    const pinyinOf = (entry) => {
+      if (!this._pinyinCache) this._pinyinCache = new Map();
+      if (!this._pinyinCache.has(entry)) {
+        try {
+          const pp = window.pinyinPro || {};
+          const full = pp.pinyin ? pp.pinyin(entry, { toneType: 'none', type: 'array' }).join('') : '';
+          const abbr = pp.pinyin ? pp.pinyin(entry, { pattern: 'first', toneType: 'none', type: 'array' }).join('') : '';
+          this._pinyinCache.set(entry, { full, abbr });
+        } catch (e) { this._pinyinCache.set(entry, { full: '', abbr: '' }); }
+      }
+      return this._pinyinCache.get(entry);
+    };
     const scored = [];
     (pool || []).forEach((entry) => {
       const e = String(entry).toLowerCase();
@@ -543,6 +558,12 @@ class EnhancedSearchComponent {
       else if (terms.some((t) => e.indexOf(t) === 0)) score = 3;
       else if (e.indexOf(q) !== -1) score = 2;
       else if (terms.some((t) => e.indexOf(t) !== -1)) score = 1;
+      else if (pinyinQ) {
+        const py = pinyinOf(String(entry));
+        if (py.abbr && py.abbr.indexOf(pinyinQ) === 0) score = 3;
+        else if (py.full && py.full.indexOf(pinyinQ) === 0) score = 2.5;
+        else if (py.full && py.full.indexOf(pinyinQ) !== -1) score = 1;
+      }
       if (score > 0) scored.push({ entry: String(entry), score });
     });
     scored.sort((a, b) => (b.score - a.score) || a.entry.localeCompare(b.entry, 'zh'));

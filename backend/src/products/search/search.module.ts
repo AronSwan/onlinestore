@@ -9,6 +9,7 @@ import { MeiliSearchService } from './meilisearch.service';
 import { ZincSearchService } from './zincsearch.service';
 import { SearchSuggestionService } from './search-suggestion.service';
 import { PopularSearchService } from './popular-search.service';
+import { EmbeddingService } from './embedding.service';
 import { SearchController } from './search.controller';
 
 @Module({
@@ -25,9 +26,11 @@ import { SearchController } from './search.controller';
     SearchManagerService,
     SearchSuggestionService,
     PopularSearchService,
+  EmbeddingService,
   ],
   controllers: [SearchController],
   exports: [
+    EmbeddingService,
     SearchManagerService,
     MeiliSearchService,
     ZincSearchService,

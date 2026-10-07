@@ -73,6 +73,13 @@ export class MeiliSearchService implements SearchStrategy {
         searchOptions.sort = [`${options.sortBy}:${options.sortOrder || 'asc'}`];
       }
 
+      // "智能且快"批（2026-10-07）：带查询向量走 hybrid——关键词+语义融合
+      // （semanticRatio 0.5 各半；embedder 配置见 initializeIndexSettings）
+      if (options.queryVector && options.queryVector.length) {
+        searchOptions.vector = options.queryVector;
+        searchOptions.hybrid = { embedder: 'default', semanticRatio: 0.5 };
+      }
+
       const response = await firstValueFrom(
         this.httpService.post<MeiliSearchResponse>(url, searchOptions, { headers }),
       );
@@ -222,7 +229,7 @@ export class MeiliSearchService implements SearchStrategy {
   }
 
   private transformProductForIndexing(product: ProductIndexData): Record<string, any> {
-    return {
+    const doc: Record<string, any> = {
       id: product.id,
       name: product.name,
       description: product.description,
@@ -237,6 +244,11 @@ export class MeiliSearchService implements SearchStrategy {
       updatedAt: product.updatedAt,
       specifications: product.specifications,
     };
+    if (product.embedding && product.embedding.length) {
+      // 语义向量随文档存（userProvided——向量由后端 EmbeddingService 预算）
+      (doc as any)._vectors = { default: product.embedding };
+    }
+    return doc;
   }
 
   /**
@@ -256,6 +268,18 @@ export class MeiliSearchService implements SearchStrategy {
 
       // 设置排序属性
       await this.updateSortableAttributes(['price', 'createdAt', 'updatedAt']);
+
+      // 语义向量配置（2026-10-07）：userProvided=后端预算向量，维度=bge-small-zh 512。
+      // hybrid 查询依赖此配置；失败仅告警（旧版引擎退纯关键词）。
+      try {
+        const eurl = `${this.baseUrl}/indexes/${this.indexName}/settings/embedders`;
+        const eheaders = { Authorization: `Bearer ${this.apiKey}`, 'Content-Type': 'application/json' };
+        await firstValueFrom(this.httpService.put(eurl, {
+          default: { source: 'userProvided', dimensions: 512 },
+        }, { headers: eheaders }));
+      } catch (error) {
+        this.logger.warn('embedders 配置失败（语义检索不可用，关键词不受影响）');
+      }
 
       this.logger.log('MeiliSearch索引设置初始化成功');
     } catch (error) {

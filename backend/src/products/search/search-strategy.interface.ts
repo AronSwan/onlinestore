@@ -32,6 +32,8 @@ export interface SearchStrategy {
 }
 
 export interface SearchOptions {
+  /** 查询语义向量（2026-10-07 “智能且快”批）：存在时 Meili 走 hybrid，不支持的引擎自然忽略 */
+  queryVector?: number[];
   filters?: Record<string, any>;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
@@ -61,6 +63,8 @@ export interface ProductHit {
 }
 
 export interface ProductIndexData {
+  /** 商品语义向量（EmbeddingService 预算，灌索引时随文档存 _vectors） */
+  embedding?: number[];
   id: string;
   name: string;
   description: string;

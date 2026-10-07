@@ -250,3 +250,6 @@ test-results/
 .local-zinc.log
 .local-zinc.err
 .local-meilisearch-v1.7.4.exe.bak
+
+# 本地语义模型（2026-10-07 智能且快批：bge-small-zh q8 24MB，gitignore 遮蔽）
+backend/.local-models/
