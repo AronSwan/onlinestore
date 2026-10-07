@@ -6,13 +6,13 @@ import { ConfigService } from '@nestjs/config';
 import { ConflictException, NotFoundException, BadRequestException, NotImplementedException } from '@nestjs/common';
 import { ValidationPipe } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { CreateUserDto } from './application/dto/create-user.dto';
-import { UpdateUserDto } from './application/dto/update-user.dto';
+
+
 import { User, UserRole } from './entities/user.entity';
-import { CustomerProfile, CustomerLevel } from './domain/entities/customer-profile.entity';
+
 import { Order } from '../orders/entities/order.entity';
-import { UserRoleEntity } from '../auth/rbac/entities/user-role.entity';
-import { Address } from './domain/entities/address.entity';
+
+
 
 import { UserDeletionService } from './user-deletion.service';
 
