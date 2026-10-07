@@ -37,7 +37,13 @@ export class MeiliSearchService implements SearchStrategy {
     try {
       this.baseUrl =
         this.configService.get<string>('search.meilisearch.host') || 'http://localhost:7700';
-      this.apiKey = this.configService.get<string>('search.meilisearch.apiKey') || 'masterKey';
+      // 密钥兜底链（2026-10-07 语义真相案）：仓内存在两个独立 ConfigModule.forRoot
+      // （app.module 与 config.module），unified-master 的 load 结果不保证到达本服务
+      // ——configService 拿不到时直接读 process.env（dotenv 由 ConfigModule envFilePath
+      // 或环境注入），三级兜底防 403 静默降级。
+      this.apiKey = this.configService.get<string>('search.meilisearch.apiKey')
+        || process.env.MEILISEARCH_API_KEY
+        || 'masterKey';
 
       this.logger.log(`MeiliSearch客户端初始化成功: ${this.baseUrl}`);
       this.isConnected = true;
@@ -274,7 +280,7 @@ export class MeiliSearchService implements SearchStrategy {
       try {
         const eurl = `${this.baseUrl}/indexes/${this.indexName}/settings/embedders`;
         const eheaders = { Authorization: `Bearer ${this.apiKey}`, 'Content-Type': 'application/json' };
-        await firstValueFrom(this.httpService.put(eurl, {
+        await firstValueFrom(this.httpService.patch(eurl, {
           default: { source: 'userProvided', dimensions: 512 },
         }, { headers: eheaders }));
       } catch (error) {
@@ -295,7 +301,7 @@ export class MeiliSearchService implements SearchStrategy {
       'Content-Type': 'application/json',
     };
 
-    await firstValueFrom(this.httpService.put(url, attributes, { headers }));
+    await firstValueFrom(this.httpService.patch(url, attributes, { headers }));
   }
 
   private async updateFilterableAttributes(attributes: string[]): Promise<void> {
@@ -305,7 +311,7 @@ export class MeiliSearchService implements SearchStrategy {
       'Content-Type': 'application/json',
     };
 
-    await firstValueFrom(this.httpService.put(url, attributes, { headers }));
+    await firstValueFrom(this.httpService.patch(url, attributes, { headers }));
   }
 
   private async updateSortableAttributes(attributes: string[]): Promise<void> {
@@ -315,6 +321,6 @@ export class MeiliSearchService implements SearchStrategy {
       'Content-Type': 'application/json',
     };
 
-    await firstValueFrom(this.httpService.put(url, attributes, { headers }));
+    await firstValueFrom(this.httpService.patch(url, attributes, { headers }));
   }
 }

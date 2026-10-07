@@ -73,8 +73,11 @@ export class ZincSearchService implements SearchStrategy {
       const urlObj = new URL(url);
 
       // 只允许访问配置的ZincSearch服务器
+      // SSRF host 比对修复（2026-10-07 语义搜索真相批）：旧写 allowedHost 含端口
+      // （'localhost:4080'）而 hostname 不含（'localhost'）——两者永不相等，Zinc 搜索
+      // 自第一天起被自家防护全拦（后端日志'所有搜索引擎都失败'根因之一）。
       const allowedHost = this.baseUrl.replace('http://', '').replace('https://', '').split('/')[0];
-      const requestHost = urlObj.hostname;
+      const requestHost = urlObj.host; // host 含端口，与 allowedHost 同口径
 
       // 检查主机名是否匹配
       if (requestHost !== allowedHost) {
