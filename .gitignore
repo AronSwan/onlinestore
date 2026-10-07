@@ -238,3 +238,9 @@ roo_task_*.md
 security-report.json
 backend/docs/openapi.json
 test-results/
+
+# 本地单文件 MeiliSearch（2026-10-07 A方案：115MB 二进制与数据不进库，启动走 scripts/meili.sh）
+.local-meilisearch.exe
+.local-meili-data/
+.local-meili.log
+.local-meili.err
