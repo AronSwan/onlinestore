@@ -74,7 +74,7 @@
     var name = escapeHtml(String(p.name || 'Reich 单品'));
     var id8 = String(p.id != null ? p.id : index + 1).padStart(8, '0');
     var priceNum = Number(p.price || 0);
-    var priceText = priceNum.toLocaleString('zh-CN');
+    var priceText = (window.formatPrice || function (v) { return '¥' + v; })(priceNum); /* UI热心用户批 P1: 价格双轨收口——formatPrice 由 cart.js(module) 挂 window, 文档序在前; 兜底防加载序异常 */
     var inStock = Number(p.stock != null ? p.stock : 1) > 0;
 
     var jpg = String(p.mainImage || DEFAULT_IMAGE);
@@ -166,7 +166,7 @@
   /* 价格 + schema.org Offer（.reich-product-price 与内层 [itemprop=price] 为冻结契约） */
   function priceOffer(f) {
     return '<span class="reich-product-price" itemprop="offers" itemscope itemtype="https://schema.org/Offer">' +
-      '<span itemprop="price" content="' + f.priceNum + '">¥' + f.priceText + '</span>' +
+      '<span itemprop="price" content="' + f.priceNum + '">' + f.priceText + '</span>' +
       '<meta itemprop="priceCurrency" content="CNY">' +
       '<meta itemprop="availability" content="https://schema.org/' + (f.inStock ? 'InStock' : 'OutOfStock') + '">' +
       '</span>';
@@ -416,7 +416,23 @@
     });
 
   function boot() {
+    showSkeleton();
     loadFromApi().catch(fallback);
+  }
+
+  /* UI热心用户批 P1(强迫症): API 在途期骨架占位——旧写 0px 高空洞, 数据落地后
+     +1249px 布局跳动; .skeleton CSS(main.css:1757)建好但全站零引用, 此处接上 */
+  function showSkeleton() {
+    var grid = document.getElementById(GRID_ID);
+    if (!grid || grid.children.length) return; // 已有内容(回退渲染)不覆盖
+    var html = '';
+    for (var i = 0; i < 3; i++) {
+      html += '<div class="skeleton" aria-hidden="true" style="' +
+        'height:' + (i === 0 ? 420 : 240) + 'px;border-radius:var(--radius-lg,16px);' +
+        'grid-column:' + (i === 0 ? 'span 2' : 'auto') + '"></div>';
+    }
+    grid.innerHTML = html;
+    grid.setAttribute('aria-busy', 'true');
   }
 
   if (document.readyState === 'loading') {

@@ -382,7 +382,7 @@ class LoginEnhanced {
             lowercase: /[a-z]/.test(password),
             uppercase: /[A-Z]/.test(password),
             numbers: /\d/.test(password),
-            symbols: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+                        symbols: /[@$!%*?&]/.test(password) /* UI热心用户批 P1(购物流程党F3): 与 auth.js 闸门同口径——旧集含#等会被闸门拒的符号, 强度计说很好却被拒 */
         };
 
         score = Object.values(checks).filter(Boolean).length;

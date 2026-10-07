@@ -401,3 +401,14 @@
   .pdp-name { font-size: 1.5rem; }
   .pdp-price { font-size: 1.25rem; }
 }
+
+/* UI热心用户批 P1(购物流程党F1): 双色款颜色选择器 */
+.pdp-variants { display: flex; align-items: center; gap: 10px; margin: 4px 0 2px; }
+.pdp-variants-label { font-size: 13px; color: var(--ink-soft, #767268); }
+.pdp-variant-chip {
+  padding: 6px 14px; border-radius: 999px; border: 1.5px solid var(--border-color, #e5e0d8);
+  background: var(--bg-base, #fff); color: var(--ink, #2c2825); font-size: 13px; cursor: pointer;
+  transition: border-color .2s ease, background .2s ease;
+}
+.pdp-variant-chip.is-selected { border-color: var(--ink, #2c2825); background: var(--ink, #2c2825); color: #fff; }
+.pdp-variant-chip:focus-visible { outline: 2px solid var(--focus-ring-color, #b93a54); outline-offset: 2px; }

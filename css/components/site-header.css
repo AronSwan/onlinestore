@@ -315,3 +315,9 @@
     transition: none;
   }
 }
+/* UI热心用户批 P1(移动党): 移动端吸底标签栏 */
+.mobile-tabbar { display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 90; background: var(--bg-base, #fff); border-top: 1px solid var(--border-color, #e5e0d8); padding: 4px 0 calc(4px + env(safe-area-inset-bottom, 0px)); justify-content: space-around; }
+.mobile-tabbar a { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 64px; padding: 6px 10px; border-radius: 10px; font-size: 11px; color: var(--ink-soft, #767268); text-decoration: none; }
+.mobile-tabbar a svg { width: 22px; height: 22px; }
+.mobile-tabbar a[aria-current="page"] { color: var(--ink, #2c2825); font-weight: 600; }
+@media (max-width: 768px) { .mobile-tabbar { display: flex; } body { padding-bottom: 60px; } }

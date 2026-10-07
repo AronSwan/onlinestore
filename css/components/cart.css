@@ -855,7 +855,8 @@
   padding: 12px 14px;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md, 12px);
-  font-size: 14px;
+  /* UI热心用户批 P1(移动党): 14px→16px——iOS 缩放坑，与搜索框 18px 同理 */
+  font-size: 16px;
   color: var(--ink);
   background: var(--bg-base, #fff);
 }

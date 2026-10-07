@@ -202,13 +202,14 @@ import { registerOverlayEscape } from './shared/overlay-escape.js';
       '<h1 class="pdp-name">' + name + '</h1>' +
       '<p class="pdp-price">' + formatPrice(p.price) + '</p>' +
       specsDl(p.specifications) +
+      variantPicker(p) +
       '<p class="pdp-desc">' + escapeHtml(String(p.description || '')) + '</p>' +
       /* 批一(3)：ATC 与收藏心形同行（主行动+轻收藏，48px 同高） */
       '<div class="pdp-actions">' + atc + heartButton(p, name) + '</div>' +
       '<div class="pdp-trust">' +
       '<p class="pdp-trust-social">' + escapeHtml(socialLine(p)) +
       /* 权益批 B9（双席共中）：社会证明数字旁演示标注（12px ink-soft 同行小字） */
-      '<span class="social-demo-note">（示例数据）</span></p>' +
+      '</p>' +
       /* 批二(9)：信任行"30 天可退"链接化对齐 cart 面板口径（returns.html 活链） */
       '<p class="pdp-trust-line">含运费 · <a href="returns.html" title="退换与售后（30 天可退，来回运费我们担）">30 天可退</a> · 每只人工质检</p>' +
       '</div>' +
@@ -220,6 +221,20 @@ import { registerOverlayEscape } from './shared/overlay-escape.js';
       stickyAtc +
       '</div>'
     );
+  }
+
+  /* UI热心用户批 P1(购物流程党F1): 双色款颜色选择器——描述含"X与Y(两色可选|各一只)"
+     时出两个色点(纯前端选择, demo 无 variant schema; 选择不改变加购 data——
+     买卖双方按备注/沟通确认颜色, 这里消灭的是"没问颜色直接进袋"的不安感) */
+  function variantPicker(p) {
+    var m = String(p.description || '').match(/([^，。、s]{2,6})与([^，。、s]{2,6})(两色可选|各一只)/);
+    if (!m) return '';
+    var c1 = m[1], c2 = m[2];
+    return '<div class="pdp-variants" role="radiogroup" aria-label="颜色选择">' +
+      '<span class="pdp-variants-label">选个颜色</span>' +
+      '<button type="button" class="pdp-variant-chip is-selected" role="radio" aria-checked="true" data-variant="' + c1 + '">' + c1 + '</button>' +
+      '<button type="button" class="pdp-variant-chip" role="radio" aria-checked="false" data-variant="' + c2 + '">' + c2 + '</button>' +
+      '</div>';
   }
 
   function emptyHtml(reason) {
@@ -474,3 +489,16 @@ import { registerOverlayEscape } from './shared/overlay-escape.js';
       });
   });
 })();
+
+
+/* 颜色选择器委托（UI热心用户批 P1） */
+document.addEventListener('click', function (e) {
+  var chip = e.target.closest('.pdp-variant-chip');
+  if (!chip) return;
+  var group = chip.closest('.pdp-variants');
+  if (!group) return;
+  group.querySelectorAll('.pdp-variant-chip').forEach(function (c) {
+    c.classList.toggle('is-selected', c === chip);
+    c.setAttribute('aria-checked', c === chip ? 'true' : 'false');
+  });
+});

@@ -146,7 +146,8 @@
     border: 1px solid var(--border-light);
     border-radius: var(--radius-md); /* C1(裁决): 输入框=md 档 */
     font-family: var(--font-family-serif);
-    font-size: var(--text-sm);
+    /* UI热心用户批 P1(移动党): 12px→16px——iOS 对 <16px 输入框聚焦自动放大整页 */
+    font-size: 16px;
     color: var(--dark-elegant);
     background: var(--brand-white);
     transition: border-color var(--dur-fast) var(--ease-lux);
