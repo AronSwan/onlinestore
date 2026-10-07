@@ -121,45 +121,7 @@
   background-color: var(--brand-red);
   color: var(--brand-white);
   transform: translateY(-2px);
-}
-
-/* ==========================================================================
-   按钮尺寸变体
-   ========================================================================== */
-
-.btn-sm {
-  padding: calc(var(--spacing-sm) * 0.75) calc(var(--spacing-md) * 0.75);
-  font-size: 0.8rem;
-}
-
-.btn-lg {
-  padding: calc(var(--spacing-sm) * 1.25) calc(var(--spacing-xl) * 0.75);
-  font-size: 1rem;
-}
-
-.btn-block {
-  display: block;
-  width: 100%;
-}
-
-/* ==========================================================================
-   按钮特殊效果（P2 清理：以下 8 组动效库存类 HTML/JS 零引用，整块删除——
-   金钮 / .btn-pulse-glow / .btn-glow / .btn-ripple / .btn-borderGradient
-   （btn-gradient-border） / .btn-3d-hover / .btn-bounce（btn-icon-bounce）
-   / .btn-icon-animate）
-   ========================================================================== */
-
-/* ==========================================================================
-   按钮图标组合
-   ========================================================================== */
-
-.btn-icon {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.btn-icon .icon {
+}.btn-icon .icon {
   width: 16px;
   height: 16px;
   fill: currentColor;
@@ -173,16 +135,7 @@
   .btn {
     padding: 0.6rem 1.2rem;
     font-size: 0.85rem;
-  }
-  
-  .btn-lg {
-    padding: 0.8rem 1.5rem;
-  }
-  
-  .btn-sm {
-    padding: 0.4rem 0.8rem;
-  }
-}
+  }}
 
 /* ==========================================================================
    按钮加载状态

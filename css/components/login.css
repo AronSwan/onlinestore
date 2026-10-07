@@ -195,17 +195,7 @@
 
 .form-input.is-invalid + .invalid-feedback {
     display: block;
-}
-
-.valid-feedback {
-    display: none;
-    font-family: var(--font-family-serif);
-    font-size: var(--text-xs);
-    color: var(--success);
-    margin-top: var(--spacing-2);
-}
-
-.form-input.is-valid + .valid-feedback {
+}.form-input.is-valid + .valid-feedback {
     display: block;
 }
 
@@ -451,29 +441,7 @@
 
 .notification.show {
     transform: translateX(0);
-}
-
-.notification-success {
-    border-left: 3px solid var(--success);
-    color: var(--success);
-}
-
-.notification-error {
-    border-left: 3px solid var(--error);
-    color: var(--error);
-}
-
-.notification-warning {
-    border-left: 3px solid var(--warning);
-    color: var(--warning);
-}
-
-.notification-info {
-    border-left: 3px solid var(--candy-blush-ink);
-    color: var(--candy-blush-ink);
-}
-
-/* ==========================================================================
+}/* ==========================================================================
    安全提示 - Reich品牌
    ========================================================================== */
 

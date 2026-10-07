@@ -345,69 +345,9 @@
   margin: 0 -12px;
   padding: 16px 12px;
   border-radius: 8px;
-}
-
-/* 商品缩略图（列序第一列 72px） */
-.cart-item-image {
-  width: 72px;
-  height: 72px;
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  background: var(--background-secondary);
-}
-
-.cart-item-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.2s ease;
-}
-
-.cart-item:hover .cart-item-image img {
+}.cart-item:hover .cart-item-image img {
   transform: scale(1.03);
-}
-
-/* 商品信息 */
-.cart-item-info {
-  min-width: 0;
-}
-
-.cart-item-name {
-  margin: 0 0 4px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-primary);
-  line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.cart-item-brand {
-  margin: 0 0 4px;
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.cart-item-attrs {
-  margin: 0 0 8px;
-  font-size: 11px;
-  color: var(--text-tertiary);
-  background: var(--background-secondary);
-  padding: 2px 6px;
-  border-radius: 4px;
-  display: inline-block;
-}
-
-.cart-item-price {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--primary);
-}
-
-/* 数量步进器 · M2：CartUI 实际类名 .item-quantity（旧 .cart-item-quantity 词表块与本对齐归一；
+}/* 数量步进器 · M2：CartUI 实际类名 .item-quantity（旧 .cart-item-quantity 词表块与本对齐归一；
    markup 为 <button>−<span>n</span><button>+，无 input——.quantity-input 死样式同葬 */
 .cart-items-list .item-quantity {
   display: flex;
@@ -484,48 +424,7 @@
   font-weight: 600;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
-}
-
-/* 商品总价（旧独立小计列已随 C5 砍除，保留词表占位防外链） */
-.cart-item-total {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
-  text-align: right;
-  min-width: 60px;
-}
-
-/* 商品操作 */
-.cart-item-actions {
-  display: flex;
-  align-items: center;
-}
-
-.remove-item-btn {
-  width: 28px;
-  height: 28px;
-  border: none;
-  background: none;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-}
-
-.remove-item-btn:hover {
-  background: var(--error-light);
-  color: var(--error);
-}
-
-.remove-item-btn:focus-visible {
-  outline: 2px solid var(--focus-ring-color);
-  outline-offset: var(--focus-ring-offset);
-}
-
-/* 购物袋底部 · M2(C5)：合计行 + B6 信任行 + 结算独占一行 */
+}/* 购物袋底部 · M2(C5)：合计行 + B6 信任行 + 结算独占一行 */
 .cart-footer {
   border-top: 1px solid var(--border-color);
   background: var(--background-primary);
