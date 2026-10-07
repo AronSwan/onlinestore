@@ -31,15 +31,12 @@
     "jwt:check": "cd backend && node jwt-secret-check.js"
   },
   "dependencies": {
-    "axios": "^1.12.2",
-    "pinyin-pro": "^3.29.4",
-    "winston": "^3.8.2"
+    "axios": "^1.12.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.35.0",
     "@playwright/test": "^1.55.1",
     "autoprefixer": "^10.6.1",
-    "cross-env": "^7.0.3",
     "cssnano": "^7.1.1",
     "eslint": "^9.36.0",
     "globals": "^13.24.0",
@@ -48,7 +45,6 @@
     "postcss-preset-env": "^10.4.0",
     "sharp": "^0.33.5",
     "tailwindcss": "^3.4.19",
-    "typescript": "^5.9.3",
     "vite": "^7.1.7"
   }
 }
