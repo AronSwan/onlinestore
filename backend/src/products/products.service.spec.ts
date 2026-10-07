@@ -23,6 +23,7 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { MonitoringService } from '../monitoring/monitoring.service';
 import { ProductEventsService } from '../messaging/product-events.service';
 import { SearchManagerService } from './search/search-manager.service';
+import { EmbeddingService } from './search/embedding.service';
 
 // Mock entities
 const mockCategory = {
@@ -141,6 +142,7 @@ const mockProductEventsService = {
   publishInventoryUpdated: createMockedFunction<(payload: any) => Promise<void>>(),
 };
 
+const mockEmbeddingService = { embedOne: jest.fn().mockResolvedValue([]), embed: jest.fn().mockResolvedValue([]) };
 const mockSearchManagerService = {
   search:
     createMockedFunction<
@@ -220,6 +222,7 @@ describe('ProductsService', () => {
           provide: SearchManagerService,
           useValue: mockSearchManagerService,
         },
+        { provide: EmbeddingService, useValue: mockEmbeddingService },
       ],
     }).compile();
 

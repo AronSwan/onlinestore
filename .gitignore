@@ -253,3 +253,9 @@ test-results/
 
 # 本地语义模型（2026-10-07 智能且快批：bge-small-zh q8 24MB，gitignore 遮蔽）
 backend/.local-models/
+
+test-cases.json
+playwright-report/
+.test-cache/
+backend/.test-cache/
+__pycache__/

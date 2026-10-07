@@ -1,0 +1,57 @@
+{
+  "passed": 9,
+  "failed": 1,
+  "total": 10,
+  "details": [
+    {
+      "name": "读写锁基本功能",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "读写锁超时功能",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "沙箱命令验证",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "审计日志条目创建",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "安全扫描模式加载",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "安全扫描文件排除",
+      "passed": false,
+      "error": "文件排除功能不正确"
+    },
+    {
+      "name": "可视化报告数据收集",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "配置热重载手动加载",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "配置向导模板加载",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "配置向导配置构建",
+      "passed": true,
+      "error": null
+    }
+  ]
+}
