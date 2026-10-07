@@ -244,3 +244,8 @@ test-results/
 .local-meili-data/
 .local-meili.log
 .local-meili.err
+.local-zinc.exe
+.local-zinc.tar.gz
+.local-zinc/
+.local-zinc.log
+.local-zinc.err

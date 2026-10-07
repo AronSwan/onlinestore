@@ -206,14 +206,20 @@ export class ZincSearchService implements SearchStrategy {
       return false;
     }
 
-    try {
-      await this.makeRequest('/api/health', { method: 'GET' });
-      this.isConnected = true;
-      return true;
-    } catch (error) {
-      this.isConnected = false;
-      return false;
+    // Zinc 版本漂移适配（2026-10-07 实测）：v0.x 健康端点=/api/health，
+    // 1.0.0-beta3 起=/healthz（/api/health 返回 404）。双端点依次探测，
+    // 任一 200 即健康——compose 钉 latest，两代镜像都可能落地。
+    for (const endpoint of ['/api/health', '/healthz']) {
+      try {
+        await this.makeRequest(endpoint, { method: 'GET' });
+        this.isConnected = true;
+        return true;
+      } catch (error) {
+        // 继续尝试下一个端点；全部失败才判不健康
+      }
     }
+    this.isConnected = false;
+    return false;
   }
 
   getName(): string {
