@@ -153,7 +153,7 @@ class ProfileManager {
                         sessionStorage.getItem('user_info');
         
         if (userData) {
-            this.currentUser = JSON.parse(userData);
+            try { this.currentUser = JSON.parse(userData); } catch (e) { this.currentUser = null; } /* 清理批: 裸 parse 守卫 */
         } else {
             // 如果没有用户信息，重定向到登录页
             window.location.href = 'login.html';
