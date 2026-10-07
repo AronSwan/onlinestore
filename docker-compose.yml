@@ -147,7 +147,7 @@ services:
 
   # MeiliSearch (主要搜索引擎)
   meilisearch:
-    image: getmeili/meilisearch:v1.7.4
+    image: getmeili/meilisearch:v1.54.3
     container_name: shopping-meilisearch
     restart: unless-stopped
     environment:

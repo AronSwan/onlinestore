@@ -249,3 +249,4 @@ test-results/
 .local-zinc/
 .local-zinc.log
 .local-zinc.err
+.local-meilisearch-v1.7.4.exe.bak
