@@ -131,7 +131,7 @@ class WishlistManager {
     if (removed) {
       showToast({
         message: `「${removed.name}」从小本本上划掉了。`,
-        sub: '你的心头好清单在个人中心·我的心头好里，随时在看',
+        sub: '存在这台设备上，换设备需重新收藏' /* P2 F5: 不随账号但旧文案过诺 */,
         confirmText: null,
         dismissText: null
       });

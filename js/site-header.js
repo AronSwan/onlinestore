@@ -147,8 +147,8 @@ ${cfg.back ? `        <!-- 返回个人中心（orders 页独有，原独立返�
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.8-9.8-9.2C.6 8.8 2.5 5 6.1 5c2 0 3.4 1 4.4 2.5h3C14.5 6 15.9 5 17.9 5c3.6 0 5.5 3.8 3.9 6.8C19.5 16.2 12 21 12 21z" fill="none"/></svg>
         </a>
 
-        <!-- 用户 -->
-        <a href="${u.href}"${u.id ? ` id="${u.id}"` : ''} aria-label="${u.label}" class="site-user-btn"${currentAttr(u.current)}>
+        <!-- 用户（P2·F4 修复：登录态下 href 与 aria 同步切到 profile——回头客不再被指去登录页） -->
+        <a href="${u.href}"${u.id ? ` id="${u.id}"` : ''} aria-label="${u.label}" class="site-user-btn"${currentAttr(u.current)} data-auth-href="${u.href}">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-4 3.6-6 7-6s7 2 7 6"/></svg>
         </a>
 
@@ -456,6 +456,8 @@ function markLoggedInUser(header) {
     sessionStorage.getItem('userLoggedIn') === 'true';
   if (!userBtn || !isLoggedIn) return;
   userBtn.setAttribute('aria-label', '我的账户');
+  // P2·F4 修复：登录态下 href 改指 profile（不指 login——回头客主场最伤的就是这处错位）
+  userBtn.setAttribute('href', 'profile.html');
   const dot = document.createElement('span');
   dot.className = 'site-user-dot';
   dot.setAttribute('aria-hidden', 'true');

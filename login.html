@@ -107,7 +107,7 @@
                                     placeholder="邮箱"
                                     required
                                     autocomplete="email"
-                                >
+                                 enterkeyhint="next" autocapitalize="none">
                                 <!-- C25(裁决): 占位收为"邮箱"，"请输入有效的邮箱地址用于登录"移入错误态
                                      （js/login-enhanced.js 邮箱校验失败时展示） -->
                                 <div id="login-email-error" class="invalid-feedback"></div>
@@ -127,7 +127,7 @@
                                         autocomplete="current-password"
                                         aria-describedby="login-password-help"
                                         minlength="6"
-                                    >
+                                     enterkeyhint="go">
                                     <div id="login-password-help" class="sr-only">请输入您的登录密码</div>
                                     <button 
                                         type="button" 
@@ -242,7 +242,7 @@
                                         minlength="8"
                                         aria-describedby="register-password-help"
                                         pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
-                                    >
+                                     enterkeyhint="go">
                                     <div id="register-password-help" class="sr-only">密码至少8位，建议包含大小写字母、数字和特殊字符</div>
                                     <button 
                                         type="button" 

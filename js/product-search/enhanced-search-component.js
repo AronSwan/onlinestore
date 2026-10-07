@@ -852,9 +852,25 @@ async performSearch(query) {
     // 清空容器
     this.elements.searchSuggestions.innerHTML = '';
 
-    // 如果没有搜索建议，隐藏容器
+    // 如果没有搜索建议，显示"没找到"空态而非静默隐藏（P2 移动党：乱词输入后
+    // 联想框空白无任何文案——"点了没反应"式体验，用户不知道是没搜到还是坏了）
     if (this.state.searchSuggestions.length === 0) {
-      this.hideSearchSuggestions();
+      const query = this.elements.searchInput ? this.elements.searchInput.value.trim() : '';
+      if (query.length > 0) {
+        this.elements.searchSuggestions.setAttribute('role', 'listbox');
+        this.elements.searchSuggestions.setAttribute('aria-label', '搜索建议');
+        this.elements.searchSuggestions.style.display = 'block';
+        const empty = document.createElement('div');
+        empty.className = 'search-suggestion-empty';
+        empty.style.cssText = 'padding:12px 16px;font-size:13px;color:var(--ink-soft,#767268);';
+        empty.textContent = '没找到「' + query + '」相关的词——试试 手袋 / 链条包 / 波士顿';
+        this.elements.searchSuggestions.appendChild(empty);
+        if (this.elements.searchInput) {
+          this.elements.searchInput.setAttribute('aria-expanded', 'true');
+        }
+      } else {
+        this.hideSearchSuggestions();
+      }
       return;
     }
 

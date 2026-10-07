@@ -186,7 +186,8 @@
 
 /* M2(C5 终裁)：两步清空文字链（原"清空选中"随勾选模型砍除改整袋版） */
 .clear-bag-btn {
-  padding: var(--spacing-1) var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-3);
+  min-height: 44px; /* P2 移动党: 旧 28px 破坏性操作难按准 */
   border: none;
   background: none;
   color: var(--text-secondary);
@@ -904,4 +905,12 @@
   font-size: 12px;
   line-height: 1.5;
   color: var(--text-secondary);
+}
+
+/* P2 移动党: 全站主按钮 pressed 态铺底（0.97 与 atc-btn 同典） */
+.btn-pill:active:not(:disabled),
+.waitlist-panel button:active:not(:disabled),
+.newsletter-form button:active:not(:disabled),
+.form-input + button:active:not(:disabled) {
+  transform: scale(0.97);
 }
