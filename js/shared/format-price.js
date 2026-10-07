@@ -24,7 +24,12 @@ export function formatPrice(value) {
   }
   var cents = Math.round(n * 100);           // 分为整数运算，避开 0.1+0.2 族误差
   var fixed = (cents / 100).toFixed(2);      // 定宽两位
-  return '¥' + fixed.replace(/\.00$/, '');   // 整数抹 .00，非整保留两位
+  var trimmed = fixed.replace(/\.00$/, '');   // 整数抹 .00，非整保留两位
+  // UI 批修复循环（验收 X1/X2/Y1 三席共中虚报勘正）：千分位只加整数段——
+  // 双盲验收实证旧 node-replace 静默失败致本行从未落盘（假 done 无 MISS 检查）
+  var parts = trimmed.split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return '¥' + parts.join('.');
 }
 
 // Node 侧单测直接 import；浏览器经典脚本如需消费，经 window 挂出（module 内先行判窗）

@@ -14,7 +14,7 @@
     var tabs = [
       { href: 'index.html', label: '首页',
         icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>' },
-      { href: 'product.html', label: '手袋',
+      { href: 'index.html#featured-collections', label: '手袋', /* UI 批修复循环: 与桌面导航同落地（裸 product.html 无 id 落售罄空态——三席共中） */
         icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 8h12l1 12H5L6 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>' },
       { href: '#bag', label: '袋', id: 'tabbar-cart',
         icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 8h12l1 12H5L6 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>',
@@ -30,6 +30,14 @@
         (t.extra || '') + '<span>' + t.label + '</span></a>';
     }).join('');
     document.body.appendChild(bar);
+    // UI 批修复循环（验收 X2 F5）: 冷载角标——cart.js 的初始 updateCartBadge 先于
+    // tabbar 注入跑过，角标错过那次广播；注入后立即从 reich_cart 读数补点亮
+    try {
+      var cold = JSON.parse(localStorage.getItem('reich_cart') || '[]');
+      var n = cold.reduce(function (s, it) { return s + (Number(it.productQuantity) || 0); }, 0);
+      var badge = bar.querySelector('.cart-badge');
+      if (badge && n > 0) { badge.textContent = String(n); badge.style.display = 'flex'; }
+    } catch (e) { /* 损坏数据静默 */ }
     // 袋 tab：打开购物袋（复用全站袋管理器；无管理器时跳首页兜底）
     var cartTab = bar.querySelector('#tabbar-cart');
     if (cartTab) cartTab.addEventListener('click', function (e) {

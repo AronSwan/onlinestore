@@ -170,7 +170,7 @@ class OrderManager {
         } catch (error) {
             console.warn('从API加载订单失败，回退到演示数据:', error.message);
             this._demoReason = 'network-error';
-            this.loadDemoData();
+            this.loadDemoData(this._demoReason); // UI 批修复循环（验收三席共中）：漏传参致"网络不太顺"文案永不出现
         } finally {
             this.hideLoading();
         }
@@ -335,8 +335,8 @@ class OrderManager {
      * 显示"演示数据"徽标
      */
     showDemoBadge(reason) {
-        // UI热心用户批 P1(强迫症): 按回退原因分文案——旧写把后端故障也说成
-        // "或尚未登录"，已登录用户被误导去查自己的登录状态
+        // UI 批修复循环（验收 X2 F4/Y2 共中）: 旧写 el.textContent=msg 整体覆写
+        // 清掉 SVG 图标——改为找/建文本 span 只更新文字，图标保留
         const el = this.elements.demoDataBadge;
         if (!el) return;
         const msg = {
@@ -344,8 +344,13 @@ class OrderManager {
             'server-error': '订单服务暂时连不上，先看看演示数据的样子——',
             'network-error': '网络不太顺，先看看演示数据的样子——',
         }[reason] || '当前展示的是演示数据，并非您的真实订单——';
-        const textEl = el.querySelector('.demo-badge-text') || el;
-        if (textEl === el) { el.textContent = msg; } else { textEl.textContent = msg; }
+        let textEl = el.querySelector('.demo-badge-text');
+        if (!textEl) {
+            textEl = document.createElement('span');
+            textEl.className = 'demo-badge-text';
+            el.appendChild(textEl);
+        }
+        textEl.textContent = msg;
         el.classList.remove('hidden');
     }
     

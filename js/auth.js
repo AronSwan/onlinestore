@@ -359,6 +359,13 @@ function showError(inputId, message) {
   input.classList.add("is-invalid");
   input.classList.remove("is-valid");
 
+  // UI 批修复循环（验收 X1/X2 虚报勘正）：聚焦+滚到首个错误字段——
+  // 旧写只红字不聚焦，密码框在表单中部、视线在按钮上根本不知道哪里错了
+  try {
+    input.focus({ preventScroll: true });
+    input.scrollIntoView({ block: "center", behavior: "smooth" });
+  } catch (e) { /* 老浏览器降级：聚焦本身不失败 */ }
+
   const errorElement = document.getElementById(inputId + "-error");
   if (!errorElement) {
     return;

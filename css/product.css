@@ -380,7 +380,7 @@
    非 PDP 页变量缺省（toast 原位不变）。io-ready 时条隐藏瞬间小幅过抬属
    已知取舍（宁可高让不可重叠） */
 @media (max-width: 1023.98px) {
-  :root { --toast-lift-below: calc(68px + env(safe-area-inset-bottom, 0px)); }
+  :root { --toast-lift-below: calc(131px + env(safe-area-inset-bottom, 0px)); } /* 修复循环: 条上浮62px让tabbar后, 抬升同步(68+62+1) */
 }
 
 /* ── print 样式（orders 先例）：一栏黑白，价格/规格/描述留档，交互件全退 ── */
@@ -412,3 +412,9 @@
 }
 .pdp-variant-chip.is-selected { border-color: var(--ink, #2c2825); background: var(--ink, #2c2825); color: #fff; }
 .pdp-variant-chip:focus-visible { outline: 2px solid var(--focus-ring-color, #b93a54); outline-offset: 2px; }
+
+/* UI 批修复循环（验收 Y1 P1-新2/X2 F6 两席共中）: PDP 双吸底避让——
+   吸底加购条让出 tabbar 空间（≤768px 时上浮 62px），tabbar 保持可达 */
+@media (max-width: 768px) {
+  .pdp-atc-bar { bottom: 62px; }
+}

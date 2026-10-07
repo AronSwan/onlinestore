@@ -227,9 +227,11 @@ import { registerOverlayEscape } from './shared/overlay-escape.js';
      时出两个色点(纯前端选择, demo 无 variant schema; 选择不改变加购 data——
      买卖双方按备注/沟通确认颜色, 这里消灭的是"没问颜色直接进袋"的不安感) */
   function variantPicker(p) {
-    var m = String(p.description || '').match(/([^，。、s]{2,6})与([^，。、s]{2,6})(两色可选|各一只)/);
+    // 修复循环（验收 X1/X2 P2）: 旧字符类含字面 s（疑 \s 损毁）——含 s 英文色名失效；
+    // 色名经 escapeHtml 转义后再插 HTML（旧写 description 原文直插=属性注入面）
+    var m = String(p.description || '').match(/([^\s，。、]{2,6})与([^\s，。、]{2,6})(两色可选|各一只)/);
     if (!m) return '';
-    var c1 = m[1], c2 = m[2];
+    var c1 = escapeHtml(m[1]), c2 = escapeHtml(m[2]);
     return '<div class="pdp-variants" role="radiogroup" aria-label="颜色选择">' +
       '<span class="pdp-variants-label">选个颜色</span>' +
       '<button type="button" class="pdp-variant-chip is-selected" role="radio" aria-checked="true" data-variant="' + c1 + '">' + c1 + '</button>' +

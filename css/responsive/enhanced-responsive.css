@@ -42,7 +42,8 @@
 
     .form-input {
         padding: var(--spacing-3);
-        font-size: var(--text-sm);
+        /* UI 批修复循环: iOS 缩放坑——断点不低 16px */
+        font-size: 16px;
     }
 
     .notification {
@@ -118,9 +119,11 @@
     }
     
     .form-input {
-        font-size: var(--text-xs);
+        /* UI 批修复循环（验收三席共中击穿勘正）：iOS 对 <16px 输入框聚焦自动
+           放大整页——任何断点都不低于 16px，覆盖旧 12px/14px 缩小规则 */
+        font-size: 16px;
     }
-    
+
     .social-btn span {
         display: none;
     }
