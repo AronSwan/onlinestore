@@ -42,7 +42,7 @@ import { PaymentOrderId } from '../domain/value-objects/payment-order-id.value-o
  * 参考temp_congomall项目的架构模式和gopay的API设计
  */
 @ApiTags('Payment')
-@Controller('api/payment')
+@Controller('payment')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true, forbidNonWhitelisted: true }))
 export class PaymentController {
   private readonly logger = new Logger(PaymentController.name);

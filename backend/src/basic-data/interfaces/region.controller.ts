@@ -5,7 +5,7 @@ import { RegionService } from '../application/region.service';
 import { RegionInfoEntity } from '../infrastructure/entities/region-info.entity';
 
 @ApiTags('行政区划')
-@Controller('api/basics-data/region')
+@Controller('basic-data/region')
 export class RegionController {
   constructor(private readonly service: RegionService) {}
 
