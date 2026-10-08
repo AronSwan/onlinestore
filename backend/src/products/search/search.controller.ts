@@ -5,6 +5,7 @@
 
 import {
   Controller,
+  BadRequestException,
   Get,
   Post,
   Body,
@@ -47,6 +48,12 @@ export class SearchController {
     @Query('minPrice') minPrice?: string,
     @Query('maxPrice') maxPrice?: string,
   ): Promise<SearchResult> {
+    // S8(契约席立法⑤):缺 q 返 200 全量是活 bug——Swagger 声 required 而运行时
+    // 不校验(BACKLOG 语义搜索真相案机理之一)。缺省/空白即 400,流经全局 problem+json。
+    if (!q || !q.trim()) {
+      throw new BadRequestException('搜索关键词 q 必填');
+    }
+
     const options: SearchOptions = {
       limit,
       offset,
@@ -101,7 +108,7 @@ export class SearchController {
   @Get('suggestions')
   async getSuggestions(
     @Query('q') q: string,
-    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
   ): Promise<string[]> {
     const suggestions = await this.searchSuggestionService.getSuggestions(q, {
       limit,
@@ -121,7 +128,7 @@ export class SearchController {
   })
   @Get('popular')
   async getPopularSearches(
-    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
     @Query('includeTrends', new DefaultValuePipe(true)) includeTrends: boolean,
     @Query('timeRange', new DefaultValuePipe('week')) timeRange: 'day' | 'week' | 'month',
     @Query('category') category?: string,
@@ -151,7 +158,7 @@ export class SearchController {
   ) {
     const { query, userId, resultCount } = body;
     await this.popularSearchService.recordSearch(query, userId, resultCount);
-    return { success: true };
+    return; // S1契约批:废信封(写操作成功无返回体)
   }
 
   @ApiDocs({
@@ -178,7 +185,7 @@ export class SearchController {
   async addPopularSearchTerm(@Body() body: { term: string; category?: string }) {
     const { term, category } = body;
     await this.popularSearchService.addPopularSearchTerm(term, category);
-    return { success: true };
+    return; // S1契约批:废信封(写操作成功无返回体)
   }
 
   @ApiDocs({
@@ -191,7 +198,7 @@ export class SearchController {
   async clearSearchCache() {
     await this.searchSuggestionService.clearCache();
     await this.popularSearchService.clearCache();
-    return { success: true };
+    return; // S1契约批:废信封(写操作成功无返回体)
   }
 
   @ApiDocs({

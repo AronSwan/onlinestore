@@ -265,7 +265,7 @@ export class ProductsController {
   // 并不接收这些参数（过滤能力在 GET /products/search）——文档失实已删，只保留真实支持的 search。
   findAll(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
     @Query('search') search?: string,
   ) {
     return this.productsService.findAll({
@@ -414,7 +414,7 @@ export class ProductsController {
       },
     ],
   })
-  findPopular(@Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number) {
+  findPopular(@Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number) {
     return this.productsService.findPopular(limit);
   }
 
@@ -433,7 +433,7 @@ export class ProductsController {
   })
   findAllAdmin(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-    @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
     @Query('search') search?: string,
   ) {
     return this.productsService.findAll({

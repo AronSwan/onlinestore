@@ -137,11 +137,7 @@ export class NotificationController {
 
       this.logger.log(`Test notification published for user ${testData.userId}`);
 
-      return {
-        success: true,
-        message: '测试通知已发送到消息队列',
-        timestamp: new Date().toISOString(),
-      };
+      return { message: '测试通知已发送到消息队列', timestamp: new Date().toISOString() }; // S1契约批:废信封
     } catch (error) {
       this.logger.error('Failed to publish test notification', error);
       throw error;
@@ -178,11 +174,7 @@ export class NotificationController {
 
       this.logger.log(`Bulk notifications published for ${bulkData.userIds.length} users`);
 
-      return {
-        success: true,
-        message: `批量通知已发送给 ${bulkData.userIds.length} 个用户`,
-        timestamp: new Date().toISOString(),
-      };
+      return { message: `批量通知已发送给 ${bulkData.userIds.length} 个用户`, timestamp: new Date().toISOString() }; // S1契约批:废信封
     } catch (error) {
       this.logger.error('Failed to publish bulk notifications', error);
       throw error;

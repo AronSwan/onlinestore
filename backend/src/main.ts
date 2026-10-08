@@ -9,6 +9,7 @@ import compression from 'compression';
 import { ConfigurationValidator } from './config/configuration.validator';
 import { MetricsInterceptor } from './monitoring/metrics.interceptor';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { AllExceptionsProblemDetailsFilter } from './common/filters/all-exceptions.problem-details.filter';
 import { MonitoringService } from './monitoring/monitoring.service';
 
 // 已知不安全的开发/测试默认 JWT 密钥 —— 生产环境出现即拒绝启动
@@ -102,6 +103,10 @@ export async function bootstrap() {
 
   // 获取MonitoringService实例
   const monitoringService = app.get(MonitoringService);
+
+  // RFC 9457 全局异常过滤器（S1 契约批，2026-10-09）——统一错误形状
+  // application/problem+json；LoggingInterceptor 记日志、本 filter 兜形状，职责分离
+  app.useGlobalFilters(new AllExceptionsProblemDetailsFilter());
 
   // 请求级日志拦截器（双盲审A1裁决恢复：零依赖，fbf4f91误判零引用删除）
   app.useGlobalInterceptors(new LoggingInterceptor());

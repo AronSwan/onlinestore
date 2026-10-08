@@ -5,10 +5,11 @@ import {
   Body,
   Param,
   Query,
-  HttpStatus,
-  HttpException,
   ValidationPipe,
   UsePipes,
+  BadRequestException,
+  NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { AddressService } from './address.service';
 import { AddressQueueService } from './services/address-queue.service';
@@ -25,28 +26,22 @@ import {
 
 // 定义返回类型接口
 export interface JobStatusResponse {
-  success: boolean;
-  data: {
-    id: string | number;
-    status: string;
-    progress: any;
-    result: any;
-    error: string | null;
-    createdAt: Date;
-    processedAt: Date | null;
-    finishedAt: Date | null;
-  };
+  id: string | number;
+  status: string;
+  progress: any;
+  result: any;
+  error: string | null;
+  createdAt: Date;
+  processedAt: Date | null;
+  finishedAt: Date | null;
 }
 
 export interface QueueStatusResponse {
-  success: boolean;
-  data: {
-    waiting: number;
-    active: number;
-    completed: number;
-    failed: number;
-    delayed: number;
-  };
+  waiting: number;
+  active: number;
+  completed: number;
+  failed: number;
+  delayed: number;
 }
 
 @Controller('address')
@@ -69,18 +64,9 @@ export class AddressController {
         language: request.language,
       });
 
-      return {
-        success: true,
-        data: results,
-      };
+      return results; // S1契约批:废成功信封
     } catch (error) {
-      throw new HttpException(
-        {
-          success: false,
-          message: error.message,
-        },
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestException(error.message); // S1契约批:V-C信封错误半边源头消灭
     }
   }
 
@@ -95,18 +81,9 @@ export class AddressController {
         language: request.language,
       });
 
-      return {
-        success: true,
-        data: result,
-      };
+      return result; // S1契约批:废成功信封
     } catch (error) {
-      throw new HttpException(
-        {
-          success: false,
-          message: error.message,
-        },
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestException(error.message); // S1契约批:V-C信封错误半边源头消灭
     }
   }
 
@@ -121,21 +98,9 @@ export class AddressController {
         priority: request.priority,
       });
 
-      return {
-        success: true,
-        data: {
-          jobIds,
-          message: `Submitted ${request.addresses.length} addresses for geocoding`,
-        },
-      };
+      return { jobIds, message: `Submitted ${request.addresses.length} addresses for geocoding` }; // S1契约批:废信封
     } catch (error) {
-      throw new HttpException(
-        {
-          success: false,
-          message: error.message,
-        },
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestException(error.message); // S1契约批:V-C信封错误半边源头消灭
     }
   }
 
@@ -148,30 +113,21 @@ export class AddressController {
       const job = await this.queueService.getJob(jobId);
 
       if (!job) {
-        throw new HttpException('Job not found', HttpStatus.NOT_FOUND);
+        throw new NotFoundException('Job not found'); // S1契约批:形状交全局filter
       }
 
       return {
-        success: true,
-        data: {
-          id: job.id,
-          status: await job.getState(),
-          progress: job.progress(),
-          result: job.returnvalue,
-          error: job.failedReason || (null as string | null),
-          createdAt: new Date(job.timestamp),
-          processedAt: job.processedOn ? new Date(job.processedOn) : null,
-          finishedAt: job.finishedOn ? new Date(job.finishedOn) : null,
-        },
-      };
+        id: job.id,
+        status: await job.getState(),
+        progress: job.progress(),
+        result: job.returnvalue,
+        error: job.failedReason || (null as string | null),
+        createdAt: new Date(job.timestamp),
+        processedAt: job.processedOn ? new Date(job.processedOn) : null,
+        finishedAt: job.finishedOn ? new Date(job.finishedOn) : null,
+      }; // S1契约批:废信封
     } catch (error) {
-      throw new HttpException(
-        {
-          success: false,
-          message: error.message,
-        },
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestException(error.message); // S1契约批:V-C信封错误半边源头消灭
     }
   }
 
@@ -191,18 +147,9 @@ export class AddressController {
         ),
       ])) as { waiting: number; active: number; completed: number; failed: number; delayed: number };
 
-      return {
-        success: true,
-        data: status,
-      };
+      return status; // S1契约批:废成功信封
     } catch (error) {
-      throw new HttpException(
-        {
-          success: false,
-          message: error.message,
-        },
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestException(error.message); // S1契约批:V-C信封错误半边源头消灭
     }
   }
 
@@ -214,18 +161,9 @@ export class AddressController {
     try {
       const stats = await this.cacheService.getStats();
 
-      return {
-        success: true,
-        data: stats,
-      };
+      return stats; // S1契约批:废成功信封
     } catch (error) {
-      throw new HttpException(
-        {
-          success: false,
-          message: error.message,
-        },
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestException(error.message); // S1契约批:V-C信封错误半边源头消灭
     }
   }
 
@@ -237,18 +175,9 @@ export class AddressController {
     try {
       await this.cacheService.clear();
 
-      return {
-        success: true,
-        message: 'Cache cleaned successfully',
-      };
+      return { message: 'Cache cleaned successfully' }; // S1契约批:废信封
     } catch (error) {
-      throw new HttpException(
-        {
-          success: false,
-          message: error.message,
-        },
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestException(error.message); // S1契约批:V-C信封错误半边源头消灭
     }
   }
 
@@ -264,18 +193,9 @@ export class AddressController {
         request.countryCode,
       );
 
-      return {
-        success: true,
-        data: result,
-      };
+      return result; // S1契约批:废成功信封
     } catch (error) {
-      throw new HttpException(
-        {
-          success: false,
-          message: error.message,
-        },
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestException(error.message); // S1契约批:V-C信封错误半边源头消灭
     }
   }
 
@@ -288,20 +208,9 @@ export class AddressController {
     try {
       const result = await this.addressService.formatAddress(request.address, request.countryCode);
 
-      return {
-        success: true,
-        data: {
-          formatted: result,
-        },
-      };
+      return { formatted: result }; // S1契约批:废信封
     } catch (error) {
-      throw new HttpException(
-        {
-          success: false,
-          message: error.message,
-        },
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestException(error.message); // S1契约批:V-C信封错误半边源头消灭
     }
   }
 
@@ -313,21 +222,9 @@ export class AddressController {
     try {
       const isHealthy = await this.addressService.healthCheck();
 
-      return {
-        success: true,
-        data: {
-          status: isHealthy ? 'healthy' : 'unhealthy',
-          timestamp: new Date().toISOString(),
-        },
-      };
+      return { status: isHealthy ? 'healthy' : 'unhealthy', timestamp: new Date().toISOString() }; // S1契约批:废信封
     } catch (error) {
-      throw new HttpException(
-        {
-          success: false,
-          message: error.message,
-        },
-        HttpStatus.SERVICE_UNAVAILABLE,
-      );
+      throw new ServiceUnavailableException(error.message); // S1契约批:V-C消灭
     }
   }
 }
