@@ -10,6 +10,8 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { JwtModule } from '@nestjs/jwt';
 import { DataSource, QueryRunner, Repository } from 'typeorm';
 import { RedpandaService } from '../src/messaging/redpanda.service';
+import { PaymentSecurityService } from '../src/common/security/payment-security.service';
+import { LogSanitizerService } from '../src/common/security/log-sanitizer.service';
 import { MonitoringService } from '../src/monitoring/monitoring.service';
 import { createMockedFunction } from './utils/typed-mock-factory';
 
@@ -201,6 +203,24 @@ export const createMockRedpandaService = (): jest.Mocked<RedpandaService> => {
   } as any;
 };
 
+// 创建Mock PaymentSecurityService
+export const createMockPaymentSecurityService = (): jest.Mocked<PaymentSecurityService> => {
+  return {
+    validatePaymentRequest: createMockedFunction<(...args: any[]) => any>(),
+    logSecurityEvent: createMockedFunction<(...args: any[]) => any>(),
+    validateSignature: createMockedFunction<(...args: any[]) => any>(),
+    encryptPaymentData: createMockedFunction<(...args: any[]) => any>(),
+    decryptPaymentData: createMockedFunction<(...args: any[]) => any>(),
+  } as any;
+};
+
+// 创建Mock LogSanitizerService
+export const createMockLogSanitizerService = (): jest.Mocked<LogSanitizerService> => {
+  return {
+    sanitize: createMockedFunction<(...args: any[]) => any>(),
+    sanitizeObject: createMockedFunction<(...args: any[]) => any>(),
+  } as any;
+};
 // 创建Mock MonitoringService
 export const createMockMonitoringService = (): jest.Mocked<MonitoringService> => {
   return {

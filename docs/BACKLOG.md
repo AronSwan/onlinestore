@@ -114,6 +114,19 @@
 
 验证（2026-10-08，复现命令随项）：V1 复活 201/量=本次值；V2 IDOR 200 但 B 袋完好；V3 PUT 404/qty1.5 400/null 200 不炸；cart 套件 43/43 绿（33+新10）；tsc EXIT=0；node --check 过。
 
+
+### 电商基本模块恢复批（2026-10-08 用户令"电商网站该有的基本模块要有"）
+
+**教训（承重）**：清理战役中期起用"代码消费面"判据删模块，误删了 payment（支付，8215 行真实现）/address（收货地址，3385 行）/basic-data（行政区划，97 行）/notification（通知中心，570 行）——它们当年未挂载（被当死码的原因），但属电商基本模块，产品功能完整性判据高于代码可达性判据（同用户"功能不减"四连令）。git 历史全程可恢复，本批全部捞回。
+
+**恢复+挂载**：五件 git checkout（含 email-verification——独立 Express 服务，compose email-verifier 容器用，不进 Nest）；app.module 挂 PaymentModule/AddressModule/BasicDataModule/NotificationModule + EventEmitterModule.forRoot()；app.module 实体注册列表补四模块 glob（此前 No metadata 假活——address/payment 的 health 端点不触 DB 掩盖了实体未注册）。
+
+**依赖归位（版本考古）**：@nestjs/cqrs@11（12.x ESM-only+peer common@12 冲突）/@nestjs/bull@11+bull@4（12.x 同病，jest parse 炸）/@nestjs/event-emitter/uuid 装回；common/security 四件+redis-utils 撑回；ENCRYPTION_KEY 轮换为合规 64-hex（.env 不入 git）。
+
+**端点实测**：/api/address/health 200、/api/api/payment/health 200（双前缀系历史命名）、/api/notifications 401 守卫、/api/api/basics-data/region/all 200（空数据集——region 表待导入数据）。jest 809 例 807 绿（2 败环境带）。
+
+**挂账**：region 行政区划数据导入；payment/address/notification 的前端接线（当前前端无调用面——模块恢复为后端能力，接线属产品迭代）；email-verification 服务容器化启动验证（需 docker）。
+
 ## 若真要接手（非承诺）
 
 安全基线：`docs/safety.md`（规则→落点→锁）；验证：README"验证"节三命令；

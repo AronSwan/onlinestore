@@ -3,6 +3,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AppController } from 'src/app.controller';
 import { AppService } from 'src/app.service';
 import { MonitoringModule } from './monitoring/monitoring.module';
@@ -13,9 +14,18 @@ import { ProductsModule } from './products/products.module';
 import { OrdersModule } from './orders/orders.module';
 import { CartModule } from './cart/cart.module';
 import { AuditModule } from './common/audit/audit.module';
+// 电商基本模块恢复挂载（2026-10-08 用户令"电商网站该有的基本模块要有"——
+// 此前清理批按代码消费面误判为死码删除，现按产品功能完整性恢复）
+import { PaymentModule } from './payment/payment.module';
+import { AddressModule } from './address/address.module';
+import { BasicDataModule } from './basic-data/basic-data.module';
+import { NotificationModule } from './notification/notification.module';
 
 @Module({
   imports: [
+    // 事件总线（payment 恢复挂载所需，2026-10-08）
+    EventEmitterModule.forRoot(),
+
     // 配置模块
     ConfigModule.forRoot({
       isGlobal: true,
@@ -60,6 +70,11 @@ import { AuditModule } from './common/audit/audit.module';
             __dirname + '/products/entities/*.entity{.ts,.js}',
             __dirname + '/common/audit/entities/*.entity{.ts,.js}',
             __dirname + '/monitoring/*.service{.ts,.js}',
+            // 电商基本模块恢复(2026-10-08)：支付/地址/基础数据/通知的实体
+            __dirname + '/payment/**/*.entity{.ts,.js}',
+            __dirname + '/address/**/*.entity{.ts,.js}',
+            __dirname + '/basic-data/**/*.entity{.ts,.js}',
+            __dirname + '/notification/**/*.entity{.ts,.js}',
           ],
           synchronize: dbConfig.synchronize,
           logging: dbConfig.logging,
@@ -107,6 +122,12 @@ import { AuditModule } from './common/audit/audit.module';
     // @Global 模块，接线后 AuditService 全局可注入（products 写操作审计即消费方）。
     // 其控制器查询面按 logging.controller 同规挂类级 admin 守卫（见 audit.controller.ts）。
     AuditModule,
+
+    // 电商基本模块（2026-10-08 用户令恢复——支付/收货地址/基础数据/通知中心）
+    PaymentModule,
+    AddressModule,
+    BasicDataModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [

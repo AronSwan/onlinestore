@@ -2,6 +2,14 @@ module.exports = {
   moduleFileExtensions: ['js', 'json', 'ts'],
   rootDir: 'src',
   testMatch: ['**/*.spec.ts', '**/*.test.ts', '**/*.spec.js', '**/*.test.js'],
+  transformIgnorePatterns: [
+    'node_modules/(?!(uuid|p-retry|is-network-error|@nestjs/bull|@nestjs/bull-shared)/)'
+  ],
+  testPathIgnorePatterns: [
+    // email-verification 是独立 Express 服务(compose email-verifier 容器)的
+    // 自测——jest29 与其考古 mock 写法不合,归服务自身口径
+    '<rootDir>/email-verification/'
+  ],
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', { useESM: true, tsconfig: 'tsconfig.spec.json' }],
   },
