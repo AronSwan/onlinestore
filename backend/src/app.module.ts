@@ -58,7 +58,6 @@ import { AuditModule } from './common/audit/audit.module';
             __dirname + '/auth/**/*.entity{.ts,.js}',
             __dirname + '/orders/entities/*.entity{.ts,.js}',
             __dirname + '/products/entities/*.entity{.ts,.js}',
-            __dirname + '/notification/entities/*.entity{.ts,.js}',
             __dirname + '/common/audit/entities/*.entity{.ts,.js}',
             __dirname + '/monitoring/*.service{.ts,.js}',
           ],

@@ -44,22 +44,9 @@ const masterConfig = createMasterConfiguration();
         return {
           ...baseConfig,
           entities: [
-            // 明确包含所有实体路径，确保TypeORM能找到它们
+            // 通配全量实体（原列表另有六条"明确包含"glob——首条通配已全覆盖，
+            // 且其中三条指向已删目录，2026-10-08 收敛为单条）
             __dirname + '/../**/*.entity{.ts,.js}',
-            // 明确包含用户相关实体
-            __dirname + '/../users/domain/entities/*.entity{.ts,.js}',
-            __dirname + '/../users/infrastructure/persistence/typeorm/*.entity{.ts,.js}',
-            __dirname + '/../users/infrastructure/entities/*.entity{.ts,.js}',
-            // 明确包含产品相关实体
-            __dirname + '/../products/entities/*.entity{.ts,.js}',
-            // 明确包含订单相关实体
-            __dirname + '/../orders/entities/*.entity{.ts,.js}',
-            // 明确包含支付相关实体
-            __dirname + '/../payment/entities/*.entity{.ts,.js}',
-            // 明确包含通知相关实体
-            __dirname + '/../notification/entities/*.entity{.ts,.js}',
-            // 明确包含地址相关实体
-            __dirname + '/../address/infrastructure/entities/*.entity{.ts,.js}',
           ],
           synchronize: isDev, // 开发环境自动同步表结构
           logging: isDev, // 开发环境开启日志

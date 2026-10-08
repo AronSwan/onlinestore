@@ -23,7 +23,6 @@ export const testDatabaseConfig = {
     'src/products/entities/**/*.ts',
     'src/orders/entities/**/*.ts',
     'src/payment/entities/**/*.ts',
-    'src/notification/entities/**/*.ts',
     'src/common/audit/entities/**/*.ts',
   ],
   synchronize: true,
