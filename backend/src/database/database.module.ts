@@ -55,7 +55,7 @@ const masterConfig = createMasterConfiguration();
             dbType === 'better-sqlite3'
               ? {
                   // SQLite 特定配置
-                  busyTimeout: 30000,
+                  timeout: 30000,
                 }
               : dbType === 'postgres'
                 ? {

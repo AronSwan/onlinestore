@@ -301,7 +301,8 @@ export class ProductsController {
     },
   })
   async searchProducts(@Query() query: any) {
-    const { q, page = 1, limit = 20, category, minPrice, maxPrice, inStock } = query;
+    // 双盲B1席修复：tags 此前未从 query 解构——service 层过滤能力在，参数被丢弃恒全量
+    const { q, page = 1, limit = 20, category, minPrice, maxPrice, inStock, tags } = query;
 
     const searchOptions = {
       keyword: q,
@@ -311,6 +312,7 @@ export class ProductsController {
       minPrice: minPrice ? parseFloat(minPrice) : undefined,
       maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
       inStock: inStock === 'true',
+      tags: tags ? String(tags).split(',').map(t => t.trim()).filter(Boolean) : undefined,
     };
 
     return this.productsService.search(searchOptions);

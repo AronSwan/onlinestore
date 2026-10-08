@@ -54,7 +54,7 @@ if (dbType !== 'better-sqlite3') {
 } else {
   // SQLite特定配置
   baseConfig.extra = {
-    busyTimeout: 30000,
+    timeout: 30000,
   };
 }
 

@@ -22,6 +22,8 @@ module.exports = {
     '!**/*.d.ts',
     '!**/test/**',
     '!**/node_modules/**',
+    // C1席: email-verification 测试被排除但源码计入分母——13.3% 永零死重,对称排除
+    '!**/email-verification/**',
     '!../dist/**',
     '!../coverage/**'
   ],

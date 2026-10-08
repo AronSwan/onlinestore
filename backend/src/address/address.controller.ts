@@ -181,7 +181,15 @@ export class AddressController {
   @Get('queue/status')
   async getQueueStatus(): Promise<QueueStatusResponse> {
     try {
-      const status = await this.queueService.getQueueStatus();
+      // 双盲B1席修复：Redis 缺席时 bull 队列命令的 promise 永不落定（连接
+      // 挂起无超时），原 try/catch 永不可达——15s/20s 超时挂死实测复现。
+      // 3s race 兜底：超时按队列不可用降级，不再挂连接。
+      const status = (await Promise.race([
+        this.queueService.getQueueStatus(),
+        new Promise((_, rej) =>
+          setTimeout(() => rej(new Error('队列服务不可用（Redis 未连接或响应超时）')), 3000),
+        ),
+      ])) as { waiting: number; active: number; completed: number; failed: number; delayed: number };
 
       return {
         success: true,

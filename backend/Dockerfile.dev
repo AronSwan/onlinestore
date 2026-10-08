@@ -1,5 +1,5 @@
 # 后端开发环境 Dockerfile
-FROM node:18-alpine
+FROM node:26-alpine
 
 # 安装开发工具
 RUN apk add --no-cache git python3 make g++

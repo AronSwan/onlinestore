@@ -1,5 +1,5 @@
 # 简单的 Email Verifier 服务 Dockerfile
-FROM node:18-alpine
+FROM node:26-alpine
 
 WORKDIR /app
 

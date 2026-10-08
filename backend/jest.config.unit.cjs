@@ -25,8 +25,7 @@ module.exports = {
     },
   },
   setupFilesAfterEnv: [
-    '<rootDir>/test/setup.ts',
-    '<rootDir>/test/unit-setup.ts'
+    '<rootDir>/../test/setup.ts'
   ],
   // 确保没有项目配置导致重复执行
   projects: undefined,

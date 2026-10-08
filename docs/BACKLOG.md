@@ -127,6 +127,19 @@
 
 **挂账**：region 行政区划数据导入；payment/address/notification 的前端接线（当前前端无调用面——模块恢复为后端能力，接线属产品迭代）；email-verification 服务容器化启动验证（需 docker）。
 
+
+### 升级批双盲审计收口（2026-10-09 六席严格履职后施工）
+
+六席（兼容性/数据层/黑盒/性能/测试保真/残留收口）审升级两波。P0×2 仲裁：cart 中文损坏销案（node 纯 UTF-8 全链码点无损，B1 席 GitBash curl GBK 客户端编码所致）；后端进程单次无日志死亡挂账观察（未复现，归因不唯一）。
+
+**施工清单（全落地）**：suggestions 缺 q 500→空建议；address queue/status 挂死（bull 在 Redis 缺席 promise 永不落定）→3s race 降级 400；products/search 的 tags 参数漏解构（service 层能力在、controller 丢弃恒全量）→接线；依赖卫生（@babel 三死件+sqlite3 卸、ts-jest 29.4.14 消 TS6 peer 违约、better-sqlite3 降 12.x 消 typeorm peer 违约，npm ls invalid 158→0）；busyTimeout 死配置→顶层 timeout（better-sqlite3 驱动只读顶层）；migration 脚本→typeorm-ts-node-commonjs（裸 CLI 不加载 .ts，A1/A2 双席实证）；.env.example 对齐 better-sqlite3；.env.test 创建（消 2 存量红）；coverage 分母对称排除 email-verification（13.3% 永零死重）；jest.config.unit.cjs 双断修复；Node 声明面对齐 26（Dockerfile×3/CI×3/.nvmrc×2/engines）；前端升级（vite 8/eslint 10/cssnano 9/globals 17/postcss-preset-env 11/sharp 0.35/playwright 1.64）。
+
+**勘误（升级批 commit 内承重陈述）**：'Windows 路径反斜杠使 transformIgnorePatterns 永不匹配'系误诊——jest-config 对该模式自动做分隔符归一（normalize.js:752），旧病根是放行名单广度不足（只放 bull 不放整个 @nestjs），C1 席实测证伪我 commit 里的"破案"叙事。
+
+**挂账**：tailwind 3→4（配置体系重写级，前端样式基建，单独战役）；TS7（node10 resolution+ignoreDeprecations 跑道到期，须先迁 bundler resolution）；better-sqlite3 同步驱动并发串行化（B2 量化：search 按位线性排队边际 15ms/位——数据量放大后吞吐绑定点，迁 postgres/TiDB 时自然解除）；migration:show 会建空 migrations 表+9 个 0.3 迁移全未跑的重放风险（真实库靠 synchronize）；后端进程单次死亡观察项；audit 链化写在 typeorm1 组合下零流量覆盖。
+
+验证（2026-10-09 全实测）：**jest 809/809 首次满绿**（.env.test 补齐治最后 2 环境带）；build 0 错；npm ls invalid=0；修复项复验 suggestions []/queue 3s 400/tags 过滤生效/中文 UTF-8 无损；冒烟五端点+vite8 全 200。
+
 ## 若真要接手（非承诺）
 
 安全基线：`docs/safety.md`（规则→落点→锁）；验证：README"验证"节三命令；

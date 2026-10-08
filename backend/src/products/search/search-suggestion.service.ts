@@ -53,8 +53,8 @@ export class SearchSuggestionService {
       minCharacters = 2,
     } = options;
 
-    // 如果查询太短，不提供建议
-    if (query.length < minCharacters) {
+    // 双盲B1席修复：q 缺失/过短统一空建议（原 undefined.length 落 500）
+    if (!query || query.trim().length < minCharacters) {
       return [];
     }
 
