@@ -113,29 +113,8 @@ export class MonitoringService {
   }
 
   // Added cache counters to satisfy callers in cache strategies and database cache services
-  incrementCacheHit(resource: string) {
-    // delegate to metrics service where applicable
-    try {
-      this.metricsService.recordCacheHit();
-    } catch (e) {
-      // noop: ensure method exists even if metrics service changes
-    }
-    this.logger.debug(`Cache hit for ${resource}`);
-  }
 
-  incrementCacheMiss(resource: string) {
-    try {
-      this.metricsService.recordCacheMiss();
-    } catch (e) {
-      // noop
-    }
-    this.logger.debug(`Cache miss for ${resource}`);
-  }
 
-  incrementCacheClear(resource: string) {
-    // Track cache clear operations
-    this.logger.debug(`Cache clear for ${resource}`);
-  }
 
   // Redis duration tracking
   observeRedisDuration(operation: string, duration: number) {
@@ -148,14 +127,7 @@ export class MonitoringService {
   }
 
   // Added Kafka helpers to satisfy callers in DLQ and order events services
-  setKafkaConnectionStatus(connected: boolean) {
-    const status = connected ? 'connected' : 'disconnected';
-    this.logger.warn(`Kafka connection status: ${status}`);
-  }
 
-  incrementKafkaMessagesProduced(topic: string) {
-    this.logger.debug(`Kafka messages produced on topic: ${topic}`);
-  }
 
   // Trace ID tracking
   getCurrentTraceId(): string {
@@ -174,27 +146,9 @@ export class MonitoringService {
   }
 
   // HTTP request tracking
-  incrementHttpRequest(method: string, path: string, statusCode: number) {
-    const duration = Math.random() * 1000; // Mock duration
-    this.recordApiCall(method, path, statusCode, duration);
-  }
 
-  observeHttpRequestDuration(method: string, path: string, duration: number) {
-    this.metricsService.recordHttpRequest(method, path, 200, duration);
-  }
 
   // Audit logging
-  async logAuditLog(event: any) {
-    this.logger.debug(`Audit log: ${JSON.stringify(event)}`);
-    return {
-      success: true,
-      id: `audit_${Date.now()}`,
-      timestamp: new Date(),
-      eventType: event.eventType,
-      userId: event.userId,
-      action: event.action,
-    };
-  }
 
   getAuditLogs(filter?: any) {
     this.logger.debug(`Getting audit logs with filter: ${JSON.stringify(filter)}`);
@@ -202,16 +156,6 @@ export class MonitoringService {
   }
 
   // Security event logging
-  async logSecurityEvent(event: any) {
-    this.logger.warn(`Security event: ${JSON.stringify(event)}`);
-    return {
-      success: true,
-      id: `security_${Date.now()}`,
-      timestamp: new Date(),
-      eventType: event.eventType,
-      severity: event.severity,
-    };
-  }
 
   getSecurityEvents(filter?: any) {
     this.logger.debug(`Getting security events with filter: ${JSON.stringify(filter)}`);
@@ -363,48 +307,9 @@ export class MonitoringService {
 
   // Save metrics to database (scheduled task)
   @Cron(CronExpression.EVERY_MINUTE)
-  async saveMetricsToDatabase() {
-    try {
-      const metrics = this.getMetrics();
-      const systemInfo = this.getSystemInfo();
-
-      const metric = this.metricRepository.create({
-        timestamp: new Date(),
-        apiCalls: metrics.apiCalls,
-        avgResponseTime: metrics.avgResponseTime,
-        errorRate: metrics.errorRate,
-        errors: metrics.errors,
-        memoryUsage: systemInfo.memoryUsage,
-        cpuLoad: systemInfo.cpuLoad,
-        uptime: systemInfo.uptime,
-      });
-
-      await this.metricRepository.save(metric);
-      this.logger.debug('Metrics saved to database');
-    } catch (error) {
-      this.logger.error('Failed to save metrics to database', error);
-    }
-  }
 
   // Cleanup old metrics (scheduled task)
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
-  async cleanupOldMetrics() {
-    try {
-      // Keep metrics for the last 30 days
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - 30);
-
-      await this.metricRepository
-        .createQueryBuilder()
-        .delete()
-        .where('timestamp < :cutoffDate', { cutoffDate })
-        .execute();
-
-      this.logger.debug('Old metrics cleaned up');
-    } catch (error) {
-      this.logger.error('Failed to cleanup old metrics', error);
-    }
-  }
 
   // Get metrics history for charts
   async getMetricsHistory(period: 'hour' | 'day' | 'week' = 'day') {

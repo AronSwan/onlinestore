@@ -149,14 +149,6 @@ export class RedpandaService implements OnModuleInit, OnModuleDestroy {
   /**
    * 别名：publishMessage
    */
-  async publishMessage(
-    topic: TopicName,
-    value: any,
-    key?: string,
-    headers?: Record<string, string>,
-  ) {
-    await this.publish({ topic, value, key, headers });
-  }
 
   /**
    * 别名：sendMessage / sendMessages - 兼容调用点
@@ -164,18 +156,13 @@ export class RedpandaService implements OnModuleInit, OnModuleDestroy {
   // 兼容：sendMessage(topic, value, key) 或 sendMessage({ topic, value, key })
   async sendMessage(topicOrMsg: TopicName | RedpandaProducerMessage, value?: any, key?: string) {
     if (typeof topicOrMsg === 'string') {
-      await this.publishMessage(topicOrMsg, value, key);
+      await this.publish({ topic: topicOrMsg, value, key });
       return;
     }
     const msg = topicOrMsg as RedpandaProducerMessage;
-    await this.publishMessage(msg.topic, msg.value, msg.key, msg.headers);
+    await this.publish(msg);
   }
 
-  async sendMessages(messages: RedpandaProducerMessage[]) {
-    for (const m of messages) {
-      await this.publish(m);
-    }
-  }
 
   /**
    * 兼容：createTopic(topic, partitions?, replication?) 或 createTopic({ topic, partitions, replication })
@@ -329,16 +316,6 @@ export class RedpandaService implements OnModuleInit, OnModuleDestroy {
   /**
    * 兼容：getTopicDetails(topic)
    */
-  async getTopicDetails(topic: string) {
-    const admin = this.kafka.admin();
-    await admin.connect();
-    try {
-      const metadata = await admin.fetchTopicMetadata({ topics: [topic] });
-      return metadata;
-    } finally {
-      await admin.disconnect();
-    }
-  }
 
   /**
    * 兼容：queryMessages （简单的占位实现，按需扩展）

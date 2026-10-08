@@ -363,42 +363,7 @@ describe('MonitoringService', () => {
       expect(status).toHaveProperty('platform');
     });
   });
-
-  describe('logAuditLog', () => {
-    it('should log audit event', async () => {
-      const event = {
-        eventType: 'USER_LOGIN',
-        userId: 'user-123',
-        action: 'login',
-      };
-
-      const result = await service.logAuditLog(event);
-
-      expect(result).toBeDefined();
-      expect(result.success).toBe(true);
-      expect(result).toHaveProperty('id');
-      expect(result).toHaveProperty('timestamp');
-      expect(result.eventType).toBe(event.eventType);
-      expect(result.userId).toBe(event.userId);
-      expect(result.action).toBe(event.action);
-    });
-  });
-
-  describe('logSecurityEvent', () => {
-    it('should log security event', async () => {
-      const event = {
-        eventType: 'LOGIN_FAILED',
-        severity: 'high',
-      };
-
-      const result = await service.logSecurityEvent(event);
-
-      expect(result).toBeDefined();
-      expect(result.success).toBe(true);
-      expect(result).toHaveProperty('id');
-      expect(result).toHaveProperty('timestamp');
-      expect(result.eventType).toBe(event.eventType);
-      expect(result.severity).toBe(event.severity);
-    });
-  });
 });
+
+// logAuditLog/logSecurityEvent 的用例随方法删除（2026-10-08 复杂度清理批：
+// 两方法全仓零调用方，属无人消费的仪式件）

@@ -237,29 +237,6 @@ export class AuditService {
   }
 
   /**
-   * 从 HTTP 请求创建审计上下文
-   */
-  createContextFromRequest(
-    request: Request,
-    additionalContext: Partial<AuditContext> = {},
-  ): AuditContext {
-    const user = request.user as any;
-
-    return {
-      userId: user?.id || user?.sub,
-      userEmail: user?.email,
-      userRole: user?.role,
-      ipAddress: this.extractIpAddress(request),
-      userAgent: request.headers['user-agent'],
-      requestId: request.headers['x-request-id'] as string,
-      sessionId: (request as any).sessionID || 'unknown',
-      endpoint: `${request.method} ${request.path}`,
-      httpMethod: request.method,
-      ...additionalContext,
-    };
-  }
-
-  /**
    * 查询审计日志（兼容原有接口）
    */
   async findLogs(params: {

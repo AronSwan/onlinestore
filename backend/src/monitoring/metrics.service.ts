@@ -209,45 +209,6 @@ export class MetricsService {
   }
 
   // Reset all metrics (useful for testing)
-  resetMetrics(): void {
-    this.metrics = {
-      httpRequests: {
-        total: 0,
-        byMethod: {} as Record<string, number>,
-        byRoute: {} as Record<string, number>,
-        byStatus: {} as Record<string, number>,
-      },
-      httpRequestDurations: {
-        data: [],
-        buckets: {
-          '0-100': 0,
-          '100-500': 0,
-          '500-1000': 0,
-          '1000-2000': 0,
-          '2000+': 0,
-        },
-      },
-      httpRequestErrors: {
-        total: 0,
-        byMethod: {} as Record<string, number>,
-        byRoute: {} as Record<string, number>,
-        byStatus: {} as Record<string, number>,
-      },
-      activeConnections: 0,
-      databaseQueries: {
-        total: 0,
-        durations: [],
-        byOperation: {} as Record<string, number>,
-        byTable: {} as Record<string, number>,
-      },
-      cache: {
-        hits: 0,
-        misses: 0,
-      },
-    };
-
-    this.initializeMetrics();
-  }
 
   // Get metrics for a specific category
   getMetricsByCategory(category: 'http' | 'database' | 'cache' | 'connections') {

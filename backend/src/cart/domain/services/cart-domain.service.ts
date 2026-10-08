@@ -2,155 +2,19 @@ import { Injectable } from '@nestjs/common';
 import { CartItemAggregate } from '../aggregates/cart-item.aggregate';
 import { CartRepository } from '../repositories/cart.repository';
 
-/**
- * 购物车领域服务
- * 基于 CongoMall 的业务逻辑封装
- * 统一了两个版本的服务接口
- */
 /** 购物车上限业务错误（application 层转 400，非服务器故障） */
 export class CartLimitExceededError extends Error {}
 
+/**
+ * 购物车领域服务
+ *
+ * 精简版（2026-10-08 复杂度清理批）：原 330 行 18 个方法中 13 个零外部引用
+ * （validate 全家 8 个、calc 家族被 getCartSummary 内联、merge/batchSelect/
+ * stock/discount 均为 TODO 仪式件）。保留 4 个活方法。
+ */
 @Injectable()
 export class CartDomainService {
   constructor(private readonly cartRepository?: CartRepository) {}
-
-  /**
-   * 验证商品是否可以添加到购物车
-   */
-  validateAddToCart(
-    productId: string,
-    productSkuId: string,
-    quantity: number,
-    maxQuantity: number = 999,
-  ): void {
-    if (!productId || !productSkuId) {
-      throw new Error('商品ID和SKU ID不能为空');
-    }
-
-    if (quantity <= 0) {
-      throw new Error('商品数量必须大于0');
-    }
-
-    if (quantity > maxQuantity) {
-      throw new Error(`商品数量不能超过${maxQuantity}`);
-    }
-  }
-
-  /**
-   * 验证购物车商品数量更新
-   */
-  validateQuantityUpdate(
-    currentQuantity: number,
-    newQuantity: number,
-    maxQuantity: number = 999,
-  ): void {
-    if (newQuantity <= 0) {
-      throw new Error('商品数量必须大于0');
-    }
-
-    if (newQuantity > maxQuantity) {
-      throw new Error(`商品数量不能超过${maxQuantity}`);
-    }
-  }
-
-  /**
-   * 计算购物车总金额
-   */
-  calculateCartTotal(cartItems: CartItemAggregate[]): number {
-    return cartItems
-      .filter(item => item.selectFlag && !item.delFlag)
-      .reduce((total, item) => {
-        return total + item.productPrice * item.productQuantity;
-      }, 0);
-  }
-
-  /**
-   * 计算购物车商品总数量
-   */
-  calculateCartItemCount(cartItems: CartItemAggregate[]): number {
-    return cartItems
-      .filter(item => !item.delFlag)
-      .reduce((count, item) => count + item.productQuantity, 0);
-  }
-
-  /**
-   * 计算选中商品总数量
-   */
-  calculateSelectedItemCount(cartItems: CartItemAggregate[]): number {
-    return cartItems
-      .filter(item => item.selectFlag && !item.delFlag)
-      .reduce((count, item) => count + item.productQuantity, 0);
-  }
-
-  /**
-   * 验证购物车商品是否存在
-   */
-  validateCartItemExists(cartItem: CartItemAggregate | null): void {
-    if (!cartItem) {
-      throw new Error('购物车商品不存在');
-    }
-
-    if (cartItem.delFlag) {
-      throw new Error('购物车商品已删除');
-    }
-  }
-
-  /**
-   * 验证用户权限
-   */
-  validateUserPermission(cartItem: CartItemAggregate, userId: string): void {
-    if (cartItem.customerUserId !== userId) {
-      throw new Error('无权限操作该购物车商品');
-    }
-  }
-
-  /**
-   * 合并相同商品
-   */
-  mergeCartItems(
-    existingItem: CartItemAggregate,
-    newQuantity: number,
-    maxQuantity: number = 999,
-  ): CartItemAggregate {
-    const totalQuantity = existingItem.productQuantity + newQuantity;
-
-    this.validateQuantityUpdate(existingItem.productQuantity, totalQuantity, maxQuantity);
-
-    existingItem.updateQuantity(totalQuantity);
-    return existingItem;
-  }
-
-  /**
-   * 批量选择/取消选择商品
-   */
-  batchSelectItems(cartItems: CartItemAggregate[], selected: boolean): CartItemAggregate[] {
-    return cartItems.map(item => {
-      if (!item.delFlag) {
-        item.updateSelectFlag(selected);
-      }
-      return item;
-    });
-  }
-
-  /**
-   * 验证购物车是否为空
-   */
-  validateCartNotEmpty(cartItems: CartItemAggregate[]): void {
-    const activeItems = cartItems.filter(item => !item.delFlag);
-    if (activeItems.length === 0) {
-      throw new Error('购物车为空');
-    }
-  }
-
-  /**
-   * 验证是否有选中的商品
-   */
-  validateHasSelectedItems(cartItems: CartItemAggregate[]): void {
-    const selectedItems = cartItems.filter(item => item.selectFlag && !item.delFlag);
-    if (selectedItems.length === 0) {
-      throw new Error('请选择要操作的商品');
-    }
-  }
 
   /**
    * 获取购物车摘要信息
@@ -165,13 +29,19 @@ export class CartDomainService {
   } {
     const activeItems = cartItems.filter(item => !item.delFlag);
     const selectedItems = activeItems.filter(item => item.selectFlag);
+    const sum = (items: CartItemAggregate[]) =>
+      items.reduce((total, item) => total + item.productPrice * item.productQuantity, 0);
+    // 件数口径=Σqty（原 calculateCartItemCount/SelectedItemCount 语义，A2 席实测
+    // summary.totalItems=18 对 3 条目——保持不变）
+    const countQty = (items: CartItemAggregate[]) =>
+      items.reduce((count, item) => count + item.productQuantity, 0);
 
-    const totalAmount = this.calculateCartTotal(activeItems);
-    const selectedAmount = this.calculateCartTotal(selectedItems);
+    const totalAmount = sum(activeItems);
+    const selectedAmount = sum(selectedItems);
 
     return {
-      totalItems: this.calculateCartItemCount(cartItems),
-      selectedItems: this.calculateSelectedItemCount(cartItems),
+      totalItems: countQty(cartItems),
+      selectedItems: countQty(selectedItems),
       totalAmount,
       selectedAmount,
       totalValue: totalAmount, // 兼容性别名
@@ -202,7 +72,9 @@ export class CartDomainService {
     // 检查购物车商品数量限制
     const currentCount = await this.cartRepository.countByUserId(customerUserId);
     if (currentCount >= 500) {
-      throw new Error('购物车最多添加500件商品');
+      // 双盲C1席：业务上限拒绝此前落 500(裸Error)与服务器故障不可区分——
+      // 专用错误类型交 application 层转 4xx
+      throw new CartLimitExceededError('购物车最多添加500件商品');
     }
 
     // 检查是否已存在相同商品
@@ -274,57 +146,5 @@ export class CartDomainService {
       throw new Error('CartRepository not injected');
     }
     await this.cartRepository.removeSelectedByUserId(customerUserId);
-  }
-
-  /**
-   * 验证购物车商品库存（集成商品服务）
-   */
-  async validateCartItemsStock(customerUserId: string): Promise<{
-    valid: boolean;
-    invalidItems: string[];
-  }> {
-    if (!this.cartRepository) {
-      throw new Error('CartRepository not injected');
-    }
-
-    const selectedItems = await this.cartRepository.findSelectedByUserId(customerUserId);
-    const invalidItems: string[] = [];
-
-    // TODO: 集成商品服务验证库存
-    // for (const item of selectedItems) {
-    //   const stockAvailable = await this.productService.checkStock(item.productSkuId, item.productQuantity);
-    //   if (!stockAvailable) {
-    //     invalidItems.push(item.productSkuId);
-    //   }
-    // }
-
-    return {
-      valid: invalidItems.length === 0,
-      invalidItems,
-    };
-  }
-
-  /**
-   * 计算购物车优惠（集成优惠券服务）
-   */
-  async calculateDiscount(customerUserId: string): Promise<{
-    originalTotal: number;
-    discountAmount: number;
-    finalTotal: number;
-  }> {
-    if (!this.cartRepository) {
-      throw new Error('CartRepository not injected');
-    }
-
-    const originalTotal = await this.cartRepository.getSelectedTotalValue(customerUserId);
-
-    // TODO: 集成优惠券服务计算折扣
-    const discountAmount = 0;
-
-    return {
-      originalTotal,
-      discountAmount,
-      finalTotal: originalTotal - discountAmount,
-    };
   }
 }

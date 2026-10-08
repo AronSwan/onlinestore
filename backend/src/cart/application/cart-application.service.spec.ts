@@ -178,7 +178,7 @@ describe('CartDomainService.addItemToCart 软删复活', () => {
     const result = await svc.addItemToCart('u1', 'p1', 'sku-new', 'n', 'b', 1, 2, '', '{}');
 
     expect(result.productQuantity).toBe(2);
-    expect(result.getProductSkuId()).toBe('sku-new');
+    expect(result.productSkuId).toBe('sku-new');
     expect(repo.save).toHaveBeenCalled();
   });
 

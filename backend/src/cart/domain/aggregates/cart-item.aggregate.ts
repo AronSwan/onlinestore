@@ -1,17 +1,12 @@
-import { AggregateRoot } from '@nestjs/cqrs';
-import { CartItemAddedEvent } from '../events/cart-item-added.event';
-import { CartItemUpdatedEvent } from '../events/cart-item-updated.event';
-import { CartItemRemovedEvent } from '../events/cart-item-removed.event';
-
 /**
- * 购物车商品聚合根 - 参考 CongoMall CartItem 设计
+ * 购物车商品聚合根
  *
- * 聚合根职责：
- * 1. 封装业务规则和不变性约束
- * 2. 发布领域事件
- * 3. 维护数据一致性
+ * 精简版（2026-10-08 复杂度清理批）：原 202 行——CQRS 事件发布（apply）全仓
+ * 零 handler、15 个 getter 与 public 字段重复、remove()/toggleSelect()/
+ * updateSelectFlag() 与 setSelectFlag() 多重同义无人调——均删。保留业务
+ * 规则（数量边界/合并/验证）与复活所需的可变字段。
  */
-export class CartItemAggregate extends AggregateRoot {
+export class CartItemAggregate {
   constructor(
     public readonly id: string,
     public readonly customerUserId: string,
@@ -27,61 +22,11 @@ export class CartItemAggregate extends AggregateRoot {
     public delFlag: boolean = false,
     public readonly createdAt: Date = new Date(),
     public updatedAt: Date = new Date(),
-  ) {
-    super();
-  }
+  ) {}
 
   // 兼容性属性 - 为了与仓储实现保持一致
   get userId(): string {
     return this.customerUserId;
-  }
-
-  // Getter 方法
-  getId(): string {
-    return this.id;
-  }
-  getUserId(): string {
-    return this.customerUserId;
-  }
-  getProductId(): string {
-    return this.productId;
-  }
-  getProductSkuId(): string {
-    return this.productSkuId;
-  }
-  getProductName(): string {
-    return this.productName;
-  }
-  getProductBrand(): string {
-    return this.productBrand;
-  }
-  getProductPrice(): number {
-    return this.productPrice;
-  }
-  getProductQuantity(): number {
-    return this.productQuantity;
-  }
-  getProductPic(): string {
-    return this.productPic;
-  }
-  getProductAttribute(): string {
-    return this.productAttribute;
-  }
-  getSelectFlag(): boolean {
-    return this.selectFlag;
-  }
-
-  setSelectFlag(selectFlag: boolean): void {
-    this.selectFlag = selectFlag;
-  }
-  getDelFlag(): boolean {
-    return this.delFlag;
-  }
-  getCreatedAt(): Date {
-    return this.createdAt;
-  }
-  getUpdatedAt(): Date {
-    return this.updatedAt;
   }
 
   // 更新方法
@@ -92,25 +37,23 @@ export class CartItemAggregate extends AggregateRoot {
     if (newQuantity > 999) {
       throw new Error('单个商品数量不能超过999');
     }
-
-    const oldQuantity = this.productQuantity;
     this.productQuantity = newQuantity;
     this.updatedAt = new Date();
-
-    this.apply(
-      new CartItemUpdatedEvent(
-        this.id,
-        this.customerUserId,
-        this.productSkuId,
-        oldQuantity,
-        newQuantity,
-        new Date(),
-      ),
-    );
   }
 
-  updateSelectFlag(selected: boolean): void {
-    this.selectFlag = selected;
+  setSelectFlag(selectFlag: boolean): void {
+    this.selectFlag = selectFlag;
+  }
+
+  /**
+   * 合并相同商品（数量累加）
+   */
+  mergeQuantity(additionalQuantity: number): void {
+    const newQuantity = this.productQuantity + additionalQuantity;
+    if (newQuantity > 999) {
+      throw new Error('单个商品数量不能超过999');
+    }
+    this.productQuantity = newQuantity;
     this.updatedAt = new Date();
   }
 
@@ -128,8 +71,8 @@ export class CartItemAggregate extends AggregateRoot {
     productPic: string,
     productAttribute: string,
   ): CartItemAggregate {
-    const cartItem = new CartItemAggregate(
-      this.generateId(),
+    return new CartItemAggregate(
+      CartItemAggregate.generateId(),
       customerUserId,
       productId,
       productSkuId,
@@ -140,46 +83,6 @@ export class CartItemAggregate extends AggregateRoot {
       productPic,
       productAttribute,
     );
-
-    cartItem.apply(
-      new CartItemAddedEvent(cartItem.id, customerUserId, productSkuId, productQuantity),
-    );
-    return cartItem;
-  }
-
-  /**
-   * 切换选中状态
-   */
-  toggleSelect(): void {
-    this.selectFlag = !this.selectFlag;
-    this.updatedAt = new Date();
-  }
-
-  /**
-   * 合并相同商品（数量累加）
-   */
-  mergeQuantity(additionalQuantity: number): void {
-    const newQuantity = this.productQuantity + additionalQuantity;
-    if (newQuantity > 999) {
-      throw new Error('合并后数量超过限制');
-    }
-    this.updateQuantity(newQuantity);
-  }
-
-  /**
-   * 移除商品
-   */
-  remove(): void {
-    this.apply(
-      new CartItemRemovedEvent(this.id, this.customerUserId, this.productSkuId, new Date()),
-    );
-  }
-
-  /**
-   * 计算商品总价
-   */
-  getTotalPrice(): number {
-    return this.productPrice * this.productQuantity;
   }
 
   /**

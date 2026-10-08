@@ -307,34 +307,6 @@ export class SearchSuggestionService {
   /**
    * 获取零结果搜索查询，用于优化
    */
-  async getZeroResultSearches(limit: number = 50): Promise<string[]> {
-    try {
-      const zeroResults = await this.cacheService.get<Record<string, any>[]>(
-        'search',
-        'zero_results',
-      );
-
-      if (!zeroResults) {
-        return [];
-      }
-
-      // 统计零结果搜索的频率
-      const frequencyMap: Record<string, number> = {};
-      zeroResults.forEach(record => {
-        const query = record.query;
-        frequencyMap[query] = (frequencyMap[query] || 0) + 1;
-      });
-
-      // 按频率排序并返回最常见的零结果搜索
-      return Object.entries(frequencyMap)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, limit)
-        .map(([query]) => query);
-    } catch (error) {
-      this.logger.error('获取零结果搜索失败', error);
-      return [];
-    }
-  }
 
   /**
    * 清除搜索建议缓存
