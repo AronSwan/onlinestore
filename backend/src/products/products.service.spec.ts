@@ -571,8 +571,24 @@ describe('ProductsService', () => {
         );
         expect(findInSetCalls).toHaveLength(0);
       });
-      // MySQL/TiDB 的 FIND_IN_SET 方言用例已随死方言裁剪（2026-10-08：
-      // mysql/tidb 在 compose/.env/Dockerfile 部署链零引用，方言分支删除）
+
+      it('MySQL/TiDB 保留 FIND_IN_SET 方言', async () => {
+        mockConfigService.get.mockImplementation((key: string) =>
+          key === 'master.database.type' ? 'mysql' : null,
+        );
+        const qb = createMockQueryBuilder<Product>();
+        qb.getManyAndCount.mockResolvedValue([[mockProduct], 1]);
+        mockProductRepository.createQueryBuilder.mockReturnValue(qb);
+
+        await service.search(tagOptions);
+
+        expect(qb.andWhere).toHaveBeenCalledWith('FIND_IN_SET(:tag0, product.tags)', {
+          tag0: '真皮',
+        });
+        expect(qb.andWhere).toHaveBeenCalledWith('FIND_IN_SET(:tag1, product.tags)', {
+          tag1: '手提',
+        });
+      });
     });
   });
 

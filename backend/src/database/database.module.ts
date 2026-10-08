@@ -22,9 +22,11 @@ const masterConfig = createMasterConfiguration();
 
         // 根据配置使用相应的数据库
         const dbType = masterConfig.database.type;
-        const defaultPort = dbType === 'postgres' ? 5432 : 3306;
+        // TiDB 使用 MySQL 驱动；统一在此做类型映射
+        const resolvedType = dbType === 'tidb' ? 'mysql' : dbType;
+        const defaultPort = dbType === 'tidb' ? 4000 : resolvedType === 'postgres' ? 5432 : 3306;
         const baseConfig = {
-          type: dbType as any,
+          type: resolvedType as any,
           database: masterConfig.database.database,
         };
 

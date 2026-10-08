@@ -428,13 +428,21 @@ export class ProductsService {
     }
 
     if (tags && tags.length > 0) {
-      // M1-B7(2026-10-04)：tags 为 simple-array 逗号串存储；用
-      // (',' || tags || ',') LIKE '%,tag,%' 做等值匹配（首尾包逗号防子串误配）。
-      // FIND_IN_SET 的 MySQL/TiDB 方言分支已随死方言裁剪（2026-10-08：部署链零引用）。
+      // M1-B7(2026-10-04)：tags 双方言。tags 为 simple-array 逗号串存储；
+      // FIND_IN_SET 是 MySQL/TiDB 方言，SQLite/Postgres 下直接语法错误。
+      // 非 MySQL 族用 (',' || tags || ',') LIKE '%,tag,%' 做等值匹配（首尾包逗号防子串误配）。
+      const dbType = (
+        this.configService.get<string>('master.database.type') || 'sqlite'
+      ).toLowerCase();
+      const isMysqlFamily = dbType === 'mysql' || dbType === 'tidb';
       tags.forEach((tag, index) => {
-        query.andWhere(`(',' || product.tags || ',') LIKE :tag${index}`, {
-          [`tag${index}`]: `%,${tag},%`,
-        });
+        if (isMysqlFamily) {
+          query.andWhere(`FIND_IN_SET(:tag${index}, product.tags)`, { [`tag${index}`]: tag });
+        } else {
+          query.andWhere(`(',' || product.tags || ',') LIKE :tag${index}`, {
+            [`tag${index}`]: `%,${tag},%`,
+          });
+        }
       });
     }
 
@@ -751,7 +759,6 @@ export class ProductsService {
     });
   }
 
-
   /**
    * 获取产品统计信息
    */
@@ -1002,7 +1009,6 @@ export class ProductsService {
     }
   }
 
-
   /**
    * 根据分类查找产品
    */
@@ -1051,7 +1057,6 @@ export class ProductsService {
 
     return products;
   }
-
 
   /**
    * 获取所有分类

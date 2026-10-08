@@ -4,6 +4,7 @@
 // 时间：2025-06-17 10:50:00
 
 import { createMasterConfiguration } from './unified-master.config';
+import { TiDBOptimizer } from './tidb-optimizer';
 import { RedpandaOptimizer } from './redpanda-optimizer';
 import { PhysicalDeploymentOptimizer } from './physical-deployment-optimizer';
 import { RxJSOptimizer } from './rxjs-optimizer';
@@ -80,6 +81,11 @@ export class ConfigurationValidator {
     // 验证连接池配置
     const poolValidation = this.validateConnectionPool();
     warnings.push(...poolValidation.warnings);
+
+    // 验证TiDB配置
+    const tidbValidation = TiDBOptimizer.validateTiDBConfig();
+    if (!tidbValidation.isValid) errors.push(...tidbValidation.errors);
+    warnings.push(...tidbValidation.warnings);
 
     // 验证Redpanda配置
     const redpandaValidation = RedpandaOptimizer.validateRedpandaConfig();
