@@ -7,6 +7,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import { ConfigurationValidator } from './config/configuration.validator';
 import { MetricsInterceptor } from './monitoring/metrics.interceptor';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { MonitoringService } from './monitoring/monitoring.service';
 
 // 已知不安全的开发/测试默认 JWT 密钥 —— 生产环境出现即拒绝启动
@@ -100,6 +101,9 @@ export async function bootstrap() {
 
   // 获取MonitoringService实例
   const monitoringService = app.get(MonitoringService);
+
+  // 请求级日志拦截器（双盲审A1裁决恢复：零依赖，fbf4f91误判零引用删除）
+  app.useGlobalInterceptors(new LoggingInterceptor());
 
   // 监控指标拦截器
   app.useGlobalInterceptors(new MetricsInterceptor(monitoringService));

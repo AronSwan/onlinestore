@@ -13,22 +13,16 @@
     "test:perf": "cross-env NODE_OPTIONS='--no-warnings' playwright test --config=perf.config.js",
     "test:coverage": "cross-env NODE_OPTIONS='--no-warnings' playwright show-report",
     "verify:audit": "node --experimental-strip-types --no-warnings --experimental-sqlite scripts/verify-audit-chain.mjs",
-    "build:secure": "node scripts/deploy-security.js build",
-    "deploy:secure": "node scripts/deploy-security.js deploy",
-    "security:report": "node scripts/deploy-security.js report",
     "audit": "npm audit",
     "audit:fix": "npm audit fix",
     "outdated": "npm outdated",
     "update:patch": "npm update",
-    "update:check": "node scripts/update-dependencies.js",
-    "update:auto": "node scripts/update-dependencies.js --auto-fix",
     "security:check": "npm audit && cd backend && npm audit",
     "security:fix": "npm audit fix && cd backend && npm audit fix",
     "deps:check": "npm outdated && cd backend && npm outdated",
     "deps:update": "npm run update:patch && cd backend && npm update",
     "test:backend": "cd backend && npm run test:cov",
-    "test:backend:soft": "cd backend && npm run test:cov:soft",
-    "jwt:check": "cd backend && node jwt-secret-check.js"
+    "test:backend:soft": "cd backend && npm run test:cov:soft"
   },
   "dependencies": {
     "axios": "^1.12.2"
@@ -37,6 +31,7 @@
     "@eslint/js": "^9.35.0",
     "@playwright/test": "^1.55.1",
     "autoprefixer": "^10.6.1",
+    "cross-env": "^10.1.0",
     "cssnano": "^7.1.1",
     "eslint": "^9.36.0",
     "globals": "^13.24.0",

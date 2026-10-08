@@ -55,16 +55,12 @@ show_help() {
     database            仅启动数据库服务
     cache               仅启动缓存服务
     monitoring          启动监控服务
-    payment             启动支付服务 (需要 -p payment)
-    tidb                启动TiDB服务 (需要 -p tidb)
     dev                 启动开发环境服务
     prod                启动生产环境服务
 
 示例:
     $0                  # 启动所有基础服务
     $0 backend          # 仅启动后端服务
-    $0 -p payment all   # 启动包含支付服务的所有服务
-    $0 -p tidb all      # 启动包含TiDB的所有服务
     $0 -d monitoring    # 在后台启动监控服务
     $0 -s               # 停止所有服务
     $0 -l backend       # 查看后端服务日志
@@ -148,7 +144,7 @@ start_services() {
             ;;
         "backend")
             print_info "启动后端服务..."
-            docker-compose $compose_files $compose_args up backend postgres redis email-verifier openobserve
+            docker-compose $compose_files $compose_args up backend postgres redis email-verifier
             ;;
         "database")
             print_info "启动数据库服务..."
@@ -160,25 +156,11 @@ start_services() {
             ;;
         "monitoring")
             print_info "启动监控服务..."
-            docker-compose $compose_files $compose_args up openobserve node-exporter
-            ;;
-        "payment")
-            print_info "启动支付服务..."
-            if [[ -z "$profile" || "$profile" != "payment" ]]; then
-                print_warning "支付服务需要使用 -p payment 选项"
-            fi
-            docker-compose $compose_files $compose_args up gopay-service crypto-gateway
-            ;;
-        "tidb")
-            print_info "启动 TiDB 服务..."
-            if [[ -z "$profile" || "$profile" != "tidb" ]]; then
-                print_warning "TiDB 服务需要使用 -p tidb 选项"
-            fi
-            docker-compose $compose_files $compose_args up tidb-pd tidb-tikv tidb
+            docker-compose $compose_files $compose_args up prometheus grafana
             ;;
         "dev")
             print_info "启动开发环境服务..."
-            docker-compose $compose_files $compose_args up postgres redis email-verifier backend openobserve
+            docker-compose $compose_files $compose_args up postgres redis email-verifier backend meilisearch zincsearch
             ;;
         "prod")
             print_info "启动生产环境服务..."
@@ -211,7 +193,7 @@ stop_services() {
             ;;
         "backend")
             print_info "停止后端服务..."
-            docker-compose -f docker-compose.yml stop backend postgres redis email-verifier openobserve
+            docker-compose -f docker-compose.yml stop backend postgres redis email-verifier
             ;;
         "database")
             print_info "停止数据库服务..."
@@ -223,15 +205,7 @@ stop_services() {
             ;;
         "monitoring")
             print_info "停止监控服务..."
-            docker-compose -f docker-compose.yml stop openobserve node-exporter
-            ;;
-        "payment")
-            print_info "停止支付服务..."
-            docker-compose -f docker-compose.yml stop gopay-service crypto-gateway
-            ;;
-        "tidb")
-            print_info "停止 TiDB 服务..."
-            docker-compose -f docker-compose.yml --profile tidb down
+            docker-compose -f docker-compose.yml stop prometheus grafana
             ;;
         *)
             print_error "未知的服务类型: $service_type"
@@ -270,13 +244,7 @@ show_logs() {
             docker-compose -f docker-compose.yml logs -f redis
             ;;
         "monitoring")
-            docker-compose -f docker-compose.yml logs -f openobserve
-            ;;
-        "payment")
-            docker-compose -f docker-compose.yml --profile payment logs -f gopay-service
-            ;;
-        "tidb")
-            docker-compose -f docker-compose.yml --profile tidb logs -f
+            docker-compose -f docker-compose.yml logs -f prometheus grafana
             ;;
         *)
             print_error "未知的服务类型: $service_type"
@@ -316,17 +284,6 @@ clean_resources() {
 show_status() {
     print_info "服务状态:"
     docker-compose -f docker-compose.yml ps
-    
-    # 显示profile服务的状态
-    if docker-compose -f docker-compose.optimized.yml --profile payment config >/dev/null 2>&1; then
-        print_info "\n支付服务状态:"
-        docker-compose -f docker-compose.yml --profile payment ps
-    fi
-    
-    if docker-compose -f docker-compose.optimized.yml --profile tidb config >/dev/null 2>&1; then
-        print_info "\nTiDB 服务状态:"
-        docker-compose -f docker-compose.yml --profile tidb ps
-    fi
 }
 
 # 主函数
@@ -386,7 +343,7 @@ main() {
                 action="status"
                 shift
                 ;;
-            all|backend|database|cache|monitoring|payment|tidb|dev|prod)
+            all|backend|database|cache|monitoring|dev|prod)
                 service_type="$1"
                 shift
                 ;;

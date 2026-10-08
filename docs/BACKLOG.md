@@ -77,6 +77,23 @@
 - **求真务实轮移交下批（2026-10-07）**：① 演示库清存——users 表 118 存活号几乎全为审计/测试残留（reich.a1.*×50/fraud_*/Tamperer/reich.y2.*/x2probe_a 等 2026-10-02 起累积）+orders 13 条审计残留订单（收件人"求真audit/Fraud Squad"等）；products 6 件干净；止血已做（A1 自删），存量需 admin 批量清理脚本（产品数据操作，单独做）。清点复现（2026-10-07，制度审查组·合规席 P2-4 补）：`node -e "const{DatabaseSync}=require('node:sqlite');const db=new DatabaseSync('backend/data/dev_caddy_shopping.db',{readOnly:true});console.log(db.prepare('SELECT COUNT(*) c,MAX(id) m FROM users').get(), db.prepare(\"SELECT COUNT(*) c FROM users WHERE email LIKE 'reich.a1.%'\").get(), db.prepare('SELECT COUNT(*) c FROM orders').get());db.close()"`（输出 {c:118,m:170} {c:50} {c:13}）；② backend/scripts/security 下 6 个已跟踪测试产物文件每次套件跑即重写（时间戳+性能数字 churn）——长期方案二选一：git rm 改 gitignore 或提交一次锁基线，下批定；③ 席位证据纪律——多轮审计在仓根遗留 .tmp-* 目录（本轮已清 11 个），后续席位任务书应强制"证据一律仓外+离场自清"；④ qty 归一化的服务端半——补水分支 every 守卫未做同款归一化（当前不可达分支，务实席定档防御，若未来后端真回 cart 键再做）
 - **务实排序基准（2026-10-07 务实席独立排序，供下批开工次序参考——原账面顺序偏重措辞轻于可用性）**：前五=批1①（A1 字符集矛盾，注册阻塞级）＞批1②（跨 SKU 吞 toast，本链回归）＞批1⑪（成功 toast 被 400ms 跳转腰斩，100% 触发）＞批1⑩（游客订单页假交互面，100% 可见）＞批1⑫（隐私政策死文本，一行 href）；文案三件（批1⑥⑦⑧）后置；wishlist 裸 parse（终验①）优先于全部文案件但让位于前五；B11/stash 类裁决额度件不再立项
 
+
+## 双盲审计收口批（2026-10-08 六席盲审后施工）
+
+**审计口径**：3 组×2 席独立盲审（死码判定/运行态黑盒/构建完整性），不锚定 commit 宣称。P0 零；P1 六项已施工清零，P2/P3 顺手项随批清理。
+
+**承重陈述勘误（本批施工自带，三处）**：
+- 9bda6bc 称"tsconfig.spec.json 摘除指向 src/logging 的 typeRoots"——CRLF 致 replace 静默失败，diff 无该 hunk，本批已真摘除
+- 9bda6bc 称"users CQRS 层类文件从未入库"——实为 84c8ebb 所删（取证时路径尾斜杠+子目录双误）；重写方向不变，陈述失实
+- 9bda6bc 称"data-source.ts 全仓零消费"——漏扫 backend/scripts/run-migrations.js 动态 require；该脚本无 npm/CI 入口且官方迁移路径（migration:run -d src/config/typeorm.config.ts）健在，脚本已随批删除，账实对齐
+
+**挂账（双盲审发现，未随批施工）**：
+- /api/products/search 中文关键词 DB 降级 LIKE 0 命中（B2 判别实验：q=% 同路径全量命中，失效限定中文比较层，疑 collation/驱动绑定）——搜索引擎运行时不受影响，属 DB 降级路径短板
+- GlobalExceptionFilter 结构化错误形状（errorCode/category）随 fbf4f91 误删未恢复：依赖链（enhanced-business.exception/error-codes/domain errors）全灭+前端零消费旧形状，若未来需要结构化错误契约按当期需求新写
+- 服务端购物车与前端 localStorage 永不相通（B2 P2-2，README 已知限制口径）；cart count(行数) 与 summary.totalItems(件数) 口径不一致
+- backend/docs/HEALTH_CHECK.md 整篇围绕从未实装的健康模块撰写（本批已修可执行 curl 断链，整体重写挂账）
+- 根 docs/openapi.json 为陈旧导出（含 17 个已删 /api/logging/* 端点），活性 spec 以 /api/docs 运行时生成为准
+
 ## 若真要接手（非承诺）
 
 安全基线：`docs/safety.md`（规则→落点→锁）；验证：README"验证"节三命令；

@@ -323,7 +323,7 @@ export class SearchManagerService implements OnModuleInit {
   /**
    * 获取当前搜索引擎状态
    */
-  getStatus(): {
+  async getStatus(): Promise<{
     currentEngine: SearchEngine;
     fallbackEngine: SearchEngine;
     strategies: Array<{
@@ -331,7 +331,7 @@ export class SearchManagerService implements OnModuleInit {
       name: string;
       isHealthy: boolean;
     }>;
-  } {
+  }> {
     const strategies: Array<{
       engine: SearchEngine;
       name: string;
@@ -342,7 +342,7 @@ export class SearchManagerService implements OnModuleInit {
       strategies.push({
         engine,
         name: strategy.getName(),
-        isHealthy: this.isStrategyHealthy(engine),
+        isHealthy: await this.isStrategyHealthy(engine),
       });
     }
 
@@ -407,10 +407,18 @@ export class SearchManagerService implements OnModuleInit {
     }
   }
 
-  private isStrategyHealthy(engine: SearchEngine): boolean {
-    // 简化健康检查，实际应该调用healthCheck方法
-    // 这里返回true表示假设服务健康，实际实现中应该调用healthCheck
-    return true;
+  private async isStrategyHealthy(engine: SearchEngine): Promise<boolean> {
+    // 真探测：调用各引擎的 healthCheck（双盲审B1/B2：写死 return true 造成
+    // /api/search/status 引擎全灭时仍报双绿的假健康监控）
+    const strategy = this.strategies.get(engine);
+    if (!strategy || typeof strategy.healthCheck !== 'function') {
+      return false;
+    }
+    try {
+      return await strategy.healthCheck();
+    } catch {
+      return false;
+    }
   }
 
   onModuleDestroy() {

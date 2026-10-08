@@ -303,8 +303,9 @@ let enhancedSearchComponent = null;
 let searchComponentPromise = null;
 
 function ensureSearchStyles() {
-  // 非 index 页不静态链 product-search 两张 CSS——此处按需注入（幂等）
-  ['css/product-search.css', 'css/product-search-enhanced.css'].forEach((href) => {
+  // 非 index 页不静态链 product-search CSS——此处按需注入（幂等）
+  // product-search.css 已随死规则清理删除，现仅注入 enhanced 一张
+  ['css/product-search-enhanced.css'].forEach((href) => {
     if (document.querySelector(`link[href*="${href}"]`)) return;
     const link = document.createElement('link');
     link.rel = 'stylesheet';

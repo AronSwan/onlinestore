@@ -20,6 +20,7 @@ import { SearchManagerService } from './search-manager.service';
 import { SearchSuggestionService } from './search-suggestion.service';
 import { PopularSearchService, PopularSearchOptions } from './popular-search.service';
 import { SearchOptions, SearchResult } from './search-strategy.interface';
+import { ProductsService } from '../products.service';
 import { ApiDocs, ApiPaginatedQuery } from '../../common/decorators/api-docs.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
@@ -33,6 +34,7 @@ export class SearchController {
     private readonly searchManagerService: SearchManagerService,
     private readonly searchSuggestionService: SearchSuggestionService,
     private readonly popularSearchService: PopularSearchService,
+    private readonly productsService: ProductsService,
   ) {}
 
   @ApiPaginatedQuery(Object, '执行搜索')
@@ -62,8 +64,25 @@ export class SearchController {
       options.filters!.maxPrice = parseFloat(maxPrice);
     }
 
-    // 执行搜索
-    const result = await this.searchManagerService.search(q, options);
+    let result: SearchResult;
+    try {
+      result = await this.searchManagerService.search(q, options);
+    } catch (error) {
+      // 双引擎全灭时回退数据库搜索（与 /api/products/search 同一降级链，双盲审B1/B2）
+      console.warn('/api/search 搜索引擎全灭，回退到数据库搜索:', error instanceof Error ? error.message : error);
+      const started = Date.now();
+      const dbResult = await this.productsService.search({
+        keyword: q,
+        page: Math.floor(offset / Math.max(limit, 1)) + 1,
+        limit,
+      });
+      result = {
+        hits: dbResult.products as any,
+        total: dbResult.total,
+        processingTimeMs: Date.now() - started,
+        query: q,
+      };
+    }
 
     // 记录搜索历史
     await this.popularSearchService.recordSearch(q, undefined, result.hits.length);
