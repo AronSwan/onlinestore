@@ -12,9 +12,6 @@ process.env.ENCRYPTION_ALGORITHM = 'aes-256-gcm';
 process.env.CORS_ORIGINS = 'http://localhost:3000,http://localhost:5173';
 
 import { ConfigurationValidator } from './configuration.validator';
-import { CacheKeyManager } from './cache-key-manager';
-import { ErrorLogger } from './error-logger';
-import { ApiVersionManager } from './api-version-manager';
 
 describe('ConfigurationValidator', () => {
   beforeEach(() => {
@@ -190,101 +187,6 @@ describe('ConfigurationValidator', () => {
 
       // 可能包含错误或警告部分
       expect(report.length).toBeGreaterThan(0);
-    });
-  });
-
-  describe('validateRxJSOptimization', () => {
-    it('应该验证RxJS优化配置', () => {
-      const result = ConfigurationValidator.validateRxJSOptimization();
-
-      expect(result).toBeDefined();
-      expect(typeof result.isValid).toBe('boolean');
-      expect(Array.isArray(result.errors)).toBe(true);
-      expect(Array.isArray(result.warnings)).toBe(true);
-    });
-
-    it('应该检查重试机制配置', () => {
-      const result = ConfigurationValidator.validateRxJSOptimization();
-
-      // 应该检查重试机制
-      expect(result.errors.length + result.warnings.length).toBeGreaterThanOrEqual(0);
-    });
-  });
-
-  describe('validateCacheKeyManagement', () => {
-    it('应该验证缓存键管理', () => {
-      const result = ConfigurationValidator.validateCacheKeyManagement();
-
-      expect(result).toBeDefined();
-      expect(typeof result.isValid).toBe('boolean');
-      expect(Array.isArray(result.errors)).toBe(true);
-      expect(Array.isArray(result.warnings)).toBe(true);
-    });
-
-    it('应该测试缓存键生成', () => {
-      // Mock CacheKeyManager
-      jest.spyOn(CacheKeyManager.product, 'byId').mockReturnValue('test-key');
-
-      const result = ConfigurationValidator.validateCacheKeyManagement();
-
-      expect(result.errors.length + result.warnings.length).toBeGreaterThanOrEqual(0);
-    });
-
-    it('应该检查TTL配置', () => {
-      const result = ConfigurationValidator.validateCacheKeyManagement();
-
-      // 应该检查TTL设置
-      expect(result.errors.length + result.warnings.length).toBeGreaterThanOrEqual(0);
-    });
-  });
-
-  describe('validateErrorLogging', () => {
-    it('应该验证错误日志配置', () => {
-      const result = ConfigurationValidator.validateErrorLogging();
-
-      expect(result).toBeDefined();
-      expect(typeof result.isValid).toBe('boolean');
-      expect(Array.isArray(result.errors)).toBe(true);
-      expect(Array.isArray(result.warnings)).toBe(true);
-    });
-
-    it('应该测试错误日志功能', () => {
-      // Mock ErrorLogger
-      jest.spyOn(ErrorLogger, 'logError').mockImplementation(() => {});
-
-      const result = ConfigurationValidator.validateErrorLogging();
-
-      expect(result.errors.length + result.warnings.length).toBeGreaterThanOrEqual(0);
-    });
-
-    it('应该检查日志级别配置', () => {
-      const result = ConfigurationValidator.validateErrorLogging();
-
-      // 应该检查日志级别
-      expect(result.errors.length + result.warnings.length).toBeGreaterThanOrEqual(0);
-    });
-  });
-
-  describe('validateApiVersionControl', () => {
-    it('应该验证API版本控制', () => {
-      const result = ConfigurationValidator.validateApiVersionControl();
-
-      expect(result).toBeDefined();
-      expect(typeof result.isValid).toBe('boolean');
-      expect(Array.isArray(result.errors)).toBe(true);
-      expect(Array.isArray(result.warnings)).toBe(true);
-    });
-
-    it('应该验证版本支持', () => {
-      // Mock ApiVersionManager
-      jest.spyOn(ApiVersionManager, 'validateVersion').mockReturnValue({
-        valid: true,
-        message: '版本有效',
-      });
-
-      const result = ConfigurationValidator.validateApiVersionControl();
-
-      expect(result.errors.length + result.warnings.length).toBeGreaterThanOrEqual(0);
     });
   });
 

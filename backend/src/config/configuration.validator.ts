@@ -5,12 +5,6 @@
 
 import { createMasterConfiguration } from './unified-master.config';
 import { TiDBOptimizer } from './tidb-optimizer';
-import { RedpandaOptimizer } from './redpanda-optimizer';
-import { PhysicalDeploymentOptimizer } from './physical-deployment-optimizer';
-import { RxJSOptimizer } from './rxjs-optimizer';
-import { CacheKeyManager } from './cache-key-manager';
-import { ErrorLogger } from './error-logger';
-import { ApiVersionManager } from './api-version-manager';
 
 /**
  * Create configuration instance with safe fallback
@@ -86,36 +80,6 @@ export class ConfigurationValidator {
     const tidbValidation = TiDBOptimizer.validateTiDBConfig();
     if (!tidbValidation.isValid) errors.push(...tidbValidation.errors);
     warnings.push(...tidbValidation.warnings);
-
-    // 验证Redpanda配置
-    const redpandaValidation = RedpandaOptimizer.validateRedpandaConfig();
-    if (!redpandaValidation.isValid) errors.push(...redpandaValidation.errors);
-    warnings.push(...redpandaValidation.warnings);
-
-    // 验证部署配置
-    const deploymentValidation = PhysicalDeploymentOptimizer.validateDeploymentConfig();
-    if (!deploymentValidation.isValid) errors.push(...deploymentValidation.errors);
-    warnings.push(...deploymentValidation.warnings);
-
-    // 验证RxJS异步处理优化
-    const rxjsValidation = this.validateRxJSOptimization();
-    if (!rxjsValidation.isValid) errors.push(...rxjsValidation.errors);
-    warnings.push(...rxjsValidation.warnings);
-
-    // 验证缓存键管理
-    const cacheValidation = this.validateCacheKeyManagement();
-    if (!cacheValidation.isValid) errors.push(...cacheValidation.errors);
-    warnings.push(...cacheValidation.warnings);
-
-    // 验证错误日志增强
-    const errorLogValidation = this.validateErrorLogging();
-    if (!errorLogValidation.isValid) errors.push(...errorLogValidation.errors);
-    warnings.push(...errorLogValidation.warnings);
-
-    // 验证API版本控制
-    const apiVersionValidation = this.validateApiVersionControl();
-    if (!apiVersionValidation.isValid) errors.push(...apiVersionValidation.errors);
-    warnings.push(...apiVersionValidation.warnings);
 
     return {
       isValid: errors.length === 0,
@@ -303,85 +267,7 @@ export class ConfigurationValidator {
     return report;
   }
 
-  /**
-   * 验证RxJS异步处理优化
-   */
-  static validateRxJSOptimization() {
-    const errors: string[] = [];
-    const warnings: string[] = [];
 
-    // 检查重试机制配置
-    if (!masterConfig.database.connectionTimeout) {
-      warnings.push('数据库连接超时未配置，建议配置连接超时时间');
-    }
 
-    return { isValid: errors.length === 0, errors, warnings };
-  }
 
-  /**
-   * 验证缓存键管理
-   */
-  static validateCacheKeyManagement() {
-    const errors: string[] = [];
-    const warnings: string[] = [];
-
-    // 测试缓存键生成
-    try {
-      const testKey = CacheKeyManager.product.byId('test-123');
-      if (!testKey.includes(masterConfig.app.env)) {
-        errors.push('缓存键未包含环境标识');
-      }
-    } catch (error) {
-      errors.push(`缓存键生成测试失败: ${error.message}`);
-    }
-
-    // 检查TTL配置
-    const ttlConfig = CacheKeyManager.config.TTL;
-    if (!ttlConfig.products.byId || ttlConfig.products.byId < 300000) {
-      warnings.push('建议增加产品缓存TTL以提高性能');
-    }
-
-    return { isValid: errors.length === 0, errors, warnings };
-  }
-
-  /**
-   * 验证错误日志增强
-   */
-  static validateErrorLogging() {
-    const errors: string[] = [];
-    const warnings: string[] = [];
-
-    // 检查日志级别配置
-    if (masterConfig.app.env === 'production') {
-      warnings.push('生产环境建议配置详细的日志级别');
-    }
-
-    // 只在测试环境中测试错误日志功能
-    if (process.env.NODE_ENV === 'test') {
-      try {
-        const testError = new Error('测试错误');
-        ErrorLogger.logError(testError, 'VALIDATION_TEST');
-      } catch (error) {
-        errors.push(`错误日志功能测试失败: ${error.message}`);
-      }
-    }
-
-    return { isValid: errors.length === 0, errors, warnings };
-  }
-
-  /**
-   * 验证API版本控制
-   */
-  static validateApiVersionControl() {
-    const errors: string[] = [];
-    const warnings: string[] = [];
-
-    // 验证版本支持
-    const versionValidation = ApiVersionManager.validateVersion('v2');
-    if (!versionValidation.valid) {
-      errors.push(`API版本验证失败: ${versionValidation.message}`);
-    }
-
-    return { isValid: errors.length === 0, errors, warnings };
-  }
 }
