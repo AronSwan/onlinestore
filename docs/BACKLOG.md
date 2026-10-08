@@ -88,10 +88,10 @@
 - 9bda6bc 称"data-source.ts 全仓零消费"——漏扫 backend/scripts/run-migrations.js 动态 require；该脚本无 npm/CI 入口且官方迁移路径（migration:run -d src/config/typeorm.config.ts）健在，脚本已随批删除，账实对齐
 
 **挂账（双盲审发现，未随批施工）**：
-- /api/products/search 中文关键词 DB 降级 LIKE 0 命中（B2 判别实验：q=% 同路径全量命中，失效限定中文比较层，疑 collation/驱动绑定）——搜索引擎运行时不受影响，属 DB 降级路径短板
+- ~~中文关键词 DB 降级 LIKE 0 命中~~（**翻案销账 2026-10-08 挂账复核**：sqlite 直查 LIKE '%渐变%'/'%褶皱%'/'%手袋%' 全命中，API 层正确 UTF-8 编码全命中；唯一 0 命中的是 GBK 字节串 %BD%A5%B1%E4——即 B2 席自己 Git Bash 终端发出的编码。服务端无 bug，误报根因=审计席终端编码，B2 报告曾记录该 GBK 请求但未连点）
 - GlobalExceptionFilter 结构化错误形状（errorCode/category）随 fbf4f91 误删未恢复：依赖链（enhanced-business.exception/error-codes/domain errors）全灭+前端零消费旧形状，若未来需要结构化错误契约按当期需求新写
 - 服务端购物车与前端 localStorage 永不相通（B2 P2-2，README 已知限制口径）；cart count(行数) 与 summary.totalItems(件数) 口径不一致
-- backend/docs/HEALTH_CHECK.md 整篇围绕从未实装的健康模块撰写（本批已修可执行 curl 断链，整体重写挂账）
+- ~~backend/docs/HEALTH_CHECK.md 整篇重写~~（**已下账 2026-10-08 挂账复核批**：764 行虚构教程重写为对齐现实的 70 行（真实端点/守卫/验证命令）；同批发现并删除 monitoring 下两个零挂载死 controller（metrics.controller/health.controller，/api/metrics 404 实证））
 - 根 docs/openapi.json 为陈旧导出（含 17 个已删 /api/logging/* 端点），活性 spec 以 /api/docs 运行时生成为准
 
 ## 若真要接手（非承诺）
