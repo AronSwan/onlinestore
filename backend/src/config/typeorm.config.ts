@@ -4,7 +4,7 @@ import { config } from 'dotenv';
 // 加载环境变量
 config();
 
-const dbType = (process.env.DB_TYPE || 'sqlite') as 'mysql' | 'postgres' | 'sqlite';
+const dbType = (process.env.DB_TYPE || 'better-sqlite3') as 'postgres' | 'mysql' | 'better-sqlite3';
 
 // 基础配置
 const baseConfig: any = {
@@ -21,7 +21,7 @@ const baseConfig: any = {
 };
 
 // 根据数据库类型添加特定配置
-if (dbType !== 'sqlite') {
+if (dbType !== 'better-sqlite3') {
   baseConfig.host = process.env.DB_HOST || process.env.DATABASE_HOST || '127.0.0.1';
   baseConfig.port = parseInt(process.env.DB_PORT || process.env.DATABASE_PORT || '4000', 10);
   baseConfig.username = process.env.DB_USERNAME || process.env.DATABASE_USERNAME || 'caddy_app';

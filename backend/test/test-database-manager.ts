@@ -30,7 +30,7 @@ export class TestDatabaseManager {
 
     while (retryCount < maxRetries) {
       try {
-        this.dataSource = new DataSource(testDatabaseConfig as DataSourceOptions);
+        this.dataSource = new DataSource(testDatabaseConfig as unknown as DataSourceOptions);
         await this.dataSource.initialize();
         this.isConnected = true;
         console.log('✅ 测试数据库连接成功');

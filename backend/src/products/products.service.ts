@@ -280,7 +280,7 @@ export class ProductsService {
     const startDb = process.hrtime.bigint();
     const product = await this.productRepository.findOne({
       where: { id },
-      relations: ['category', 'images'],
+      relations: { category: true, images: true },
     });
     const endDb = process.hrtime.bigint();
     this.monitoring.observeDbQuery('detail', 'products', Number(endDb - startDb) / 1_000_000_000);
@@ -361,7 +361,7 @@ export class ProductsService {
         // R3(反查 P2-2)：引擎侧虽传了 isActive:true 过滤，但索引与 DB 可能短暂不一致
         // （下架事件异步、索引写失败重试中）——DB 回填必须复检，下架品不得回流给前台。
         where: { id: In(productIds), isActive: true },
-        relations: ['category', 'images'],
+        relations: { category: true, images: true },
       });
 
       // 保持搜索结果的排序
@@ -432,7 +432,7 @@ export class ProductsService {
       // FIND_IN_SET 是 MySQL/TiDB 方言，SQLite/Postgres 下直接语法错误。
       // 非 MySQL 族用 (',' || tags || ',') LIKE '%,tag,%' 做等值匹配（首尾包逗号防子串误配）。
       const dbType = (
-        this.configService.get<string>('master.database.type') || 'sqlite'
+        this.configService.get<string>('master.database.type') || 'better-sqlite3'
       ).toLowerCase();
       const isMysqlFamily = dbType === 'mysql' || dbType === 'tidb';
       tags.forEach((tag, index) => {
@@ -483,7 +483,7 @@ export class ProductsService {
       where: { isActive: true },
       order: { sales: 'DESC' },
       take: limit,
-      relations: ['category', 'images'],
+      relations: { category: true, images: true },
     });
     const endDb = process.hrtime.bigint();
     this.monitoring.observeDbQuery(
@@ -1087,7 +1087,7 @@ export class ProductsService {
     const categories = await this.categoryRepository.find({
       where: { isActive: true },
       order: { sortOrder: 'ASC', name: 'ASC' },
-      relations: ['products'],
+      relations: { products: true },
     });
     const endDb = process.hrtime.bigint();
     this.monitoring.observeDbQuery('list', 'categories', Number(endDb - startDb) / 1_000_000_000);

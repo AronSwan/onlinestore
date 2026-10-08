@@ -213,7 +213,7 @@ export class OrdersService {
     const startDb = process.hrtime.bigint();
     const result = await this.orderRepository.findOne({
       where: { id },
-      relations: ['items', 'user'],
+      relations: { items: true, user: true },
     });
     // 越权审计(2026-10-03): user 关系会把 bcrypt 哈希整包吐给客户端, 统一剥离
     if (result?.user) {
@@ -233,7 +233,7 @@ export class OrdersService {
     const startDb = process.hrtime.bigint();
     const [orders, total] = await this.orderRepository.findAndCount({
       where: { userId },
-      relations: ['items'],
+      relations: { items: true },
       order: { createdAt: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
@@ -251,7 +251,7 @@ export class OrdersService {
   async findAll(page: number = 1, limit: number = 10): Promise<{ orders: Order[]; total: number }> {
     const startDb = process.hrtime.bigint();
     const [orders, total] = await this.orderRepository.findAndCount({
-      relations: ['items', 'user'],
+      relations: { items: true, user: true },
       order: { createdAt: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,

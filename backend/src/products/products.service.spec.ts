@@ -405,7 +405,7 @@ describe('ProductsService', () => {
       expect(mockCacheManager.get).toHaveBeenCalledWith('caddy_shopping:product:1');
       expect(mockProductRepository.findOne).toHaveBeenCalledWith({
         where: { id: 1 },
-        relations: ['category', 'images'],
+        relations: { category: true, images: true },
       });
       expect(mockCacheManager.set).toHaveBeenCalledWith(
         'caddy_shopping:product:1',
@@ -540,7 +540,7 @@ describe('ProductsService', () => {
 
       expect(mockProductRepository.find).toHaveBeenCalledWith({
         where: { id: In([1, 2]), isActive: true },
-        relations: ['category', 'images'],
+        relations: { category: true, images: true },
       });
       expect(result.products).toEqual([activeProduct]);
       expect(result.products.every((p: Product) => p.isActive !== false)).toBe(true);
@@ -644,7 +644,7 @@ describe('ProductsService', () => {
         where: { isActive: true },
         order: { sales: 'DESC' },
         take: 10,
-        relations: ['category', 'images'],
+        relations: { category: true, images: true },
       });
       expect(mockCacheManager.set).toHaveBeenCalledWith(
         'caddy_shopping:popular:products:10',
@@ -1159,7 +1159,7 @@ describe('ProductsService', () => {
 
       expect(mockProductRepository.findOne).toHaveBeenCalledWith({
         where: { id: 1 },
-        relations: ['category', 'images'],
+        relations: { category: true, images: true },
       });
       expect(mockProductRepository.update).toHaveBeenCalledWith(1, { isActive: false });
       expect(mockProductRepository.delete).not.toHaveBeenCalled();
@@ -1411,7 +1411,7 @@ describe('ProductsService', () => {
       expect(mockCategoryRepository.find).toHaveBeenCalledWith({
         where: { isActive: true },
         order: { sortOrder: 'ASC', name: 'ASC' },
-        relations: ['products'],
+        relations: { products: true },
       });
       expect(mockCacheManager.set).toHaveBeenCalledWith(
         'caddy_shopping:categories:all',

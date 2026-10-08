@@ -52,7 +52,7 @@ export interface AppConfig {
 }
 
 export interface DatabaseConfig {
-  type: 'postgres' | 'mysql' | 'tidb' | 'sqlite';
+  type: 'postgres' | 'mysql' | 'tidb' | 'better-sqlite3';
   host?: string;
   port?: number;
   username?: string;
@@ -273,7 +273,7 @@ const configValidationSchema = Joi.object({
   API_PREFIX: Joi.string().default('api'),
 
   // 数据库配置
-  DB_TYPE: Joi.string().valid('postgres', 'mysql', 'tidb', 'sqlite').default('sqlite'),
+  DB_TYPE: Joi.string().valid('postgres', 'mysql', 'tidb', 'better-sqlite3').default('better-sqlite3'),
   DB_HOST: Joi.string().when('DB_TYPE', {
     is: Joi.string().valid('postgres', 'mysql', 'tidb'),
     then: Joi.required(),
@@ -426,7 +426,7 @@ export const createMasterConfiguration = (): MasterConfig => {
   const shouldValidateProduction = isProd && !isTest && process.env.JEST_WORKER_ID === undefined;
   if (shouldValidateProduction) {
     // 禁止在生产环境使用 sqlite，避免隐式回退
-    if (env.DB_TYPE === 'sqlite') {
+    if (env.DB_TYPE === 'better-sqlite3') {
       throw new Error(
         '生产环境禁止使用 sqlite 数据库，请设置 DB_TYPE 为 postgres/mysql/tidb 并提供连接信息',
       );

@@ -162,17 +162,7 @@ describe('UsersService', () => {
 
       expect(mockUserRepository.findOne).toHaveBeenCalledWith({
         where: { email: 'test@example.com' },
-        select: [
-          'id',
-          'email',
-          'password',
-          'username',
-          'role',
-          'isActive',
-          'avatar',
-          'phone',
-          'createdAt',
-        ],
+        select: { id: true, email: true, password: true, username: true, role: true, isActive: true, avatar: true, phone: true, createdAt: true },
       });
       expect(monitoringService.observeDbQuery).toHaveBeenCalledWith(
         'detail',

@@ -14,7 +14,7 @@ import {
 
 // 测试数据库配置
 const testDatabaseConfig = {
-  type: 'sqlite' as const,
+  type: 'better-sqlite3' as const,
   database: ':memory:',
   entities: ['src/**/*.entity.ts'],
   synchronize: true, // 仅测试环境使用
@@ -30,7 +30,8 @@ export const createTestingModule = (modules: any[]) => {
         isGlobal: true,
         envFilePath: '.env.test',
       }),
-      TypeOrmModule.forRoot(testDatabaseConfig),
+      // typeorm 1.x 类型收紧，测试基建 as any
+      TypeOrmModule.forRoot(testDatabaseConfig as any),
       CacheModule.register({
         isGlobal: true,
         ttl: 60, // 60秒

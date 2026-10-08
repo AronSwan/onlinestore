@@ -31,7 +31,7 @@ const masterConfig = createMasterConfiguration();
         };
 
         // SQLite不需要网络连接参数
-        if (dbType !== 'sqlite') {
+        if (dbType !== 'better-sqlite3') {
           Object.assign(baseConfig, {
             host: masterConfig.database.host,
             // 端口允许安全回退：TiDB默认4000，Postgres默认5432，MySQL默认3306
@@ -52,7 +52,7 @@ const masterConfig = createMasterConfiguration();
           logging: isDev, // 开发环境开启日志
           // 数据库连接参数
           extra:
-            dbType === 'sqlite'
+            dbType === 'better-sqlite3'
               ? {
                   // SQLite 特定配置
                   busyTimeout: 30000,

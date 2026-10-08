@@ -567,7 +567,7 @@ describe('OrdersService', () => {
       expect(result).toEqual(mockOrder);
       expect(mockOrderRepository.findOne).toHaveBeenCalledWith({
         where: { id: 1 },
-        relations: ['items', 'user'],
+        relations: { items: true, user: true },
       });
       expect(mockMonitoringService.observeDbQuery).toHaveBeenCalledWith(
         'detail',
@@ -599,7 +599,7 @@ describe('OrdersService', () => {
       expect(result).toEqual({ orders, total });
       expect(mockOrderRepository.findAndCount).toHaveBeenCalledWith({
         where: { userId: 1 },
-        relations: ['items'],
+        relations: { items: true },
         order: { createdAt: 'DESC' },
         skip: 0,
         take: 10,
@@ -623,7 +623,7 @@ describe('OrdersService', () => {
       expect(result).toEqual({ orders, total });
       expect(mockOrderRepository.findAndCount).toHaveBeenCalledWith({
         where: { userId: 1 },
-        relations: ['items'],
+        relations: { items: true },
         order: { createdAt: 'DESC' },
         skip: 5,
         take: 5,
@@ -643,7 +643,7 @@ describe('OrdersService', () => {
 
       expect(result).toEqual({ orders, total });
       expect(mockOrderRepository.findAndCount).toHaveBeenCalledWith({
-        relations: ['items', 'user'],
+        relations: { items: true, user: true },
         order: { createdAt: 'DESC' },
         skip: 0,
         take: 10,
@@ -778,7 +778,7 @@ describe('OrdersService', () => {
 
       expect(mockOrderRepository.findOne).toHaveBeenCalledWith({
         where: { id: 1 },
-        relations: ['items', 'user'],
+        relations: { items: true, user: true },
       });
       expect(mockOrderRepository.delete).toHaveBeenCalledWith(1);
     });

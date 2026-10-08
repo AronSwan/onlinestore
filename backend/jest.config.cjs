@@ -3,7 +3,8 @@ module.exports = {
   rootDir: 'src',
   testMatch: ['**/*.spec.ts', '**/*.test.ts', '**/*.spec.js', '**/*.test.js'],
   transformIgnorePatterns: [
-    'node_modules/(?!(uuid|p-retry|is-network-error|@nestjs/bull|@nestjs/bull-shared)/)'
+    // Windows 路径是反斜杠——正则须兼容两种分隔符，否则放行名单永不生效
+    'node_modules[\\/](?!(uuid|p-retry|is-network-error|@nestjs)[\\/])'
   ],
   testPathIgnorePatterns: [
     // email-verification 是独立 Express 服务(compose email-verifier 容器)的
@@ -12,6 +13,9 @@ module.exports = {
   ],
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', { useESM: true, tsconfig: 'tsconfig.spec.json' }],
+    // Nest 12 ESM-only 包在 jest CJS 沙箱不可 require——@swc/jest 编译为 CJS
+    // （swc 原生处理 ESM+import.meta；babel 无官方 import.meta 转译）
+    '^.+\\.m?js$': ['@swc/jest', { jsc: { target: 'es2022' }, module: { type: 'commonjs' } }],
   },
   collectCoverageFrom: [
     '<rootDir>/**/*.{ts,js}',

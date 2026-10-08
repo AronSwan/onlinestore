@@ -4,8 +4,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { AppController } from 'src/app.controller';
-import { AppService } from 'src/app.service';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 import { MonitoringModule } from './monitoring/monitoring.module';
 import { createMasterConfiguration } from './config/unified-master.config';
 import { AuthModule } from './auth/auth.module';
@@ -81,7 +81,7 @@ import { NotificationModule } from './notification/notification.module';
         };
 
         // 非 SQLite 数据库需要连接参数
-        if (dbConfig.type !== 'sqlite') {
+        if (dbConfig.type !== 'better-sqlite3') {
           Object.assign(config, {
             host: dbConfig.host,
             port: dbConfig.port,

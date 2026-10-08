@@ -17,7 +17,7 @@ import { createMockedFunction } from './utils/typed-mock-factory';
 
 // 测试数据库配置
 export const testDatabaseConfig = {
-  type: 'sqlite' as const,
+  type: 'better-sqlite3' as const,
   database: ':memory:',
   entities: [
     'src/**/*.entity.ts',
@@ -177,7 +177,7 @@ export const createMockConfigService = (): jest.Mocked<ConfigService> => {
           port: 6379,
         },
         database: {
-          type: 'sqlite',
+          type: 'better-sqlite3',
           host: 'localhost',
           port: 3306,
           username: 'test',
@@ -315,7 +315,8 @@ export const createBaseTestingModule = async (
         isGlobal: true,
         envFilePath: '.env.test',
       }),
-      TypeOrmModule.forRoot(testDatabaseConfig),
+      // typeorm 1.x 类型收紧，测试基建 as any
+      TypeOrmModule.forRoot(testDatabaseConfig as any),
       CacheModule.register({
         isGlobal: true,
         ttl: 60,
@@ -340,7 +341,7 @@ export const createBaseTestingModule = async (
 export const setupTestEnvironment = (): void => {
   process.env.NODE_ENV = 'test';
   process.env.JWT_SECRET = 'test-secret-key';
-  process.env.DB_TYPE = 'sqlite';
+  process.env.DB_TYPE = 'better-sqlite3';
   process.env.DB_DATABASE = ':memory:';
   process.env.REDIS_HOST = 'localhost';
   process.env.REDIS_PORT = '6379';

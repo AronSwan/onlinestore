@@ -74,17 +74,18 @@ export class UsersService {
     const startDb = process.hrtime.bigint();
     const result = await this.userRepository.findOne({
       where: { email },
-      select: [
-        'id',
-        'email',
-        'password',
-        'username',
-        'role',
-        'isActive',
-        'avatar',
-        'phone',
-        'createdAt',
-      ],
+      // typeorm 1.x: select 收紧为对象形式（原 string[] 不再接受）
+      select: {
+        id: true,
+        email: true,
+        password: true,
+        username: true,
+        role: true,
+        isActive: true,
+        avatar: true,
+        phone: true,
+        createdAt: true,
+      },
     });
     const endDb = process.hrtime.bigint();
     this.monitoring.observeDbQuery('detail', 'users', Number(endDb - startDb) / 1_000_000_000);
