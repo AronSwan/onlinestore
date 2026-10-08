@@ -22,13 +22,9 @@ tags: ["modules", "architecture", "backend"]
 | [产品模块](#products) | 🟢 Active | Backend Team | 2025-01-26 | 75% | ⚠️ 部分 |
 | [订单模块](#orders) | 🟢 Active | Backend Team | 2025-01-26 | 70% | ⚠️ 部分 |
 | [购物车模块](#cart) | 🟢 Active | Backend Team | 2025-01-26 | 85% | ✅ 完整 |
-| [支付模块](#payment) | 🟢 Active | Backend Team | 2025-01-26 | 60% | ❌ 缺失 |
-| [地址模块](#address) | 🟢 Active | Backend Team | 2025-01-26 | 90% | ✅ 完整 |
 | [缓存模块](#cache) | 🟢 Active | Backend Team | 2025-01-26 | 95% | ✅ 完整 |
 | [Redis模块](#redis) | 🟢 Active | Backend Team | 2025-01-26 | 90% | ✅ 完整 |
 | [消息模块](#messaging) | 🟢 Active | Backend Team | 2025-01-26 | 70% | ⚠️ 部分 |
-| [网关模块](#gateway) | 🟢 Active | Backend Team | 2025-01-26 | 80% | ⚠️ 部分 |
-| [健康检查](#health) | 🟢 Active | Backend Team | 2025-01-26 | 100% | ✅ 完整 |
 
 ---
 
@@ -121,31 +117,7 @@ tags: ["modules", "architecture", "backend"]
 
 ---
 
-## 💳 支付模块 {#payment}
 
-**路径**: `backend/src/payment/`  
-**目的**: 支付处理、第三方支付集成、交易记录  
-**关键接口**: `/payment/process`, `/payment/callback`
-
-### ⚠️ 文档状态
-**状态**: 文档缺失  
-**优先级**: 高  
-**建议**: 需要补充支付流程、安全策略、第三方集成文档
-
----
-
-## 📍 地址模块 {#address}
-
-**路径**: `backend/src/address/`  
-**目的**: 用户地址管理、地址验证、默认地址设置  
-**关键接口**: `/address`, `/address/default`
-
-### 🔧 关键组件
-- `AddressService`: 地址业务逻辑
-- `AddressEntity`: 地址数据实体
-- `AddressController`: 地址接口控制器
-
----
 
 ## 🗄️ 缓存模块 {#cache}
 
@@ -179,27 +151,7 @@ tags: ["modules", "architecture", "backend"]
 
 ---
 
-## 🌐 网关模块 {#gateway}
 
-**路径**: `backend/src/gateway/`  
-**目的**: API 网关、路由管理、限流熔断  
-
-### 📚 相关文档
-- [熔断器系统](../CIRCUIT_BREAKER.md)
-- [限流系统](../RATE_LIMITER_SYSTEM.md)
-
----
-
-## ❤️ 健康检查 {#health}
-
-**路径**: `backend/src/health/`  
-**目的**: 服务健康状态监控、依赖检查、存活探针  
-
-### 📚 相关文档
-- [健康检查配置](../HEALTH_CHECK.md)
-- [监控告警系统](../MONITORING_ALERTING_SYSTEM.md)
-
----
 
 ## 🔗 快速链接
 
