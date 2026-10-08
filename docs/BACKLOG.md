@@ -90,7 +90,7 @@
 **挂账（双盲审发现，未随批施工）**：
 - ~~中文关键词 DB 降级 LIKE 0 命中~~（**翻案销账 2026-10-08 挂账复核**：sqlite 直查 LIKE '%渐变%'/'%褶皱%'/'%手袋%' 全命中，API 层正确 UTF-8 编码全命中；唯一 0 命中的是 GBK 字节串 %BD%A5%B1%E4——即 B2 席自己 Git Bash 终端发出的编码。服务端无 bug，误报根因=审计席终端编码，B2 报告曾记录该 GBK 请求但未连点）
 - GlobalExceptionFilter 结构化错误形状（errorCode/category）随 fbf4f91 误删未恢复：依赖链（enhanced-business.exception/error-codes/domain errors）全灭+前端零消费旧形状，若未来需要结构化错误契约按当期需求新写
-- 服务端购物车与前端 localStorage 永不相通（B2 P2-2，README 已知限制口径）；cart count(行数) 与 summary.totalItems(件数) 口径不一致
+- ~~服务端购物车与前端 localStorage 永不相通~~（**已下账 2026-10-08 挂账系统修复批**：syncToServer 重写为全量对账——GET 拉服务端袋按 SKU diff 后 POST/PUT/DELETE 收敛，本地袋仍是唯一真相源；loadCart 补水键对齐分页 DTO 的 items（换设备恢复激活）。施工中连带修复后端两个存量 bug：removeCartItem 把条目 id 当 skuId 查致 DELETE 永远静默 no-op（200 假成功）；updateCartItem 忽略路径 cartItemId 按 body.skuId 定位且 DTO 必填 skuId 拒合法改量请求。repository 增 findByUserIdAndItemId（uid+id 定位防越权删改）。验证=浏览器全链：登录补水/加购 POST/同量跳过，curl 验 PUT 改量/DELETE 真删/403 越权，cart spec 33/33 绿）；cart count(行数) 与 summary.totalItems(件数) 口径不一致（前端未消费 count，保留记档）
 - ~~backend/docs/HEALTH_CHECK.md 整篇重写~~（**已下账 2026-10-08 挂账复核批**：764 行虚构教程重写为对齐现实的 70 行（真实端点/守卫/验证命令）；同批发现并删除 monitoring 下两个零挂载死 controller（metrics.controller/health.controller，/api/metrics 404 实证））
 - 根 docs/openapi.json 为陈旧导出（含 17 个已删 /api/logging/* 端点），活性 spec 以 /api/docs 运行时生成为准
 

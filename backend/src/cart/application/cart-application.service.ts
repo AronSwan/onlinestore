@@ -146,9 +146,11 @@ export class CartApplicationService {
     updateCartItemDto: UpdateCartItemDto,
   ): Promise<void> {
     try {
-      const cartItem = await this.cartRepository.findByUserIdAndSkuId(
+      // 挂账#3 接线修复(2026-10-08)：按路径参数 cartItemId 定位（原实现按
+      // body.productSkuId 查——cartItemId 形参被忽略，且 skuId 非本人条目键时错位）
+      const cartItem = await this.cartRepository.findByUserIdAndItemId(
         customerUserId,
-        updateCartItemDto.productSkuId,
+        cartItemId,
       );
       if (!cartItem) {
         throw new Error('购物车商品不存在');
@@ -188,7 +190,13 @@ export class CartApplicationService {
    */
   async removeCartItem(customerUserId: string, cartItemId: string): Promise<void> {
     try {
-      const cartItem = await this.cartRepository.findByUserIdAndSkuId(customerUserId, cartItemId);
+      // 挂账#3 接线修复(2026-10-08)：原实现 findByUserIdAndSkuId(uid, cartItemId)
+      // 把条目 id 当 skuId 查——永远查不到，静默 no-op 返回 200（curl 实证删除
+      // 不生效）。改为按 uid+itemId 定位后删除；按 uid 过滤防 A 删 B 条目。
+      const cartItem = await this.cartRepository.findByUserIdAndItemId(
+        customerUserId,
+        cartItemId,
+      );
       if (cartItem) {
         await this.cartRepository.remove(cartItem.id);
       }

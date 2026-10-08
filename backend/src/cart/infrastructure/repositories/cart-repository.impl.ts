@@ -36,6 +36,16 @@ export class CartRepositoryImpl extends CartRepository {
     return entity ? this.entityToAggregate(entity) : null;
   }
 
+  async findByUserIdAndItemId(
+    userId: string,
+    cartItemId: string,
+  ): Promise<CartItemAggregate | null> {
+    const entity = await this.cartItemRepository.findOne({
+      where: { customerUserId: userId, id: cartItemId, delFlag: false },
+    });
+    return entity ? this.entityToAggregate(entity) : null;
+  }
+
   async save(cartItem: CartItemAggregate): Promise<void> {
     const entity = this.aggregateToEntity(cartItem);
     await this.cartItemRepository.save(entity);

@@ -115,11 +115,12 @@ class CartManager {
         
         const data = await response.json();
         if (response.ok) {
-          /* 本地优先修复(2026-10-06·⑥审 X2 P1)：两个后端（NestJS 分页 DTO / mock
-             {items,total,message}）均无 cart 键，旧写 data.cart||[] 恒得 [] ——
-             登录态每次页面加载把本地袋覆写为空。reich_cart 始终是真相源：
-             服务端仅在返回合法非空数组且本地为空时才允许补水，其余一律保本地。 */
-          const serverCart = Array.isArray(data.cart) ? data.cart : null;
+          /* 本地优先修复(2026-10-06·⑥审 X2 P1)+挂账#3 接线(2026-10-08)：
+             分页 DTO 的键是 items（{"items":[...],"total":n,"page":n}），旧写
+             data.cart||[] 恒得 []——服务端补水从未生效。reich_cart 仍是真相源：
+             服务端仅在返回合法非空数组且本地为空时才允许补水（换设备恢复场景），
+             其余一律保本地——本地非空时由 syncToServer 对账把本地推上服务端。 */
+          const serverCart = Array.isArray(data.items) ? data.items : null;
           let localCart = [];
           try { localCart = JSON.parse(localStorage.getItem('reich_cart') || '[]'); } catch (e) { /* 损坏按空袋 */ }
           // 形状守卫：全项带本地族字段才采用——首项制会让混合数组半生吞（徽章 NaN）；
@@ -346,31 +347,86 @@ class CartManager {
 
   // 保留现有方法：同步到服务端
   // A5：返回值语义化（true=成功/无需同步/确定性失败；false=可重试的瞬时失败，
-  // 供后台重试判定）——网络级失败仍留 console 痕迹；HTTP 非 2xx（本地优先模式下
-  // /api/cart 根路由 404 属常态）按原口径静默，不污染 console（A 档 18 纪律）。
-  // ⑥审修复(2026-10-06·X1/X2 共中)：4xx 是确定性失败（路由不存在/鉴权拒绝），
-  // 重试必再败——只对网络异常与 5xx 返回 false 触发重试，404 不再死重试翻倍。
+  // 供后台重试判定）——网络级失败仍留 console 痕迹；HTTP 非 2xx 静默，不污染 console。
+  // 挂账#3 接线（2026-10-08 用户令"挂账系统正确修复"）：原实现打不存在的
+  // POST /api/cart 根路由（404 常态），服务端同步从未真正发生。现重写为
+  // 全量对账：GET 拉服务端袋 → 按 productSkuId diff → POST 新增 / PUT 改量 /
+  // DELETE 删除。本地袋（reich_cart）仍是唯一真相源，服务端是镜像——对账幂等，
+  // 换设备登录时本地空袋由 loadCart 从服务端补水，形成双向闭环。
+  // 4xx 确定性失败按 A5/⑥审口径不触发重试（返回 true），仅网络异常与 5xx 返回 false。
   async syncToServer() {
-    // 审计标注(2026-10-03): 本方法调用的 GET/POST /api/cart 根路由在后端不存在(只有
-    // /api/cart/items/:customerUserId 参数化路由)——服务端同步是静默降级的本地优先模式, 详见 README 已知限制
     const isLoggedIn = localStorage.getItem('userLoggedIn') === 'true' || sessionStorage.getItem('userLoggedIn') === 'true';
 
     if (!isLoggedIn) {
       return true; // 未登录用户不同步到服务端
     }
 
+    const uid = this.getUserId();
+    if (!uid) return true; // 无用户标识（守卫要求路径参数===JWT sub，缺失属确定性失败）
+
     try {
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-      const response = await fetch('/api/cart', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ cart: this.cart })
+      if (!token) return true;
+      const authHeaders = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      };
+
+      // 1) 拉服务端袋全量（后端购物车上限 500 条，对齐 limit）
+      const res = await fetch(`/api/cart/items/${uid}?page=1&limit=500`, {
+        method: 'GET',
+        headers: authHeaders
       });
-      if (response.ok) return true;
-      return response.status >= 500 ? false : true; // 5xx 瞬时可重试；4xx 确定失败不重试
+      if (!res.ok) {
+        return res.status >= 500 ? false : true; // 5xx 瞬时可重试；4xx 确定失败不重试
+      }
+      const data = await res.json();
+      const serverItems = Array.isArray(data.items) ? data.items : [];
+      const serverBySku = new Map(serverItems.map(it => [it.productSkuId, it]));
+      const localSkus = new Set(this.cart.map(it => it.productSkuId));
+
+      // 2) diff：本地有服务端无→POST；量不同→PUT（按服务端条目 id）；服务端有本地无→DELETE
+      const ops = [];
+      for (const local of this.cart) {
+        const server = serverBySku.get(local.productSkuId);
+        if (!server) {
+          ops.push(fetch(`/api/cart/items/${uid}`, {
+            method: 'POST',
+            headers: authHeaders,
+            body: JSON.stringify({
+              productId: String(local.productId || ''),
+              productSkuId: local.productSkuId,
+              productName: local.productName,
+              productBrand: local.productBrand || '',
+              productPrice: Number(local.productPrice) || 0,
+              productQuantity: local.productQuantity,
+              productPic: local.productPic || '',
+              productAttribute: local.productAttribute || '{}'
+            })
+          }));
+        } else if (Number(server.productQuantity) !== Number(local.productQuantity)) {
+          ops.push(fetch(`/api/cart/items/${uid}/${server.id}`, {
+            method: 'PUT',
+            headers: authHeaders,
+            body: JSON.stringify({ productQuantity: local.productQuantity })
+          }));
+        }
+      }
+      for (const server of serverItems) {
+        if (!localSkus.has(server.productSkuId)) {
+          ops.push(fetch(`/api/cart/items/${uid}/${server.id}`, {
+            method: 'DELETE',
+            headers: authHeaders
+          }));
+        }
+      }
+
+      if (ops.length === 0) return true; // 已一致，无操作
+      const results = await Promise.allSettled(ops);
+      const hasRetryable = results.some(r =>
+        r.status === 'rejected' || (r.value && r.value.status >= 500)
+      );
+      return !hasRetryable; // 任一网络异常/5xx→false 供后台重试；4xx（如越权）确定性失败不重试
     } catch (error) {
       console.error('同步购物车到服务端失败:', error);
       return false;

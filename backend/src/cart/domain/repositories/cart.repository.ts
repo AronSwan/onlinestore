@@ -10,6 +10,10 @@ export abstract class CartRepository {
     userId: string,
     productSkuId: string,
   ): Promise<CartItemAggregate | null>;
+  abstract findByUserIdAndItemId(
+    userId: string,
+    cartItemId: string,
+  ): Promise<CartItemAggregate | null>;
   abstract save(cartItem: CartItemAggregate): Promise<void>;
   abstract remove(cartItemId: string): Promise<void>;
   abstract removeByUserIdAndSkuIds(userId: string, productSkuIds: string[]): Promise<void>;
