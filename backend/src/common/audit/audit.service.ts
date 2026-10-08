@@ -3,7 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, In, DataSource, Not, IsNull } from 'typeorm';
 import { Request } from 'express';
 import { AuditLogEntity } from './entities/audit-log.entity';
-import { TracingService } from '../tracing/tracing.service';
 import { computeRecordHash, ZERO_HASH } from './audit-chain';
 import { runExclusiveWrite } from '../db-write-mutex';
 
@@ -155,7 +154,6 @@ export class AuditService {
   constructor(
     @InjectRepository(AuditLogEntity)
     private auditLogRepository: Repository<AuditLogEntity>,
-    private readonly tracingService: TracingService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -171,90 +169,71 @@ export class AuditService {
     oldValues?: Record<string, any>,
     newValues?: Record<string, any>,
   ): Promise<AuditLogEntity> {
-    return this.tracingService.trace(
-      'audit-log-creation',
-      async span => {
-        span.setAttributes({
-          'audit.action': action,
-          'audit.result': result,
-          'audit.severity': severity,
-          'audit.user_id': context.userId || 'anonymous',
-          'audit.resource_type': context.resourceType || 'unknown',
-        });
 
-        const auditLog = this.auditLogRepository.create({
-          // 映射到现有字段
-          operation: action,
-          module: context.resourceType || 'unknown',
-          method: context.httpMethod || 'UNKNOWN',
-          url: context.endpoint || '',
-          ip: context.ipAddress || '',
-          userAgent: context.userAgent || '',
-          userId: context.userId,
-          userName: context.userEmail,
-          requestParams: JSON.stringify(oldValues || {}),
-          responseData: JSON.stringify(newValues || {}),
-          duration: 0, // 可以从 context.metadata 中获取
-          status: result === AuditResult.SUCCESS ? 'SUCCESS' : 'FAILURE',
-          errorMessage: result === AuditResult.FAILED ? description : undefined,
-          createTime: new Date(),
+      const auditLog = this.auditLogRepository.create({
+        // 映射到现有字段
+        operation: action,
+        module: context.resourceType || 'unknown',
+        method: context.httpMethod || 'UNKNOWN',
+        url: context.endpoint || '',
+        ip: context.ipAddress || '',
+        userAgent: context.userAgent || '',
+        userId: context.userId,
+        userName: context.userEmail,
+        requestParams: JSON.stringify(oldValues || {}),
+        responseData: JSON.stringify(newValues || {}),
+        duration: 0, // 可以从 context.metadata 中获取
+        status: result === AuditResult.SUCCESS ? 'SUCCESS' : 'FAILURE',
+        errorMessage: result === AuditResult.FAILED ? description : undefined,
+        createTime: new Date(),
 
-          // 扩展字段（如果实体支持）
-          ...(context.metadata && { metadata: JSON.stringify(context.metadata) }),
-          ...(context.traceId && { traceId: context.traceId }),
-          ...(context.sessionId && { sessionId: context.sessionId }),
-          ...(context.requestId && { requestId: context.requestId }),
-        });
+        // 扩展字段（如果实体支持）
+        ...(context.metadata && { metadata: JSON.stringify(context.metadata) }),
+        ...(context.traceId && { traceId: context.traceId }),
+        ...(context.sessionId && { sessionId: context.sessionId }),
+        ...(context.requestId && { requestId: context.requestId }),
+      });
 
-        try {
-          // M6：持久化段统一链化——事务内 读头→插入→回读原生行→补链列。
-          // 回读原生行（而非复用实体对象）保证哈希输入与验侧（node:sqlite 只读
-          // 原生行）是同一字节，根治 Date 往返漂移。
-          // M3：排他从本服务私有队列改用全局 runExclusiveWrite（见类头注释）。
-          const savedLog = await runExclusiveWrite(() =>
-            this.dataSource.transaction(async em => {
-              const [head] = await em.query(
-                `SELECT seq, recordHash FROM audit_logs WHERE seq IS NOT NULL ORDER BY seq DESC LIMIT 1`,
-              );
-              const seq = head ? Number(head.seq) + 1 : 1;
-              const prevHash = head ? String(head.recordHash) : ZERO_HASH;
+      try {
+        // M6：持久化段统一链化——事务内 读头→插入→回读原生行→补链列。
+        // 回读原生行（而非复用实体对象）保证哈希输入与验侧（node:sqlite 只读
+        // 原生行）是同一字节，根治 Date 往返漂移。
+        // M3：排他从本服务私有队列改用全局 runExclusiveWrite（见类头注释）。
+        const savedLog = await runExclusiveWrite(() =>
+          this.dataSource.transaction(async em => {
+            const [head] = await em.query(
+              `SELECT seq, recordHash FROM audit_logs WHERE seq IS NOT NULL ORDER BY seq DESC LIMIT 1`,
+            );
+            const seq = head ? Number(head.seq) + 1 : 1;
+            const prevHash = head ? String(head.recordHash) : ZERO_HASH;
 
-              const inserted = await em.save(AuditLogEntity, auditLog);
-              const [rawRow] = await em.query(`SELECT * FROM audit_logs WHERE id = ?`, [
-                inserted.id,
-              ]);
-              const recordHash = computeRecordHash(prevHash, seq, rawRow);
-              await em.update(AuditLogEntity, { id: inserted.id }, { seq, prevHash, recordHash });
-              return { ...inserted, seq, prevHash, recordHash };
-            }),
-          );
+            const inserted = await em.save(AuditLogEntity, auditLog);
+            const [rawRow] = await em.query(`SELECT * FROM audit_logs WHERE id = ?`, [
+              inserted.id,
+            ]);
+            const recordHash = computeRecordHash(prevHash, seq, rawRow);
+            await em.update(AuditLogEntity, { id: inserted.id }, { seq, prevHash, recordHash });
+            return { ...inserted, seq, prevHash, recordHash };
+          }),
+        );
 
-          // 计算风险分数
-          const riskScore = context.riskScore || this.calculateRiskScore(action, context);
-          const isSuspicious = context.isSuspicious || this.isSuspiciousActivity(action, context);
+        // 计算风险分数
+        const riskScore = context.riskScore || this.calculateRiskScore(action, context);
+        const isSuspicious = context.isSuspicious || this.isSuspiciousActivity(action, context);
 
-          // 异步处理高风险活动
-          if (isSuspicious || riskScore > 70) {
-            this.handleHighRiskActivity(savedLog, riskScore, isSuspicious).catch(error => {
-              this.logger.error('Failed to handle high risk activity', error);
-            });
-          }
-
-          span.setAttributes({
-            'audit.log_id': savedLog.id,
-            'audit.risk_score': riskScore,
-            'audit.is_suspicious': isSuspicious,
+        // 异步处理高风险活动
+        if (isSuspicious || riskScore > 70) {
+          this.handleHighRiskActivity(savedLog, riskScore, isSuspicious).catch(error => {
+            this.logger.error('Failed to handle high risk activity', error);
           });
-
-          return savedLog;
-        } catch (error) {
-          span.recordException(error);
-          this.logger.error('Failed to save audit log', error);
-          throw error;
         }
-      },
-      { 'business.domain': 'audit' },
-    );
+
+
+        return savedLog;
+      } catch (error) {
+        this.logger.error('Failed to save audit log', error);
+        throw error;
+      }
   }
 
   /**
@@ -341,96 +320,77 @@ export class AuditService {
    * 增强的查询审计日志
    */
   async findLogsAdvanced(filter: AuditLogFilter): Promise<AuditLogEntity[]> {
-    return this.tracingService.trace(
-      'audit-logs-query',
-      async span => {
-        const queryBuilder = this.auditLogRepository.createQueryBuilder('audit');
+      const queryBuilder = this.auditLogRepository.createQueryBuilder('audit');
 
-        // 应用过滤条件
-        if (filter.userId) {
-          queryBuilder.andWhere('audit.userId = :userId', { userId: filter.userId });
+      // 应用过滤条件
+      if (filter.userId) {
+        queryBuilder.andWhere('audit.userId = :userId', { userId: filter.userId });
+      }
+
+      if (filter.action) {
+        if (Array.isArray(filter.action)) {
+          queryBuilder.andWhere('audit.operation IN (:...actions)', { actions: filter.action });
+        } else {
+          queryBuilder.andWhere('audit.operation = :action', { action: filter.action });
         }
+      }
 
-        if (filter.action) {
-          if (Array.isArray(filter.action)) {
-            queryBuilder.andWhere('audit.operation IN (:...actions)', { actions: filter.action });
-          } else {
-            queryBuilder.andWhere('audit.operation = :action', { action: filter.action });
-          }
-        }
-
-        if (filter.startDate && filter.endDate) {
-          queryBuilder.andWhere('audit.createTime BETWEEN :startDate AND :endDate', {
-            startDate: filter.startDate,
-            endDate: filter.endDate,
-          });
-        }
-
-        if (filter.ipAddress) {
-          queryBuilder.andWhere('audit.ip = :ipAddress', { ipAddress: filter.ipAddress });
-        }
-
-        // 排序和分页
-        queryBuilder.orderBy('audit.createTime', 'DESC');
-
-        if (filter.limit) {
-          queryBuilder.limit(filter.limit);
-        }
-
-        if (filter.offset) {
-          queryBuilder.offset(filter.offset);
-        }
-
-        const logs = await queryBuilder.getMany();
-
-        span.setAttributes({
-          'audit.query.result_count': logs.length,
-          'audit.query.has_filters': Object.keys(filter).length > 0,
+      if (filter.startDate && filter.endDate) {
+        queryBuilder.andWhere('audit.createTime BETWEEN :startDate AND :endDate', {
+          startDate: filter.startDate,
+          endDate: filter.endDate,
         });
+      }
 
-        return logs;
-      },
-      { 'business.domain': 'audit' },
-    );
+      if (filter.ipAddress) {
+        queryBuilder.andWhere('audit.ip = :ipAddress', { ipAddress: filter.ipAddress });
+      }
+
+      // 排序和分页
+      queryBuilder.orderBy('audit.createTime', 'DESC');
+
+      if (filter.limit) {
+        queryBuilder.limit(filter.limit);
+      }
+
+      if (filter.offset) {
+        queryBuilder.offset(filter.offset);
+      }
+
+      const logs = await queryBuilder.getMany();
+
+
+      return logs;
   }
 
   /**
    * 获取审计统计信息
    */
   async getStatistics(startDate: Date, endDate: Date): Promise<AuditStatistics> {
-    return this.tracingService.trace(
-      'audit-statistics',
-      async span => {
-        const [totalLogs, actionCounts, resultCounts, topUsers, topIpAddresses, recentTrends] =
-          await Promise.all([
-            this.getTotalLogsCount(startDate, endDate),
-            this.getActionCounts(startDate, endDate),
-            this.getResultCounts(startDate, endDate),
-            this.getTopUsers(startDate, endDate),
-            this.getTopIpAddresses(startDate, endDate),
-            this.getRecentTrends(startDate, endDate),
-          ]);
+      const [totalLogs, actionCounts, resultCounts, topUsers, topIpAddresses, recentTrends] =
+        await Promise.all([
+          this.getTotalLogsCount(startDate, endDate),
+          this.getActionCounts(startDate, endDate),
+          this.getResultCounts(startDate, endDate),
+          this.getTopUsers(startDate, endDate),
+          this.getTopIpAddresses(startDate, endDate),
+          this.getRecentTrends(startDate, endDate),
+        ]);
 
-        const statistics: AuditStatistics = {
-          totalLogs,
-          actionCounts,
-          resultCounts,
-          severityCounts: {}, // 简化版本
-          topUsers,
-          topIpAddresses,
-          suspiciousActivities: 0, // 简化版本
-          highRiskActivities: 0, // 简化版本
-          recentTrends,
-        };
+      const statistics: AuditStatistics = {
+        totalLogs,
+        actionCounts,
+        resultCounts,
+        severityCounts: {}, // 简化版本
+        topUsers,
+        topIpAddresses,
+        suspiciousActivities: 0, // 简化版本
+        highRiskActivities: 0, // 简化版本
+        recentTrends,
+      };
 
-        span.setAttributes({
-          'audit.stats.total_logs': totalLogs,
-        });
 
-        return statistics;
-      },
-      { 'business.domain': 'audit' },
-    );
+      return statistics;
   }
 
   /**
@@ -450,29 +410,20 @@ export class AuditService {
       return 0;
     }
 
-    return this.tracingService.trace(
-      'audit-cleanup',
-      async span => {
-        const cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
 
-        const result = await this.auditLogRepository
-          .createQueryBuilder()
-          .delete()
-          .where('createTime < :cutoffDate', { cutoffDate })
-          .execute();
+      const result = await this.auditLogRepository
+        .createQueryBuilder()
+        .delete()
+        .where('createTime < :cutoffDate', { cutoffDate })
+        .execute();
 
-        const deletedCount = result.affected || 0;
+      const deletedCount = result.affected || 0;
 
-        span.setAttributes({
-          'audit.cleanup.deleted_count': deletedCount,
-        });
 
-        this.logger.log(`Cleaned up ${deletedCount} expired audit logs`);
-        return deletedCount;
-      },
-      { 'business.domain': 'audit' },
-    );
+      this.logger.log(`Cleaned up ${deletedCount} expired audit logs`);
+      return deletedCount;
   }
 
   // 私有方法

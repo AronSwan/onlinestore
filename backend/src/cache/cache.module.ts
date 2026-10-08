@@ -1,13 +1,14 @@
 import { Module, Global } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { CacheModule } from '@nestjs/cache-manager';
 import { UnifiedCacheService } from './unified-cache.service';
-import { CacheController } from './cache.controller';
+import { CacheService } from './cache.service';
+import { MonitoringModule } from '../monitoring/monitoring.module';
 
 @Global()
 @Module({
-  imports: [ConfigModule],
-  providers: [UnifiedCacheService],
-  controllers: [CacheController],
-  exports: [UnifiedCacheService],
+  imports: [ConfigModule, CacheModule.register(), MonitoringModule],
+  providers: [UnifiedCacheService, CacheService],
+  exports: [UnifiedCacheService, CacheService],
 })
 export class UnifiedCacheModule {}

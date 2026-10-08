@@ -517,7 +517,7 @@ describe('OrdersController', () => {
         updatedAt: new Date(),
       };
 
-      jest.spyOn(ordersService, 'findById').mockResolvedValue(order);
+      jest.spyOn(ordersService, 'findById').mockResolvedValue(order as any);
 
       const result = await controller.findOne(1, reqOf(1));
 
@@ -588,7 +588,7 @@ describe('OrdersController', () => {
         updatedAt: new Date(),
       };
 
-      jest.spyOn(ordersService, 'findById').mockResolvedValue(order);
+      jest.spyOn(ordersService, 'findById').mockResolvedValue(order as any);
 
       const result = await controller.findOne(1, reqOf(1));
 

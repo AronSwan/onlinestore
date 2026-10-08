@@ -1,87 +1,72 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
-import { AuthService } from '../auth/auth.service';
-import { ConfigService } from '@nestjs/config';
-import { ConflictException, NotFoundException, BadRequestException, NotImplementedException } from '@nestjs/common';
-import { ValidationPipe } from '@nestjs/common';
-import { CommandBus, QueryBus } from '@nestjs/cqrs';
-
+import {
+  ConflictException,
+  NotFoundException,
+  NotImplementedException,
+} from '@nestjs/common';
 
 import { User, UserRole } from './entities/user.entity';
-
-import { Order } from '../orders/entities/order.entity';
-
-
-
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { UserDeletionService } from './user-deletion.service';
 
 describe('UsersController', () => {
   let controller: UsersController;
+  let usersService: {
+    create: jest.Mock;
+    findOne: jest.Mock;
+    update: jest.Mock;
+    findAll: jest.Mock;
+    getStatistics: jest.Mock;
+  };
   let userDeletion: { deleteMeCascade: jest.Mock };
 
-  const mockAuthService = {
-    validateUser: jest.fn(),
-  };
+  const createMockUser = (overrides: Partial<User> = {}): User =>
+    ({
+      id: 1,
+      username: 'testuser',
+      email: 'test@example.com',
+      password: 'hashedPassword',
+      role: UserRole.USER,
+      isActive: true,
+      avatar: '',
+      phone: '',
+      casdoorId: '',
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+      lastLoginAt: new Date(),
+      loginCount: 0,
+      orders: [],
+      userRoles: [],
+      ...overrides,
+    }) as User;
 
-  const mockConfigService = {
-    get: jest.fn(),
-  };
-
-  // 创建一个模拟的CustomerProfile对象
-  const createMockCustomerProfile = (): CustomerProfile => ({
-    id: 1,
-    user: null as any, // 避免循环引用
-    userId: 1,
-    level: CustomerLevel.BRONZE,
-    points: 0,
-    totalSpent: 0,
-    orderCount: 0,
-    returnCount: 0,
-    reviewCount: 0,
-    averageRating: '0.00',
-    firstPurchaseAt: new Date(),
-    lastPurchaseAt: new Date(),
-    consecutiveLoginDays: 0,
-    tags: '',
-    notes: '',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  });
-
-  // 创建一个模拟的User对象
-  const createMockUser = (overrides: Partial<User> = {}): User => ({
-    id: 1,
-    username: 'testuser',
-    email: 'test@example.com',
-    password: 'hashedPassword',
-    role: UserRole.USER,
-    isActive: true,
-    avatar: '',
-    phone: '',
-    casdoorId: '',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    lastLoginAt: new Date(),
-    loginCount: 0,
-    orders: [] as Order[],
-    userRoles: [] as UserRoleEntity[],
-    addresses: [] as Address[],
-    customerProfile: createMockCustomerProfile(),
-    ...overrides,
+  // 控制器出口形状：实体经 toResponse 映射（无 password）
+  const expectedResponse = (user: User) => ({
+    id: user.id,
+    email: user.email,
+    username: user.username,
+    role: user.role,
+    isActive: user.isActive,
+    avatar: user.avatar,
+    phone: user.phone,
+    createdAt: user.createdAt.toISOString(),
+    updatedAt: user.updatedAt.toISOString(),
   });
 
   beforeEach(async () => {
-    const mockCommandBus = {
-      execute: jest.fn(),
-    };
-
-    const mockQueryBus = {
-      execute: jest.fn(),
+    usersService = {
+      create: jest.fn(),
+      findOne: jest.fn(),
+      update: jest.fn(),
+      findAll: jest.fn(),
+      getStatistics: jest.fn(),
     };
 
     // 权益批 B10：UserDeletionService mock（DELETE /users/me 委托目标）
-    const mockUserDeletion = {
+    userDeletion = {
       deleteMeCascade: jest.fn(),
     };
 
@@ -89,96 +74,47 @@ describe('UsersController', () => {
       controllers: [UsersController],
       providers: [
         {
-          provide: CommandBus,
-          useValue: mockCommandBus,
-        },
-        {
-          provide: QueryBus,
-          useValue: mockQueryBus,
-        },
-        {
-          provide: AuthService,
-          useValue: mockAuthService,
-        },
-        {
-          provide: ConfigService,
-          useValue: mockConfigService,
+          provide: UsersService,
+          useValue: usersService,
         },
         {
           provide: UserDeletionService,
-          useValue: mockUserDeletion,
+          useValue: userDeletion,
         },
       ],
     }).compile();
 
     controller = module.get<UsersController>(UsersController);
-    userDeletion = mockUserDeletion;
 
-    // Reset all mocks before each test
     jest.clearAllMocks();
   });
 
   describe('POST /users', () => {
+    const createUserDto: CreateUserDto = {
+      username: 'newuser',
+      email: 'new@example.com',
+      password: 'Password123!',
+    };
+
     it('should create a new user successfully', async () => {
-      const createUserDto: CreateUserDto = {
-        firstName: 'New',
-        lastName: 'User',
-        username: 'new',
-        email: 'new@example.com',
-        password: 'Password123!',
-      };
-
-      const createdUser = {
-        id: '1',
-        firstName: 'New',
-        lastName: 'User',
-        email: 'new@example.com',
-        isActive: true,
-        emailVerified: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      // Mock the command bus execution
-      const mockCommandBus = { execute: jest.fn().mockResolvedValue(createdUser) };
-      (controller as any).commandBus = mockCommandBus;
+      const createdUser = createMockUser({ username: 'newuser', email: 'new@example.com' });
+      usersService.create.mockResolvedValue(createdUser);
 
       const result = await controller.createUser(createUserDto);
 
-      expect(result).toEqual(createdUser);
-      expect(mockCommandBus.execute).toHaveBeenCalled();
+      expect(result).toEqual(expectedResponse(createdUser));
+      expect(result).not.toHaveProperty('password');
+      expect(usersService.create).toHaveBeenCalledWith(createUserDto);
     });
 
     it('should throw error for duplicate email', async () => {
-      const createUserDto: CreateUserDto = {
-        firstName: 'New',
-        lastName: 'User',
-        username: 'existing',
-        email: 'existing@example.com',
-        password: 'Password123!',
-      };
-
-      const mockCommandBus = {
-        execute: jest.fn().mockRejectedValue(new ConflictException('邮箱已被注册')),
-      };
-      (controller as any).commandBus = mockCommandBus;
+      usersService.create.mockRejectedValue(new ConflictException('邮箱已被注册'));
 
       await expect(controller.createUser(createUserDto)).rejects.toThrow(ConflictException);
     });
 
     it('should handle database connection errors', async () => {
-      const createUserDto: CreateUserDto = {
-        firstName: 'New',
-        lastName: 'User',
-        username: 'test',
-        email: 'test@example.com',
-        password: 'Password123!',
-      };
-
-      const mockCommandBus = {
-        execute: jest.fn().mockRejectedValue(new Error('Database connection failed')),
-      };
-      (controller as any).commandBus = mockCommandBus;
+      usersService.create.mockRejectedValue(new Error('Database connection failed'));
 
       await expect(controller.createUser(createUserDto)).rejects.toThrow(
         'Database connection failed',
@@ -186,169 +122,71 @@ describe('UsersController', () => {
     });
 
     it('should handle concurrent user creation', async () => {
-      const createUserDto: CreateUserDto = {
-        firstName: 'New',
-        lastName: 'User',
-        username: 'test',
-        email: 'test@example.com',
-        password: 'Password123!',
-      };
+      const createdUser = createMockUser();
+      usersService.create.mockResolvedValue(createdUser);
 
-      const createdUser = {
-        id: '1',
-        firstName: 'New',
-        lastName: 'User',
-        email: 'test@example.com',
-        isActive: true,
-        emailVerified: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      const mockCommandBus = { execute: jest.fn().mockResolvedValue(createdUser) };
-      (controller as any).commandBus = mockCommandBus;
-
-      // 模拟并发调用
-      const promises = [controller.createUser(createUserDto), controller.createUser(createUserDto)];
-
-      const results = await Promise.all(promises);
+      const results = await Promise.all([
+        controller.createUser(createUserDto),
+        controller.createUser(createUserDto),
+      ]);
 
       expect(results).toHaveLength(2);
-      expect(results[0]).toEqual(createdUser);
-      expect(results[1]).toEqual(createdUser);
+      expect(results[0]).toEqual(expectedResponse(createdUser));
+      expect(results[1]).toEqual(expectedResponse(createdUser));
     });
   });
 
   describe('GET /users', () => {
     it('should return array of users', async () => {
-      const users = [
-        {
-          id: '1',
-          firstName: 'User',
-          lastName: 'One',
-          email: 'user1@example.com',
-          isActive: true,
-          emailVerified: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: '2',
-          firstName: 'User',
-          lastName: 'Two',
-          email: 'user2@example.com',
-          isActive: true,
-          emailVerified: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-      ];
-
-      const mockQueryBus = {
-        execute: jest.fn().mockResolvedValue({
-          users,
-          total: 2,
-          page: 1,
-          limit: 10,
-          totalPages: 1,
-        }),
-      };
-      (controller as any).queryBus = mockQueryBus;
+      const users = [createMockUser(), createMockUser({ id: 2, email: 'user2@example.com' })];
+      usersService.findAll.mockResolvedValue({ users, total: 2 });
 
       const result = await controller.searchUsers();
 
-      expect(result.users).toEqual(users);
+      expect(result.users).toEqual(users.map(expectedResponse));
       expect(result.total).toBe(2);
-      expect(mockQueryBus.execute).toHaveBeenCalled();
+      expect(result.totalPages).toBe(1);
+      expect(usersService.findAll).toHaveBeenCalledWith({
+        page: 1,
+        limit: 10,
+        search: undefined,
+      });
     });
 
     it('should handle pagination', async () => {
-      const users = [
-        {
-          id: '1',
-          firstName: 'User',
-          lastName: 'One',
-          email: 'user1@example.com',
-          isActive: true,
-          emailVerified: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-      ];
+      const users = [createMockUser()];
+      usersService.findAll.mockResolvedValue({ users, total: 21 });
 
-      const mockQueryBus = {
-        execute: jest.fn().mockResolvedValue({
-          users,
-          total: 1,
-          page: 1,
-          limit: 10,
-          totalPages: 1,
-        }),
-      };
-      (controller as any).queryBus = mockQueryBus;
+      const result = await controller.searchUsers(undefined, 3, 10);
 
-      const result = await controller.searchUsers(undefined, 1, 10);
-
-      expect(result.users).toEqual(users);
-      expect(result.total).toBe(1);
-      expect(mockQueryBus.execute).toHaveBeenCalled();
+      expect(result.page).toBe(3);
+      expect(result.limit).toBe(10);
+      expect(result.totalPages).toBe(3);
+      expect(usersService.findAll).toHaveBeenCalledWith({ page: 3, limit: 10, search: undefined });
     });
 
     it('should handle search functionality', async () => {
-      const users = [
-        {
-          id: '1',
-          firstName: 'Test',
-          lastName: 'User',
-          email: 'test@example.com',
-          isActive: true,
-          emailVerified: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-      ];
-
-      const mockQueryBus = {
-        execute: jest.fn().mockResolvedValue({
-          users,
-          total: 1,
-          page: 1,
-          limit: 10,
-          totalPages: 1,
-        }),
-      };
-      (controller as any).queryBus = mockQueryBus;
+      const users = [createMockUser()];
+      usersService.findAll.mockResolvedValue({ users, total: 1 });
 
       const result = await controller.searchUsers('test');
 
-      expect(result.users).toEqual(users);
-      expect(result.total).toBe(1);
-      expect(mockQueryBus.execute).toHaveBeenCalled();
+      expect(result.users).toEqual(users.map(expectedResponse));
+      expect(usersService.findAll).toHaveBeenCalledWith({ page: 1, limit: 10, search: 'test' });
     });
 
     it('should return empty array when no users found', async () => {
-      const mockQueryBus = {
-        execute: jest.fn().mockResolvedValue({
-          users: [],
-          total: 0,
-          page: 1,
-          limit: 10,
-          totalPages: 0,
-        }),
-      };
-      (controller as any).queryBus = mockQueryBus;
+      usersService.findAll.mockResolvedValue({ users: [], total: 0 });
 
       const result = await controller.searchUsers();
 
       expect(result.users).toEqual([]);
       expect(result.total).toBe(0);
+      expect(result.totalPages).toBe(0);
     });
 
     it('should handle database connection errors', async () => {
-      const mockQueryBus = {
-        execute: jest.fn().mockRejectedValue(new Error('Database connection failed')),
-      };
-      (controller as any).queryBus = mockQueryBus;
+      usersService.findAll.mockRejectedValue(new Error('Database connection failed'));
 
       await expect(controller.searchUsers()).rejects.toThrow('Database connection failed');
     });
@@ -356,58 +194,30 @@ describe('UsersController', () => {
 
   describe('GET /users/:id', () => {
     it('should return user by id', async () => {
-      const user = {
-        id: '1',
-        firstName: 'Test',
-        lastName: 'User',
-        email: 'test@example.com',
-        isActive: true,
-        emailVerified: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      const mockQueryBus = { execute: jest.fn().mockResolvedValue(user) };
-      (controller as any).queryBus = mockQueryBus;
+      const user = createMockUser();
+      usersService.findOne.mockResolvedValue(user);
 
       const result = await controller.getUserById('1');
 
-      expect(result).toEqual(user);
-      expect(mockQueryBus.execute).toHaveBeenCalled();
+      expect(result).toEqual(expectedResponse(user));
+      expect(usersService.findOne).toHaveBeenCalledWith(1);
     });
 
     it('should throw error for non-existent user', async () => {
-      const mockQueryBus = {
-        execute: jest.fn().mockRejectedValue(new NotFoundException('用户不存在')),
-      };
-      (controller as any).queryBus = mockQueryBus;
+      usersService.findOne.mockRejectedValue(new NotFoundException('用户不存在'));
 
       await expect(controller.getUserById('999')).rejects.toThrow(NotFoundException);
     });
 
     it('should handle database connection errors', async () => {
-      const mockQueryBus = {
-        execute: jest.fn().mockRejectedValue(new Error('Database connection failed')),
-      };
-      (controller as any).queryBus = mockQueryBus;
+      usersService.findOne.mockRejectedValue(new Error('Database connection failed'));
 
       await expect(controller.getUserById('1')).rejects.toThrow('Database connection failed');
     });
 
     it('should return inactive users', async () => {
-      const user = {
-        id: '1',
-        firstName: 'Test',
-        lastName: 'User',
-        email: 'test@example.com',
-        isActive: false,
-        emailVerified: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      const mockQueryBus = { execute: jest.fn().mockResolvedValue(user) };
-      (controller as any).queryBus = mockQueryBus;
+      const user = createMockUser({ isActive: false });
+      usersService.findOne.mockResolvedValue(user);
 
       const result = await controller.getUserById('1');
 
@@ -421,49 +231,27 @@ describe('UsersController', () => {
         email: 'updated@example.com',
       };
 
-      const updatedUser = {
-        id: '1',
-        firstName: 'Test',
-        lastName: 'User',
-        email: 'updated@example.com',
-        isActive: true,
-        emailVerified: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      const mockCommandBus = { execute: jest.fn().mockResolvedValue(updatedUser) };
-      (controller as any).commandBus = mockCommandBus;
+      const updatedUser = createMockUser({ email: 'updated@example.com' });
+      usersService.update.mockResolvedValue(updatedUser);
 
       const result = await controller.updateUser('1', updateUserDto);
 
-      expect(result).toEqual(updatedUser);
-      expect(mockCommandBus.execute).toHaveBeenCalled();
+      expect(result).toEqual(expectedResponse(updatedUser));
+      expect(usersService.update).toHaveBeenCalledWith(1, updateUserDto);
     });
 
     it('should throw error for non-existent user', async () => {
       const updateDto: UpdateUserDto = { email: 'updated@example.com' };
+      usersService.update.mockRejectedValue(new NotFoundException('用户不存在'));
 
-      const mockCommandBus = {
-        execute: jest.fn().mockRejectedValue(new NotFoundException('用户不存在')),
-      };
-      (controller as any).commandBus = mockCommandBus;
-
-      try {
-        await controller.updateUser('999', updateDto);
-        fail('Expected NotFoundException to be thrown');
-      } catch (error) {
-        expect(error).toBeInstanceOf(NotFoundException);
-      }
+      await expect(controller.updateUser('999', updateDto)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
 
     it('should handle database connection errors during update', async () => {
       const updateDto: UpdateUserDto = { email: 'updated@example.com' };
-
-      const mockCommandBus = {
-        execute: jest.fn().mockRejectedValue(new Error('Database connection failed')),
-      };
-      (controller as any).commandBus = mockCommandBus;
+      usersService.update.mockRejectedValue(new Error('Database connection failed'));
 
       await expect(controller.updateUser('1', updateDto)).rejects.toThrow(
         'Database connection failed',
@@ -487,14 +275,13 @@ describe('UsersController', () => {
 
   describe('GET /users/stats/overview', () => {
     it('should return user statistics', async () => {
+      const stats = { totalUsers: 10, activeUsers: 8, newUsersToday: 2 };
+      usersService.getStatistics.mockResolvedValue(stats);
+
       const result = await controller.getUserStats();
 
-      expect(result).toEqual({
-        totalUsers: 0,
-        activeUsers: 0,
-        verifiedUsers: 0,
-        newUsersThisMonth: 0,
-      });
+      expect(result).toEqual(stats);
+      expect(usersService.getStatistics).toHaveBeenCalled();
     });
   });
 
@@ -504,82 +291,29 @@ describe('UsersController', () => {
         email: 'updated@example.com',
       };
 
-      const updatedUser = {
-        id: '1',
-        firstName: 'Test',
-        lastName: 'User',
-        email: 'updated@example.com',
-        isActive: true,
-        emailVerified: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+      const updatedUser = createMockUser({ email: 'updated@example.com' });
+      usersService.update.mockResolvedValue(updatedUser);
 
-      const mockCommandBus = { execute: jest.fn().mockResolvedValue(updatedUser) };
-      (controller as any).commandBus = mockCommandBus;
-
-      // 模拟并发调用
-      const promises = [
+      const results = await Promise.all([
         controller.updateUser('1', updateDto),
         controller.updateUser('1', updateDto),
-      ];
-
-      const results = await Promise.all(promises);
+      ]);
 
       expect(results).toHaveLength(2);
-      expect(results[0]).toEqual(updatedUser);
-      expect(results[1]).toEqual(updatedUser);
+      expect(results[0]).toEqual(expectedResponse(updatedUser));
+      expect(results[1]).toEqual(expectedResponse(updatedUser));
     });
 
-    it('should handle rate limiting on user management endpoints', async () => {
-      const createUserDto: CreateUserDto = {
-        firstName: 'New',
-        lastName: 'User',
-        username: 'test',
-        email: 'test@example.com',
-        password: 'Password123!',
-      };
+    it('should propagate service-level errors', async () => {
+      usersService.create.mockRejectedValue(new Error('Rate limit exceeded'));
 
-      const mockCommandBus = {
-        execute: jest.fn().mockRejectedValue(new Error('Rate limit exceeded')),
-      };
-      (controller as any).commandBus = mockCommandBus;
-
-      await expect(controller.createUser(createUserDto)).rejects.toThrow('Rate limit exceeded');
-    });
-
-    it('should handle timeout scenarios', async () => {
-      const createUserDto: CreateUserDto = {
-        firstName: 'New',
-        lastName: 'User',
-        username: 'test',
-        email: 'test@example.com',
-        password: 'Password123!',
-      };
-
-      const mockCommandBus = { execute: jest.fn().mockRejectedValue(new Error('Request timeout')) };
-      (controller as any).commandBus = mockCommandBus;
-
-      await expect(controller.createUser(createUserDto)).rejects.toThrow('Request timeout');
-    });
-
-    it('should handle user service unavailability', async () => {
-      const createUserDto: CreateUserDto = {
-        firstName: 'New',
-        lastName: 'User',
-        username: 'test',
-        email: 'test@example.com',
-        password: 'Password123!',
-      };
-
-      const mockCommandBus = {
-        execute: jest.fn().mockRejectedValue(new Error('User service unavailable')),
-      };
-      (controller as any).commandBus = mockCommandBus;
-
-      await expect(controller.createUser(createUserDto)).rejects.toThrow(
-        'User service unavailable',
-      );
+      await expect(
+        controller.createUser({
+          username: 'test',
+          email: 'test@example.com',
+          password: 'Password123!',
+        }),
+      ).rejects.toThrow('Rate limit exceeded');
     });
   });
 
@@ -593,7 +327,6 @@ describe('UsersController', () => {
     });
 
     it('用户不存在时应透传 NotFoundException（404）', async () => {
-      const { NotFoundException } = await import('@nestjs/common');
       userDeletion.deleteMeCascade.mockRejectedValueOnce(new NotFoundException('用户不存在'));
       await expect(controller.deleteMe({ user: { sub: 999 } })).rejects.toBeInstanceOf(
         NotFoundException,

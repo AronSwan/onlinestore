@@ -5,7 +5,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AppController } from 'src/app.controller';
 import { AppService } from 'src/app.service';
-import { LoggingModule } from './logging/logging.module';
 import { MonitoringModule } from './monitoring/monitoring.module';
 import { createMasterConfiguration } from './config/unified-master.config';
 import { AuthModule } from './auth/auth.module';
@@ -55,12 +54,6 @@ import { AuditModule } from './common/audit/audit.module';
             // 自增 INSERT 缺 id 直接 500。其唯一真实消费方（EnhancedUsersRepository
             // CQRS 链）已改用规范 User 实体，见 typeorm-enhanced-users.repository.ts。
             __dirname + '/users/entities/*.entity{.ts,.js}',
-            // users/domain/entities 下的 Address('user_addresses')、CustomerProfile('customer_profiles')
-            // 是 User 实体 addresses/customerProfile 关联的目标实体，必须注册；
-            // 该目录其余导出为无 @Entity 装饰器的领域类，TypeORM 会自动忽略。
-            __dirname + '/users/domain/entities/*.entity{.ts,.js}',
-            __dirname + '/address/infrastructure/entities/*.entity{.ts,.js}',
-            __dirname + '/basic-data/infrastructure/entities/*.entity{.ts,.js}',
             __dirname + '/cart/infrastructure/entities/*.entity{.ts,.js}',
             __dirname + '/auth/**/*.entity{.ts,.js}',
             __dirname + '/orders/entities/*.entity{.ts,.js}',
@@ -89,7 +82,6 @@ import { AuditModule } from './common/audit/audit.module';
     }),
 
     // 日志模块
-    LoggingModule,
 
     // 限流模块(S3-min): 全局 300 次/60s, 可通过 THROTTLER_LIMIT/THROTTLER_TTL 环境变量覆盖
     ThrottlerModule.forRootAsync({

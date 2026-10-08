@@ -11,13 +11,10 @@ import {
   UpdateDateColumn,
   Index,
   OneToMany,
-  OneToOne,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Exclude } from 'class-transformer';
 import { Order } from '../../orders/entities/order.entity';
-import { Address } from '../domain/entities/address.entity';
-import { CustomerProfile } from '../domain/entities/customer-profile.entity';
 
 export enum UserRole {
   USER = 'user',
@@ -90,11 +87,6 @@ export class User {
   // "Entity metadata for User#userRoles was not found" 阻止启动。属性保留供业务代码兼容。
   userRoles?: any[];
 
-  @OneToMany(() => Address, address => address.user)
-  @ApiProperty({ description: '用户地址列表' })
-  addresses: Address[];
-
-  @OneToOne(() => CustomerProfile, profile => profile.user)
-  @ApiProperty({ description: '客户档案' })
-  customerProfile: CustomerProfile;
+  // addresses / customerProfile 关联已随 address、customer-profile 实体一并移除
+  // （实体类从未存在于本仓库，属历史遗留幻影引用）
 }

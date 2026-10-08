@@ -4,8 +4,6 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { AuditLogEntity } from './entities/audit-log.entity';
 import { AuditService } from './audit.service';
 import { AuditController } from './audit.controller';
-import { AuditInterceptor } from '../interceptors/audit.interceptor';
-import { TracingModule } from '../tracing/tracing.module';
 
 /**
  * 审计模块
@@ -16,9 +14,9 @@ import { TracingModule } from '../tracing/tracing.module';
  */
 @Global()
 @Module({
-  imports: [TypeOrmModule.forFeature([AuditLogEntity]), ScheduleModule.forRoot(), TracingModule],
-  providers: [AuditService, AuditInterceptor],
+  imports: [TypeOrmModule.forFeature([AuditLogEntity]), ScheduleModule.forRoot()],
+  providers: [AuditService],
   controllers: [AuditController],
-  exports: [AuditService, AuditInterceptor],
+  exports: [AuditService],
 })
 export class AuditModule {}

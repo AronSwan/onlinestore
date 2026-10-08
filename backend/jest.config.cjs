@@ -3,7 +3,7 @@ module.exports = {
   rootDir: 'src',
   testMatch: ['**/*.spec.ts', '**/*.test.ts', '**/*.spec.js', '**/*.test.js'],
   transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', { useESM: true }],
+    '^.+\\.(ts|tsx)$': ['ts-jest', { useESM: true, tsconfig: 'tsconfig.spec.json' }],
   },
   transformIgnorePatterns: [
     'node_modules/(?!(uuid|p-retry|is-network-error)/)'

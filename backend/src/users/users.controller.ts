@@ -1,6 +1,6 @@
 /**
- * 增强用户控制器，基于PrestaShop用户管理模式
- * 实现CQRS架构和领域驱动设计
+ * 用户控制器
+ * 直连 UsersService（原 CQRS application/ 层为幻影引用，类文件从未存在于本仓库）
  */
 
 import {
@@ -13,40 +13,34 @@ import {
   Param,
   Query,
   HttpCode,
-  NotFoundException,
   HttpStatus,
   UseGuards,
   NotImplementedException,
   Request,
 } from '@nestjs/common';
-import { CommandBus, QueryBus } from '@nestjs/cqrs';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OwnerOrAdminGuard, OwnerParam } from '../common/guards/owner-or-admin.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../auth/enums/role.enum';
-import { CreateUserCommand } from './application/commands/create-user.command';
-import { UpdateUserCommand } from './application/commands/update-user.command';
-import { GetUserForEditingQuery } from './application/queries/get-user-for-editing.query';
-import { SearchUsersQuery } from './application/queries/search-users.query';
-import { CreateUserDto } from './application/dto/create-user.dto';
-import { UpdateUserDto } from './application/dto/update-user.dto';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { UsersService } from './users.service';
 import { UserDeletionService } from './user-deletion.service';
+import { User } from './entities/user.entity';
 
+// 出口形状与 User 实体对齐——password 永不出口
 export interface UserResponseDto {
-  id: string;
+  id: number;
   email: string;
-  firstName: string;
-  lastName: string;
-  birthday?: string;
-  phone?: string;
+  username: string;
+  role: string;
   isActive: boolean;
-  emailVerified: boolean;
+  avatar?: string;
+  phone?: string;
   createdAt: string;
   updatedAt: string;
-  address?: any;
-  preferences?: any;
 }
 
 export interface UserListResponseDto {
@@ -57,14 +51,27 @@ export interface UserListResponseDto {
   totalPages: number;
 }
 
+function toResponse(user: User): UserResponseDto {
+  return {
+    id: user.id,
+    email: user.email,
+    username: user.username,
+    role: user.role,
+    isActive: user.isActive,
+    avatar: user.avatar,
+    phone: user.phone,
+    createdAt: user.createdAt instanceof Date ? user.createdAt.toISOString() : String(user.createdAt),
+    updatedAt: user.updatedAt instanceof Date ? user.updatedAt.toISOString() : String(user.updatedAt),
+  };
+}
+
 @Controller('users')
 // 整改（B2，2026-10-02）：用户管理面此前完全无认证，任何匿名请求都能读写用户。
 // 类级启用 JWT 认证，未带有效令牌的访问一律 401。
 @UseGuards(JwtAuthGuard)
 export class UsersController {
   constructor(
-    private readonly commandBus: CommandBus,
-    private readonly queryBus: QueryBus,
+    private readonly usersService: UsersService,
     private readonly userDeletion: UserDeletionService,
   ) {}
 
@@ -73,18 +80,8 @@ export class UsersController {
   @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.CREATED)
   async createUser(@Body() createUserDto: CreateUserDto): Promise<UserResponseDto> {
-    const command = new CreateUserCommand({
-      email: createUserDto.email,
-      password: createUserDto.password,
-      firstName: createUserDto.firstName,
-      lastName: createUserDto.lastName,
-      birthday: createUserDto.birthday,
-      phone: createUserDto.phone,
-      address: createUserDto.address || undefined,
-      preferences: createUserDto.preferences || undefined,
-    });
-
-    return await this.commandBus.execute(command);
+    const user = await this.usersService.create(createUserDto);
+    return toResponse(user);
   }
 
   // 兼容测试：提供无装饰器的别名方法
@@ -103,9 +100,8 @@ export class UsersController {
   @UseGuards(OwnerOrAdminGuard)
   @OwnerParam('id')
   async getUserById(@Param('id') id: string): Promise<UserResponseDto> {
-    // UserNotFoundException 已由全局过滤器统一转译 404（2026-10-03 审计整改）
-    const query = new GetUserForEditingQuery(id);
-    return await this.queryBus.execute(query);
+    const user = await this.usersService.findOne(Number(id));
+    return toResponse(user);
   }
 
   @Put(':id')
@@ -116,18 +112,8 @@ export class UsersController {
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<UserResponseDto> {
-    const command = new UpdateUserCommand({
-      userId: id,
-      email: updateUserDto.email,
-      firstName: updateUserDto.firstName,
-      lastName: updateUserDto.lastName,
-      birthday: updateUserDto.birthday,
-      phone: updateUserDto.phone,
-      address: updateUserDto.address || undefined,
-      preferences: updateUserDto.preferences || undefined,
-    });
-
-    return await this.commandBus.execute(command);
+    const user = await this.usersService.update(Number(id), updateUserDto);
+    return toResponse(user);
   }
 
   // 兼容测试：提供无装饰器的别名方法，支持 number|string 的 id
@@ -164,30 +150,22 @@ export class UsersController {
     @Query('search') searchTerm?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
-    @Query('sortBy') sortBy?: string,
-    @Query('sortDirection') sortDirection?: 'asc' | 'desc',
-    @Query('isActive') isActive?: boolean,
-    @Query('emailVerified') emailVerified?: boolean,
-    @Query('country') country?: string,
-    @Query('city') city?: string,
-    @Query('createdAfter') createdAfter?: string,
-    @Query('createdBefore') createdBefore?: string,
   ): Promise<UserListResponseDto> {
-    const query = new SearchUsersQuery({
-      searchTerm,
-      page: page || 1,
-      limit: limit || 10,
-      sortBy,
-      sortDirection,
-      isActive,
-      emailVerified,
-      country,
-      city,
-      createdAfter,
-      createdBefore,
+    const currentPage = Number(page) || 1;
+    const pageSize = Number(limit) || 10;
+    const { users, total } = await this.usersService.findAll({
+      page: currentPage,
+      limit: pageSize,
+      search: searchTerm,
     });
 
-    return await this.queryBus.execute(query);
+    return {
+      users: users.map(toResponse),
+      total,
+      page: currentPage,
+      limit: pageSize,
+      totalPages: Math.ceil(total / pageSize),
+    };
   }
 
   @Put(':id/activate')
@@ -195,9 +173,6 @@ export class UsersController {
   @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   async activateUser(@Param('id') id: string): Promise<UserResponseDto> {
-    // 这里可以实现激活用户命令
-    // const command = new ActivateUserCommand(id);
-    // return await this.commandBus.execute(command);
     throw new NotImplementedException('功能未实现');
   }
 
@@ -206,9 +181,6 @@ export class UsersController {
   @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   async deactivateUser(@Param('id') id: string): Promise<UserResponseDto> {
-    // 这里可以实现停用用户命令
-    // const command = new DeactivateUserCommand(id);
-    // return await this.commandBus.execute(command);
     throw new NotImplementedException('功能未实现');
   }
 
@@ -217,9 +189,6 @@ export class UsersController {
   @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   async verifyUserEmail(@Param('id') id: string): Promise<UserResponseDto> {
-    // 这里可以实现邮箱验证命令
-    // const command = new VerifyUserEmailCommand(id);
-    // return await this.commandBus.execute(command);
     throw new NotImplementedException('功能未实现');
   }
 
@@ -227,15 +196,8 @@ export class UsersController {
   @UseGuards(RolesGuard)
   @Roles(Role.ADMIN)
   async getUserStats(): Promise<any> {
-    // 这里可以实现用户统计查询
-    // const query = new GetUserStatsQuery();
-    // return await this.queryBus.execute(query);
-    return {
-      totalUsers: 0,
-      activeUsers: 0,
-      verifiedUsers: 0,
-      newUsersThisMonth: 0,
-    };
+    // 实体只承载 totalUsers/activeUsers/newUsersToday 三个真实计数
+    return await this.usersService.getStatistics();
   }
 
   // 兼容测试：统计计数路由
@@ -243,13 +205,7 @@ export class UsersController {
   @UseGuards(RolesGuard)
   @Roles(Role.ADMIN)
   async getUserStatsCount(): Promise<any> {
-    const stats = await this.getUserStats();
-    return {
-      totalUsers: stats.totalUsers,
-      activeUsers: stats.activeUsers,
-      verifiedUsers: stats.verifiedUsers,
-      newUsersThisMonth: stats.newUsersThisMonth,
-    };
+    return this.getUserStats();
   }
 
   // 兼容测试：提供简化统计方法别名

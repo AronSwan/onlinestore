@@ -6,9 +6,6 @@ import { AppModule } from './app.module';
 import helmet from 'helmet';
 import compression from 'compression';
 import { ConfigurationValidator } from './config/configuration.validator';
-import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
-import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
-import { FileUploadInterceptor } from './common/interceptors/file-upload.interceptor';
 import { MetricsInterceptor } from './monitoring/metrics.interceptor';
 import { MonitoringService } from './monitoring/monitoring.service';
 
@@ -104,17 +101,8 @@ export async function bootstrap() {
   // 获取MonitoringService实例
   const monitoringService = app.get(MonitoringService);
 
-  // 全局异常过滤器
-  app.useGlobalFilters(new GlobalExceptionFilter());
-
-  // 全局日志拦截器
-  app.useGlobalInterceptors(new LoggingInterceptor());
-
   // 监控指标拦截器
   app.useGlobalInterceptors(new MetricsInterceptor(monitoringService));
-
-  // 文件上传安全拦截器
-  app.useGlobalInterceptors(new FileUploadInterceptor());
 
   // 安全中间件 - 生产环境配置
   const isProduction = process.env.NODE_ENV === 'production';

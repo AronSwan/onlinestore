@@ -1,29 +1,16 @@
 /**
- * 用户模块，基于PrestaShop模块化架构
- * 整合所有用户相关的组件和服务
+ * 用户模块
+ * 整合用户相关的控制器和服务
  */
 
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { CqrsModule } from '@nestjs/cqrs';
 import { MonitoringModule } from '../monitoring/monitoring.module';
 
 // Entities
 // 整改（Blocker 1，2026-10-02）：UserEntity（uuid 形态，@Entity('users')）已从连接中
 // 摘除，forFeature 不再注册它——注册未在连接中的实体会导致 Repository 解析失败。
 import { User } from './entities/user.entity';
-
-// Repositories
-import { EnhancedUsersRepository } from './infrastructure/repositories/enhanced-users.repository';
-import { TypeOrmEnhancedUsersRepository } from './infrastructure/repositories/typeorm-enhanced-users.repository';
-
-// Command Handlers
-import { CreateUserHandler } from './application/handlers/create-user.handler';
-import { UpdateUserHandler } from './application/handlers/update-user.handler';
-
-// Query Handlers
-import { GetUserForEditingHandler } from './application/handlers/get-user-for-editing.handler';
-import { SearchUsersHandler } from './application/handlers/search-users.handler';
 
 // Controllers
 import { UsersController } from './users.controller';
@@ -32,23 +19,13 @@ import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { UserDeletionService } from './user-deletion.service'; // 权益批 B10
 
-const CommandHandlers = [CreateUserHandler, UpdateUserHandler];
-
-const QueryHandlers = [GetUserForEditingHandler, SearchUsersHandler];
-
 @Module({
-  imports: [TypeOrmModule.forFeature([User]), CqrsModule, MonitoringModule],
+  imports: [TypeOrmModule.forFeature([User]), MonitoringModule],
   controllers: [UsersController],
   providers: [
     UsersService,
     UserDeletionService, // 权益批 B10：DELETE /users/me 级联注销（被遗忘权）
-    {
-      provide: 'EnhancedUsersRepository',
-      useClass: TypeOrmEnhancedUsersRepository,
-    },
-    ...CommandHandlers,
-    ...QueryHandlers,
   ],
-  exports: [UsersService, 'EnhancedUsersRepository'],
+  exports: [UsersService],
 })
 export class UsersModule {}
