@@ -72,6 +72,10 @@ class CartManager {
        同入口致死；合法数组混异族项（跨标签覆写/旧版残留）→徽章 NaN+僵尸行
        UI 不可删——非数组按空袋，异族项逐件滤除（本地数据部分打捞优于整袋 nuked）。 */
     try {
+      // 双盲A1/B1席修复(跨账号串袋)：属主不符按空袋（详见 saveCart 注释）
+      if (this.cartOwnerMismatch()) {
+        return [];
+      }
       const cartData = localStorage.getItem('reich_cart');
       const parsed = cartData ? JSON.parse(cartData) : [];
       if (!Array.isArray(parsed)) {
@@ -102,37 +106,62 @@ class CartManager {
   
   async loadCart() {
     const isLoggedIn = localStorage.getItem('userLoggedIn') === 'true' || sessionStorage.getItem('userLoggedIn') === 'true';
-    
+
     if (isLoggedIn) {
       try {
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-        // 求真修复(2026-10-04): /api/cart 根路由不存在(只有 /api/cart/items/:customerUserId)
-      // → 404 轮询每页一次 console 警告。本地优先模式下不再请求根路由。
-      const response = await fetch('/api/cart/items/' + (this.getUserId() || 'guest'), {
-          method: 'GET',
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        
-        const data = await response.json();
-        if (response.ok) {
+        // 双盲A1/A2席修复(2026-10-08)：原 GET 不带 limit——后端默认 20 条窗口，
+        // 与 syncToServer 的 500 窗口不一致：>20 条袋补水只得前 20，其余被
+        // 对账 DELETE 静默清掉（实测 500 条丢 480）。两窗口统一为 500 并翻页拉尽。
+        const uid = this.getUserId() || 'guest';
+        let serverItems = [];
+        let page = 1;
+        let firstOk = false;
+        for (let guard = 0; guard < 30; guard++) {
+          const response = await fetch(`/api/cart/items/${uid}?page=${page}&limit=500`, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (!response.ok) break;
+          if (page === 1) firstOk = true;
+          const data = await response.json();
+          const batch = Array.isArray(data.items) ? data.items : [];
+          serverItems = serverItems.concat(batch);
+          if (serverItems.length >= (data.total || 0) || batch.length === 0) break;
+          page++;
+        }
+
+        if (firstOk) {
           /* 本地优先修复(2026-10-06·⑥审 X2 P1)+挂账#3 接线(2026-10-08)：
-             分页 DTO 的键是 items（{"items":[...],"total":n,"page":n}），旧写
-             data.cart||[] 恒得 []——服务端补水从未生效。reich_cart 仍是真相源：
-             服务端仅在返回合法非空数组且本地为空时才允许补水（换设备恢复场景），
-             其余一律保本地——本地非空时由 syncToServer 对账把本地推上服务端。 */
-          const serverCart = Array.isArray(data.items) ? data.items : null;
+             分页 DTO 的键是 items，旧写 data.cart||[] 恒得 []——服务端补水从未
+             生效。reich_cart 仍是真相源：服务端仅在返回合法非空数组且本地为空时
+             才允许补水（换设备恢复场景），其余一律保本地。
+             双盲B2席修复：补水条目补 addedAt（服务端 createdAt）——撤销排序
+             a.addedAt||0 否则恒排袋首。 */
+          const serverCart = serverItems.map(it => ({
+            ...it,
+            addedAt: it.createdAt ? new Date(it.createdAt).getTime() : Date.now()
+          }));
           let localCart = [];
-          try { localCart = JSON.parse(localStorage.getItem('reich_cart') || '[]'); } catch (e) { /* 损坏按空袋 */ }
+          try {
+            // 属主不符按空袋（跨账号串袋防线，与 loadCartSync 同口径）
+            localCart = this.cartOwnerMismatch() ? [] : JSON.parse(localStorage.getItem('reich_cart') || '[]');
+          } catch (e) { /* 损坏按空袋 */ }
           // 形状守卫：全项带本地族字段才采用——首项制会让混合数组半生吞（徽章 NaN）；
           // 算术字段同验（有 sku 无 qty 的变异 DTO 也致 NaN，终验 X1 补枪）
-          const shapeOk = serverCart && serverCart.length > 0 &&
+          const shapeOk = serverCart.length > 0 &&
             serverCart.every(it => it && typeof it === 'object' &&
               'productSkuId' in it && typeof it.productQuantity === 'number');
           if (shapeOk && localCart.length === 0) {
             localStorage.setItem('reich_cart', JSON.stringify(serverCart));
             return serverCart;
           }
-          return localCart;
+          // 双盲B2席修复(B-2)：本地袋返回前过归一化——历史字符串 qty("3")
+          // 绕过此关会致徽章"03"且对账 POST 400 永久静默失同步
+          return localCart
+            .filter(it => it && typeof it === 'object' && 'productSkuId' in it)
+            .map(it => ({ ...it, productQuantity: Number(it.productQuantity) || 0 }))
+            .filter(it => it.productQuantity > 0);
         }
       } catch (error) {
         console.error('加载购物车数据出错:', error);
@@ -331,6 +360,19 @@ class CartManager {
   // 保留现有方法：保存购物车
   saveCart() {
     localStorage.setItem('reich_cart', JSON.stringify(this.cart));
+    // 双盲A1/B1席修复(跨账号串袋)：本地袋记属主——logout 不清袋（同浏览器
+    // 换账号时，前任账号的袋会被对账 POST 进后任账号并 DELETE 其服务端袋）。
+    // 读侧 owner 不匹配当前 userId 时按空袋处理，账号间自然隔离。
+    try { localStorage.setItem('reich_cart_owner', this.getUserId() || ''); } catch (e) { /* 隐私模式 */ }
+  }
+
+  // 属主校验：本地袋属主与当前登录用户不符 → 视为空袋（不认领前任袋）
+  cartOwnerMismatch() {
+    try {
+      const owner = localStorage.getItem('reich_cart_owner');
+      const current = this.getUserId() || '';
+      return owner !== null && owner !== '' && owner !== current;
+    } catch (e) { return false; }
   }
 
   // 保留现有方法：清空购物车
@@ -364,6 +406,15 @@ class CartManager {
     const uid = this.getUserId();
     if (!uid) return true; // 无用户标识（守卫要求路径参数===JWT sub，缺失属确定性失败）
 
+    // 双盲A1/B1/B2席修复：并发对账互斥——syncInProgress 原是死字段，两次
+    // 并发 sync 的 GET 都落在对方 POST 落库前会双 POST（后端 upsert 累加
+    // 语义致服务端数量翻倍）。在途时仅标记待补，finally 后补发一轮收敛。
+    if (this.syncInProgress) {
+      this.syncPendingAfter = true;
+      return true;
+    }
+    this.syncInProgress = true;
+
     try {
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
       if (!token) return true;
@@ -371,14 +422,23 @@ class CartManager {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       };
+      // 双盲C2席修复：fetch 无超时会使慢后端挂起态吞掉重试机制（promise
+      // 永不落定）——对齐仓内 product.js 的 FETCH_TIMEOUT_MS=6000 惯例
+      const fetchWithTimeout = (url, opts = {}) => {
+        const ctl = new AbortController();
+        const timer = setTimeout(() => ctl.abort(), 6000);
+        return fetch(url, { ...opts, signal: ctl.signal })
+          .finally(() => clearTimeout(timer));
+      };
 
       // 1) 拉服务端袋全量（后端购物车上限 500 条，对齐 limit）
-      const res = await fetch(`/api/cart/items/${uid}?page=1&limit=500`, {
+      const res = await fetchWithTimeout(`/api/cart/items/${uid}?page=1&limit=500`, {
         method: 'GET',
         headers: authHeaders
       });
       if (!res.ok) {
-        return res.status >= 500 ? false : true; // 5xx 瞬时可重试；4xx 确定失败不重试
+        // 双盲A1/A2/C1席修复：429 是瞬时限流非确定性失败，须可重试
+        return res.status >= 500 || res.status === 429 ? false : true;
       }
       const data = await res.json();
       const serverItems = Array.isArray(data.items) ? data.items : [];
@@ -390,7 +450,7 @@ class CartManager {
       for (const local of this.cart) {
         const server = serverBySku.get(local.productSkuId);
         if (!server) {
-          ops.push(fetch(`/api/cart/items/${uid}`, {
+          ops.push(fetchWithTimeout(`/api/cart/items/${uid}`, {
             method: 'POST',
             headers: authHeaders,
             body: JSON.stringify({
@@ -399,22 +459,22 @@ class CartManager {
               productName: local.productName,
               productBrand: local.productBrand || '',
               productPrice: Number(local.productPrice) || 0,
-              productQuantity: local.productQuantity,
+              productQuantity: Number(local.productQuantity) || 1,
               productPic: local.productPic || '',
               productAttribute: local.productAttribute || '{}'
             })
           }));
         } else if (Number(server.productQuantity) !== Number(local.productQuantity)) {
-          ops.push(fetch(`/api/cart/items/${uid}/${server.id}`, {
+          ops.push(fetchWithTimeout(`/api/cart/items/${uid}/${server.id}`, {
             method: 'PUT',
             headers: authHeaders,
-            body: JSON.stringify({ productQuantity: local.productQuantity })
+            body: JSON.stringify({ productQuantity: Number(local.productQuantity) || 1 })
           }));
         }
       }
       for (const server of serverItems) {
         if (!localSkus.has(server.productSkuId)) {
-          ops.push(fetch(`/api/cart/items/${uid}/${server.id}`, {
+          ops.push(fetchWithTimeout(`/api/cart/items/${uid}/${server.id}`, {
             method: 'DELETE',
             headers: authHeaders
           }));
@@ -424,12 +484,19 @@ class CartManager {
       if (ops.length === 0) return true; // 已一致，无操作
       const results = await Promise.allSettled(ops);
       const hasRetryable = results.some(r =>
-        r.status === 'rejected' || (r.value && r.value.status >= 500)
+        r.status === 'rejected' ||
+        (r.value && (r.value.status >= 500 || r.value.status === 429))
       );
-      return !hasRetryable; // 任一网络异常/5xx→false 供后台重试；4xx（如越权）确定性失败不重试
+      return !hasRetryable; // 任一网络异常/5xx/429→false 供后台重试；其余 4xx 确定性失败不重试
     } catch (error) {
       console.error('同步购物车到服务端失败:', error);
       return false;
+    } finally {
+      this.syncInProgress = false;
+      if (this.syncPendingAfter) {
+        this.syncPendingAfter = false;
+        setTimeout(() => { this.syncToServerBackground(); }, 1500);
+      }
     }
   }
 

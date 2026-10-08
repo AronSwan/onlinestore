@@ -46,6 +46,19 @@ export class CartRepositoryImpl extends CartRepository {
     return entity ? this.entityToAggregate(entity) : null;
   }
 
+  async findByUserIdAndSkuIdAnyState(
+    userId: string,
+    productSkuId: string,
+  ): Promise<CartItemAggregate | null> {
+    // P1 修复(2026-10-08 双盲四席实证)：软删行仍占用 (uid,sku) 唯一索引——
+    // upsert 只查活行会导致删后重加同 SKU 撞唯一键永久 500。此法不过滤
+    // delFlag，供 addItemToCart 复活软删行。
+    const entity = await this.cartItemRepository.findOne({
+      where: { customerUserId: userId, productSkuId },
+    });
+    return entity ? this.entityToAggregate(entity) : null;
+  }
+
   async save(cartItem: CartItemAggregate): Promise<void> {
     const entity = this.aggregateToEntity(cartItem);
     await this.cartItemRepository.save(entity);
@@ -103,9 +116,13 @@ export class CartRepositoryImpl extends CartRepository {
     };
   }
 
-  async removeBatch(cartItemIds: string[]): Promise<void> {
+  async removeBatch(userId: string, cartItemIds: string[]): Promise<void> {
+    // P0 修复(2026-10-08 双盲C1/A2/B2三席实证IDOR)：原实现 {id: In(ids)} 无
+    // customerUserId 条件——A 用自己 token+自己路径 uid，body 塞 B 的条目 id
+    // 即可删空 B 的袋（CartOwnerGuard 只验路径 uid）。双键过滤照抄同文件
+    // removeByUserIdAndSkuIds 模式。
     await this.cartItemRepository.update(
-      { id: In(cartItemIds) },
+      { id: In(cartItemIds), customerUserId: userId },
       { delFlag: true, updatedAt: new Date() },
     );
   }

@@ -14,7 +14,7 @@ export class UpdateCartItemDto {
 
   @ApiProperty({ description: '商品数量', example: 2, minimum: 1, maximum: 999, required: false })
   @IsOptional()
-  @IsNumber()
+  @IsNumber({ maxDecimalPlaces: 0 }) // 双盲C1席：原可落库 1.5 致 summary 4.5
   @Min(1)
   @Max(999)
   productQuantity?: number;

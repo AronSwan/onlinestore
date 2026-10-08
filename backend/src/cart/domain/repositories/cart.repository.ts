@@ -14,6 +14,10 @@ export abstract class CartRepository {
     userId: string,
     cartItemId: string,
   ): Promise<CartItemAggregate | null>;
+  abstract findByUserIdAndSkuIdAnyState(
+    userId: string,
+    productSkuId: string,
+  ): Promise<CartItemAggregate | null>;
   abstract save(cartItem: CartItemAggregate): Promise<void>;
   abstract remove(cartItemId: string): Promise<void>;
   abstract removeByUserIdAndSkuIds(userId: string, productSkuIds: string[]): Promise<void>;
@@ -25,7 +29,7 @@ export abstract class CartRepository {
     page: number,
     limit: number,
   ): Promise<{ items: CartItemAggregate[]; total: number }>;
-  abstract removeBatch(cartItemIds: string[]): Promise<void>;
+  abstract removeBatch(userId: string, cartItemIds: string[]): Promise<void>;
   abstract updateAllSelectFlag(userId: string, selectFlag: boolean): Promise<void>;
   abstract removeSelectedByUserId(userId: string): Promise<void>;
   abstract countSelectedByUserId(userId: string): Promise<number>;

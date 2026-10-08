@@ -31,7 +31,7 @@ export class AddCartItemDto {
   productPrice: number;
 
   @ApiProperty({ description: '商品数量', example: 1, minimum: 1, maximum: 999 })
-  @IsNumber()
+  @IsNumber({ maxDecimalPlaces: 0 })
   @Min(1)
   @Max(999)
   productQuantity: number;

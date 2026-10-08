@@ -94,6 +94,26 @@
 - ~~backend/docs/HEALTH_CHECK.md 整篇重写~~（**已下账 2026-10-08 挂账复核批**：764 行虚构教程重写为对齐现实的 70 行（真实端点/守卫/验证命令）；同批发现并删除 monitoring 下两个零挂载死 controller（metrics.controller/health.controller，/api/metrics 404 实证））
 - 根 docs/openapi.json 为陈旧导出（含 17 个已删 /api/logging/* 端点），活性 spec 以 /api/docs 运行时生成为准
 
+
+### 挂账#3 加固批（2026-10-08 双盲六席严格审核后施工）
+
+双盲组（协议算法/黑盒破坏/行为等价/测试盲区/安全攻击/工艺横切 六席）对 f3037ec 的对抗审核：P0 一项+P1 五项+P2/P3 一批。本批全部施工：
+
+- ~~P0 批量删除 IDOR~~：removeBatch 补 (uid,id) 双键过滤（A 用自己 token+自己路径 uid+body 塞他人条目 id 可删空他人袋——三席独立实证，复验 200 但 B 袋完好）
+- ~~P1 软删+唯一索引死区~~：删后重加同 SKU 永久 500（四席实证）——addItemToCart 增软删行查询与原地复活路径，复验 201 且量取本次值
+- ~~P1 窗口不一致~~：loadCart 无 limit(默认20) vs sync 500——换设备大袋补水 20 条后对账 DELETE 其余（实测 500 丢 480）→ 统一 500+翻页拉尽
+- ~~P1 跨账号串袋~~：logout 不清袋+A 的袋 POST 进 B 账户 → reich_cart_owner 属主绑定，读侧不匹配按空袋
+- ~~P1 并发对账翻倍~~：syncInProgress 死字段真用化（互斥+尾随补发）
+- ~~P1 loadCart 绕过归一化~~：历史字符串 qty 致徽章"03"+POST 400 永久失同步 → 返回前统一归一化
+- 语义批：PUT 不存在 404（原500）/数量上限 400（原500）/qty 小数 400（原可落库 1.5）/null 防御/429 归可重试/fetch 6s 超时/补水条目补 addedAt
+- 测试批：service 层零回归力补齐（新增 cart-application.service.spec 10 例守新契约：按路径 id 定位/404/上限400/IDOR 回归/软删复活）；controller spec 三处编造断言改真
+- 文档批：README 三处过期口径更新；cart-domain.service.ts 死重复文件删除
+- 施工中自伤一处已修：@Injectable 被插类隔开致 CartDomainService 失去 DI 元数据（EADDRINUSE 掩盖下的 not-injected，启动即现）——装饰器归位
+
+**遗留挂账（多席指出、本批不修，产品决策级）**：多设备语义=最后活跃设备独裁（本地唯一真相源架构固有，双设备交替互删）；summary totalValue≡selectedValue（calculateCartTotal 内嵌 selectFlag 过滤，存量）；select-all 端点 body 无 DTO 校验（'banana' 静默落库）；DELETE 不存在 200 幂等语义与 PUT 404 不对称（有意保留：对账重试安全）；补水 shapeOk 全项苛刻在驱动返字符串数量的漂移场景会拒收整袋（当前 TS 驱动返回 number 不可达）。
+
+验证（2026-10-08，复现命令随项）：V1 复活 201/量=本次值；V2 IDOR 200 但 B 袋完好；V3 PUT 404/qty1.5 400/null 200 不炸；cart 套件 43/43 绿（33+新10）；tsc EXIT=0；node --check 过。
+
 ## 若真要接手（非承诺）
 
 安全基线：`docs/safety.md`（规则→落点→锁）；验证：README"验证"节三命令；

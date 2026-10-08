@@ -1,5 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { CartDomainService } from '../domain/services/cart-domain.service';
+import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import { CartDomainService, CartLimitExceededError } from '../domain/services/cart-domain.service';
 import { CartRepository } from '../domain/repositories/cart.repository';
 import { AddCartItemDto } from './dto/add-cart-item.dto';
 import { UpdateCartItemDto } from './dto/update-cart-item.dto';
@@ -132,6 +132,10 @@ export class CartApplicationService {
         cartItem.updatedAt,
       );
     } catch (error) {
+      if (error instanceof CartLimitExceededError) {
+        // 业务上限拒绝转 400（双盲C1席：原落500与服务器故障不可区分）
+        throw new BadRequestException(error.message);
+      }
       this.logger.error(`添加购物车商品失败: ${error.message}`, error.stack);
       throw error;
     }
@@ -153,14 +157,15 @@ export class CartApplicationService {
         cartItemId,
       );
       if (!cartItem) {
-        throw new Error('购物车商品不存在');
+        // 双盲C1/C2/B2席：裸 Error 落 500，应为 404
+        throw new NotFoundException('购物车商品不存在');
       }
 
-      if (updateCartItemDto.productQuantity !== undefined) {
+      if (updateCartItemDto.productQuantity != null) { // null 防御(双盲C1席：@IsOptional 放行 null 落 500)
         cartItem.updateQuantity(updateCartItemDto.productQuantity);
       }
 
-      if (updateCartItemDto.selectFlag !== undefined) {
+      if (updateCartItemDto.selectFlag != null) {
         cartItem.setSelectFlag(updateCartItemDto.selectFlag);
       }
 
@@ -212,7 +217,7 @@ export class CartApplicationService {
    */
   async removeCartItems(customerUserId: string, cartItemIds: string[]): Promise<void> {
     try {
-      await this.cartRepository.removeBatch(cartItemIds);
+      await this.cartRepository.removeBatch(customerUserId, cartItemIds);
       this.logger.log(`用户 ${customerUserId} 批量删除购物车商品: ${cartItemIds.join(', ')}`);
     } catch (error) {
       this.logger.error(`批量删除购物车商品失败: ${error.message}`, error.stack);

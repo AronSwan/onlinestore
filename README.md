@@ -38,7 +38,7 @@ npm run verify:audit -- --anchor           # 全链校验通过后把链头追�
 | 健康检查 | 可用 | `GET /api/health`（另有 `backend/src/health` 模块） |
 | 注册 / 登录 | 可用 | `/api/auth/*`，JWT（访问令牌默认 15m，刷新 7d） |
 | 商品 | 可用 | `/api/products` |
-| 购物车 | 后端路由可用 / 前端同步未打通 | 后端购物车路由已挂 `JwtAuthGuard` + `CartOwnerGuard`（见 `backend/src/cart/interfaces/cart.controller.ts`）：`customerUserId` 必须等于认证用户 JWT `sub`，不一致一律 403（越权拦截）；前端 gap 是 `js/cart.js` 仍在调用不存在的 `/api/cart` 根路由，失败后静默回退本地购物车。接通需按 `/api/cart/items/{sub}` 契约改造前端（携带认证令牌，body 需 `productSkuId` 等 SKU 域字段） |
+| 购物车 | 前后端已接通 | 后端路由挂 `JwtAuthGuard` + `CartOwnerGuard`（`customerUserId` 必须等于 JWT `sub`，不一致一律 403）；`js/cart.js` 以全量对账同步（GET 拉服务端袋按 SKU diff 后 POST/PUT/DELETE 收敛，带 6s 超时与并发互斥），本地袋 `reich_cart` 仍是唯一真相源并记属主防跨账号串袋；换设备登录本地空袋时从服务端补水 |
 | 订单 | 可用 | `/api/orders`；前端带演示回退（后端不可用时使用本地演示数据） |
 | 支付 | 演示 / 未完成 | `backend/src/payment` 各策略（alipay / wechat-pay / credit-card）实现为 TODO；回调验签 fail-closed（校验失败即拒绝） |
 | AI 助手 | 演示 / 未接线 | 仓库内是规则式（非大模型）演示代码（如 js/nextchat-advanced-unified.js（已移出工作树，见 git 历史）），未挂载到任何页面；旧版 README 宣称的"NextChat 多模态 AI 助手"与现实不符 |
@@ -95,9 +95,9 @@ docker compose up -d frontend backend   # 3) 起服务，入口 http://localhost
 
 ## 已知限制与改进路线
 
-- 已验证可用的后端链路：健康检查、注册、登录、购物车（参数化路由 `/api/cart/items/{sub}`，挂 `JwtAuthGuard` + `CartOwnerGuard`）、订单——经 1189 项单测与 `scripts/smoke.sh` 冒烟验证；差距集中在前端接通与下列各项。
+- 已验证可用的后端链路：健康检查、注册、登录、购物车（参数化路由 `/api/cart/items/{sub}`，挂 `JwtAuthGuard` + `CartOwnerGuard`）、订单——经 1189 项单测与 `scripts/smoke.sh` 冒烟验证（历史口径）。
 - 支付为演示态：策略层 TODO，未接真实网关；回调验签 fail-closed。
-- 购物车前端同步未打通：后端购物车的 `customerUserId` 键即认证用户 JWT `sub`（有意决策，越权 403）；差距在前端——`js/cart.js` 仍在调用不存在的 `/api/cart` 根路由，失败后静默回退本地存储。接通需按 `/api/cart/items/{sub}` 契约改造前端（携带认证令牌，body 需 `productSkuId` 等 SKU 域字段）。
+- ~~购物车前端同步未打通~~（已于 2026-10-08 接通，见功能概览表）。多设备语义为"最后活跃设备收敛"：本地袋是唯一真相源，任一设备对账会把服务端袋收敛为该设备本地袋（他设备的袋内容会被覆盖），多设备并行编辑暂不支持。
 - AI 助手是规则式演示代码，与页面未接线，无后端会话支持。
 - 监控栈（Prometheus / Grafana / OpenObserve）只有配置与编排，未部署。
 - 部署残骸（缺陷 k8s 清单、17 套 compose 变体、一次性部署脚本）与全部历史过程文档已从工作树移除——git 历史（提交 6e55ecc/90a1cd8 及本仓库 log）可完整追溯；根目录仅保留 `docker-compose.yml`（主）、`docker-compose.local.yml`、`docker-compose.openobserve.yml` 三套。

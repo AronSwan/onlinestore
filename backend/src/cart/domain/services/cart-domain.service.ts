@@ -7,6 +7,9 @@ import { CartRepository } from '../repositories/cart.repository';
  * 基于 CongoMall 的业务逻辑封装
  * 统一了两个版本的服务接口
  */
+/** 购物车上限业务错误（application 层转 400，非服务器故障） */
+export class CartLimitExceededError extends Error {}
+
 @Injectable()
 export class CartDomainService {
   constructor(private readonly cartRepository?: CartRepository) {}
@@ -213,22 +216,44 @@ export class CartDomainService {
       existingItem.mergeQuantity(productQuantity);
       await this.cartRepository.save(existingItem);
       return existingItem;
-    } else {
-      // 创建新商品
-      const newItem = CartItemAggregate.create(
-        customerUserId,
-        productId,
-        productSkuId,
-        productName,
-        productBrand,
-        productPrice,
-        productQuantity,
-        productPic,
-        productAttribute,
-      );
-      await this.cartRepository.save(newItem);
-      return newItem;
     }
+
+    // P1 修复(2026-10-08 双盲四席实证)：软删行仍占用 (uid,sku) 唯一索引——
+    // 直接 INSERT 撞键 500，删后重加同 SKU 永久死区。命中软删行则原地复活
+    // （aggregateToEntity save 时 delFlag 恒写 false），量取本次新增值
+    // （删除语义=旧量已弃），商品信息同步刷新。
+    const softDeleted = await this.cartRepository.findByUserIdAndSkuIdAnyState(
+      customerUserId,
+      productSkuId,
+    );
+    if (softDeleted) {
+      // productId 是只读标识——软删行复活不换商品标识，仅刷新可变信息
+      softDeleted.productName = productName;
+      softDeleted.productBrand = productBrand;
+      softDeleted.productPrice = productPrice;
+      softDeleted.productQuantity = productQuantity;
+      softDeleted.productPic = productPic;
+      softDeleted.productAttribute = productAttribute;
+      softDeleted.selectFlag = true;
+      softDeleted.updatedAt = new Date();
+      await this.cartRepository.save(softDeleted);
+      return softDeleted;
+    }
+
+    // 创建新商品
+    const newItem = CartItemAggregate.create(
+      customerUserId,
+      productId,
+      productSkuId,
+      productName,
+      productBrand,
+      productPrice,
+      productQuantity,
+      productPic,
+      productAttribute,
+    );
+    await this.cartRepository.save(newItem);
+    return newItem;
   }
 
   /**

@@ -263,22 +263,20 @@ describe('CartController', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should handle insufficient stock for update', async () => {
+    it('should propagate service NotFoundException (item not found)', async () => {
+      // 双盲B2席改真：原 insufficient stock 系编造场景（真代码无库存检查）——
+      // service 新契约对不存在条目抛 NotFoundException(404)
       const customerUserId = 'user_123456';
-      const cartItemId = 'cart_123456';
-      const updateCartItemDto: UpdateCartItemDto = {
-        productSkuId: 'sku_123456',
-        productQuantity: 1000,
-        selectFlag: false,
-      };
+      const cartItemId = 'nonexistent_cart';
+      const updateCartItemDto: UpdateCartItemDto = { productQuantity: 3 };
 
       mockCartApplicationService.updateCartItem.mockRejectedValue(
-        new ConflictException('库存不足'),
+        new NotFoundException('购物车商品不存在'),
       );
 
       await expect(
         controller.updateCartItem(customerUserId, cartItemId, updateCartItemDto),
-      ).rejects.toThrow(ConflictException);
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -321,17 +319,16 @@ describe('CartController', () => {
       expect(result).toBeUndefined();
     });
 
-    it('should handle cart item not found', async () => {
+    it('should silently no-op (200) for nonexistent item — DELETE idempotency', async () => {
+      // 双盲B2席改真：真实现查无条目静默返回（DELETE 幂等语义，对账重试安全）
       const customerUserId = 'user_123456';
       const cartItemId = 'nonexistent_cart';
 
-      mockCartApplicationService.removeCartItem.mockRejectedValue(
-        new NotFoundException('购物车商品不存在'),
-      );
+      mockCartApplicationService.removeCartItem.mockResolvedValue(undefined);
 
-      await expect(controller.removeCartItem(customerUserId, cartItemId)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        controller.removeCartItem(customerUserId, cartItemId),
+      ).resolves.toBeUndefined();
     });
   });
 
@@ -360,17 +357,16 @@ describe('CartController', () => {
       expect(result).toBeUndefined();
     });
 
-    it('should handle some cart items not found', async () => {
+    it('should tolerate nonexistent ids in batch (soft-filter by uid+id)', async () => {
+      // 双盲B2席改真：批量删除按 (uid,id) 双键过滤（P0 IDOR 修复），查无不抛错
       const customerUserId = 'user_123456';
       const cartItemIds = ['cart_123456', 'nonexistent_cart'];
 
-      mockCartApplicationService.removeCartItems.mockRejectedValue(
-        new NotFoundException('部分购物车商品不存在'),
-      );
+      mockCartApplicationService.removeCartItems.mockResolvedValue(undefined);
 
-      await expect(controller.removeCartItems(customerUserId, cartItemIds)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        controller.removeCartItems(customerUserId, cartItemIds),
+      ).resolves.toBeUndefined();
     });
   });
 
