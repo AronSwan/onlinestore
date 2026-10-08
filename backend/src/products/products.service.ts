@@ -428,21 +428,13 @@ export class ProductsService {
     }
 
     if (tags && tags.length > 0) {
-      // M1-B7(2026-10-04)：tags 双方言。tags 为 simple-array 逗号串存储；
-      // FIND_IN_SET 是 MySQL/TiDB 方言，SQLite/Postgres 下直接语法错误。
-      // 非 MySQL 族用 (',' || tags || ',') LIKE '%,tag,%' 做等值匹配（首尾包逗号防子串误配）。
-      const dbType = (
-        this.configService.get<string>('master.database.type') || 'sqlite'
-      ).toLowerCase();
-      const isMysqlFamily = dbType === 'mysql' || dbType === 'tidb';
+      // M1-B7(2026-10-04)：tags 为 simple-array 逗号串存储；用
+      // (',' || tags || ',') LIKE '%,tag,%' 做等值匹配（首尾包逗号防子串误配）。
+      // FIND_IN_SET 的 MySQL/TiDB 方言分支已随死方言裁剪（2026-10-08：部署链零引用）。
       tags.forEach((tag, index) => {
-        if (isMysqlFamily) {
-          query.andWhere(`FIND_IN_SET(:tag${index}, product.tags)`, { [`tag${index}`]: tag });
-        } else {
-          query.andWhere(`(',' || product.tags || ',') LIKE :tag${index}`, {
-            [`tag${index}`]: `%,${tag},%`,
-          });
-        }
+        query.andWhere(`(',' || product.tags || ',') LIKE :tag${index}`, {
+          [`tag${index}`]: `%,${tag},%`,
+        });
       });
     }
 
@@ -759,31 +751,6 @@ export class ProductsService {
     });
   }
 
-  /**
-   * 更新产品库存
-   */
-  async updateStock(id: number, quantity: number): Promise<void> {
-    const oldProduct = await this.findById(id);
-    const oldStock = oldProduct?.stock || 0;
-
-    await this.productRepository.update(id, {
-      stock: () => `stock + ${quantity}`,
-    });
-
-    // 清除缓存（统一前缀）
-    const keyPrefix = this.configService.get<string>('redis.keyPrefix') || 'caddy_shopping';
-    try {
-      await this.cacheManager.del(`${keyPrefix}:product:${id}`);
-    } catch (e) {}
-    await this.invalidateListCache();
-
-    // 异步发布库存更新事件
-    this.publishInventoryUpdatedEvent(id, oldStock, oldStock + quantity, quantity, 'system').catch(
-      error => {
-        console.error('发布库存更新事件失败:', error);
-      },
-    );
-  }
 
   /**
    * 获取产品统计信息
@@ -1035,39 +1002,6 @@ export class ProductsService {
     }
   }
 
-  /**
-   * 批量索引所有产品到搜索引擎
-   */
-  async reindexAllProducts(): Promise<{ success: number; failed: number }> {
-    try {
-      const products = await this.productRepository.find({
-        relations: ['category'],
-      });
-
-      const indexData: ProductIndexData[] = products.map(product => ({
-        id: product.id.toString(),
-        name: product.name,
-        description: product.description,
-        price: product.price,
-        originalPrice: product.originalPrice,
-        category: product.category?.name || '',
-        categoryId: product.category?.id || 0,
-        tags: product.tags || [],
-        stock: product.stock,
-        isActive: product.isActive,
-        createdAt: product.createdAt.toISOString(),
-        updatedAt: product.updatedAt.toISOString(),
-        specifications: product.specifications,
-      }));
-
-      await this.searchManager.indexProducts(indexData);
-
-      return { success: products.length, failed: 0 };
-    } catch (error) {
-      console.error('批量重新索引失败:', error);
-      throw new Error(`批量重新索引失败: ${error.message}`);
-    }
-  }
 
   /**
    * 根据分类查找产品
@@ -1118,43 +1052,6 @@ export class ProductsService {
     return products;
   }
 
-  /**
-   * 获取搜索引擎状态
-   */
-  async getSearchEngineStatus(): Promise<{ status: 'healthy' | 'unhealthy'; uptime: number }> {
-    try {
-      const raw = await this.searchManager.getStatus();
-      // 兼容不同实现，规范化返回结构（支持 strategies/currentEngine 结构）
-      let healthy = false;
-      // 默认运行时间：可通过配置覆盖，未配置则为 3600 秒
-      const defaultUptime = this.configService.get<number>('search.status.defaultUptime') ?? 3600;
-      let uptime = defaultUptime;
-
-      if (typeof (raw as any)?.healthy === 'boolean') {
-        healthy = !!(raw as any).healthy;
-      } else if (typeof (raw as any)?.status === 'string') {
-        healthy = String((raw as any).status).toLowerCase() === 'healthy';
-      } else if (Array.isArray((raw as any)?.strategies)) {
-        // 如果返回为策略集合，认为存在任何 isHealthy=true 即健康
-        healthy = !!(raw as any).strategies.find((s: any) => s?.isHealthy === true);
-      }
-
-      if (typeof (raw as any)?.uptime === 'number') {
-        uptime = Number((raw as any).uptime);
-      } else if (typeof (raw as any)?.uptimeSeconds === 'number') {
-        uptime = Number((raw as any).uptimeSeconds);
-      }
-
-      return { status: healthy ? 'healthy' : 'unhealthy', uptime };
-    } catch (error) {
-      console.error('获取搜索引擎状态失败:', error);
-      // 保留原始错误消息，满足测试期望
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error(String(error));
-    }
-  }
 
   /**
    * 获取所有分类

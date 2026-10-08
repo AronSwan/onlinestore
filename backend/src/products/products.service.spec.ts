@@ -571,24 +571,8 @@ describe('ProductsService', () => {
         );
         expect(findInSetCalls).toHaveLength(0);
       });
-
-      it('MySQL/TiDB 保留 FIND_IN_SET 方言', async () => {
-        mockConfigService.get.mockImplementation((key: string) =>
-          key === 'master.database.type' ? 'mysql' : null,
-        );
-        const qb = createMockQueryBuilder<Product>();
-        qb.getManyAndCount.mockResolvedValue([[mockProduct], 1]);
-        mockProductRepository.createQueryBuilder.mockReturnValue(qb);
-
-        await service.search(tagOptions);
-
-        expect(qb.andWhere).toHaveBeenCalledWith('FIND_IN_SET(:tag0, product.tags)', {
-          tag0: '真皮',
-        });
-        expect(qb.andWhere).toHaveBeenCalledWith('FIND_IN_SET(:tag1, product.tags)', {
-          tag1: '手提',
-        });
-      });
+      // MySQL/TiDB 的 FIND_IN_SET 方言用例已随死方言裁剪（2026-10-08：
+      // mysql/tidb 在 compose/.env/Dockerfile 部署链零引用，方言分支删除）
     });
   });
 
@@ -1188,30 +1172,6 @@ describe('ProductsService', () => {
     });
   });
 
-  describe('Update Stock', () => {
-    it('should successfully update product stock', async () => {
-      mockProductRepository.findOne.mockResolvedValue(mockProduct);
-      mockProductRepository.update.mockResolvedValue({ affected: 1 });
-      mockCacheManager.del.mockResolvedValue(true);
-      mockProductEventsService.publishInventoryUpdated.mockResolvedValue(undefined);
-
-      await service.updateStock(1, 10);
-
-      expect(mockProductRepository.update).toHaveBeenCalledWith(1, {
-        stock: expect.any(Function),
-      });
-      expect(mockCacheManager.del).toHaveBeenCalledWith('caddy_shopping:product:1');
-      expect(mockProductEventsService.publishInventoryUpdated).toHaveBeenCalledWith({
-        productId: 1,
-        oldStock: 50,
-        newStock: 60,
-        change: 10,
-        reason: 'system',
-        timestamp: expect.any(String),
-      });
-    });
-  });
-
   describe('Get Statistics', () => {
     it('should return product statistics', async () => {
       // 重置mock调用计数
@@ -1445,63 +1405,6 @@ describe('ProductsService', () => {
       expect(mockMonitoringService.recordCacheMiss).toHaveBeenCalledWith(
         'caddy_shopping:categories:all',
       );
-    });
-  });
-
-  describe('Reindex All Products', () => {
-    it('should successfully reindex all products', async () => {
-      mockProductRepository.find.mockResolvedValue([mockProduct]);
-      mockSearchManagerService.indexProducts.mockResolvedValue(undefined);
-
-      const result = await service.reindexAllProducts();
-
-      expect(result).toEqual({ success: 1, failed: 0 });
-      expect(mockProductRepository.find).toHaveBeenCalledWith({
-        relations: ['category'],
-      });
-      expect(mockSearchManagerService.indexProducts).toHaveBeenCalledWith([
-        {
-          id: '1',
-          name: '测试产品',
-          description: '测试产品描述',
-          price: 100,
-          originalPrice: 120,
-          category: '测试分类',
-          categoryId: 1,
-          tags: ['标签1', '标签2'],
-          stock: 50,
-          isActive: true,
-          createdAt: expect.any(String),
-          updatedAt: expect.any(String),
-          specifications: { color: '红色', size: 'M' },
-        },
-      ]);
-    });
-
-    it('should throw error when reindexing fails', async () => {
-      mockProductRepository.find.mockRejectedValue(new Error('Database error'));
-
-      await expect(service.reindexAllProducts()).rejects.toThrow(
-        '批量重新索引失败: Database error',
-      );
-    });
-  });
-
-  describe('Get Search Engine Status', () => {
-    it('should return search engine status', async () => {
-      const status = { status: 'healthy', uptime: 3600 };
-      mockSearchManagerService.getStatus.mockResolvedValue({ healthy: true });
-
-      const result = await service.getSearchEngineStatus();
-
-      expect(result).toEqual(status);
-      expect(mockSearchManagerService.getStatus).toHaveBeenCalled();
-    });
-
-    it('should throw error when getting status fails', async () => {
-      mockSearchManagerService.getStatus.mockRejectedValue(new Error('Status error'));
-
-      await expect(service.getSearchEngineStatus()).rejects.toThrow('Status error');
     });
   });
 

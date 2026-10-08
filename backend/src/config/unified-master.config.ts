@@ -52,7 +52,7 @@ export interface AppConfig {
 }
 
 export interface DatabaseConfig {
-  type: 'postgres' | 'mysql' | 'tidb' | 'sqlite';
+  type: 'postgres' | 'sqlite'; // 方言裁剪(2026-10-08): mysql/tidb 部署链零引用(compose/env/Dockerfile 全核)
   host?: string;
   port?: number;
   username?: string;
@@ -69,15 +69,6 @@ export interface DatabaseConfig {
   connectionTimeout: number;
   acquireTimeout: number;
   idleTimeout: number;
-  // TiDB 特定配置
-  tidb?: {
-    clusterName: string;
-    pdEndpoints: string;
-    tikvEndpoints: string;
-    tidbEndpoints: string;
-    nodes: string;
-    dashboardUrl: string;
-  };
 }
 
 export interface RedisConfig {
@@ -273,26 +264,26 @@ const configValidationSchema = Joi.object({
   API_PREFIX: Joi.string().default('api'),
 
   // 数据库配置
-  DB_TYPE: Joi.string().valid('postgres', 'mysql', 'tidb', 'sqlite').default('sqlite'),
+  DB_TYPE: Joi.string().valid('postgres', 'sqlite').default('sqlite'),
   DB_HOST: Joi.string().when('DB_TYPE', {
-    is: Joi.string().valid('postgres', 'mysql', 'tidb'),
+    is: Joi.string().valid('postgres'),
     then: Joi.required(),
     otherwise: Joi.optional(),
   }),
   DB_PORT: Joi.number().when('DB_TYPE', {
-    is: Joi.string().valid('postgres', 'mysql', 'tidb'),
+    is: Joi.string().valid('postgres'),
     then: Joi.required(),
     otherwise: Joi.optional(),
   }),
   DB_USERNAME: Joi.string().when('DB_TYPE', {
-    is: Joi.string().valid('postgres', 'mysql', 'tidb'),
+    is: Joi.string().valid('postgres'),
     then: Joi.required(),
     otherwise: Joi.optional(),
   }),
   DB_PASSWORD: Joi.string()
     .allow('')
     .when('DB_TYPE', {
-      is: Joi.string().valid('postgres', 'mysql', 'tidb'),
+      is: Joi.string().valid('postgres'),
       then: Joi.optional(),
       otherwise: Joi.optional(),
     }),
@@ -428,7 +419,7 @@ export const createMasterConfiguration = (): MasterConfig => {
     // 禁止在生产环境使用 sqlite，避免隐式回退
     if (env.DB_TYPE === 'sqlite') {
       throw new Error(
-        '生产环境禁止使用 sqlite 数据库，请设置 DB_TYPE 为 postgres/mysql/tidb 并提供连接信息',
+        '生产环境禁止使用 sqlite 数据库，请设置 DB_TYPE 为 postgres 并提供连接信息',
       );
     }
 
@@ -506,17 +497,6 @@ export const createMasterConfiguration = (): MasterConfig => {
       connectionTimeout: parseInt(env.DB_CONNECTION_TIMEOUT, 10),
       acquireTimeout: parseInt(env.DB_ACQUIRE_TIMEOUT, 10),
       idleTimeout: parseInt(env.DB_IDLE_TIMEOUT, 10),
-      tidb:
-        env.DB_TYPE === 'tidb'
-          ? {
-              clusterName: env.TIDB_CLUSTER_NAME,
-              pdEndpoints: env.TIDB_PD_ENDPOINTS,
-              tikvEndpoints: env.TIDB_TIKV_ENDPOINTS,
-              tidbEndpoints: env.TIDB_TIDB_ENDPOINTS,
-              nodes: env.TIDB_NODES,
-              dashboardUrl: env.TIDB_DASHBOARD_URL,
-            }
-          : undefined,
     },
 
     redis: {

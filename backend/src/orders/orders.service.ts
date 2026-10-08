@@ -296,6 +296,9 @@ export class OrdersService {
     return updatedOrder!;
   }
 
+  // 恢复注记(2026-10-08)：生产链零调用，但它是 orders spec 十余处事件
+  // 发布断言的测试驱动器（"使用updateStatus方法，因为它总是会发布事件"）——
+  // 测试基建价值保留
   async updateStatus(id: number, status: OrderStatus): Promise<Order> {
     const order = await this.findById(id);
     if (!order) {

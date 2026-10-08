@@ -4,7 +4,7 @@ import { config } from 'dotenv';
 // 加载环境变量
 config();
 
-const dbType = (process.env.DB_TYPE || 'sqlite') as 'mysql' | 'postgres' | 'sqlite';
+const dbType = (process.env.DB_TYPE || 'sqlite') as 'postgres' | 'sqlite';
 
 // 基础配置
 const baseConfig: any = {
