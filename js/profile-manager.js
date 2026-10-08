@@ -1,7 +1,9 @@
 // 用途：用户个人资料管理器，处理用户信息的加载、编辑、地址管理等功能
-// 依赖文件：无（navigation-state-manager.js 已移出工作树，见 git 历史）
+// 依赖文件：shared/toast.js（S14 施工单③ toast 归一引入；本文件已 module 化）
 // 作者：系统开发团队
 // 时间：2025-10-01 19:05:51
+
+import { showToast } from './shared/toast.js';
 
 class ProfileManager {
     constructor() {
@@ -687,18 +689,10 @@ class ProfileManager {
     }
 
     showNotification(message, type = 'info') {
-        // 创建通知元素
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        notification.textContent = message;
-        
-        // 添加到页面
-        document.body.appendChild(notification);
-        
-        // 3秒后自动移除
-        setTimeout(() => {
-            notification.remove();
-        }, 3000);
+        // S14 施工单③:第三物种 toast 归一——裸 div.notification 退役,改调 shared/toast.js
+        // (login-utils.js:70-73 同款先例);type 形参保留仅为 11 处调用点签名兼容
+        void type;
+        showToast({ message, confirmText: null, dismissText: null });
     }
 }
 

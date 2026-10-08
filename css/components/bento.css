@@ -5,7 +5,11 @@
 .bento-card {
   background: var(--bg-base); border: 1px solid var(--line); border-radius: var(--radius-md);
   overflow: hidden; display: flex; min-width: 0;
-  transition: border-color var(--dur-fast) var(--ease-lux);
+  /* S14 案一(2026-10-09 用户裁决:保浮起)——补 transform/box-shadow 过渡,
+     修复与 main.css 全属性过渡的打架(边框淡入/位移瞬跳) */
+  transition: border-color var(--dur-fast) var(--ease-lux),
+              transform var(--dur-fast) var(--ease-lux),
+              box-shadow var(--dur-fast) var(--ease-lux);
 }
 .bento-grid .card-fig { position: relative; background: var(--bg-soft); flex: none; min-width: 0; }
 .bento-card .reich-product-image { height: 100%; aspect-ratio: auto; }

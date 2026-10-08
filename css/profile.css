@@ -48,25 +48,25 @@
     display: block;
     padding: 12px 16px;
     text-decoration: none;
-    color: #666;
-    border-radius: 6px;
+    color: var(--ink-soft);
+    border-radius: var(--radius-sm);
     transition: all 0.3s ease;
     font-weight: 500;
 }
 
 .profile-menu a:hover,
 .profile-menu a.active {
-    background: #007bff;
-    color: white;
+    background: var(--ink);
+    color: var(--bg-base);
 }
 
 /* 主要内容区域 */
 .profile-content {
     flex: 1;
     background: white;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     padding: 30px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-md);
 }
 
 .profile-section {
@@ -79,10 +79,10 @@
 
 .profile-section h2 {
     margin-bottom: 30px;
-    color: #333;
+    color: var(--ink);
     font-size: 24px;
     font-weight: 600;
-    border-bottom: 2px solid #007bff;
+    border-bottom: 2px solid var(--candy-blush-ink);
     padding-bottom: 10px;
 }
 
@@ -99,15 +99,15 @@
     display: block;
     margin-bottom: 8px;
     font-weight: 500;
-    color: #333;
+    color: var(--ink);
 }
 
 .form-group input,
 .form-group select {
     width: 100%;
     padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
     font-size: 14px;
     transition: border-color 0.3s ease;
 }
@@ -115,13 +115,13 @@
 .form-group input:focus,
 .form-group select:focus {
     outline: none;
-    border-color: #007bff;
+    border-color: var(--candy-blush-ink);
     box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
 }
 
 .form-group input:read-only {
-    background-color: #f8f9fa;
-    color: #666;
+    background-color: var(--bg-soft);
+    color: var(--ink-soft);
     cursor: not-allowed;
 }
 
@@ -149,8 +149,8 @@
 /* 批三(排版 P1-7): .btn-primary 并入 btn-pill 形制——圆角 6→pill、14px/500→13px/600
    （main.css .btn-pill 同参）；配色不在裁决范围，保守不动 */
 .btn-primary {
-    background: #007bff;
-    color: white;
+    background: var(--ink);
+    color: var(--bg-base);
     border: none;
     padding: 12px 24px;
     border-radius: var(--radius-pill);
@@ -161,42 +161,42 @@
 }
 
 .btn-primary:hover {
-    background: #0056b3;
+    background: var(--candy-blush);
 }
 
 .btn-secondary {
-    background: #6c757d;
-    color: white;
+    background: transparent;
+    color: var(--bg-base);
     border: none;
     padding: 8px 16px;
-    border-radius: 4px;
+    border-radius: var(--radius-pill);
     cursor: pointer;
     font-size: 12px;
     transition: background 0.3s ease;
 }
 
 .btn-secondary:hover {
-    background: #545b62;
+    background: var(--ink-soft);
 }
 
 .btn-danger {
-    background: #dc3545;
-    color: white;
+    background: var(--error);
+    color: var(--bg-base);
     border: none;
     padding: 8px 16px;
-    border-radius: 4px;
+    border-radius: var(--radius-pill);
     cursor: pointer;
     font-size: 12px;
     transition: background 0.3s ease;
 }
 
 .btn-danger:hover {
-    background: #c82333;
+    background: var(--error-dark);
 }
 
 /* 权益批 B10：注销钮 armed 态（两步确认第一步——与购物袋清空钮同款语义） */
 .btn-danger.armed {
-    background: #a71d2a;
+    background: var(--error-dark);
     box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.25);
 }
 
@@ -214,21 +214,21 @@
 }
 
 .address-card {
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
     padding: 20px;
     transition: all 0.3s ease;
     position: relative;
 }
 
 .address-card:hover {
-    border-color: #007bff;
+    border-color: var(--candy-blush-ink);
     box-shadow: 0 2px 8px rgba(0, 123, 255, 0.1);
 }
 
 .address-card.default {
-    border-color: #28a745;
-    background: #f8fff9;
+    border-color: var(--success);
+    background: var(--success-bg);
 }
 
 .address-header {
@@ -240,22 +240,22 @@
 
 .address-header h4 {
     margin: 0;
-    color: #333;
+    color: var(--ink);
     font-size: 16px;
 }
 
 .default-badge {
-    background: #28a745;
-    color: white;
+    background: transparent;
+    color: var(--bg-base);
     padding: 4px 8px;
-    border-radius: 12px;
+    border-radius: var(--radius-sm);
     font-size: 12px;
     font-weight: 500;
 }
 
 .address-content p {
     margin: 5px 0;
-    color: #666;
+    color: var(--ink-soft);
     line-height: 1.4;
 }
 
@@ -277,7 +277,7 @@
     margin: 0 0 20px;
     padding: 12px 16px;
     border: 1px solid var(--line, #e9ecef);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     background: var(--bg-soft, #faf9f7);
     font-size: 14px;
     line-height: 1.6;
@@ -288,7 +288,7 @@
     color: var(--candy-blush-ink, #B93A54);
     text-decoration: underline;
     text-underline-offset: 3px;
-    border-radius: 4px;
+    border-radius: var(--radius-pill);
 }
 
 .guest-wishlist-note a:focus-visible {
@@ -300,8 +300,8 @@
     display: flex;
     align-items: center;
     gap: 16px;
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
     padding: 16px 20px;
     transition: all 0.3s ease;
 }
@@ -315,7 +315,7 @@
     width: 56px;
     height: 72px; /* 3:4 与商品卡同比例 */
     object-fit: cover;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     flex: none;
 }
 
@@ -326,13 +326,13 @@
 
 .wishlist-item-info h4 {
     margin: 0 0 4px;
-    color: #333;
+    color: var(--ink);
     font-size: 16px;
 }
 
 .wishlist-item-info p {
     margin: 0;
-    color: #666;
+    color: var(--ink-soft);
     font-size: 14px;
 }
 
@@ -342,14 +342,14 @@
 
 .no-wishlist {
     text-align: center;
-    color: #666;
+    color: var(--ink-soft);
     font-style: italic;
     padding: 40px 20px;
 }
 
 .no-addresses {
     text-align: center;
-    color: #666;
+    color: var(--ink-soft);
     font-style: italic;
     padding: 40px 20px;
 }
@@ -366,14 +366,14 @@
     justify-content: space-between;
     align-items: center;
     padding: 20px;
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    background: #f8f9fa;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: var(--bg-soft);
 }
 
 .security-item h3 {
     margin: 0;
-    color: #333;
+    color: var(--ink);
     font-size: 16px;
 }
 
@@ -390,10 +390,10 @@
 }
 
 .modal-content {
-    background-color: white;
+    background-color: var(--bg-base);
     margin: 5% auto;
     padding: 30px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     width: 90%;
     max-width: 500px;
     position: relative;
@@ -402,7 +402,7 @@
 
 .modal-content h3 {
     margin: 0 0 20px 0;
-    color: #333;
+    color: var(--ink);
     font-size: 20px;
     font-weight: 600;
 }
@@ -411,7 +411,7 @@
     position: absolute;
     right: 20px;
     top: 20px;
-    color: #aaa;
+    color: var(--ink-faint);
     font-size: 24px;
     font-weight: bold;
     cursor: pointer;
@@ -419,7 +419,7 @@
 }
 
 .close:hover {
-    color: #333;
+    color: var(--ink);
 }
 
 .form-actions {
@@ -429,30 +429,7 @@
     margin-top: 20px;
 }
 
-/* 通知样式 */
-.notification {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 12px 20px;
-    border-radius: 6px;
-    color: white;
-    z-index: var(--z-toast);
-    font-weight: 500;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-}
-
-.notification.success {
-    background: #28a745;
-}
-
-.notification.error {
-    background: #dc3545;
-}
-
-.notification.info {
-    background: #17a2b8;
-}
+/* 通知样式已随第三物种 toast 归一删除(S14 施工单③) */
 
 /* 响应式设计 */
 @media (max-width: 768px) {

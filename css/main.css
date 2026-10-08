@@ -992,8 +992,12 @@ body {
     transition: transform var(--transition-standard);
 }
 
-.reich-product-card:hover .reich-product-image {
+/* S14 案一(2026-10-09):图 hover scale 补 reduced-motion 门
+   (视觉席补审:该规则无门,bento.css:41 的门只覆盖 bento 类自己的 transform) */
+@media (prefers-reduced-motion: no-preference) {
+  .reich-product-card:hover .reich-product-image {
     transform: scale(1.03);
+  }
 }
 
 .reich-product-name {

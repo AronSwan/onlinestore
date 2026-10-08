@@ -10,7 +10,7 @@
   left: 0;
   right: 0;
   background-color: #fff;
-  border: 1px solid #ddd;
+  border: 1px solid var(--line);
   border-top: none;
   border-radius: 0 0 4px 4px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -38,7 +38,7 @@
   left: 0;
   right: 0;
   background-color: #fff;
-  border: 1px solid #ddd;
+  border: 1px solid var(--line);
   border-top: none;
   border-radius: 0 0 4px 4px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -52,7 +52,7 @@
 .search-history-title {
   padding: 10px 15px;
   font-weight: bold;
-  color: #333;
+  color: var(--ink);
   border-bottom: 1px solid #eee;
 }
 
@@ -82,7 +82,7 @@
 /* 热门搜索标题 */
 .popular-searches-title {
   font-weight: bold;
-  color: #333;
+  color: var(--ink);
   margin-bottom: 10px;
   font-size: 16px;
 }
@@ -93,8 +93,8 @@
   margin: 5px;
   padding: 5px 10px;
   background-color: #fff;
-  border: 1px solid #ddd;
-  border-radius: 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
   cursor: pointer;
   transition: all 0.2s;
   font-size: 14px;
@@ -108,13 +108,13 @@
 /* 热门搜索排名 */
 .popular-search-rank {
   font-weight: bold;
-  color: #ff6b6b;
+  color: var(--candy-blush-ink);
   margin-right: 5px;
 }
 
 /* 热门搜索词 */
 .popular-search-term {
-  color: #333;
+  color: var(--ink);
 }
 
 /* 热门搜索次数 */
@@ -133,7 +133,7 @@
 .search-results-title {
   font-size: 18px;
   font-weight: bold;
-  color: #333;
+  color: var(--ink);
   margin-bottom: 15px;
   padding-bottom: 10px;
   border-bottom: 1px solid #eee;
@@ -172,7 +172,7 @@
 .no-search-results {
   padding: 30px;
   text-align: center;
-  color: #666;
+  color: var(--ink-soft);
   font-size: 16px;
   background-color: #f9f9f9;
   border-radius: 4px;
@@ -188,7 +188,7 @@
 /* 产品卡片 */
 .product-card {
   background-color: #fff;
-  border: 1px solid #ddd;
+  border: 1px solid var(--line);
   border-radius: 4px;
   overflow: hidden;
   transition: transform 0.2s, box-shadow 0.2s;
@@ -216,7 +216,7 @@
 .product-name {
   font-size: 16px;
   font-weight: bold;
-  color: #333;
+  color: var(--ink);
   margin-bottom: 5px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -247,7 +247,7 @@
 /* 产品评分数量 */
 .product-rating-count {
   font-size: 14px;
-  color: #666;
+  color: var(--ink-soft);
 }
 
 /* 产品操作按钮 */
@@ -290,7 +290,7 @@
 .search-loading-indicator {
   text-align: center;
   padding: 20px;
-  color: #666;
+  color: var(--ink-soft);
   display: none;
 }
 
@@ -304,7 +304,7 @@
 .search-input {
   width: 100%;
   padding: 12px 15px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--line);
   border-radius: 4px;
   font-size: 16px;
   transition: border-color 0.2s;
