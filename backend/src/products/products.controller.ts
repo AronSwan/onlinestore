@@ -301,6 +301,11 @@ export class ProductsController {
     },
   })
   async searchProducts(@Query() query: Record<string, any>) {
+    // 反拟合席A P2-3 同族补修:与 /api/search 同款缺 q 400(S8 只修了一处,
+    // 自家搜索组件调的恰是这个端点)
+    if (!query.q || !String(query.q).trim()) {
+      throw new BadRequestException('搜索关键词 q 必填');
+    }
     // 双盲B1席修复：tags 此前未从 query 解构——service 层过滤能力在，参数被丢弃恒全量
     const { q, page = 1, limit = 20, category, minPrice, maxPrice, inStock, tags } = query;
 

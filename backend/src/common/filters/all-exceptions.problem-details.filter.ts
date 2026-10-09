@@ -86,6 +86,10 @@ export class AllExceptionsProblemDetailsFilter implements ExceptionFilter {
       const title = exception.name.replace(/Exception$/, '') ||
         HttpStatus[status] ||
         'Error';
+      // 自洽席B1:5xx 卫兵对 HttpException 分支同样生效(原只卫非HttpException)
+      if (status >= 500) {
+        return { status, title, detail: '服务器内部错误', retryAfter: undefined };
+      }
 
       // V-D 限流对象体：提取 retryAfter（自写 RateLimitGuard 的形状）
       let retryAfter: number | undefined;

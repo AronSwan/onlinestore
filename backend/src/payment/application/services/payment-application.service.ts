@@ -296,7 +296,7 @@ export class PaymentApplicationService {
       const gateway = this.paymentGatewayFactory.createGateway(paymentOrder.paymentMethod);
       const gatewayResult = await gateway.createRefund({
         paymentOrderId: paymentOrder.id.value,
-        gatewayOrderId: paymentOrder.gatewayOrderId,
+        gatewayOrderId: paymentOrder.gatewayOrderId ?? '',
         refundId: refund.id.value,
         refundAmount: command.refundAmount,
         reason: command.reason,
@@ -349,7 +349,7 @@ export class PaymentApplicationService {
       const gateway = this.paymentGatewayFactory.createGateway(paymentOrder.paymentMethod);
       const gatewayStatus = await gateway.queryPaymentStatus({
         paymentOrderId: paymentOrder.id.value,
-        gatewayOrderId: paymentOrder.gatewayOrderId,
+        gatewayOrderId: paymentOrder.gatewayOrderId ?? '',
       });
 
       // 3. 更新本地状态
@@ -393,7 +393,7 @@ export class PaymentApplicationService {
       const gateway = this.paymentGatewayFactory.createGateway(paymentOrder.paymentMethod);
       await gateway.closePayment({
         paymentOrderId: paymentOrder.id.value,
-        gatewayOrderId: paymentOrder.gatewayOrderId,
+        gatewayOrderId: paymentOrder.gatewayOrderId ?? '',
       });
 
       // 4. 保存更新
@@ -402,8 +402,8 @@ export class PaymentApplicationService {
       this.logger.log(`支付订单关闭成功: ${paymentOrderId.value}`);
       return {
         paymentOrderId: paymentOrder.id.value,
-        status: paymentOrder.status,
-        closedAt: paymentOrder.closedAt?.toISOString(),
+        status: paymentOrder.status as string,
+        closedAt: paymentOrder.closedAt ? paymentOrder.closedAt.toISOString() : '',
       };
     } catch (error) {
       this.logger.error(`关闭支付订单失败: ${error.message}`, error.stack);

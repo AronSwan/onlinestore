@@ -7,22 +7,22 @@ export interface PaymentOrderRepository {
   /**
    * 根据ID查找支付订单
    */
-  findById(id: PaymentOrderId): Promise<any | null>;
+  findById(id: PaymentOrderId): Promise<import('../aggregates/payment-order.aggregate').PaymentOrderAggregate | null>;
 
   /**
    * 根据ID列表查找支付订单
    */
-  findByIds(ids: PaymentOrderId[]): Promise<any[]>;
+  findByIds(ids: PaymentOrderId[]): Promise<import('../aggregates/payment-order.aggregate').PaymentOrderAggregate[]>;
 
   /**
    * 根据商户订单ID查找支付订单
    */
-  findByMerchantOrderId(merchantOrderId: string): Promise<any[]>;
+  findByMerchantOrderId(merchantOrderId: string): Promise<import('../aggregates/payment-order.aggregate').PaymentOrderAggregate[]>;
 
   /**
    * 根据幂等性键查找支付订单
    */
-  findByIdempotencyKey(idempotencyKey: string): Promise<any | null>;
+  findByIdempotencyKey(idempotencyKey: string): Promise<import('../aggregates/payment-order.aggregate').PaymentOrderAggregate | null>;
 
   /**
    * 根据用户ID查找支付订单
@@ -39,7 +39,7 @@ export interface PaymentOrderRepository {
   /**
    * 保存支付订单
    */
-  save(paymentOrder: any): Promise<void>;
+  save(paymentOrder: import('../aggregates/payment-order.aggregate').PaymentOrderAggregate): Promise<void>;
 
   /**
    * 获取统计信息
