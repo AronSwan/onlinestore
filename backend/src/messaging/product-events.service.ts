@@ -3,7 +3,7 @@
 // 作者：后端开发团队
 // 时间：2025-09-30 00:00:00
 
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { RedpandaService } from './redpanda.service';
 import { ConfigService } from '@nestjs/config';
 
@@ -41,6 +41,8 @@ export interface InventoryUpdatedEvent {
 
 @Injectable()
 export class ProductEventsService implements OnModuleInit {
+  private readonly logger = new Logger(ProductEventsService.name);
+
   private readonly PRODUCT_CREATED_TOPIC = 'products.created';
   private readonly PRODUCT_UPDATED_TOPIC = 'products.updated';
   private readonly PRODUCT_VIEWED_TOPIC = 'products.viewed';
@@ -71,7 +73,7 @@ export class ProductEventsService implements OnModuleInit {
       try {
         await this.redpandaService.createTopic(topic, 3, 1);
       } catch (error) {
-        console.warn(`主题创建失败 ${topic}:`, error.message);
+        this.logger.warn(`主题创建失败 ${topic}: ${error.message}`);
       }
     }
   }
@@ -162,7 +164,7 @@ export class ProductEventsService implements OnModuleInit {
    * 处理产品浏览事件
    */
   private async handleProductViewed(event: ProductViewedEvent): Promise<void> {
-    console.log('处理产品浏览事件:', event.productId);
+    this.logger.log(`处理产品浏览事件: ${event.productId}`);
 
     // 这里可以添加用户行为分析逻辑：
     // 1. 更新产品热度
@@ -173,9 +175,9 @@ export class ProductEventsService implements OnModuleInit {
     try {
       // 模拟异步处理
       await new Promise(resolve => setTimeout(resolve, 50));
-      console.log(`✅ 产品 ${event.productId} 浏览事件处理完成`);
+      this.logger.log(`✅ 产品 ${event.productId} 浏览事件处理完成`);
     } catch (error) {
-      console.error(`❌ 产品 ${event.productId} 浏览事件处理失败:`, error);
+      this.logger.error(`❌ 产品 ${event.productId} 浏览事件处理失败:`, error instanceof Error ? error.stack : String(error));
     }
   }
 
@@ -183,7 +185,7 @@ export class ProductEventsService implements OnModuleInit {
    * 处理库存更新事件
    */
   private async handleInventoryUpdated(event: InventoryUpdatedEvent): Promise<void> {
-    console.log('处理库存更新事件:', event.productId);
+    this.logger.log(`处理库存更新事件: ${event.productId}`);
 
     // 这里可以添加库存相关逻辑：
     // 1. 更新库存缓存
@@ -194,9 +196,9 @@ export class ProductEventsService implements OnModuleInit {
     try {
       // 模拟异步处理
       await new Promise(resolve => setTimeout(resolve, 50));
-      console.log(`✅ 产品 ${event.productId} 库存更新处理完成`);
+      this.logger.log(`✅ 产品 ${event.productId} 库存更新处理完成`);
     } catch (error) {
-      console.error(`❌ 产品 ${event.productId} 库存更新处理失败:`, error);
+      this.logger.error(`❌ 产品 ${event.productId} 库存更新处理失败:`, error instanceof Error ? error.stack : String(error));
     }
   }
 }

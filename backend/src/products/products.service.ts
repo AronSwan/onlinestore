@@ -8,6 +8,7 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, QueryDeepPartialEntity, DeepPartial } from 'typeorm';
@@ -76,6 +77,8 @@ export interface ProductSearchOptions {
 
 @Injectable()
 export class ProductsService {
+  private readonly logger = new Logger(ProductsService.name);
+
   constructor(
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
@@ -100,7 +103,7 @@ export class ProductsService {
   private logCache(event: 'hit' | 'miss', key: string) {
     if (event === 'hit') this.cacheHits++;
     else this.cacheMisses++;
-    console.log('[cache]', { key, event, hits: this.cacheHits, misses: this.cacheMisses });
+    this.logger.log(`[cache] ${JSON.stringify({ key, event, hits: this.cacheHits, misses: this.cacheMisses })}`);
   }
 
   /**
@@ -173,11 +176,11 @@ export class ProductsService {
           try {
             await this.cacheManager.del(key);
           } catch (e) {
-            console.warn('删除缓存键失败', { key, error: (e as Error).message });
+            this.logger.warn(`删除缓存键失败 ${JSON.stringify({ key, error: (e as Error).message })}`);
           }
         }
       } catch (e) {
-        console.warn('清除缓存模式失败', { pattern, error: (e as Error).message });
+        this.logger.warn(`清除缓存模式失败 ${JSON.stringify({ pattern, error: (e as Error).message })}`);
       }
     }
 
@@ -238,12 +241,12 @@ export class ProductsService {
 
     // 异步发布产品创建事件
     this.publishProductCreatedEvent(saved).catch((error: Error) => {
-      console.error('发布产品创建事件失败:', error);
+      this.logger.error('发布产品创建事件失败:', error instanceof Error ? error.stack : String(error));
     });
 
     // 异步索引产品到搜索引擎
     this.indexProductToSearch(saved).catch((error: Error) => {
-      console.error('产品搜索索引失败:', error);
+      this.logger.error('产品搜索索引失败:', error instanceof Error ? error.stack : String(error));
     });
 
     return saved;
@@ -270,7 +273,7 @@ export class ProductsService {
         return cached;
       }
     } catch (error) {
-      console.error('缓存获取失败:', error);
+      this.logger.error('缓存获取失败:', error instanceof Error ? error.stack : String(error));
       // 继续到数据库查询
     }
 
@@ -294,7 +297,7 @@ export class ProductsService {
         const endSet = process.hrtime.bigint();
         this.monitoring.observeRedisDuration('set', Number(endSet - startSet) / 1_000_000_000);
       } catch (error) {
-        console.error('缓存设置失败:', error);
+        this.logger.error('缓存设置失败:', error instanceof Error ? error.stack : String(error));
         // 不影响主流程，继续返回产品
       }
     }
@@ -373,7 +376,7 @@ export class ProductsService {
         total: searchResult.total,
       };
     } catch (error) {
-      console.warn('搜索引擎搜索失败，回退到数据库搜索:', error);
+      this.logger.warn(`搜索引擎搜索失败，回退到数据库搜索: ${error instanceof Error ? error.message : String(error)}`);
       // 搜索引擎失败时回退到数据库搜索
       return this.databaseSearch(options);
     }
@@ -701,14 +704,14 @@ export class ProductsService {
     // 异步发布产品更新事件
     if (oldProduct && updatedProduct) {
       this.publishProductUpdatedEvent(oldProduct, updatedProduct, updateDataForEvent).catch(error => {
-        console.error('发布产品更新事件失败:', error);
+        this.logger.error('发布产品更新事件失败:', error instanceof Error ? error.stack : String(error));
       });
     }
 
     // 异步更新产品搜索索引
     if (updatedProduct) {
       this.indexProductToSearch(updatedProduct).catch((error: Error) => {
-        console.error('产品搜索索引更新失败:', error);
+        this.logger.error('产品搜索索引更新失败:', error instanceof Error ? error.stack : String(error));
       });
     }
 
@@ -743,7 +746,7 @@ export class ProductsService {
 
     // 异步移除搜索索引，下架品不应再出现在搜索结果
     this.deleteProductFromSearch(id).catch((error: Error) => {
-      console.error('产品搜索索引删除失败:', error);
+      this.logger.error('产品搜索索引删除失败:', error instanceof Error ? error.stack : String(error));
     });
   }
 
@@ -755,7 +758,7 @@ export class ProductsService {
 
     // 异步发布产品浏览事件
     this.publishProductViewedEvent(id).catch(error => {
-      console.error('发布产品浏览事件失败:', error);
+      this.logger.error('发布产品浏览事件失败:', error instanceof Error ? error.stack : String(error));
     });
   }
 
@@ -992,7 +995,7 @@ export class ProductsService {
 
       await this.searchManager.indexProduct(indexData);
     } catch (error) {
-      console.error('产品搜索索引失败:', error);
+      this.logger.error('产品搜索索引失败:', error instanceof Error ? error.stack : String(error));
       // 不抛出错误，避免影响主流程
     }
   }
@@ -1004,7 +1007,7 @@ export class ProductsService {
     try {
       await this.searchManager.deleteProduct(productId.toString());
     } catch (error) {
-      console.error('产品搜索索引删除失败:', error);
+      this.logger.error('产品搜索索引删除失败:', error instanceof Error ? error.stack : String(error));
       // 不抛出错误，避免影响主流程
     }
   }

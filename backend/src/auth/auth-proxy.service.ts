@@ -4,7 +4,7 @@
 // 时间：2025-06-17 12:35:00
 
 import { UserRole } from '../users/entities/user.entity';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { JwtService } from '@nestjs/jwt';
 import { createMasterConfiguration } from '../config/unified-master.config';
@@ -23,6 +23,8 @@ export interface CasdoorUser {
 
 @Injectable()
 export class AuthProxyService {
+  private readonly logger = new Logger(AuthProxyService.name);
+
   private readonly config;
 
   constructor(
@@ -81,7 +83,7 @@ export class AuthProxyService {
 
       return response.data;
     } catch (error) {
-      console.error('Casdoor令牌交换失败:', error);
+      this.logger.error('Casdoor令牌交换失败:', error instanceof Error ? error.stack : String(error));
       throw new UnauthorizedException('认证服务暂时不可用，请稍后重试');
     }
   }
@@ -107,7 +109,7 @@ export class AuthProxyService {
 
       return userInfo.data;
     } catch (error) {
-      console.error('Casdoor令牌验证失败:', error);
+      this.logger.error('Casdoor令牌验证失败:', error instanceof Error ? error.stack : String(error));
       throw new UnauthorizedException('无效的认证令牌');
     }
   }
@@ -168,7 +170,7 @@ export class AuthProxyService {
 
       return response.data;
     } catch (error) {
-      console.error('Casdoor令牌刷新失败:', error);
+      this.logger.error('Casdoor令牌刷新失败:', error instanceof Error ? error.stack : String(error));
       throw new UnauthorizedException('认证令牌已过期，请重新登录');
     }
   }
@@ -204,7 +206,7 @@ export class AuthProxyService {
         )
         .toPromise();
     } catch (error) {
-      console.warn('Casdoor登出失败，但继续处理本地登出:', error);
+      this.logger.warn(`Casdoor登出失败，但继续处理本地登出: ${error instanceof Error ? error.message : String(error)}`);
       // 即使Casdoor登出失败，也继续处理本地登出
     }
   }
@@ -264,7 +266,7 @@ export class AuthProxyService {
         casdoor_user: casdoorUser,
       };
     } catch (error) {
-      console.error('Casdoor回调处理失败:', error);
+      this.logger.error('Casdoor回调处理失败:', error instanceof Error ? error.stack : String(error));
       throw new UnauthorizedException('认证失败，请重试');
     }
   }
@@ -298,7 +300,7 @@ export class AuthProxyService {
 
       return response.data.data;
     } catch (error) {
-      console.error('获取Casdoor用户信息失败:', error);
+      this.logger.error('获取Casdoor用户信息失败:', error instanceof Error ? error.stack : String(error));
       throw new UnauthorizedException('获取用户信息失败');
     }
   }

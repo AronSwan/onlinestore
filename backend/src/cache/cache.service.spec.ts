@@ -241,26 +241,24 @@ describe('CacheService', () => {
 
   describe('Delete By Pattern', () => {
     it('should log warning for pattern-based deletion', async () => {
-      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const loggerSpy = jest.spyOn((service as any).logger, 'warn').mockImplementation();
       const pattern = 'caddy_shopping:products:*';
 
       await service.deleteByPattern(pattern);
 
-      expect(consoleSpy).toHaveBeenCalledWith('Pattern-based deletion not fully implemented');
-      consoleSpy.mockRestore();
+      expect(loggerSpy).toHaveBeenCalledWith('Pattern-based deletion not fully implemented');
+      loggerSpy.mockRestore();
     });
 
     it('should handle pattern deletion errors gracefully', async () => {
-      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const loggerSpy = jest.spyOn((service as any).logger, 'warn').mockImplementation();
       const pattern = 'caddy_shopping:products:*';
 
-      // Mock console.warn to capture the warning
       await service.deleteByPattern(pattern);
 
-      // Since deleteByPattern just logs a warning and doesn't actually throw errors,
-      // we'll just verify it was called
-      expect(consoleSpy).toHaveBeenCalledWith('Pattern-based deletion not fully implemented');
-      consoleSpy.mockRestore();
+      // deleteByPattern 只告警不抛错——验证告警确发
+      expect(loggerSpy).toHaveBeenCalledWith('Pattern-based deletion not fully implemented');
+      loggerSpy.mockRestore();
     });
   });
 

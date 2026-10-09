@@ -3,7 +3,7 @@
 // 作者：后端开发团队
 // 时间：2025-09-30 00:00:00
 
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { RedpandaService } from './redpanda.service';
 import { ConfigService } from '@nestjs/config';
 
@@ -40,6 +40,8 @@ export interface PaymentProcessedEvent {
 
 @Injectable()
 export class OrderEventsService implements OnModuleInit {
+  private readonly logger = new Logger(OrderEventsService.name);
+
   private readonly ORDER_CREATED_TOPIC = 'orders.created';
   private readonly ORDER_UPDATED_TOPIC = 'orders.updated';
   private readonly PAYMENT_PROCESSED_TOPIC = 'payments.processed';
@@ -57,14 +59,14 @@ export class OrderEventsService implements OnModuleInit {
       // 初始化时创建必要的主题
       await this.initializeTopics();
     } catch (error: any) {
-      console.warn('[OrderEventsService] 初始化主题失败（事件功能降级）:', error?.message);
+      this.logger.warn(`[OrderEventsService] 初始化主题失败（事件功能降级）: ${error?.message}`);
     }
 
     try {
       // 启动消费者处理订单相关事件
       await this.startConsumers();
     } catch (error: any) {
-      console.warn('[OrderEventsService] 启动事件消费者失败（事件功能降级）:', error?.message);
+      this.logger.warn(`[OrderEventsService] 启动事件消费者失败（事件功能降级）: ${error?.message}`);
     }
   }
 
@@ -80,7 +82,7 @@ export class OrderEventsService implements OnModuleInit {
       try {
         await this.redpandaService.createTopic(topic, 3, 1);
       } catch (error) {
-        console.warn(`主题创建失败 ${topic}:`, error.message);
+        this.logger.warn(`主题创建失败 ${topic}: ${error.message}`);
       }
     }
   }
@@ -178,7 +180,7 @@ export class OrderEventsService implements OnModuleInit {
    */
   async reprocessOrderEvent(event: any): Promise<void> {
     if (event.metadata?.isRetry) {
-      console.log(`♻️ 重试处理订单事件: ${event.orderId} (尝试 ${event.metadata.retryCount}次)`);
+      this.logger.log(`♻️ 重试处理订单事件: ${event.orderId} (尝试 ${event.metadata.retryCount}次)`);
     }
     await this.handleOrderCreated(event);
   }
@@ -187,7 +189,7 @@ export class OrderEventsService implements OnModuleInit {
    * 处理订单创建事件
    */
   private async handleOrderCreated(event: OrderCreatedEvent): Promise<void> {
-    console.log('处理订单创建事件:', event.orderId);
+    this.logger.log(`处理订单创建事件: ${event.orderId}`);
 
     // 这里可以添加异步处理逻辑：
     // 1. 发送订单确认邮件
@@ -198,9 +200,9 @@ export class OrderEventsService implements OnModuleInit {
     try {
       // 模拟异步处理
       await new Promise(resolve => setTimeout(resolve, 100));
-      console.log(`✅ 订单 ${event.orderId} 异步处理完成`);
+      this.logger.log(`✅ 订单 ${event.orderId} 异步处理完成`);
     } catch (error) {
-      console.error(`❌ 订单 ${event.orderId} 处理失败:`, error);
+      this.logger.error(`❌ 订单 ${event.orderId} 处理失败:`, error instanceof Error ? error.stack : String(error));
     }
   }
 
@@ -208,7 +210,7 @@ export class OrderEventsService implements OnModuleInit {
    * 处理支付处理事件
    */
   private async handlePaymentProcessed(event: PaymentProcessedEvent): Promise<void> {
-    console.log('处理支付事件:', event.orderId);
+    this.logger.log(`处理支付事件: ${event.orderId}`);
 
     // 这里可以添加支付后的处理逻辑：
     // 1. 更新订单支付状态
@@ -218,9 +220,9 @@ export class OrderEventsService implements OnModuleInit {
     try {
       // 模拟异步处理
       await new Promise(resolve => setTimeout(resolve, 100));
-      console.log(`✅ 支付 ${event.paymentId} 异步处理完成`);
+      this.logger.log(`✅ 支付 ${event.paymentId} 异步处理完成`);
     } catch (error) {
-      console.error(`❌ 支付 ${event.paymentId} 处理失败:`, error);
+      this.logger.error(`❌ 支付 ${event.paymentId} 处理失败:`, error instanceof Error ? error.stack : String(error));
     }
   }
 }

@@ -3,7 +3,7 @@
 // 作者：后端开发团队
 // 时间：2025-06-17 12:10:00
 
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { ConfigService } from '@nestjs/config';
@@ -18,6 +18,8 @@ export interface CacheOptions {
 
 @Injectable()
 export class CacheService {
+  private readonly logger = new Logger(CacheService.name);
+
   private readonly keyPrefix: string;
 
   constructor(
@@ -60,7 +62,7 @@ export class CacheService {
       return null;
     } catch (error) {
       this.monitoring.incrementCacheError('get');
-      console.error('Cache get error:', error);
+      this.logger.error('Cache get error:', error instanceof Error ? error.stack : String(error));
       return null;
     }
   }
@@ -90,7 +92,7 @@ export class CacheService {
       this.monitoring.incrementCacheSet(resource);
     } catch (error) {
       this.monitoring.incrementCacheError('set');
-      console.error('Cache set error:', error);
+      this.logger.error('Cache set error:', error instanceof Error ? error.stack : String(error));
     }
   }
 
@@ -105,7 +107,7 @@ export class CacheService {
       this.monitoring.incrementCacheDelete(resource);
     } catch (error) {
       this.monitoring.incrementCacheError('delete');
-      console.error('Cache delete error:', error);
+      this.logger.error('Cache delete error:', error instanceof Error ? error.stack : String(error));
     }
   }
 
@@ -118,10 +120,10 @@ export class CacheService {
     try {
       // 这里可以实现基于模式的缓存清理
       // 实际实现需要根据缓存存储类型调整
-      console.warn('Pattern-based deletion not fully implemented');
+      this.logger.warn('Pattern-based deletion not fully implemented');
     } catch (error) {
       this.monitoring.incrementCacheError('delete_pattern');
-      console.error('Cache delete pattern error:', error);
+      this.logger.error('Cache delete pattern error:', error instanceof Error ? error.stack : String(error));
     }
   }
 
