@@ -17,7 +17,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { pathToFileURL } from 'url';
-import { BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, InternalServerErrorException, Logger } from '@nestjs/common';
 
 /** 复检闸入参（DTO 入口形状；Create/UpdateProductDto 均结构兼容） */
 export interface IntegrityGateInput {
@@ -187,9 +187,10 @@ export async function enforceProductIntegrityGate(
   try {
     rules = await loadIntegrityRules();
   } catch (error) {
-    console.error(
-      '[M4-复检] 名实相符规则引擎加载失败（fail-closed，阻断本次写入）:',
-      (error as Error).message,
+    Logger.error(
+      `[M4-复检] 名实相符规则引擎加载失败（fail-closed，阻断本次写入）: ${(error as Error).message}`,
+      undefined,
+      'IntegrityGate',
     );
     throw new InternalServerErrorException('名实相符规则引擎不可用，写入已阻断（fail-closed）');
   }

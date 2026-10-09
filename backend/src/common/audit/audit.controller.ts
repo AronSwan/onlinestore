@@ -10,6 +10,7 @@ import {
   ParseIntPipe,
   DefaultValuePipe,
   ValidationPipe,
+  Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -41,6 +42,7 @@ import { Role } from '../../auth/enums/role.enum';
 @Controller('audit')
 @ApiBearerAuth()
 export class AuditController {
+  private readonly logger = new Logger(AuditController.name);
   constructor(
     private readonly auditService: AuditService,
     private readonly dataSource: DataSource,
@@ -370,9 +372,9 @@ export class AuditController {
   async scheduledCleanup() {
     try {
       const deletedCount = await this.auditService.cleanupLogs(90);
-      console.log(`Scheduled cleanup completed: ${deletedCount} logs deleted`);
+      this.logger.log(`Scheduled cleanup completed: ${deletedCount} logs deleted`);
     } catch (error) {
-      console.error('Scheduled cleanup failed:', error);
+      this.logger.error('Scheduled cleanup failed:', error instanceof Error ? error.stack : String(error));
     }
   }
 

@@ -8,6 +8,7 @@ import {
   UnauthorizedException,
   ConflictException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -38,6 +39,7 @@ export interface LoginResponse {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   private readonly config;
 
   constructor(
@@ -83,7 +85,7 @@ export class AuthService {
           throw error;
         }
         // Redis连接错误时，继续执行注册流程
-        console.error('Redis connection error during registration:', error);
+        this.logger.error('Redis connection error during registration:', error instanceof Error ? error.stack : String(error));
       }
     }
     // 检查用户是否已存在
@@ -94,7 +96,7 @@ export class AuthService {
           await redis.multi().incr(regFailKey).expire(regFailKey, windowSec).exec();
         } catch (error) {
           // Redis连接错误时，继续执行流程
-          console.error('Redis connection error during registration:', error);
+          this.logger.error('Redis connection error during registration:', error instanceof Error ? error.stack : String(error));
         }
       }
       throw new ConflictException('用户已存在');
@@ -120,7 +122,7 @@ export class AuthService {
         await redis.del(regFailKey);
       } catch (error) {
         // Redis连接错误时，继续执行流程
-        console.error('Redis connection error during registration:', error);
+        this.logger.error('Redis connection error during registration:', error instanceof Error ? error.stack : String(error));
       }
     }
     return this.generateTokens(user);

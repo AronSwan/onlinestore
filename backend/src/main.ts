@@ -68,7 +68,7 @@ function validateJwtSecretForEnvironment(): void {
       throw new Error(`生产环境安全校验失败，拒绝启动：${problems.join('；')}`);
     }
   } else if (isInsecureJwtSecret(jwtSecret)) {
-    console.warn('⚠️  JWT_SECRET 未设置或为开发默认值/占位符，仅供本地开发测试，严禁用于生产环境');
+    Logger.warn('⚠️  JWT_SECRET 未设置或为开发默认值/占位符，仅供本地开发测试，严禁用于生产环境', 'Bootstrap');
   }
 }
 
@@ -81,16 +81,16 @@ export async function bootstrap() {
   if (!skipValidation) {
     const configValidation = ConfigurationValidator.validateAll();
     if (!configValidation.isValid) {
-      console.error('❌ 配置验证失败:');
-      configValidation.errors.forEach(error => console.error(`  - ${error}`));
+      Logger.error('❌ 配置验证失败:', 'Bootstrap');
+      configValidation.errors.forEach(error => Logger.error(`  - ${error}`, 'Bootstrap'));
       process.exit(1);
     }
     if (configValidation.warnings.length > 0) {
-      console.warn('⚠️  配置警告:');
-      configValidation.warnings.forEach(warning => console.warn(`  - ${warning}`));
+      Logger.warn('⚠️  配置警告:', 'Bootstrap');
+      configValidation.warnings.forEach(warning => Logger.warn(`  - ${warning}`, 'Bootstrap'));
     }
   } else {
-    console.warn('⚠️ 本地开发跳过配置验证（SKIP_CONFIG_VALIDATION=true）');
+    Logger.warn('⚠️ 本地开发跳过配置验证（SKIP_CONFIG_VALIDATION=true）', 'Bootstrap');
   }
 
   const app = await NestFactory.create(AppModule, {
@@ -305,7 +305,7 @@ export async function bootstrap() {
 // 如果直接运行此文件，则启动应用
 if (require.main === module) {
   bootstrap().catch(err => {
-    console.error('应用启动失败:', err);
+    Logger.error('应用启动失败:', err instanceof Error ? err.stack : String(err), 'Bootstrap');
     process.exit(1);
   });
 }

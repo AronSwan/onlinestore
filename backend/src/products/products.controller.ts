@@ -22,6 +22,7 @@ import {
   UploadedFile,
   BadRequestException,
   PayloadTooLargeException,
+  Logger,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import * as fs from 'fs';
@@ -146,6 +147,7 @@ export function resolveUploadDir(): string {
 @Controller('products')
 @UseInterceptors(RouteLabelInterceptor)
 export class ProductsController {
+  private readonly logger = new Logger(ProductsController.name);
   constructor(
     private readonly productsService: ProductsService,
     @Inject(forwardRef(() => SearchManagerService))
@@ -187,7 +189,7 @@ export class ProductsController {
         newValues,
       );
     } catch (error) {
-      console.warn('商品审计日志写入失败:', (error as Error).message);
+      this.logger.warn(`商品审计日志写入失败: ${(error as Error).message}`);
     }
   }
 

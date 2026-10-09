@@ -12,7 +12,7 @@ import { PaymentMethod } from '../entities/payment.entity';
 
 @Injectable()
 export class CryptoStrategy extends PaymentStrategy {
-  private readonly logger = new Logger(CryptoStrategy.name);
+  // logger 继承自 PaymentStrategy 基类(protected,上下文=PaymentStrategy)
 
   constructor(
     private readonly cryptoGateway: CryptoGatewayService,

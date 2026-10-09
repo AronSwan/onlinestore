@@ -495,8 +495,8 @@ describe('OrdersService', () => {
       });
 
       mockOrderEventsService.publishOrderCreated.mockRejectedValue(new Error('Event failed'));
-      // 监视console.error调用，避免测试输出中的错误信息
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      // 钉实现侧告警(W-1刀1后走 Logger,原 console 钉点随迁)
+      const consoleSpy = jest.spyOn((service as any).logger, 'error').mockImplementation(() => {});
 
       const result = await service.create(createOrderData);
 
@@ -751,8 +751,8 @@ describe('OrdersService', () => {
       mockOrderRepository.update.mockResolvedValue({ affected: 1 });
       mockOrderEventsService.publishOrderStatusUpdated.mockRejectedValue(new Error('Event failed'));
 
-      // 监视console.error调用，避免测试输出中的错误信息
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      // 钉实现侧告警(W-1刀1后走 Logger,原 console 钉点随迁)
+      const consoleSpy = jest.spyOn((service as any).logger, 'error').mockImplementation(() => {});
 
       // 确保状态更新会触发事件发布
       // 使用updateStatus方法，因为它总是会发布事件

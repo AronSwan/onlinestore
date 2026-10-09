@@ -1,4 +1,5 @@
 import * as crypto from 'crypto';
+import { Logger } from '@nestjs/common';
 import { sortKeysDeep } from '../../common/security/payment-security.service';
 
 export interface PaymentRequest {
@@ -26,6 +27,7 @@ export interface RefundRequest {
   metadata?: Record<string, unknown>;
 }
 export abstract class PaymentStrategy {
+  protected readonly logger = new Logger(PaymentStrategy.name);
   abstract createPayment(request: PaymentRequest): Promise<GatewayResult<CreatePaymentData>>;
 
   abstract queryPayment(paymentId: string): Promise<GatewayResult<QueryPaymentData>>;
@@ -55,7 +57,7 @@ export abstract class PaymentStrategy {
   protected verifyCallbackSignature(data: Record<string, unknown>): boolean {
     const secret = process.env.PAYMENT_SIGNATURE_SECRET;
     if (!secret) {
-      console.warn(
+      this.logger.warn(
         `[${this.constructor.name}] PAYMENT_SIGNATURE_SECRET 未配置，支付回调验签拒绝（fail-closed）`,
       );
       return false;

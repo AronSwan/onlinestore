@@ -174,7 +174,7 @@ export class OrdersService {
 
       // 发布订单创建事件
       this.publishOrderCreatedEvent(savedOrder, orderData.items).catch(error => {
-        console.error('发布订单创建事件失败:', error);
+        this.logger.error('发布订单创建事件失败:', error);
       });
 
       return savedOrder;
@@ -289,7 +289,7 @@ export class OrdersService {
 
     if (updateData.status && updatedOrder) {
       this.publishOrderStatusUpdatedEvent(updatedOrder, updateData.status).catch(error => {
-        console.error('发布订单状态更新事件失败:', error);
+        this.logger.error('发布订单状态更新事件失败:', error);
       });
     }
 
@@ -387,7 +387,7 @@ export class OrdersService {
     const updatedOrder = await this.findById(id);
 
     this.publishOrderStatusUpdatedEvent(updatedOrder!, status).catch(error => {
-      console.error('发布订单状态更新事件失败:', error);
+      this.logger.error('发布订单状态更新事件失败:', error);
     });
 
     return updatedOrder!;

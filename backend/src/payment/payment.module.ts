@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, Logger } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PaymentController } from './controllers/payment.controller';
@@ -65,6 +65,7 @@ import paymentConfig from './config/payment.config';
   exports: [PaymentApplicationService, PaymentQueryService, PaymentGatewayFactory],
 })
 export class PaymentModule {
+  private readonly logger = new Logger(PaymentModule.name);
   constructor(private configService: ConfigService) {
     // 启动时验证关键配置
     this.validateCriticalConfig();
@@ -82,10 +83,10 @@ export class PaymentModule {
 
     for (const config of requiredConfigs) {
       if (!paymentConfig[config]) {
-        console.warn(`支付配置缺失: ${config}，将使用默认值`);
+        this.logger.warn(`支付配置缺失: ${config}，将使用默认值`);
       }
     }
 
-    console.log('支付模块配置验证完成');
+    this.logger.log('支付模块配置验证完成');
   }
 }

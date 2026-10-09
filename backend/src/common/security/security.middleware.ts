@@ -1,4 +1,4 @@
-import { Injectable, NestMiddleware } from '@nestjs/common';
+import { Injectable, NestMiddleware , Logger } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { LogSanitizerService } from './log-sanitizer.service';
 import { SECURITY_CONSTANTS } from './security.constants';
@@ -6,6 +6,7 @@ import * as helmet from 'helmet';
 
 @Injectable()
 export class SecurityMiddleware implements NestMiddleware {
+  private readonly logger = new Logger(SecurityMiddleware.name);
   constructor(private logSanitizer: LogSanitizerService) {}
 
   use(req: Request, res: Response, next: NextFunction) {
@@ -88,7 +89,7 @@ export class SecurityMiddleware implements NestMiddleware {
 
     // 只在开发环境记录详细日志
     if (process.env.NODE_ENV === 'development') {
-      console.log('[REQUEST]', JSON.stringify(logData, null, 2));
+      this.logger.log(`[REQUEST] ${JSON.stringify(logData, null, 2)}`);
     }
   }
 

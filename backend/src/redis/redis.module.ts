@@ -3,7 +3,7 @@
 // 作者：后端开发团队
 // 时间：2025-06-17 10:35:00
 
-import { Module, Global } from '@nestjs/common';
+import { Module, Global, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 import { RedisHealthService } from './redis-health.service';
@@ -72,7 +72,7 @@ import { EnvironmentAdapter } from '../config/environment-adapter';
           };
           // 记录降级信息，便于观察
           try {
-            console.warn('[RedisModule] Redis disabled or non-prod stub in use');
+            Logger.warn('Redis disabled or non-prod stub in use', 'RedisModule');
           } catch {}
           return stub;
         }
@@ -94,7 +94,7 @@ import { EnvironmentAdapter } from '../config/environment-adapter';
         });
 
         client.on('error', err => {
-          console.warn('Redis client error:', err?.message || err);
+          Logger.warn(`Redis client error: ${err?.message || err}`, 'RedisModule');
         });
 
         return client;

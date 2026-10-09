@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, BadRequestException, UnauthorizedException , Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EncryptionService } from './encryption.service';
 import { LogSanitizerService } from './log-sanitizer.service';
@@ -34,6 +34,7 @@ export function sortKeysDeep<T>(obj: T): T {
 
 @Injectable()
 export class PaymentSecurityService {
+  private readonly logger = new Logger(PaymentSecurityService.name);
   private readonly nonceCache = new Map<string, number>();
 
   constructor(
@@ -273,6 +274,6 @@ export class PaymentSecurityService {
     };
 
     // 这里可以集成到日志系统
-    console.log(`[PAYMENT_SECURITY] ${JSON.stringify(logEntry)}`);
+    this.logger.log(`[PAYMENT_SECURITY] ${JSON.stringify(logEntry)}`);
   }
 }
