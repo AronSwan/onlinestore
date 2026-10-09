@@ -1,10 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Payment, Payment as PaymentEntity } from '../../entities/payment.entity';
 import {
   PaymentOrderAggregate,
   PaymentStatus,
+  RefundAggregate,
+  RefundStatus,
 } from '../../domain/aggregates/payment-order.aggregate';
 import { PaymentOrderId } from '../../domain/value-objects/payment-order-id.value-object';
 import { Money } from '../../domain/value-objects/money.value-object';
@@ -74,6 +76,8 @@ const METHOD_TO_DOMAIN: Record<string, string> = Object.fromEntries(
 
 @Injectable()
 export class TypeOrmPaymentOrderRepository implements PaymentOrderRepository {
+  private readonly logger = new Logger(TypeOrmPaymentOrderRepository.name);
+
   constructor(
     @InjectRepository(Payment)
     private readonly repository: Repository<Payment>,
@@ -269,10 +273,71 @@ export class TypeOrmPaymentOrderRepository implements PaymentOrderRepository {
       entity.failureReason ?? undefined,
       entity.expiredAt ?? undefined,
       metadata.closedAt ? new Date(metadata.closedAt) : undefined,
-      [],
+      // W-3 席根因修复:退款明细从 metadata 恢复(原硬编码 []——守卫因数据
+      // 失明而形同虚设,且两次退款互相覆盖因每次 reload 后 refunds 恒空)
+      this.restoreRefunds(metadata, entity.currency),
     );
     (aggregate as { idempotencyKey?: string }).idempotencyKey = entity.idempotencyKey ?? undefined;
     return aggregate;
+  }
+
+  /**
+   * 从 metadata 恢复退款明细——save() 写入形状（JSON 序列化后 Date→ISO 串、
+   * undefined 键被丢弃）的对称读回。损坏行剔除并告警：写路径唯一（save()），
+   * 坏行只可能来自库外手改，不应让附属明细炸掉主单读取。
+   */
+  private restoreRefunds(
+    metadata: Record<string, any>,
+    currency: string,
+  ): RefundAggregate[] {
+    const raw = metadata.refunds;
+    if (!Array.isArray(raw) || raw.length === 0) return [];
+    const refunds: RefundAggregate[] = [];
+    for (const row of raw) {
+      const refund = this.tryRestoreRefund(row, currency);
+      if (refund) {
+        refunds.push(refund);
+      } else {
+        this.logger.warn(
+          `metadata.refunds 损坏行已剔除: ${JSON.stringify(row)}`,
+        );
+      }
+    }
+    return refunds;
+  }
+
+  private tryRestoreRefund(
+    row: unknown,
+    currency: string,
+  ): RefundAggregate | null {
+    if (!row || typeof row !== 'object') return null;
+    const r = row as Record<string, unknown>;
+    if (typeof r.id !== 'string' || r.id.length === 0) return null;
+    const amount = Number(r.amount);
+    // Money 自身校验对 NaN 失明（NaN<0 与 |NaN-x|>ε 均为 false）——NaN 入
+    // 累计退款算术会让守卫比较恒 false（绕过），必须在此显式拦截
+    if (!Number.isFinite(amount) || amount < 0) return null;
+    const status = String(r.status ?? '');
+    const refundStatus = (
+      Object.values(RefundStatus) as string[]
+    ).includes(status)
+      ? (status as RefundStatus)
+      : RefundStatus.PENDING;
+    try {
+      return new RefundAggregate(
+        PaymentOrderId.create(r.id),
+        new Money(amount, currency),
+        String(r.reason ?? ''),
+        String(r.operatorId ?? ''),
+        refundStatus,
+        r.createdAt ? new Date(String(r.createdAt)) : new Date(),
+        r.gatewayRefundId != null ? String(r.gatewayRefundId) : undefined,
+        r.completedAt ? new Date(String(r.completedAt)) : undefined,
+      );
+    } catch {
+      // PaymentOrderId VO 校验（长度/字符集）不过的行——同按损坏剔除
+      return null;
+    }
   }
 
   private toNumericUserId(userId: string): number {
