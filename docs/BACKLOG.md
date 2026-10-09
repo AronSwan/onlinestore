@@ -212,6 +212,19 @@
 **案情**：10-09 23:45~00:01 一非本会话编排的执行体（git 作者=ZCode Agent；本工作区 cron/offpeak 全空；stash"seatC/F3"命名对不上我方席位——疑似前会话遗留后台 agent）在仓库活动：提交 62669a0（150 行并发回归 spec，**带红测试提交**——测试先行实现未写完即死）+ 在途未提交乐观锁桥半成品（6 文件+101 行，方向与调研推荐一致但未经审查）+ diag.spec.ts 残留。全部活动早于用户留坑令，非抗令。
 
 **处置（B）**：①在途半成品+diag 封存 stash@{0}（标签含恢复指引）②git revert 62669a0（b7ac2a8，纯历史追加不重写）③验证：支付+订单 9 套件 157/157 绿+tsc 0=支付域精确回到 W-3 终态。旧 stash"seatC-partial"原样保留（证据+已隔离）。若未来重启支付批一，stash@{0} 的乐观锁方向可按冷审标准重新评估后再用，不直接采信。
+### 阶段性验收（2026-10-10 专家组五席，用户令"严格验收"）
+
+五席=A数字核验/B刀1质量/C支付域完整性/D仓库健康/E运行态（E席agent超时，协调者补位实测）。
+
+**总判定：通过（带整改，整改已当场落地）**。
+- A席：承重数字全真（157/836/87=77+10/stash 6文件+101行+diag/revert ±150/50+27 处逐点精确复现）。偏差三处：①"全仓非豁免归零"仅 .ts 口径（email-verification .js 域另有 48 处 console——独立 Express 服务，归 W-2/W-4 范畴另立）②验收清单转述"spec 钉点随迁 4 文件"实为 4 例 2 文件（commit message 自记无误，呈报转述错）③文件头"60"三次测量 60/63/64 口径不可精确复现（W-4 刀 5 施工时以实测为准）。
+- B席：刀 1 八项全 PASS（this 绑定/两参语义经 Nest 12.1.2 源码级核验/级别保真/行为无漂移/豁免合理/支付两文件纯机械）。P2-1：两处 spec console suppressor 未随迁（Logger 走 stderr，suppressor 失效漏噪声不破测试）——列入 W-1 后续刀。P3×4 卫生项。
+- C席：支付语义变化=0；revert 字节级回基线（git diff 23a6c98 b7ac2a8 空）；stash 清点属实；157 复现。差异面 5 文件 vs 期望 3 文件（orders.service 3 处+其 spec 2 spy 随迁属全仓刀令正常扫面，机械类，任务书期望面写窄了）。
+- D席：5 PASS+1 FAIL——**lint 债 335 错（本阶段引入，未入账）→ 已当场整改**（eslint --fix 纯格式，0 errors 复验+tsc 0+836 全绿，commit 见 lint 整改提交）。**口径勘误：远端恢复底线≠768c671，实况 origin/master=84c8ebb（最后 push 2026-10-08 04:11，本地 ahead 47；本阶段 15 提交零推送）**。P2：三个纯 docs 提交 message 无动机正文。P3×4。
+- E席（补位）：build 0 错；引导自起"Nest application successfully started"+115 路由全映射；Bootstrap 上下文日志成型（配置警告带 [Bootstrap] 前缀=刀 1 迁移生效实证）；零 TypeError/undefined。注：进程启动到 NestFactory 约 90 秒（Meili/Zinc 连接尝试阻塞在 import 期——先于 Nest 计时，非本阶段引入，观察项）。
+
+**闸门纪律修正**：阶段闸门自 tsc+jest 两道加为三道（+eslint 改动文件 --no-fix 零 error）。
+**验收后新债入账**：suppressors 随迁缺口(P2)/远端底线口径更新(P2,本条已正)/docs 提交动机正文规范(P2)/P3 卫生四项。
 ## 若真要接手（非承诺）
 
 安全基线：`docs/safety.md`（规则→落点→锁）；验证：README"验证"节三命令；
