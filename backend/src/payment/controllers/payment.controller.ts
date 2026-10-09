@@ -1,5 +1,6 @@
 import {
   Controller,
+  ForbiddenException,
   Post,
   Get,
   Body,
@@ -106,7 +107,7 @@ export class PaymentController {
    * 查询支付订单状态
    */
   @Get('orders/:paymentOrderId')
-  @UseGuards(RateLimitGuard)
+  @UseGuards(JwtAuthGuard, RateLimitGuard)
   @ApiOperation({
     summary: '查询支付订单状态',
     description: '根据支付订单ID查询当前支付状态',
@@ -132,7 +133,7 @@ export class PaymentController {
    * 批量查询支付订单状态
    */
   @Post('orders/batch-query')
-  @UseGuards(RateLimitGuard)
+  @UseGuards(JwtAuthGuard, RateLimitGuard)
   @ApiOperation({
     summary: '批量查询支付订单状态',
     description: '一次性查询多个支付订单的状态',
@@ -317,11 +318,15 @@ export class PaymentController {
   })
   async syncPaymentOrderStatus(
     @Param('paymentOrderId') paymentOrderId: string,
+    @Req() req?: Record<string, unknown>,
   ): Promise<PaymentStatusResponseDto> {
     this.logger.log(`同步支付订单状态: ${paymentOrderId}`);
 
+    // 双盲A2席 P1修复:sync 原无归属校验——任意登录用户可把他人支付单
+    // 置 SUCCEEDED。归属校验交给 service 层(查询订单userId与令牌sub比对)
+    const requesterId = String((req?.user as { sub?: number } | undefined)?.sub ?? '');
     const orderIdVO = PaymentOrderId.create(paymentOrderId);
-    const result = await this.paymentApplicationService.syncPaymentOrderStatus(orderIdVO);
+    const result = await this.paymentApplicationService.syncPaymentOrderStatus(orderIdVO, requesterId);
 
     this.logger.log(`支付订单状态同步完成: ${paymentOrderId}`);
     return result;

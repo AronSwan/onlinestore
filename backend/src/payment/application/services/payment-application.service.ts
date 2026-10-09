@@ -1,4 +1,4 @@
-import { Injectable, Logger, Inject } from '@nestjs/common';
+import { Injectable, Logger, Inject, ForbiddenException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 // Domain
@@ -335,12 +335,19 @@ export class PaymentApplicationService {
   /**
    * 同步支付订单状态
    */
-  async syncPaymentOrderStatus(paymentOrderId: PaymentOrderId): Promise<PaymentStatusResponseDto> {
+  async syncPaymentOrderStatus(
+    paymentOrderId: PaymentOrderId,
+    requesterId?: string,
+  ): Promise<PaymentStatusResponseDto> {
     this.logger.log(`同步支付订单状态: ${paymentOrderId.value}`);
 
     try {
       // 1. 查找支付订单
       const paymentOrder = await this.paymentOrderRepository.findById(paymentOrderId);
+      // 双盲A2席 P1:归属校验——非本人订单的 sync 一律 403(原可跨用户改写状态)
+      if (requesterId && paymentOrder && paymentOrder.userId !== requesterId) {
+        throw new ForbiddenException('只能同步本人支付订单');
+      }
       if (!paymentOrder) {
         throw new Error('支付订单不存在');
       }

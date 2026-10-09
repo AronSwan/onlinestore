@@ -1,0 +1,31 @@
+export declare class PaymentCallbackDto {
+    outTradeNo: string;
+    gatewayOrderId: string;
+    tradeStatus: string;
+    totalAmount: number;
+    receiptAmount?: number;
+    gmtPayment?: string;
+    buyerId?: string;
+    buyerLogonId?: string;
+    sellerId?: string;
+    sellerEmail?: string;
+    gmtCreate?: string;
+    gmtClose?: string;
+    fundBillList?: string;
+    passbackParams?: string;
+    voucherDetailList?: string;
+    rawData?: Record<string, any>;
+    sign?: string;
+    signType?: string;
+    charset?: string;
+    version?: string;
+    appId?: string;
+    txHash?: string;
+    confirmations?: number;
+    fromAddress?: string;
+    toAddress?: string;
+    network?: string;
+    contractAddress?: string;
+    blockHeight?: number;
+    fee?: number;
+}
