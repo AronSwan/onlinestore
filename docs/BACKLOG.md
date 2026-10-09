@@ -158,9 +158,9 @@
 2. **退款域守卫三连+409**：RefundNotAllowed/CurrencyMismatch/Overpaid 三域错误；累计占额口径=非 FAILED 均占（在途防并发超退）；余额基准=实付 paidAmount；最小单位整数比较（0.1+0.2 尾差防线）。业务拒绝不再冒充 500。spec 9 例。
 3. **支付→订单回写监听**：全仓 @OnEvent 零监听→payment.succeeded/failed→订单 paymentStatus 镜像；merchantOrderId 解析=orderNumber→纯数字 id 双唯一键；幂等（paidAt 保首写）。spec 6 例（含真实事件总线走线）。
 4. **金额校验双侧闸+toMinorUnits fail-closed**：创建侧站内单金额须与总额最小单位零容差相等（0.01 元刷单链封死）；回写侧 markPaymentSucceeded 携金额不符拒写；ETH 18 位 factor 超安全整数改抛错不静默失真。PaymentModule→OrdersModule 接线（无环）。spec +14。
-5+6. **状态机守卫+回调时序+写互斥**：markAsSucceeded 同网关重放 no-op/异网关抛（首写胜出）；成功后失败回调不可抹收款态；已收款单不可关闭；回调重排为"排他查改存→互斥外发事件"；同步路径补发 payment.succeeded；支付写段接入 runExclusiveWrite（M3 批"支付激活前须接入"义务兑现）。spec +11。
+5+6. **状态机守卫+回调时序+写互斥**：markAsSucceeded 同网关重放 no-op/异网关抛（首写胜出）；成功后失败回调不可抹收款态；已收款单不可关闭；回调重排为"排他查改存→互斥外发事件"；同步路径补发 payment.succeeded；支付写段接入 runExclusiveWrite（M3 批"支付激活前须接入"义务兑现）（**勘误@十席审计:实际仅回调/sync 两路径接入,退款/关闭/创建三路径未接——G1-A1 席指出**）。spec +11。
 
-**验证**：9 套件 157 例全绿（jest --config=jest.config.cjs --testPathPattern "src/orders|src/payment"，2026-10-09）；tsc -b 0 错；build 0 错；真实引导自起"Nest application successfully started"+115 路由全映射无环（端口 3778? 否——3777 被旧实例占用 errno -4091，Nest 侧完成、listen 层环境件）。
+**验证**：9 套件 157 例全绿（jest --config=jest.config.cjs --testPathPattern "src/orders|src/payment"，2026-10-09；**口径勘误@十席审计:复现须带 --no-cache --runInBand——默认并行/陈旧缓存下随机假红,C1/C2/D2 三席实测**）；tsc -b 0 错；build 0 错；真实引导自起"Nest application successfully started"+115 路由全映射无环（端口 3778? 否——3777 被旧实例占用 errno -4091，Nest 侧完成、listen 层环境件）。
 
 **挂账（本批新增/保留）**：
 - 策略层退款 stub 未接真网关（传统三策略 createRefund 假实现）
@@ -168,6 +168,24 @@
 - order.status 是否随支付联动→**用户裁决中**（凭据：陈 e2e 曾期望 status='paid' 联动；后端零消费方不联动不破坏）
 - e2e 旧契约（/api/v1+信封）修复仍属 W-4 批
 - 回调控制器对 STATE_CONFLICT_ACK 的 ACK 形状（{code,message} 200）未对账 RFC9457 豁免清单口径
+
+### 支付域 W-3 批双盲十席审计（2026-10-09，用户令"不预设立场无情审核"）
+
+5 组 10 席（域逻辑×2/持久化并发×2/契约集成×2/测试保真×2/安全资金×2），盲于施工叙事。多席观测到的"并发会话编辑"经查=D1 席受控变异实验的并发可见性，末态 porcelain 空（净树）。净树复现：9 套件 157/157 绿（--no-cache --runInBand）+tsc 0 错。
+
+**P0（多席独立共识+协调者第一手复核坐实）**：
+1. **退款路径无互斥**（G1-A1/G1-A2/B1/B2/E1 五席独立中，B2 throwaway worktree 实测复现"网关退 200/账面记 100/丢一笔"）：createRefund 查-守卫-网关-存全程锁外+save 对 metadata.refunds 整组覆盖+无版本列——并发双退双双过守卫、后写覆盖前写、后续守卫按失真账面放行。
+2. **退款端点无归属/角色校验**（E1/E2+复核坐实）：任意 JWT 用户可对他人支付单发起真实网关退款；叠加查询端点 IDOR 三处（GET orders/:id、batch-query、merchant-orders——E2 P1）构成发现面。E2 注：operatorId 实取 JWT 非 body（此点无洞）。
+
+**P1**：close 路径无互斥（迟到回调可被陈旧 close 覆盖成 cancelled，G1-A2/B2/E1）；订单镜像 markPaymentFailed 无终态守卫（PAID 可被翻 FAILED，G1-A2/C2）；回调"落库后 emit"窗口+监听器异常被 suppressErrors 静默吞+补偿路径封死（B2 源码级证据）；rawData 验签不覆盖 outTradeNo/receiptAmount 顶层迁移字段（E1）；回调按最新单路由忽略自带 gatewayOrderId——跨笔重放守卫失效（E1/C2/G1-A2）；sync 补发事件/409、close 409 零测试（D2——本批新行为无回归锚）；address/user-deletion 四处裸事务未入互斥且模块已激活=互斥头注释与现实不符（B2）；三策略 queryPayment 恒 success→sync 无凭据生产 SUCCEEDED 记录（E1/C2，缓解：paidAmount=0 被金额闸/退款基准拦）。
+
+**P2 摘**：idempotencyKey 聚合创建即丢（幂等检查死路+无唯一索引，B1+复核坐实）；'支付订单不存在'×4 路径 500（其中 GET 端点 Swagger 已声明 404 直接矛盾，C1）；Money 精度/币种业务拒绝冒充 500+ETH 退款永久 500（C1/G1-A1/E1）；回调 receiptAmount 零约束（负/多精度→SYSTEM_ERROR 冒充，缺省→paidAmount=0 两域分叉，C1/E1/G1-A2）；可退基准=回调 receiptAmount 零核对（G1-A1）；退款零幂等键（G1-A1）；损坏行两静默面：非数组/非法日期串不告警（B1）；回调端点 forbidNonWhitelisted 与网关超集字段天然冲突→混合契约（C1）；409 detail 泄露他人订单总额/单号（C1）；D1 变异实验两假绿（emit 互斥位置未锁/createPaymentOrder save 未断言，11/13 变异真锁）；sync 陈旧读覆盖首写口径；DTO Max 999999.99 vs totalAmount decimal(10,2) 上限错配（C1）。
+
+**P3 摘**：CLOSED↔cancelled 往返漂移/坏行永生无自愈/fromMinorUnits 不对称/close 幂等缺失+迟到成功 closedAt 残留/refund.created 零监听（付→全额退→订单仍 PAID）/外部商户号可无界造 SUCCEEDED 记录污染统计/jest 陈旧缓存可产假绿假红（门禁须 --no-cache）/幂等命中先于金额校验的顺序行为零断言。
+
+**已验证无恙面（十席正面结论摘）**：单线程守卫矩阵全边界实测通过（含 0.1+0.2 尾差/JPY/BTC/USDT）；验签 fail-closed 链（无 secret 零可达）；模块图无环+@OnEvent 注册链源码级验证；orderNumber 与数字 id 键域不相交；金额闸双侧数学一致无误放；回调互斥形状正确（查改存整段+emit 锁外防自锁）；变异实验 11/13 真锁（原病灶/累计守卫/幂等首写/金额闸/fail-closed/409 翻译全锁住）；D2 原样复现 157/157 与账本宣称一致。
+
+**待用户裁决项（空白呈报，未预填）**：P0-1 修法（整段入互斥/加版本列/叠加）、P0-2 退款权限语义（owner 自助/admin-only/owner-or-admin）、查询 IDOR 修复口径（admin 可见域）、404/精度 500 家族是否并入下批。
 
 ## 若真要接手（非承诺）
 
