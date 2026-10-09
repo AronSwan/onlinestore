@@ -187,6 +187,10 @@
 
 **待用户裁决项（空白呈报，未预填）**：P0-1 修法（整段入互斥/加版本列/叠加）、P0-2 退款权限语义（owner 自助/admin-only/owner-or-admin）、查询 IDOR 修复口径（admin 可见域）、404/精度 500 家族是否并入下批。
 
+**用户裁决（2026-10-10）**：
+- ①"订单状态随支付联动"→**联动**（推翻调研倾向的不联动）。落地语义：支付成功且过金额闸→order.status PENDING→PAID（守卫：已 PAID 幂等；CONFIRMED/SHIPPED/DELIVERED 不回退；CANCELLED 不联动+告警留痕——钱到已取消单走人工/退款通道）；支付失败不动 order.status（枚举无对应态），paymentStatus=failed 照旧。与陈 e2e 期望（status='paid'+paymentStatus 联动）一致。随支付批一落地。
+- ②支付三批修复整体**留坑**（用户令 2026-10-10），停工待令。
+
 ## 若真要接手（非承诺）
 
 安全基线：`docs/safety.md`（规则→落点→锁）；验证：README"验证"节三命令；
