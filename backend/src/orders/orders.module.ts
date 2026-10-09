@@ -8,6 +8,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { OrdersService } from './orders.service';
 import { OrdersController } from './orders.controller';
+import { PaymentEventsListener } from './payment-events.listener';
 import { Order } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
 import { UsersModule } from '../users/users.module';
@@ -26,7 +27,7 @@ import { Product } from '../products/entities/product.entity';
     MessagingModule,
   ],
   controllers: [OrdersController],
-  providers: [OrdersService],
+  providers: [OrdersService, PaymentEventsListener],
   exports: [OrdersService],
 })
 export class OrdersModule {}
