@@ -140,6 +140,16 @@
 
 验证（2026-10-09 全实测）：**jest 809/809 首次满绿**（.env.test 补齐治最后 2 环境带）；build 0 错；npm ls invalid=0；修复项复验 suggestions []/queue 3s 400/tags 过滤生效/中文 UTF-8 无损；冒烟五端点+vite8 全 200。
 
+
+### 反过拟合及自洽四席审计遗留挂账（2026-10-09）
+- **closePayment 网关侧关闭缺口**：PaymentStrategy 接口无 close 方法，adapter no-op 本地关单——网关侧会话仍可支付（迟到成功回调可翻转已关订单）。修法=补 close 进接口或各策略 NotImplemented（功能批）
+- **退款链两缺陷（实践席）**：①退款明细 metadata.refunds 被 toAggregate 硬编码 [] 确定性覆盖丢失；②聚合无累计退款额≤订单额守卫+传统策略假退款 stub——资金语义缺陷（功能批）
+- **枚举四套归一**：PaymentStatus 全仓 4 套同名枚举值域不齐（domain 大写/entity 小写/orders 双轨含 paid）+PaymentMethod 双轨——CLOSED↔cancelled 往返有损，refunded 被降级清除（专项批）
+- **回调协议文档缺签名方案**：README_NEW_PAYMENT_CONTROLLER.md 无 x-signature 头/HMAC-SHA256/PAYMENT_SIGNATURE_SECRET 配置说明——外部按文档无法构造可通过验签的请求
+- **adapter 层零测试覆盖**：x-signature 合并方向已修但无 spec 锁（crypto 走另一条验签链 CRYPTO_API_SECRET 亦无 spec）
+- **e2e 双侧旧契约**：cart-payment-integration.e2e-spec 打 /api/v1 全旧形状在活跃匹配集；basic-navigation 全 skip 骨架
+- **q/search 旧参已裁弃用**（非双收）：Swagger 已标注——外部迁移期（自洽B P1-1 措辞修正落账）
+
 ## 若真要接手（非承诺）
 
 安全基线：`docs/safety.md`（规则→落点→锁）；验证：README"验证"节三命令；

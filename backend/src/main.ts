@@ -192,22 +192,20 @@ export async function bootstrap() {
         \`Authorization: Bearer <your-token>\`
         
         ### 响应格式
-        所有API响应都遵循统一格式：
+        成功响应为裸资源形状（无统一信封）；错误响应统一为 RFC 9457 problem+json：
         \`\`\`json
         {
-          "code": 200,
-          "message": "操作成功",
-          "data": {},
-          "timestamp": "2025-01-26T10:30:00Z",
-          "requestId": "req_123456789"
+          "type": "about:blank",
+          "title": "Bad Request",
+          "status": 400,
+          "detail": "中文错误说明",
+          "instance": "/api/..."
         }
         \`\`\`
-        
-        ### 错误码说明
-        - **1xxx**: 通用错误（参数错误、资源不存在等）
-        - **2xxx**: 认证错误（未授权、令牌过期等）
-        - **3xxx**: 业务错误（库存不足、订单状态错误等）
-        - **5xxx**: 系统错误（服务器错误、数据库错误等）
+
+        ### 错误状态码
+        - **400**: 参数错误 / **401**: 未认证 / **403**: 无权限
+        - **404**: 资源不存在 / **429**: 限流（带 Retry-After 头）/ **5xx**: 服务器错误
       `,
       )
       .setVersion('1.0.0')
@@ -239,10 +237,9 @@ export async function bootstrap() {
 
     const document = SwaggerModule.createDocument(app, config, {
       extraModels: [
-        // 导入通用响应模型
-        require('./common/dto/api-response.dto').ApiResponseDto,
-        require('./common/dto/api-response.dto').ErrorResponseDto,
-        require('./common/dto/api-response.dto').PaginatedResponseDto,
+        // 自洽B修复(2026-10-09):S1 批废信封后旧 DTO 已不对应任何实现——
+        // 换 problem+json 形状类供错误响应 $ref
+        require('./common/dto/problem-details.dto').ProblemDetailsDto,
       ],
     });
 

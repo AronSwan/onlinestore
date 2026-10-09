@@ -137,8 +137,12 @@ class ProfileManager {
 
             if (response.ok) {
                 const userData = await response.json();
-                this.currentUser = userData;
-                return userData;
+                // 自洽席B P1-6①修复(2026-10-09): /api/users/profile 返回 {user:{sub,email,role}}
+                // ——此前整包赋值导致 currentUser.email 恒空(表单空)。取嵌套 user 并展平,
+                // sub→id 映射让 currentUser.id 可用(登录响应的 user.id 是数字主键,同源)。
+                const inner = userData.user || userData;
+                this.currentUser = { ...inner, id: inner.sub ?? inner.id };
+                return this.currentUser;
             } else {
                 // 如果后端API不可用，使用本地存储的数据
                 this.loadUserFromStorage();

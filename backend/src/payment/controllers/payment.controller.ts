@@ -334,7 +334,7 @@ export class PaymentController {
   @UseGuards(JwtAuthGuard, RateLimitGuard)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: '关闭支付订单',
+    summary: '关闭支付订单（仅本地状态——网关侧会话不关闭）',
     description: '关闭未支付的订单，释放相关资源',
   })
   @ApiResponse({

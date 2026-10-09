@@ -13,7 +13,6 @@ import {
   ApiInternalServerErrorResponse,
   getSchemaPath,
 } from '@nestjs/swagger';
-import { ApiResponseDto, ErrorResponseDto, PaginatedResponseDto } from '../dto/api-response.dto';
 
 /**
  * API文档装饰器选项
@@ -70,12 +69,10 @@ export function ApiDocs(options: ApiDocsOptions) {
     decorators.push(
       ApiBearerAuth(),
       ApiUnauthorizedResponse({
-        description: options.responses?.unauthorized || '未授权访问',
-        type: ErrorResponseDto,
+        description: (options.responses?.unauthorized || '未授权访问') + '（problem+json）',
       }),
       ApiForbiddenResponse({
-        description: options.responses?.forbidden || '权限不足',
-        type: ErrorResponseDto,
+        description: (options.responses?.forbidden || '权限不足') + '（problem+json）',
       }),
     );
   }
@@ -89,27 +86,19 @@ export function ApiDocs(options: ApiDocsOptions) {
         ApiResponse({
           status: 200,
           description: description || '操作成功',
+          // 自洽B修复(2026-10-09):S1 批废信封后装饰器仍宣称 ApiResponseDto 包装——
+          // 两世界根修,成功响应一律裸形状
           schema: {
-            allOf: [
-              { $ref: getSchemaPath(ApiResponseDto) },
-              {
-                properties: {
-                  data: {
-                    allOf: [
-                      { $ref: getSchemaPath(PaginatedResponseDto) },
-                      {
-                        properties: {
-                          items: {
-                            type: 'array',
-                            items: { $ref: getSchemaPath(type) },
-                          },
-                        },
-                      },
-                    ],
-                  },
-                },
+            type: 'object',
+            properties: {
+              items: {
+                type: 'array',
+                items: { $ref: getSchemaPath(type) },
               },
-            ],
+              total: { type: 'number' },
+              page: { type: 'number' },
+              limit: { type: 'number' },
+            },
           },
         }),
       );
@@ -119,17 +108,8 @@ export function ApiDocs(options: ApiDocsOptions) {
           status: 200,
           description: description || '操作成功',
           schema: {
-            allOf: [
-              { $ref: getSchemaPath(ApiResponseDto) },
-              {
-                properties: {
-                  data: {
-                    type: 'array',
-                    items: { $ref: getSchemaPath(type) },
-                  },
-                },
-              },
-            ],
+            type: 'array',
+            items: { $ref: getSchemaPath(type) },
           },
         }),
       );
@@ -138,16 +118,7 @@ export function ApiDocs(options: ApiDocsOptions) {
         ApiResponse({
           status: 200,
           description: description || '操作成功',
-          schema: {
-            allOf: [
-              { $ref: getSchemaPath(ApiResponseDto) },
-              {
-                properties: {
-                  data: { $ref: getSchemaPath(type) },
-                },
-              },
-            ],
-          },
+          schema: { $ref: getSchemaPath(type) },
         }),
       );
     } else {
@@ -155,7 +126,6 @@ export function ApiDocs(options: ApiDocsOptions) {
         ApiResponse({
           status: 200,
           description: description || '操作成功',
-          type: ApiResponseDto,
         }),
       );
     }
@@ -165,8 +135,8 @@ export function ApiDocs(options: ApiDocsOptions) {
   if (options.responses?.badRequest) {
     decorators.push(
       ApiBadRequestResponse({
-        description: options.responses.badRequest,
-        type: ErrorResponseDto,
+        description: options.responses.badRequest + '（RFC 9457 problem+json）',
+        content: { 'application/problem+json': { schema: { $ref: getSchemaPath('ProblemDetails') } } },
       }),
     );
   }
@@ -174,8 +144,8 @@ export function ApiDocs(options: ApiDocsOptions) {
   if (options.responses?.notFound) {
     decorators.push(
       ApiNotFoundResponse({
-        description: options.responses.notFound,
-        type: ErrorResponseDto,
+        description: options.responses.notFound + '（RFC 9457 problem+json）',
+        content: { 'application/problem+json': { schema: { $ref: getSchemaPath('ProblemDetails') } } },
       }),
     );
   }
@@ -183,8 +153,7 @@ export function ApiDocs(options: ApiDocsOptions) {
   if (options.responses?.internalServerError) {
     decorators.push(
       ApiInternalServerErrorResponse({
-        description: options.responses.internalServerError,
-        type: ErrorResponseDto,
+        description: options.responses.internalServerError + '（problem+json）',
       }),
     );
   }

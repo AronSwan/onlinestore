@@ -40,7 +40,9 @@ export class PaymentMethod {
    * 从字符串创建支付方式
    */
   static fromString(value: string): PaymentMethod {
-    const method = this.ALL_METHODS.find(m => m.value === value);
+    // 自洽A3修复(2026-10-09):URL 路径参数大小写不定——归一化匹配
+    const normalized = String(value).toUpperCase();
+    const method = this.ALL_METHODS.find(m => m.value === normalized);
     if (!method) {
       throw new Error(`不支持的支付方式: ${value}`);
     }

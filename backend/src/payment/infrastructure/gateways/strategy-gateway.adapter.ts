@@ -78,9 +78,15 @@ export class StrategyGatewayAdapter implements PaymentGateway {
     }
   }
 
+  // 自洽B5修复(2026-10-09):原 Mock 白名单为 TRADE_SUCCESS/TRADE_FINISHED/SUCCESS——
+  // 接线时丢 TRADE_FINISHED(支付宝真实回调终态之一);两处白名单(callback/query)也
+  // 不一致。单源收敛,含实体小写值+网关大写值+crypto confirmed。
+  private static readonly SUCCESS_STATES = new Set([
+    'success', 'SUCCESS', 'TRADE_SUCCESS', 'TRADE_FINISHED', 'completed', 'confirmed',
+  ]);
+
   isPaymentSuccess(tradeStatus: string): boolean {
-    // 白名单与原 Mock 对齐 + crypto 的 confirmed
-    return ['success', 'TRADE_SUCCESS', 'completed', 'confirmed'].includes(tradeStatus);
+    return StrategyGatewayAdapter.SUCCESS_STATES.has(tradeStatus);
   }
 
   getFailureReason(tradeStatus: string): string {
@@ -99,7 +105,7 @@ export class StrategyGatewayAdapter implements PaymentGateway {
     const result = await this.strategy.queryPayment(params.gatewayOrderId);
     const data = result.data;
     const isSuccess =
-      result.success && !!data && ['success', 'confirmed', 'completed'].includes(data.status);
+      result.success && !!data && this.isPaymentSuccess(data.status);
     return {
       isSuccess,
       gatewayOrderId: params.gatewayOrderId,
