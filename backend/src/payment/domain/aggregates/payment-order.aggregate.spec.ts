@@ -11,6 +11,11 @@ import {
   RefundNotAllowedError,
   RefundOverpaidError,
 } from '../errors/refund.errors';
+import {
+  PaymentAlreadySucceededError,
+  PaymentCloseNotAllowedError,
+  PaymentFailedAfterSuccessError,
+} from '../errors/payment-transition.errors';
 
 /**
  * createRefund 守卫矩阵（W-3 席根因批）
@@ -26,7 +31,7 @@ describe('PaymentOrderAggregate.createRefund 守卫', () => {
       PaymentMethod.ALIPAY,
       '守卫测试',
       '7',
-      PaymentStatus.SUCCEEDED,
+      PaymentStatus.PENDING,
     );
     order.markAsSucceeded('GW-G-1', new Money(100, 'CNY'), new Date('2026-10-09T10:00:00Z'));
     return order;
@@ -70,7 +75,7 @@ describe('PaymentOrderAggregate.createRefund 守卫', () => {
       PaymentMethod.ALIPAY,
       's',
       '7',
-      PaymentStatus.SUCCEEDED,
+      PaymentStatus.PENDING,
     );
     order.markAsSucceeded('GW-G-5', new Money(0.3, 'CNY'), new Date('2026-10-09T10:00:00Z'));
     order.createRefund(new Money(0.1, 'CNY'), 'r1', 'op');
@@ -105,7 +110,7 @@ describe('PaymentOrderAggregate.createRefund 守卫', () => {
       PaymentMethod.ALIPAY,
       's',
       '7',
-      PaymentStatus.SUCCEEDED,
+      PaymentStatus.PENDING,
     );
     // 实付 80(部分支付场景):可退上限 80 而非 100
     order.markAsSucceeded('GW-G-3', new Money(80, 'CNY'), new Date('2026-10-09T10:00:00Z'));
@@ -117,11 +122,71 @@ describe('PaymentOrderAggregate.createRefund 守卫', () => {
       PaymentMethod.ALIPAY,
       's',
       '7',
-      PaymentStatus.SUCCEEDED,
+      PaymentStatus.PENDING,
     );
     fresh.markAsSucceeded('GW-G-4', new Money(80, 'CNY'), new Date('2026-10-09T10:00:00Z'));
     expect(() => fresh.createRefund(new Money(80.01, 'CNY'), 'r', 'op')).toThrow(
       RefundOverpaidError,
     );
+  });
+});
+
+/**
+ * W-3⑥:状态迁移前置守卫——重放不覆盖首写,矛盾回调不抹收款态
+ */
+describe('PaymentOrderAggregate 状态机守卫', () => {
+  const succeeded = (): PaymentOrderAggregate => {
+    const order = new PaymentOrderAggregate(
+      PaymentOrderId.create('PAY_TRANS_GUARD_01'),
+      'ORD-T-1',
+      new Money(100, 'CNY'),
+      PaymentMethod.ALIPAY,
+      's',
+      '7',
+      PaymentStatus.PENDING,
+    );
+    order.markAsSucceeded('GW-ORIG', new Money(100, 'CNY'), new Date('2026-10-09T10:00:00Z'));
+    return order;
+  };
+
+  it('同网关单号成功重放:no-op 返回 false,paidAt/gatewayOrderId 保首写', () => {
+    const order = succeeded();
+    const firstPaidAt = order.paidAt;
+    const changed = order.markAsSucceeded('GW-ORIG', new Money(100, 'CNY'));
+    expect(changed).toBe(false);
+    expect(order.paidAt).toBe(firstPaidAt);
+    expect(order.gatewayOrderId).toBe('GW-ORIG');
+  });
+
+  it('异网关单号二次成功:抛 PaymentAlreadySucceededError(首写胜出)', () => {
+    const order = succeeded();
+    expect(() => order.markAsSucceeded('GW-OTHER', new Money(100, 'CNY'))).toThrow(
+      PaymentAlreadySucceededError,
+    );
+  });
+
+  it('成功后失败回调:抛 PaymentFailedAfterSuccessError(收款态不可抹)', () => {
+    const order = succeeded();
+    expect(() => order.markAsFailed('买家余额不足')).toThrow(PaymentFailedAfterSuccessError);
+    expect(order.status).toBe(PaymentStatus.SUCCEEDED);
+  });
+
+  it('失败同原因重放:no-op 返回 false', () => {
+    const order = new PaymentOrderAggregate(
+      PaymentOrderId.create('PAY_TRANS_GUARD_02'),
+      'ORD-T-2',
+      new Money(100, 'CNY'),
+      PaymentMethod.ALIPAY,
+      's',
+      '7',
+      PaymentStatus.FAILED,
+    );
+    order.markAsFailed('超时');
+    expect(order.markAsFailed('超时')).toBe(false);
+  });
+
+  it('已成功的单不可关闭:抛 PaymentCloseNotAllowedError', () => {
+    const order = succeeded();
+    expect(() => order.close('admin-1')).toThrow(PaymentCloseNotAllowedError);
   });
 });

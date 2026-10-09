@@ -1,6 +1,7 @@
 import { Injectable, Logger, Inject, ForbiddenException, ConflictException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { OrdersService } from '../../../orders/orders.service';
+import { runExclusiveWrite } from '../../../common/db-write-mutex';
 
 // Domain
 import { PaymentOrderAggregate, RefundAggregate } from '../../domain/aggregates/payment-order.aggregate';
@@ -12,6 +13,11 @@ import {
   RefundNotAllowedError,
   RefundOverpaidError,
 } from '../../domain/errors/refund.errors';
+import {
+  PaymentAlreadySucceededError,
+  PaymentCloseNotAllowedError,
+  PaymentFailedAfterSuccessError,
+} from '../../domain/errors/payment-transition.errors';
 
 // Value Objects
 import { PaymentOrderId } from '../../domain/value-objects/payment-order-id.value-object';
@@ -235,52 +241,89 @@ export class PaymentApplicationService {
         return { success: false, message: 'INVALID_SIGNATURE' };
       }
 
-      // 3. 查找支付订单
-      const paymentOrders = await this.paymentOrderRepository.findByMerchantOrderId(dto.outTradeNo);
-      const paymentOrder =
-        paymentOrders.length > 0 ? (paymentOrders[0] as PaymentOrderAggregate) : null;
+      // 3+4+5. 排他读改写后发事件（W-3⑤⑥）
+      // - 互斥:支付真仓储激活即接入 runExclusiveWrite(M3 批义务——sqlite 单
+      //   连接并发写段交叉=悬挂事务);查改存整段入队
+      // - 先落库后发事件:监听器失败不再影响支付态持久化;监听器在互斥外执行
+      //   (其自身写经同一队列,嵌套=自锁死)
+      // - 幂等:域守卫挡重放,changed=false 不落库不重发事件
+      type CallbackOutcome =
+        | { kind: 'not_found' }
+        | { kind: 'noop' }
+        | { kind: 'changed'; eventName: 'payment.succeeded' | 'payment.failed'; event: unknown };
 
-      if (!paymentOrder) {
+      let outcome: CallbackOutcome;
+      try {
+        outcome = await runExclusiveWrite<CallbackOutcome>(async () => {
+          const paymentOrders = await this.paymentOrderRepository.findByMerchantOrderId(
+            dto.outTradeNo,
+          );
+          const paymentOrder =
+            paymentOrders.length > 0 ? (paymentOrders[0] as PaymentOrderAggregate) : null;
+          if (!paymentOrder) {
+            return { kind: 'not_found' as const };
+          }
+
+          const isSuccess = gateway.isPaymentSuccess(dto.tradeStatus);
+          if (isSuccess) {
+            const changed = paymentOrder.markAsSucceeded(
+              dto.gatewayOrderId,
+              Money.create(dto.receiptAmount || 0, paymentOrder.amount.currency),
+              command.gmtPayment,
+            );
+            if (!changed) {
+              return { kind: 'noop' as const };
+            }
+            await this.paymentOrderRepository.save(paymentOrder);
+            return {
+              kind: 'changed' as const,
+              eventName: 'payment.succeeded' as const,
+              event: new PaymentSucceededEvent(
+                paymentOrder.id.value,
+                paymentOrder.merchantOrderId,
+                dto.receiptAmount || 0,
+                paymentOrder.amount.currency,
+                dto.gatewayOrderId,
+              ),
+            };
+          }
+
+          const failureReason = gateway.getFailureReason(dto.tradeStatus);
+          const changed = paymentOrder.markAsFailed(failureReason);
+          if (!changed) {
+            return { kind: 'noop' as const };
+          }
+          await this.paymentOrderRepository.save(paymentOrder);
+          return {
+            kind: 'changed' as const,
+            eventName: 'payment.failed' as const,
+            event: new PaymentFailedEvent(
+              paymentOrder.id.value,
+              paymentOrder.merchantOrderId,
+              failureReason,
+            ),
+          };
+        });
+      } catch (e) {
+        if (
+          e instanceof PaymentAlreadySucceededError ||
+          e instanceof PaymentFailedAfterSuccessError
+        ) {
+          // 状态冲突:首写胜出——ACK 网关停止重试,告警留痕
+          this.logger.warn(`支付回调状态冲突(首写胜出): ${e.message}`);
+          return { success: true, message: 'STATE_CONFLICT_ACK' };
+        }
+        throw e;
+      }
+
+      if (outcome.kind === 'not_found') {
         this.logger.warn(`支付订单不存在: ${dto.outTradeNo}`);
         return { success: false, message: 'ORDER_NOT_FOUND' };
       }
 
-      // 4. 处理支付结果
-      const isSuccess = gateway.isPaymentSuccess(dto.tradeStatus);
-
-      if (isSuccess) {
-        // 支付成功
-        paymentOrder.markAsSucceeded(
-          dto.gatewayOrderId,
-          Money.create(dto.receiptAmount || 0, paymentOrder.amount.currency),
-          command.gmtPayment,
-        );
-
-        // 发布支付成功事件
-        const event = new PaymentSucceededEvent(
-          paymentOrder.id.value,
-          paymentOrder.merchantOrderId,
-          dto.receiptAmount || 0,
-          paymentOrder.amount.currency,
-          dto.gatewayOrderId,
-        );
-        this.eventEmitter.emit('payment.succeeded', event);
-      } else {
-        // 支付失败
-        const failureReason = gateway.getFailureReason(dto.tradeStatus);
-        paymentOrder.markAsFailed(failureReason);
-
-        // 发布支付失败事件
-        const event = new PaymentFailedEvent(
-          paymentOrder.id.value,
-          paymentOrder.merchantOrderId,
-          failureReason,
-        );
-        this.eventEmitter.emit('payment.failed', event);
+      if (outcome.kind === 'changed') {
+        this.eventEmitter.emit(outcome.eventName, outcome.event);
       }
-
-      // 5. 保存更新后的支付订单
-      await this.paymentOrderRepository.save(paymentOrder);
 
       this.logger.log(`支付回调处理成功: ${dto.outTradeNo}, 状态: ${dto.tradeStatus}`);
       return { success: true };
@@ -400,14 +443,41 @@ export class PaymentApplicationService {
         gatewayOrderId: paymentOrder.gatewayOrderId ?? '',
       });
 
-      // 3. 更新本地状态
+      // 3. 更新本地状态(排他写段+落库后发事件——与回调路径同时序契约,W-3⑤:
+      // 原同步路径发现成功却从不发 payment.succeeded,订单回写监听对它失明)
       if (gatewayStatus.isSuccess && !paymentOrder.isSucceeded()) {
-        paymentOrder.markAsSucceeded(
-          gatewayStatus.gatewayOrderId,
-          Money.create(gatewayStatus.paidAmount, paymentOrder.amount.currency),
-          gatewayStatus.paidAt,
-        );
-        await this.paymentOrderRepository.save(paymentOrder);
+        let changed: boolean;
+        try {
+          changed = await runExclusiveWrite(async () => {
+            const c = paymentOrder.markAsSucceeded(
+              gatewayStatus.gatewayOrderId,
+              Money.create(gatewayStatus.paidAmount, paymentOrder.amount.currency),
+              gatewayStatus.paidAt,
+            );
+            if (c) {
+              await this.paymentOrderRepository.save(paymentOrder);
+            }
+            return c;
+          });
+        } catch (e) {
+          if (e instanceof PaymentAlreadySucceededError) {
+            // 读改写窗口内被回调先写——同步端点是用户请求,翻 409 而非 ACK
+            throw new ConflictException(e.message);
+          }
+          throw e;
+        }
+        if (changed) {
+          this.eventEmitter.emit(
+            'payment.succeeded',
+            new PaymentSucceededEvent(
+              paymentOrder.id.value,
+              paymentOrder.merchantOrderId,
+              gatewayStatus.paidAmount,
+              paymentOrder.amount.currency,
+              gatewayStatus.gatewayOrderId,
+            ),
+          );
+        }
       }
 
       this.logger.log(`支付订单状态同步完成: ${paymentOrderId.value}`);
@@ -434,8 +504,15 @@ export class PaymentApplicationService {
         throw new Error('支付订单不存在');
       }
 
-      // 2. 关闭订单
-      paymentOrder.close(operatorId);
+      // 2. 关闭订单(域守卫:已成功的单不可关闭——收款态不可抹成 cancelled)
+      try {
+        paymentOrder.close(operatorId);
+      } catch (e) {
+        if (e instanceof PaymentCloseNotAllowedError) {
+          throw new ConflictException(e.message);
+        }
+        throw e;
+      }
 
       // 3. 调用支付网关关闭接口
       const gateway = this.paymentGatewayFactory.createGateway(paymentOrder.paymentMethod);

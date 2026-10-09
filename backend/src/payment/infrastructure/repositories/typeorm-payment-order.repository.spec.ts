@@ -47,7 +47,7 @@ describe('TypeOrmPaymentOrderRepository 退款明细往返', () => {
       PaymentMethod.ALIPAY,
       '往返测试订单',
       '42',
-      PaymentStatus.SUCCEEDED,
+      PaymentStatus.PENDING,
     );
     order.markAsSucceeded('GW-RT-1', new Money(100.5, 'CNY'), new Date('2026-10-09T10:00:00Z'));
     return order;

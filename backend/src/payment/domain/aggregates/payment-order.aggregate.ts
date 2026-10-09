@@ -7,6 +7,11 @@ import {
   RefundNotAllowedError,
   RefundOverpaidError,
 } from '../errors/refund.errors';
+import {
+  PaymentAlreadySucceededError,
+  PaymentCloseNotAllowedError,
+  PaymentFailedAfterSuccessError,
+} from '../errors/payment-transition.errors';
 
 /**
  * 支付状态枚举
@@ -140,29 +145,53 @@ export class PaymentOrderAggregate {
   }
 
   /**
-   * 标记为成功
+   * 标记为成功（W-3⑥前置守卫）
+   *
+   * @returns true=本次迁移生效;false=同网关单号幂等重放(no-op,paidAt 保首写)
+   * @throws PaymentAlreadySucceededError 已成功但网关单号不同(首写胜出拒覆盖)
    */
-  markAsSucceeded(gatewayOrderId: string, paidAmount: Money, paidAt?: Date): void {
+  markAsSucceeded(gatewayOrderId: string, paidAmount: Money, paidAt?: Date): boolean {
+    if (this.status === PaymentStatus.SUCCEEDED) {
+      if (this.gatewayOrderId === gatewayOrderId) {
+        return false;
+      }
+      throw new PaymentAlreadySucceededError(this.id, this.gatewayOrderId ?? '', gatewayOrderId);
+    }
     this.gatewayOrderId = gatewayOrderId;
     this.paidAmount = paidAmount;
     this.paidAt = paidAt || new Date();
     (this as { status: PaymentStatus | RefundStatus }).status = PaymentStatus.SUCCEEDED;
     (this as { updatedAt: Date }).updatedAt = new Date();
+    return true;
   }
 
   /**
    * 标记为失败
+   *
+   * @returns true=状态/原因更新;false=同原因幂等重放(no-op)
+   * @throws PaymentFailedAfterSuccessError 已成功(钱已到账,失败矛盾)
    */
-  markAsFailed(failureReason: string): void {
+  markAsFailed(failureReason: string): boolean {
+    if (this.status === PaymentStatus.SUCCEEDED) {
+      throw new PaymentFailedAfterSuccessError(this.id, failureReason);
+    }
+    if (this.status === PaymentStatus.FAILED && this.failureReason === failureReason) {
+      return false;
+    }
     this.failureReason = failureReason;
     (this as { status: PaymentStatus | RefundStatus }).status = PaymentStatus.FAILED;
     (this as { updatedAt: Date }).updatedAt = new Date();
+    return true;
   }
 
   /**
    * 关闭订单
+   * @throws PaymentCloseNotAllowedError 已成功的单不可关闭(收款记录不可抹成 cancelled)
    */
   close(operatorId: string): void {
+    if (this.status === PaymentStatus.SUCCEEDED) {
+      throw new PaymentCloseNotAllowedError(this.id);
+    }
     (this as { status: PaymentStatus | RefundStatus }).status = PaymentStatus.CLOSED;
     (this as { closedAt?: Date }).closedAt = new Date();
     (this as { updatedAt: Date }).updatedAt = new Date();

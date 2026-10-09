@@ -196,3 +196,119 @@ describe('PaymentApplicationService.createPaymentOrder 金额校验', () => {
     expect(r2.paymentOrderId).toBeDefined();
   });
 });
+
+/**
+ * W-3⑤⑥:回调时序(先落库后发事件)+互斥+状态冲突首写胜出ACK
+ */
+describe('PaymentApplicationService.handlePaymentCallback 时序与冲突', () => {
+  const buildCallbackHarness = (order: PaymentOrderAggregate | null) => {
+    const calls: string[] = [];
+    const repo = {
+      findByMerchantOrderId: jest.fn().mockResolvedValue(order ? [order] : []),
+      findById: jest.fn().mockResolvedValue(null),
+      findByIdempotencyKey: jest.fn().mockResolvedValue(null),
+      save: jest.fn().mockImplementation(async () => {
+        calls.push('save');
+      }),
+    };
+    const emit = jest.fn().mockImplementation((name: string) => {
+      calls.push(`emit:${name}`);
+    });
+    const gateway = {
+      verifyCallback: jest.fn().mockResolvedValue(true),
+      isPaymentSuccess: jest.fn().mockImplementation((s: string) => s === 'TRADE_SUCCESS'),
+      getFailureReason: jest.fn().mockReturnValue('买家未付款'),
+      createPayment: jest.fn(),
+      queryPaymentStatus: jest.fn(),
+      closePayment: jest.fn(),
+    };
+    const service = new PaymentApplicationService(
+      repo as never,
+      { createGateway: jest.fn().mockReturnValue(gateway) } as never,
+      new PaymentRiskService(),
+      { emit } as never,
+      { findOrderByMerchantOrderId: jest.fn().mockResolvedValue(null) } as never,
+    );
+    return { service, calls, emit, repo };
+  };
+
+  const makePending = (): PaymentOrderAggregate =>
+    new PaymentOrderAggregate(
+      PaymentOrderId.create('PAY_CB_001'),
+      'MO_CB_1',
+      new Money(100, 'CNY'),
+      PaymentMethod.ALIPAY,
+      's',
+      '7',
+      PaymentStatus.PENDING,
+    );
+
+  const cbDto = {
+    outTradeNo: 'MO_CB_1',
+    gatewayOrderId: 'GW-CB-1',
+    tradeStatus: 'TRADE_SUCCESS',
+    receiptAmount: 100,
+    totalAmount: '100',
+  } as any;
+
+  it('成功回调:先 save 后 emit(payment.succeeded),顺序不可倒置', async () => {
+    const h = buildCallbackHarness(makePending());
+    const result = await h.service.handlePaymentCallback(cbDto, {
+      paymentMethod: PaymentMethod.ALIPAY,
+    });
+    expect(result.success).toBe(true);
+    expect(h.calls).toEqual(['save', 'emit:payment.succeeded']);
+  });
+
+  it('重复成功回调(同网关单号):ACK 且不落库不重发事件', async () => {
+    const order = makePending();
+    order.markAsSucceeded('GW-CB-1', new Money(100, 'CNY'), new Date('2026-10-09T10:00:00Z'));
+    const h = buildCallbackHarness(order);
+    const result = await h.service.handlePaymentCallback(cbDto, {
+      paymentMethod: PaymentMethod.ALIPAY,
+    });
+    expect(result.success).toBe(true);
+    expect(h.calls).toEqual([]);
+  });
+
+  it('冲突成功回调(异网关单号):ACK STATE_CONFLICT_ACK 首写胜出', async () => {
+    const order = makePending();
+    order.markAsSucceeded('GW-ORIG', new Money(100, 'CNY'), new Date('2026-10-09T10:00:00Z'));
+    const h = buildCallbackHarness(order);
+    const result = await h.service.handlePaymentCallback(cbDto, {
+      paymentMethod: PaymentMethod.ALIPAY,
+    });
+    expect(result).toEqual({ success: true, message: 'STATE_CONFLICT_ACK' });
+    expect(h.calls).toEqual([]);
+  });
+
+  it('失败回调打在已成功单上:ACK STATE_CONFLICT_ACK,收款态不动', async () => {
+    const order = makePending();
+    order.markAsSucceeded('GW-CB-1', new Money(100, 'CNY'), new Date('2026-10-09T10:00:00Z'));
+    const h = buildCallbackHarness(order);
+    const result = await h.service.handlePaymentCallback(
+      { ...cbDto, tradeStatus: 'TRADE_CLOSED' } as any,
+      { paymentMethod: PaymentMethod.ALIPAY },
+    );
+    expect(result).toEqual({ success: true, message: 'STATE_CONFLICT_ACK' });
+    expect(order.status).toBe(PaymentStatus.SUCCEEDED);
+  });
+
+  it('失败回调(PENDING单):先 save 后 emit(payment.failed)', async () => {
+    const h = buildCallbackHarness(makePending());
+    const result = await h.service.handlePaymentCallback(
+      { ...cbDto, tradeStatus: 'TRADE_CLOSED' } as any,
+      { paymentMethod: PaymentMethod.ALIPAY },
+    );
+    expect(result.success).toBe(true);
+    expect(h.calls).toEqual(['save', 'emit:payment.failed']);
+  });
+
+  it('订单不存在:success:false ORDER_NOT_FOUND(不 ACK 不事件)', async () => {
+    const h = buildCallbackHarness(null);
+    const result = await h.service.handlePaymentCallback(cbDto, {
+      paymentMethod: PaymentMethod.ALIPAY,
+    });
+    expect(result).toEqual({ success: false, message: 'ORDER_NOT_FOUND' });
+  });
+});
