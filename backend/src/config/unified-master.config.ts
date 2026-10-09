@@ -357,7 +357,7 @@ export const createMasterConfiguration = (): MasterConfig => {
   if (error) {
     if (!skipValidation) {
       // 统一生产环境下的错误文案，使与强校验分支一致
-      const firstDetail: any = (error as any).details?.[0];
+      const firstDetail = (error as { details?: Array<{ message?: string; context?: { key?: string }; path?: string[]; type?: string }> }).details?.[0];
       const key = firstDetail?.context?.key || firstDetail?.path?.[0];
       const type = firstDetail?.type;
       if (key === 'JWT_SECRET' && type && type.startsWith('string.')) {
@@ -376,7 +376,7 @@ export const createMasterConfiguration = (): MasterConfig => {
       throw new Error(`配置验证失败: ${error.message}`);
     } else {
       // 在开发或显式跳过验证时，统一中文警告文案并继续
-      const details: any[] = (error as any).details || [];
+      const details = (error as { details?: Array<{ message?: string; context?: { key?: string }; path?: string[]; type?: string }> }).details || [];
       const msgs: string[] = [];
       for (const d of details) {
         const k = d?.context?.key || d?.path?.[0];
@@ -404,12 +404,12 @@ export const createMasterConfiguration = (): MasterConfig => {
           msgs.push(`${d.message}`);
         }
       }
-      const merged = msgs.length ? msgs.join('; ') : (error as any).message;
+      const merged = msgs.length ? msgs.join('; ') : (error as Error).message;
       console.warn(`⚠️ 跳过严格配置验证: ${merged}`);
     }
   }
 
-  let env: any = validatedEnvConfig;
+  let env = validatedEnvConfig;
   if (skipValidation) {
     env.JWT_SECRET = env.JWT_SECRET || 'dev-jwt-secret-key-32-chars-xxxxxxxxxxxxxxxx';
     // S5-min: 回退默认改为随机生成, 不再使用固定已知密钥
@@ -447,7 +447,7 @@ export const createMasterConfiguration = (): MasterConfig => {
     }
 
     // 强制要求 JWT_SECRET 满足安全标准
-    const jwtSecret = env.JWT_SECRET;
+    const jwtSecret = env.JWT_SECRET as string | undefined;
     if (!jwtSecret || jwtSecret.length < 32) {
       throw new Error(
         `生产环境 JWT_SECRET 必须至少32字符长度，当前长度: ${jwtSecret?.length || 0}。请设置有效的JWT密钥`,
@@ -455,7 +455,7 @@ export const createMasterConfiguration = (): MasterConfig => {
     }
 
     // 强制要求 ENCRYPTION_KEY 满足安全标准
-    const encryptionKey = env.ENCRYPTION_KEY;
+    const encryptionKey = env.ENCRYPTION_KEY as string | undefined;
     if (!encryptionKey || encryptionKey.length !== 64) {
       throw new Error(
         `生产环境 ENCRYPTION_KEY 必须为64字符长度，当前长度: ${encryptionKey?.length || 0}。请设置有效的加密密钥`,
@@ -470,7 +470,7 @@ export const createMasterConfiguration = (): MasterConfig => {
 
     // Kafka/Redpanda：若未显式禁用，则必须提供 broker 列表
     if (env.KAFKA_ENABLED !== 'false') {
-      const brokers = env.REDPANDA_BROKERS;
+      const brokers = env.REDPANDA_BROKERS as string | undefined;
       if (!brokers || `${brokers}`.trim() === '') {
         throw new Error('生产环境需设置 REDPANDA_BROKERS 或将 KAFKA_ENABLED=false');
       }

@@ -83,8 +83,8 @@ export class ProductEventsService implements OnModuleInit {
       topics: [this.PRODUCT_VIEWED_TOPIC],
     });
 
-    await this.redpandaService.consumeMessages(productViewedConsumerId, async message => {
-      await this.handleProductViewed(message.value);
+    await this.redpandaService.consumeMessages(productViewedConsumerId, async payload => {
+      await this.handleProductViewed(JSON.parse(payload.value!.toString('utf8')));
     });
 
     // 库存更新事件消费者
@@ -93,8 +93,8 @@ export class ProductEventsService implements OnModuleInit {
       topics: [this.INVENTORY_UPDATED_TOPIC],
     });
 
-    await this.redpandaService.consumeMessages(inventoryConsumerId, async message => {
-      await this.handleInventoryUpdated(message.value);
+    await this.redpandaService.consumeMessages(inventoryConsumerId, async payload => {
+      await this.handleInventoryUpdated(JSON.parse(payload.value!.toString('utf8')));
     });
   }
 

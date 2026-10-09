@@ -6,7 +6,7 @@ export class LogSanitizerService {
   /**
    * 清理日志中的敏感信息
    */
-  sanitizeLog(data: any): any {
+  sanitizeLog(data: unknown): unknown {
     if (typeof data === 'string') {
       return this.maskSensitiveString(data);
     }
@@ -63,9 +63,9 @@ export class LogSanitizerService {
   /**
    * 掩码敏感值
    */
-  private maskValue(value: any): string {
+  private maskValue(value: unknown): string {
     if (value === null || value === undefined) {
-      return value;
+      return '';
     }
 
     const str = String(value);
@@ -106,8 +106,8 @@ export class LogSanitizerService {
   /**
    * 清理支付相关敏感信息
    */
-  sanitizePaymentLog(paymentData: any): any {
-    const sanitized = this.sanitizeLog(paymentData);
+  sanitizePaymentLog(paymentData: Record<string, unknown>): Record<string, unknown> {
+    const sanitized = this.sanitizeLog(paymentData) as Record<string, unknown>;
 
     // 特殊处理支付相关字段
     if (sanitized.thirdPartyTransactionId) {

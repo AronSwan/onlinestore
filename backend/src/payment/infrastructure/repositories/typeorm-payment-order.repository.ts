@@ -170,14 +170,14 @@ export class TypeOrmPaymentOrderRepository implements PaymentOrderRepository {
       amount: paymentOrder.amount.amount,
       currency: paymentOrder.amount.currency,
       method: this.methodToEntity(paymentOrder.paymentMethod),
-      gateway: 'manual' as any, // 实体枚举无 direct——策略直连落 manual（网关渠道语义由 method 承载）
+      gateway: 'manual' as Payment['gateway'], // 实体枚举无 direct——策略直连落 manual（渠道语义由 method 承载）
       status: this.statusToEntity(paymentOrder.status),
       thirdPartyTransactionId: paymentOrder.gatewayOrderId ?? null,
       metadata,
       failureReason: paymentOrder.failureReason ?? null,
       paidAt: paymentOrder.paidAt ?? null,
       expiredAt: paymentOrder.expireTime ?? null,
-      idempotencyKey: (paymentOrder as any).idempotencyKey ?? null,
+      idempotencyKey: (paymentOrder as { idempotencyKey?: string }).idempotencyKey ?? null,
     };
 
     if (existing) {
@@ -222,10 +222,10 @@ export class TypeOrmPaymentOrderRepository implements PaymentOrderRepository {
     let totalCount = 0;
     let successCount = 0;
     let failedCount = 0;
-    for (const raw of rows.raw as any[]) {
+    for (const raw of rows.raw as Array<Record<string, unknown>>) {
       const count = Number(raw.count) || 0;
       methodStats.push({
-        method: raw.method,
+        method: String(raw.method),
         count,
         amount: Number(raw.amount) || 0,
       });
@@ -272,7 +272,7 @@ export class TypeOrmPaymentOrderRepository implements PaymentOrderRepository {
       metadata.closedAt ? new Date(metadata.closedAt) : undefined,
       [],
     );
-    (aggregate as any).idempotencyKey = entity.idempotencyKey ?? undefined;
+    (aggregate as { idempotencyKey?: string }).idempotencyKey = entity.idempotencyKey ?? undefined;
     return aggregate;
   }
 
@@ -302,7 +302,7 @@ export class TypeOrmPaymentOrderRepository implements PaymentOrderRepository {
 
   private methodToEntity(method: PaymentMethod | string): EntityMethod {
     const key =
-      typeof method === 'string' ? method : ((method as any)?.value ?? '');
+      typeof method === 'string' ? method : ((method as { value?: string })?.value ?? '');
     const mapped = METHOD_TO_ENTITY[key.toUpperCase()];
     if (!mapped) {
       throw new Error(`未知支付方式（fail-closed 拒绝落库）: ${key}`);

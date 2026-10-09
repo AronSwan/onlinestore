@@ -10,7 +10,7 @@ export interface CryptoPaymentRequest {
   network: string; // TRC20, ERC20, BEP20
   userId: number;
   expireMinutes?: number;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 export interface CryptoPaymentResponse {
@@ -134,7 +134,7 @@ export class CryptoGatewayService {
     }
   }
 
-  validateCallback(data: any, signature: string): boolean {
+  validateCallback(data: Record<string, unknown>, signature: string): boolean {
     // P1-min fail-closed: secret 未配置时拒绝验签, 不再拼 &secret=undefined
     if (!this.apiSecret) {
       this.logger.warn('CRYPTO_API_SECRET 未配置, 拒绝回调验签(fail-closed)');
@@ -147,7 +147,7 @@ export class CryptoGatewayService {
     );
   }
 
-  private generateSignature(data: any, timestamp: string): string {
+  private generateSignature(data: Record<string, unknown>, timestamp: string): string {
     // P1-min fail-closed: 密钥缺失时抛错, 不生成伪造签名
     if (!this.apiKey || !this.apiSecret) {
       throw new HttpException(

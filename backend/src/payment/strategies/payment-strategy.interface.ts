@@ -6,7 +6,7 @@ export interface PaymentRequest {
   amount: number;
   currency: string;
   userId: number;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
   returnUrl?: string;
   notifyUrl?: string;
   expireMinutes?: number;
@@ -23,18 +23,18 @@ export interface RefundRequest {
   paymentId: string;
   amount: number;
   reason?: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 export abstract class PaymentStrategy {
   abstract createPayment(request: PaymentRequest): Promise<GatewayResult<CreatePaymentData>>;
 
   abstract queryPayment(paymentId: string): Promise<GatewayResult<QueryPaymentData>>;
 
-  abstract handleCallback(data: any): Promise<GatewayResult<CallbackData>>;
+  abstract handleCallback(data: Record<string, unknown>): Promise<GatewayResult<CallbackData>>;
 
   abstract refund(request: RefundRequest): Promise<GatewayResult<RefundData>>;
 
-  abstract validateCallback(data: any): boolean;
+  abstract validateCallback(data: Record<string, unknown>): boolean;
 
   /**
    * 通用支付回调验签（HMAC-SHA256）。
@@ -52,7 +52,7 @@ export abstract class PaymentStrategy {
    * 安全语义：fail-closed —— 未配置密钥、缺少签名或签名不匹配一律返回 false，
    * 并记录警告日志，绝不放行未验签的支付回调。
    */
-  protected verifyCallbackSignature(data: any): boolean {
+  protected verifyCallbackSignature(data: Record<string, unknown>): boolean {
     const secret = process.env.PAYMENT_SIGNATURE_SECRET;
     if (!secret) {
       console.warn(

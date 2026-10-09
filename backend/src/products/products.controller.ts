@@ -163,7 +163,7 @@ export class ProductsController {
    * 审计失败只告警不阻断主流程。
    */
   private async auditProductWrite(
-    req: any,
+    req: Record<string, unknown> | undefined,
     actionLabel: '创建' | '更新' | '删除',
     productId: number | string,
     newValues?: Record<string, any>,
@@ -173,11 +173,11 @@ export class ProductsController {
         AuditAction.ADMIN_PRODUCT_MANAGE,
         AuditResult.SUCCESS,
         {
-          userId: req?.user?.sub != null ? String(req.user.sub) : undefined,
-          userEmail: req?.user?.email,
-          userRole: req?.user?.role,
-          httpMethod: req?.method,
-          endpoint: req ? `${req.method} ${req.originalUrl || req.url || ''}` : undefined,
+          userId: (req?.user as { sub?: number } | undefined)?.sub != null ? String((req!.user as { sub: number }).sub) : undefined,
+          userEmail: (req?.user as { email?: string } | undefined)?.email,
+          userRole: (req?.user as { role?: string } | undefined)?.role,
+          httpMethod: (req as { method?: string } | undefined)?.method,
+          endpoint: req ? `${(req as { method: string }).method} ${(req as { originalUrl?: string; url?: string }).originalUrl || (req as { url?: string }).url || ''}` : undefined,
           resourceType: 'products',
           resourceId: String(productId),
         },
@@ -195,7 +195,7 @@ export class ProductsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @ApiCreateResource(Product, CreateProductDto, '创建产品')
-  async create(@Body() createProductDto: CreateProductDto, @Req() req?: any) {
+  async create(@Body() createProductDto: CreateProductDto, @Req() req?: Record<string, unknown>) {
     // M4(2026-10-04) 第二闸服务端侧 + P1-2 修复（双盲审 2026-10-05）：
     // 复检对所有 create 生效——禁用词无条件检查；带 factCard 时叠加词表冲突复检
     // （fail-closed）。结构冲突/禁用词 → 400 带明细；黄警放行（发布预览已人工确认）。
@@ -262,16 +262,16 @@ export class ProductsController {
   @ApiPaginatedQuery(Product, '获取产品列表', '分页获取产品列表，支持搜索和排序')
   @ApiQuery({ name: 'search', required: false, description: '搜索关键词', example: 'iPhone' })
   // R4(反查 P3)：此前此处还挂了 categoryId/minPrice/maxPrice 三行 @ApiQuery，但 handler
-  // 并不接收这些参数（过滤能力在 GET /products/search）——文档失实已删，只保留真实支持的 search。
+  // 并不接收这些参数（过滤能力在 GET /products/search）——文档失实已删，只保留真实支持的 q（B10 归并）。
   findAll(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
-    @Query('search') search?: string,
+    @Query('q') q?: string,
   ) {
     return this.productsService.findAll({
       page,
       limit,
-      search,
+      search: q, // B10 参数归并:HTTP 层统一 q,service 层内部字段名不动(零内层 diff)
     });
   }
 
@@ -300,7 +300,7 @@ export class ProductsController {
       },
     },
   })
-  async searchProducts(@Query() query: any) {
+  async searchProducts(@Query() query: Record<string, any>) {
     // 双盲B1席修复：tags 此前未从 query 解构——service 层过滤能力在，参数被丢弃恒全量
     const { q, page = 1, limit = 20, category, minPrice, maxPrice, inStock, tags } = query;
 
@@ -338,7 +338,7 @@ export class ProductsController {
       },
     },
   })
-  async getSearchSuggestions(@Query() query: any) {
+  async getSearchSuggestions(@Query() query: Record<string, any>) {
     const { q, limit = 10 } = query;
     return await this.searchSuggestionService.getSuggestions(q, limit);
   }
@@ -383,7 +383,7 @@ export class ProductsController {
       },
     },
   })
-  async getPopularSearches(@Query() query: any) {
+  async getPopularSearches(@Query() query: Record<string, any>) {
     const { limit = 10, includeTrends = false, timeRange = 'week', category } = query;
     return await this.popularSearchService.getPopularSearches({
       limit: parseInt(limit, 10),
@@ -434,12 +434,12 @@ export class ProductsController {
   findAllAdmin(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
-    @Query('search') search?: string,
+    @Query('q') q?: string,
   ) {
     return this.productsService.findAll({
       page,
       limit,
-      search,
+      search: q,
       includeInactive: true,
     });
   }
@@ -487,7 +487,7 @@ export class ProductsController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateProductDto: UpdateProductDto,
-    @Req() req?: any,
+    @Req() req?: Record<string, unknown>,
   ) {
     // M4(2026-10-04) 第二闸服务端侧（update 分支）+ P1-2 修复（双盲审 2026-10-05）：
     // 复检不再依赖"请求带了 specifications"——禁用词对所有 update 无条件生效；
@@ -501,7 +501,7 @@ export class ProductsController {
     // 三修 P2-7（fix2 §三 7）：合并语义收敛到 product-merge.helper 单点——
     // 闸视图与 service 写路径引用同一份 mergeSpecifications，消灭双份同构漂移面。
     const existing = await this.productsService.findById(id).catch(() => null);
-    const gateView: any = {
+    const gateView: Record<string, unknown> = {
       ...updateProductDto,
       name: updateProductDto.name ?? existing?.name,
       description: updateProductDto.description ?? existing?.description,
@@ -534,7 +534,7 @@ export class ProductsController {
       },
     ],
   })
-  async remove(@Param('id', ParseIntPipe) id: number, @Req() req?: any) {
+  async remove(@Param('id', ParseIntPipe) id: number, @Req() req?: Record<string, unknown>) {
     await this.productsService.remove(id);
     await this.auditProductWrite(req, '删除', id, { id, isActive: false });
   }

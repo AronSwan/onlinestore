@@ -13,7 +13,7 @@ export interface PaymentGateway {
   createPayment(params: {
     paymentOrderId: string;
     merchantOrderId: string;
-    amount: any;
+    amount: import('../value-objects/money.value-object').Money;
     subject: string;
     description: string;
     notifyUrl?: string;
@@ -29,7 +29,7 @@ export interface PaymentGateway {
   /**
    * 验证回调
    */
-  verifyCallback(params: { signature?: string; data: any; timestamp?: string }): Promise<boolean>;
+  verifyCallback(params: { signature?: string; data: Record<string, unknown>; timestamp?: string }): Promise<boolean>;
 
   /**
    * 判断支付是否成功
@@ -58,7 +58,7 @@ export interface PaymentGateway {
     paymentOrderId: string;
     gatewayOrderId: string;
     refundId: string;
-    refundAmount: any;
+    refundAmount: import('../value-objects/money.value-object').Money;
     reason: string;
   }): Promise<{
     gatewayRefundId: string;
@@ -86,7 +86,7 @@ export class PaymentGatewayFactory {
    * （verifyCallback 恒真）——mock-on-mock 接线修复，miss 即抛错不回退。
    */
   createGateway(paymentMethod: PaymentMethod): PaymentGateway {
-    const key = String((paymentMethod as any)?.value ?? paymentMethod).toLowerCase();
+    const key = String((paymentMethod as { value?: string })?.value ?? paymentMethod).toLowerCase();
     const strategy = this.strategies.get(key);
     if (!strategy) {
       throw new Error(`不支持的支付方式（fail-closed，无 mock 回退）: ${key}`);
@@ -99,7 +99,7 @@ export class PaymentGatewayFactory {
  * 模拟支付网关实现
  */
 class MockPaymentGateway implements PaymentGateway {
-  async createPayment(params: any): Promise<any> {
+  async createPayment(params: Parameters<PaymentGateway['createPayment']>[0]): Promise<ReturnType<PaymentGateway['createPayment']> extends Promise<infer R> ? R : never> {
     return {
       gatewayOrderId: `GATEWAY_${Date.now()}`,
       paymentUrl: 'https://example.com/pay',
@@ -107,7 +107,7 @@ class MockPaymentGateway implements PaymentGateway {
     };
   }
 
-  async verifyCallback(params: any): Promise<boolean> {
+  async verifyCallback(params: Parameters<PaymentGateway['verifyCallback']>[0]): Promise<boolean> {
     return true;
   }
 
@@ -119,7 +119,7 @@ class MockPaymentGateway implements PaymentGateway {
     return `Payment failed with status: ${tradeStatus}`;
   }
 
-  async queryPaymentStatus(params: any): Promise<any> {
+  async queryPaymentStatus(params: Parameters<PaymentGateway['queryPaymentStatus']>[0]): Promise<Awaited<ReturnType<PaymentGateway['queryPaymentStatus']>>> {
     return {
       isSuccess: true,
       gatewayOrderId: params.gatewayOrderId,
@@ -128,13 +128,13 @@ class MockPaymentGateway implements PaymentGateway {
     };
   }
 
-  async createRefund(params: any): Promise<any> {
+  async createRefund(params: Parameters<PaymentGateway['createRefund']>[0]): Promise<Awaited<ReturnType<PaymentGateway['createRefund']>>> {
     return {
       gatewayRefundId: `REFUND_${Date.now()}`,
     };
   }
 
-  async closePayment(params: any): Promise<void> {
+  async closePayment(params: Parameters<PaymentGateway['closePayment']>[0]): Promise<void> {
     // Mock implementation
   }
 }

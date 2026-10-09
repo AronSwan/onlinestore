@@ -38,13 +38,13 @@ export interface ApiDocsOptions {
   params?: Array<{
     name: string;
     description: string;
-    example?: any;
+    example?: unknown;
     required?: boolean;
   }>;
   queries?: Array<{
     name: string;
     description: string;
-    example?: any;
+    example?: unknown;
     required?: boolean;
     type?: 'string' | 'number' | 'boolean';
   }>;

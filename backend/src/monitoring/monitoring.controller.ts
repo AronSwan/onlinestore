@@ -102,7 +102,7 @@ export class MonitoringController {
   @ApiQuery({ name: 'startDate', required: false })
   @ApiQuery({ name: 'endDate', required: false })
   @ApiResponse({ status: 200, description: '审计日志数据' })
-  getAuditLogs(@Query() filter: any) {
+  getAuditLogs(@Query() filter: Record<string, unknown>) {
     return this.monitoringService.getAuditLogs(filter);
   }
 
@@ -113,7 +113,7 @@ export class MonitoringController {
   @ApiQuery({ name: 'startDate', required: false })
   @ApiQuery({ name: 'endDate', required: false })
   @ApiResponse({ status: 200, description: '安全事件数据' })
-  getSecurityEvents(@Query() filter: any) {
+  getSecurityEvents(@Query() filter: Record<string, unknown>) {
     return this.monitoringService.getSecurityEvents(filter);
   }
 
@@ -166,9 +166,9 @@ export class MonitoringController {
     prometheusMetrics += `# TYPE active_connections gauge\n`;
     prometheusMetrics += `active_connections ${metrics.activeConnections}\n\n`;
 
-    if (res && typeof (res as any).send === 'function') {
+    if (res && typeof (res as { send?: unknown }).send === 'function') {
       res.set?.('Content-Type', 'text/plain');
-      (res as any).send(prometheusMetrics);
+      (res as { send: (body: string) => void }).send(prometheusMetrics);
       return;
     }
     return prometheusMetrics;

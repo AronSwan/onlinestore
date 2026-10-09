@@ -13,23 +13,23 @@ import * as crypto from 'crypto';
  * PaymentStrategy.verifyCallbackSignature 共用本函数做签名序列化，
  * 杜绝两套排序规则各自演进导致签名互不兼容。
  */
-export function sortKeysDeep(obj: any): any {
+export function sortKeysDeep<T>(obj: T): T {
   if (typeof obj !== 'object' || obj === null) {
     return obj;
   }
 
   if (Array.isArray(obj)) {
-    return obj.map(item => sortKeysDeep(item));
+    return obj.map(item => sortKeysDeep(item)) as unknown as T;
   }
 
-  const sortedObj: any = {};
+  const sortedObj: Record<string, unknown> = {};
   Object.keys(obj)
     .sort()
     .forEach(key => {
       sortedObj[key] = sortKeysDeep(obj[key]);
     });
 
-  return sortedObj;
+  return sortedObj as unknown as T;
 }
 
 @Injectable()
@@ -48,12 +48,12 @@ export class PaymentSecurityService {
   /**
    * 验证支付请求的安全性
    */
-  validatePaymentRequest(request: any): void {
+  validatePaymentRequest(request: Record<string, unknown>): void {
     // 验证金额
-    this.validateAmount(request.amount);
+    this.validateAmount(Number(request.amount));
 
     // 验证幂等性键
-    this.validateIdempotencyKey(request.idempotencyKey);
+    this.validateIdempotencyKey(String(request.idempotencyKey ?? ''));
 
     // 验证请求签名（如果提供）
     if (request.signature) {
@@ -62,17 +62,17 @@ export class PaymentSecurityService {
 
     // 验证时间戳（防重放攻击）
     if (request.timestamp) {
-      this.validateTimestamp(request.timestamp);
+      this.validateTimestamp(Number(request.timestamp));
     }
   }
 
   /**
    * 验证支付回调的安全性
    */
-  validatePaymentCallback(callback: any, expectedSignature: string): void {
+  validatePaymentCallback(callback: Record<string, unknown>, expectedSignature: string): void {
     // 验证nonce（防重放）
     if (callback.nonce) {
-      this.validateNonce(callback.nonce);
+      this.validateNonce(String(callback.nonce));
     }
 
     // 验证回调签名
@@ -80,20 +80,20 @@ export class PaymentSecurityService {
 
     // 验证回调时间戳
     if (callback.timestamp) {
-      this.validateTimestamp(callback.timestamp);
+      this.validateTimestamp(Number(callback.timestamp));
     }
 
     // 记录已使用的nonce
     if (callback.nonce) {
-      this.markNonceAsUsed(callback.nonce);
+      this.markNonceAsUsed(String(callback.nonce));
     }
   }
 
   /**
    * 生成安全的支付请求
    */
-  generateSecurePaymentRequest(paymentData: any): any {
-    const secureRequest = {
+  generateSecurePaymentRequest(paymentData: Record<string, unknown>): Record<string, unknown> {
+    const secureRequest: Record<string, unknown> = {
       ...paymentData,
       nonce: this.encryptionService.generatePaymentNonce(),
       timestamp: Date.now(),
@@ -192,7 +192,7 @@ export class PaymentSecurityService {
   /**
    * 生成请求签名
    */
-  private generateRequestSignature(request: any): string {
+  private generateRequestSignature(request: Record<string, unknown>): string {
     const secret = this.configService.get<string>('PAYMENT_SIGNATURE_SECRET');
     if (!secret) {
       throw new Error('PAYMENT_SIGNATURE_SECRET not configured');
@@ -209,8 +209,8 @@ export class PaymentSecurityService {
   /**
    * 验证请求签名
    */
-  private validateRequestSignature(request: any): void {
-    const providedSignature = request.signature;
+  private validateRequestSignature(request: Record<string, unknown>): void {
+    const providedSignature = String(request.signature ?? '');
     const expectedSignature = this.generateRequestSignature(request);
 
     const secret = this.configService.get<string>('PAYMENT_SIGNATURE_SECRET');
@@ -232,7 +232,7 @@ export class PaymentSecurityService {
   /**
    * 验证回调签名
    */
-  private validateCallbackSignature(callback: any, expectedSignature: string): void {
+  private validateCallbackSignature(callback: Record<string, unknown>, expectedSignature: string): void {
     const secret = this.configService.get<string>('PAYMENT_CALLBACK_SECRET');
     if (!secret) {
       throw new Error('PAYMENT_CALLBACK_SECRET not configured');
@@ -255,15 +255,15 @@ export class PaymentSecurityService {
   /**
    * 对象键排序（确保签名一致性）—— 委托给共享纯函数 sortKeysDeep（递归深度排序）
    */
-  private sortObjectKeys(obj: any): any {
+  private sortObjectKeys<T>(obj: T): T {
     return sortKeysDeep(obj);
   }
 
   /**
    * 安全日志记录
    */
-  logSecurityEvent(event: string, data: any, level: 'info' | 'warn' | 'error' = 'info'): void {
-    const sanitizedData = this.logSanitizer.sanitizePaymentLog(data);
+  logSecurityEvent(event: string, data: unknown, level: 'info' | 'warn' | 'error' = 'info'): void {
+    const sanitizedData = this.logSanitizer.sanitizePaymentLog(data as Record<string, unknown>);
 
     const logEntry = {
       event,

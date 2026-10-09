@@ -54,11 +54,11 @@ export class CryptoStrategy extends PaymentStrategy {
           message: response.message || '创建加密货币支付失败',
         };
       }
-    } catch (error: any) {
-      this.logger.error(`加密货币策略创建支付失败: ${error.message}`, error.stack);
+    } catch (error: unknown) {
+      this.logger.error(`加密货币策略创建支付失败: ${(error as Error).message}`, (error as Error).stack);
       return {
         success: false,
-        message: error.message || '加密货币支付服务异常',
+        message: (error as Error).message || '加密货币支付服务异常',
       };
     }
   }
@@ -84,16 +84,16 @@ export class CryptoStrategy extends PaymentStrategy {
           message: response.message || '查询加密货币支付状态失败',
         };
       }
-    } catch (error: any) {
-      this.logger.error(`加密货币策略查询支付失败: ${error.message}`, error.stack);
+    } catch (error: unknown) {
+      this.logger.error(`加密货币策略查询支付失败: ${(error as Error).message}`, (error as Error).stack);
       return {
         success: false,
-        message: error.message || '查询加密货币支付状态异常',
+        message: (error as Error).message || '查询加密货币支付状态异常',
       };
     }
   }
 
-  async handleCallback(data: any): Promise<GatewayResult<CallbackData>> {
+  async handleCallback(data: Record<string, unknown>): Promise<GatewayResult<CallbackData>> {
     try {
       if (!this.validateCallback(data)) {
         return {
@@ -105,7 +105,7 @@ export class CryptoStrategy extends PaymentStrategy {
       if (data.txHash) {
         const { currency, network } = this.parseCryptoMethod(this.method);
         const isValid = await this.cryptoGateway.validateTransaction(
-          data.txHash,
+          String(data.txHash),
           currency,
           network,
         );
@@ -121,18 +121,18 @@ export class CryptoStrategy extends PaymentStrategy {
       return {
         success: true,
         data: {
-          paymentId: data.paymentId,
-          status: this.mapStatus(data.status),
-          amount: data.amount,
-          blockchainTxHash: data.txHash,
-          paidAt: data.paidAt ? new Date(data.paidAt) : undefined,
+          paymentId: String(data.paymentId),
+          status: this.mapStatus(String(data.status)),
+          amount: Number(data.amount),
+          blockchainTxHash: data.txHash as string,
+          paidAt: data.paidAt ? new Date(String(data.paidAt)) : undefined,
         },
       };
-    } catch (error: any) {
-      this.logger.error(`加密货币策略处理回调失败: ${error.message}`, error.stack);
+    } catch (error: unknown) {
+      this.logger.error(`加密货币策略处理回调失败: ${(error as Error).message}`, (error as Error).stack);
       return {
         success: false,
-        message: error.message || '处理加密货币回调异常',
+        message: (error as Error).message || '处理加密货币回调异常',
       };
     }
   }
@@ -145,11 +145,11 @@ export class CryptoStrategy extends PaymentStrategy {
     };
   }
 
-  validateCallback(data: any): boolean {
+  validateCallback(data: Record<string, unknown>): boolean {
     try {
-      return this.cryptoGateway.validateCallback(data, data.signature);
-    } catch (error: any) {
-      this.logger.error(`加密货币策略验证回调失败: ${error.message}`, error.stack);
+      return this.cryptoGateway.validateCallback(data, String(data.signature ?? '')); // 空串必验签失败(fail-closed语义保持)
+    } catch (error: unknown) {
+      this.logger.error(`加密货币策略验证回调失败: ${(error as Error).message}`, (error as Error).stack);
       return false;
     }
   }

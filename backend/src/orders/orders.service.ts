@@ -84,7 +84,7 @@ export class OrdersService {
           product,
           productSnapshot: {
             name: product.name,
-            image: (product as any).image || '',
+            image: (product as { image?: string }).image || '',
             specifications: {},
           },
         });
@@ -217,7 +217,7 @@ export class OrdersService {
     });
     // 越权审计(2026-10-03): user 关系会把 bcrypt 哈希整包吐给客户端, 统一剥离
     if (result?.user) {
-      delete (result.user as any).password;
+      delete (result.user as { password?: string }).password;
     }
     const endDb = process.hrtime.bigint();
 
@@ -240,7 +240,7 @@ export class OrdersService {
     });
     // 越权审计(2026-10-03): 列表同样剥离 user.password
     orders.forEach((o) => {
-      if (o.user) delete (o.user as any).password;
+      if (o.user) delete (o.user as { password?: string }).password;
     });
     const endDb = process.hrtime.bigint();
 
@@ -259,7 +259,7 @@ export class OrdersService {
     // 一审修复(2026-10-03): admin 列表同样剥离 user.password(此前误将补丁落在
     // 不加载 user 关系的 findByUserId 上——锚点撞车, 真 findAll 漏剥)
     orders.forEach((o) => {
-      if (o.user) delete (o.user as any).password;
+      if (o.user) delete (o.user as { password?: string }).password;
     });
     const endDb = process.hrtime.bigint();
 
@@ -275,13 +275,13 @@ export class OrdersService {
 
     // 更新状态相关的时间戳
     if (updateData.status === OrderStatus.SHIPPED && !order.shippedAt) {
-      (updateData as any).shippedAt = new Date();
+      (updateData as { shippedAt?: Date }).shippedAt = new Date();
     }
     if (updateData.paymentStatus === PaymentStatus.PAID && !order.paidAt) {
-      (updateData as any).paidAt = new Date();
+      (updateData as { paidAt?: Date }).paidAt = new Date();
     }
     if (updateData.status === OrderStatus.DELIVERED && !order.completedAt) {
-      (updateData as any).completedAt = new Date();
+      (updateData as { completedAt?: Date }).completedAt = new Date();
     }
 
     await this.orderRepository.update(id, updateData);
@@ -308,10 +308,10 @@ export class OrdersService {
     // 更新状态相关的时间戳
     const updateData: UpdateOrderData = { status };
     if (status === OrderStatus.SHIPPED && !order.shippedAt) {
-      (updateData as any).shippedAt = new Date();
+      (updateData as { shippedAt?: Date }).shippedAt = new Date();
     }
     if (status === OrderStatus.DELIVERED && !order.completedAt) {
-      (updateData as any).completedAt = new Date();
+      (updateData as { completedAt?: Date }).completedAt = new Date();
     }
 
     await this.orderRepository.update(id, updateData);
@@ -404,14 +404,14 @@ export class OrdersService {
     return `ORD${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
   }
 
-  private async publishOrderCreatedEvent(order: Order, items: any[]): Promise<void> {
+  private async publishOrderCreatedEvent(order: Order, items: unknown[]): Promise<void> {
     const event = {
       eventId: `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       orderId: order.id,
       orderNumber: order.orderNumber,
       userId: order.userId,
       totalAmount: order.totalAmount,
-      items: items.map(item => ({
+      items: (items as Array<{ productId: number; quantity: number; unitPrice: number }>).map(item => ({
         productId: item.productId,
         quantity: item.quantity,
         unitPrice: item.unitPrice,

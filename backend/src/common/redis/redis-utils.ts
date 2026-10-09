@@ -3,14 +3,14 @@ import Redis, { RedisOptions } from 'ioredis';
 
 export interface RedisLike {
   get(key: string): Promise<string | null>;
-  set(key: string, value: string, ...args: any[]): Promise<'OK' | null>;
+  set(key: string, value: string, ...args: unknown[]): Promise<'OK' | null>;
   setex(key: string, ttlSeconds: number, value: string): Promise<'OK'>;
   del(...keys: string[]): Promise<number>;
-  eval(script: string, numKeys: number, ...args: any[]): Promise<any>;
+  eval(script: string, numKeys: number, ...args: unknown[]): Promise<unknown>;
   ping(): Promise<string>;
   info(section?: string): Promise<string>;
   keys(pattern: string): Promise<string[]>;
-  on?(event: string, listener: (...args: any[]) => void): void;
+  on?(event: string, listener: (...args: unknown[]) => void): void;
   quit?(): Promise<void>;
   disconnect(): Promise<void>;
   exists(key: string): Promise<number>;
@@ -34,7 +34,7 @@ class NoopRedis implements RedisLike {
     return this.store.has(key) ? this.store.get(key)! : null;
   }
 
-  async set(key: string, value: string, ...args: any[]): Promise<'OK' | null> {
+  async set(key: string, value: string, ...args: unknown[]): Promise<'OK' | null> {
     // Support PX and NX semantics in a minimal way
     let ttlMs: number | undefined;
     let nx = false;
@@ -97,7 +97,7 @@ class NoopRedis implements RedisLike {
     return count;
   }
 
-  async eval(script: string, numKeys: number, ...args: any[]): Promise<any> {
+  async eval(script: string, numKeys: number, ...args: unknown[]): Promise<any> {
     // Minimal support:
     // - Unlock script in CartLockService: (key, requestId)
     // - Count keys pattern used in AddressCacheService: ARGV[1] pattern
@@ -140,7 +140,7 @@ class NoopRedis implements RedisLike {
     return result;
   }
 
-  on(event: string, listener: (...args: any[]) => void): void {
+  on(event: string, listener: (...args: unknown[]) => void): void {
     // noop
   }
 

@@ -123,7 +123,7 @@ export class AddressFormattingService {
 
       // 获取格式模板
       const template =
-        (this.formatTemplates as any)[normalizedCountry] || this.formatTemplates.default;
+        (this.formatTemplates as Record<string, string>)[normalizedCountry] || this.formatTemplates.default;
 
       // 预处理组件
       const processedComponents = this.preprocessComponents(components, options);
@@ -164,8 +164,8 @@ export class AddressFormattingService {
 
     // 标准化大小写
     Object.keys(processed).forEach(key => {
-      if ((processed as any)[key] && typeof (processed as any)[key] === 'string') {
-        (processed as any)[key] = this.titleCase((processed as any)[key]);
+      if ((processed as Record<string, unknown>)[key] && typeof (processed as Record<string, unknown>)[key] === 'string') {
+        (processed as Record<string, unknown>)[key] = this.titleCase((processed as Record<string, unknown>)[key] as string);
       }
     });
 
@@ -181,7 +181,7 @@ export class AddressFormattingService {
     // 替换占位符
     Object.keys(components).forEach(key => {
       const placeholder = `{${key}}`;
-      const value = (components as any)[key] || '';
+      const value = (components as Record<string, string>)[key] || '';
       result = result.replace(new RegExp(placeholder, 'g'), value);
     });
 
@@ -233,7 +233,7 @@ export class AddressFormattingService {
    * 缩写州名
    */
   private abbreviateState(state: string): string {
-    return (this.stateAbbreviations as any)[state] || state;
+    return (this.stateAbbreviations as Record<string, string>)[state] || state;
   }
 
   /**
@@ -258,7 +258,7 @@ export class AddressFormattingService {
       AU: 'Australia',
     };
 
-    return (countryNames as any)[countryCode.toUpperCase()] || countryCode;
+    return (countryNames as Record<string, string>)[countryCode.toUpperCase()] || countryCode;
   }
 
   /**

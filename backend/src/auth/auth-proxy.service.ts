@@ -11,6 +11,16 @@ import { createMasterConfiguration } from '../config/unified-master.config';
 import { User } from '../users/entities/user.entity';
 import { UsersService } from '../users/users.service';
 
+export interface CasdoorUser {
+  id: string;
+  name: string;
+  displayName?: string;
+  email: string;
+  phone?: string;
+  avatar?: string;
+  isAdmin?: boolean;
+}
+
 @Injectable()
 export class AuthProxyService {
   private readonly config;
@@ -49,7 +59,7 @@ export class AuthProxyService {
   /**
    * 交换授权码获取Casdoor令牌
    */
-  async exchangeCodeForToken(code: string): Promise<any> {
+  async exchangeCodeForToken(code: string): Promise<unknown> {
     const { serverUrl, clientId, clientSecret, organizationName, applicationName } =
       this.casdoorConfig;
 
@@ -79,7 +89,7 @@ export class AuthProxyService {
   /**
    * 验证Casdoor令牌并获取用户信息
    */
-  async validateCasdoorToken(token: string): Promise<any> {
+  async validateCasdoorToken(token: string): Promise<unknown> {
     try {
       // 调用Casdoor API验证令牌并获取用户信息
       const userInfo = await this.httpService
@@ -105,7 +115,7 @@ export class AuthProxyService {
   /**
    * 确保系统中存在该用户，如果不存在则创建
    */
-  private async ensureUserExists(casdoorUser: any): Promise<User> {
+  private async ensureUserExists(casdoorUser: CasdoorUser): Promise<User> {
     // 检查用户是否已存在
     let user = await this.usersService.findByEmail(casdoorUser.email);
 
@@ -139,7 +149,7 @@ export class AuthProxyService {
   /**
    * 刷新Casdoor令牌
    */
-  async refreshCasdoorToken(refreshToken: string): Promise<any> {
+  async refreshCasdoorToken(refreshToken: string): Promise<unknown> {
     const { serverUrl, clientId, clientSecret } = this.casdoorConfig;
 
     try {
@@ -213,21 +223,21 @@ export class AuthProxyService {
   /**
    * 处理Casdoor登录回调
    */
-  async handleCasdoorCallback(code: string, state: string): Promise<any> {
+  async handleCasdoorCallback(code: string, state: string): Promise<unknown> {
     if (!code) {
       throw new UnauthorizedException('认证失败，缺少授权码');
     }
 
     try {
       // 交换授权码获取Casdoor令牌
-      const casdoorToken = await this.exchangeCodeForToken(code);
+      const casdoorToken = (await this.exchangeCodeForToken(code)) as { access_token?: string; refresh_token?: string; expires_in?: number; token_type?: string };
 
       if (!casdoorToken.access_token) {
         throw new UnauthorizedException('认证失败，无法获取访问令牌');
       }
 
       // 验证令牌并获取用户信息
-      const casdoorUser = await this.validateCasdoorToken(casdoorToken.access_token);
+      const casdoorUser = (await this.validateCasdoorToken(casdoorToken.access_token!)) as CasdoorUser;
 
       // 获取系统用户
       const user = await this.usersService.findByEmail(casdoorUser.email);
@@ -262,7 +272,7 @@ export class AuthProxyService {
   /**
    * 获取Casdoor用户信息
    */
-  async getCasdoorUserInfo(email: string): Promise<any> {
+  async getCasdoorUserInfo(email: string): Promise<unknown> {
     try {
       // 查找用户
       const user = await this.usersService.findByEmail(email);

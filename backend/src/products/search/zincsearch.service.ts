@@ -37,7 +37,7 @@ export class ZincSearchService implements SearchStrategy {
     }
   }
 
-  private async makeRequest(endpoint: string, options: RequestInit = {}): Promise<any> {
+  private async makeRequest(endpoint: string, options: RequestInit = {}): Promise<unknown> {
     // SSRF防护：验证URL只允许连接到配置的ZincSearch服务
     const url = `${this.baseUrl}${endpoint}`;
 
@@ -104,7 +104,7 @@ export class ZincSearchService implements SearchStrategy {
     }
 
     try {
-      const searchBody: any = {
+      const searchBody: Record<string, unknown> = {
         search_type: 'match',
         query: {
           term: query,
@@ -130,10 +130,14 @@ export class ZincSearchService implements SearchStrategy {
         body: JSON.stringify(searchBody),
       });
 
+      const resp = response as {
+        hits: { hits: Array<Record<string, any>>; total: { value: number } };
+        took: number;
+      };
       return {
-        hits: response.hits.hits.map((hit: any) => this.transformHit(hit)),
-        total: response.hits.total.value,
-        processingTimeMs: response.took,
+        hits: resp.hits.hits.map(hit => this.transformHit(hit)),
+        total: resp.hits.total.value,
+        processingTimeMs: resp.took,
         query,
       };
     } catch (error) {
@@ -229,8 +233,8 @@ export class ZincSearchService implements SearchStrategy {
     return 'ZincSearch';
   }
 
-  private buildQueryWithFilters(query: string, filters: Record<string, any>): any {
-    const mustClauses: any[] = [
+  private buildQueryWithFilters(query: string, filters: Record<string, unknown>): Record<string, unknown> {
+    const mustClauses: Array<Record<string, unknown>> = [
       {
         match: {
           query: query,
@@ -238,7 +242,7 @@ export class ZincSearchService implements SearchStrategy {
       },
     ];
 
-    const filterClauses: any[] = [];
+    const filterClauses: Array<Record<string, unknown>> = [];
 
     if (filters.categoryId) {
       filterClauses.push({
@@ -268,7 +272,7 @@ export class ZincSearchService implements SearchStrategy {
       });
     }
 
-    if (filters.tags && filters.tags.length > 0) {
+    if (Array.isArray(filters.tags) && filters.tags.length > 0) {
       filterClauses.push({
         terms: {
           tags: filters.tags,
@@ -302,7 +306,7 @@ export class ZincSearchService implements SearchStrategy {
     };
   }
 
-  private transformHit(hit: any): ProductHit {
+  private transformHit(hit: Record<string, any>): ProductHit {
     return {
       id: hit._id,
       name: hit._source.name,
@@ -314,7 +318,7 @@ export class ZincSearchService implements SearchStrategy {
     };
   }
 
-  private transformProductForIndexing(product: ProductIndexData): any {
+  private transformProductForIndexing(product: ProductIndexData): Record<string, unknown> {
     return {
       id: product.id,
       name: product.name,

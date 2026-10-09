@@ -28,8 +28,8 @@ import {
 export interface JobStatusResponse {
   id: string | number;
   status: string;
-  progress: any;
-  result: any;
+  progress: unknown;
+  result: Record<string, unknown> | null;
   error: string | null;
   createdAt: Date;
   processedAt: Date | null;
@@ -57,7 +57,7 @@ export class AddressController {
    */
   @Post('geocode')
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
-  async geocode(@Body() request: GeocodeDto): Promise<any> {
+  async geocode(@Body() request: GeocodeDto): Promise<unknown> {
     try {
       const results = await this.addressService.geocode(request.address, {
         countryCode: request.countryCode,
@@ -75,7 +75,7 @@ export class AddressController {
    */
   @Post('reverse-geocode')
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
-  async reverseGeocode(@Body() request: ReverseGeocodeDto): Promise<any> {
+  async reverseGeocode(@Body() request: ReverseGeocodeDto): Promise<unknown> {
     try {
       const result = await this.addressService.reverseGeocode(request.latitude, request.longitude, {
         language: request.language,
@@ -92,7 +92,7 @@ export class AddressController {
    */
   @Post('geocode/batch')
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
-  async batchGeocode(@Body() request: BatchGeocodeDto): Promise<any> {
+  async batchGeocode(@Body() request: BatchGeocodeDto): Promise<unknown> {
     try {
       const jobIds = await this.addressService.batchGeocode(request.addresses, {
         priority: request.priority,
@@ -157,7 +157,7 @@ export class AddressController {
    * 获取缓存统计
    */
   @Get('cache/stats')
-  async getCacheStats(): Promise<any> {
+  async getCacheStats(): Promise<unknown> {
     try {
       const stats = await this.cacheService.getStats();
 
@@ -171,7 +171,7 @@ export class AddressController {
    * 清理缓存
    */
   @Post('cache/cleanup')
-  async cleanupCache(): Promise<any> {
+  async cleanupCache(): Promise<unknown> {
     try {
       await this.cacheService.clear();
 
@@ -186,7 +186,7 @@ export class AddressController {
    */
   @Post('validate')
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
-  async validateAddress(@Body() request: ValidateAddressDto): Promise<any> {
+  async validateAddress(@Body() request: ValidateAddressDto): Promise<unknown> {
     try {
       const result = await this.addressService.validateAddress(
         request.address,
@@ -204,7 +204,7 @@ export class AddressController {
    */
   @Post('format')
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
-  async formatAddress(@Body() request: FormatAddressDto): Promise<any> {
+  async formatAddress(@Body() request: FormatAddressDto): Promise<unknown> {
     try {
       const result = await this.addressService.formatAddress(request.address, request.countryCode);
 
@@ -218,7 +218,7 @@ export class AddressController {
    * 健康检查
    */
   @Get('health')
-  async healthCheck(): Promise<any> {
+  async healthCheck(): Promise<unknown> {
     try {
       const isHealthy = await this.addressService.healthCheck();
 

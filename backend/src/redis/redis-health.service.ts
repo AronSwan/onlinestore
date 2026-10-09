@@ -37,7 +37,7 @@ export class RedisHealthService {
     if (redisClient !== undefined) {
       this.redisClient = redisClient;
       // 若注入的是模块提供的 Stub，则标记为 stubMode，getClient 返回 undefined
-      if ((this.redisClient as any)?.__stub === true) {
+      if ((this.redisClient as { __stub?: boolean })?.__stub === true) {
         this.stubMode = true;
       }
       this.setupEventListeners();
@@ -47,7 +47,7 @@ export class RedisHealthService {
       // 开发环境或测试环境：不实例化 Redis 客户端，避免无 Redis 服务时产生连接错误
       if (isDev || isTest || !redisEnabled) {
         // 禁用或开发/测试模式：使用最小可用的Stub，避免连接错误
-        this.redisClient = this.createStubClient() as any;
+        this.redisClient = this.createStubClient() as unknown as import('ioredis').default;
         this.stubMode = true;
         const reason = !redisEnabled
           ? 'Redis disabled via REDIS_ENABLED'
@@ -84,7 +84,7 @@ export class RedisHealthService {
 
       // 开发环境或测试环境：不实例化 Redis 客户端，避免无 Redis 服务时产生连接错误
       if (isDev || isTest || !redisEnabled) {
-        this.redisClient = this.createStubClient() as any;
+        this.redisClient = this.createStubClient() as unknown as import('ioredis').default;
         this.stubMode = true;
         const reason = !redisEnabled
           ? 'Redis disabled via REDIS_ENABLED'
@@ -131,7 +131,7 @@ export class RedisHealthService {
   }
 
   // 创建一个最小可用的Stub客户端，避免连接错误
-  private createStubClient(): any {
+  private createStubClient(): Record<string, unknown> {
     const store = new Map<string, string>();
     const ttlMap = new Map<string, NodeJS.Timeout>();
     return {
@@ -210,7 +210,7 @@ export class RedisHealthService {
     }
   }
 
-  async getRedisInfo(): Promise<any> {
+  async getRedisInfo(): Promise<Record<string, unknown> | null | undefined> {
     if (this.stubMode) {
       return null;
     }
@@ -266,11 +266,11 @@ export class RedisHealthService {
     }
   }
 
-  getClient(): Redis {
+  getClient(): Redis | undefined {
     // 测试期望：在开发/测试或禁用场景返回 undefined
     if (this.stubMode) {
-      return undefined as any;
+      return undefined;
     }
-    return this.redisClient;
+    return this.redisClient as Redis | undefined;
   }
 }

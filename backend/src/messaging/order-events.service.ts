@@ -101,8 +101,8 @@ export class OrderEventsService implements OnModuleInit {
 
     const orderCreatedConsumerId = await this.redpandaService.createConsumer(consumerConfig);
 
-    await this.redpandaService.consumeMessages(orderCreatedConsumerId, async message => {
-      await this.handleOrderCreated(message.value);
+    await this.redpandaService.consumeMessages(orderCreatedConsumerId, async payload => {
+      await this.handleOrderCreated(JSON.parse(payload.value!.toString('utf8')));
     });
 
     // 支付处理事件消费者
@@ -111,8 +111,8 @@ export class OrderEventsService implements OnModuleInit {
       topics: [this.PAYMENT_PROCESSED_TOPIC],
     });
 
-    await this.redpandaService.consumeMessages(paymentConsumerId, async message => {
-      await this.handlePaymentProcessed(message.value);
+    await this.redpandaService.consumeMessages(paymentConsumerId, async payload => {
+      await this.handlePaymentProcessed(JSON.parse(payload.value!.toString('utf8')));
     });
   }
 

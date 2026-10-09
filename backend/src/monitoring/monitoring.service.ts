@@ -136,12 +136,12 @@ export class MonitoringService {
 
   // Connection tracking
   incrementActiveConnections() {
-    const current = (this.metricsService as any)?.metrics?.activeConnections ?? 0;
+    const current = (this.metricsService as unknown as { metrics?: { activeConnections?: number } })?.metrics?.activeConnections ?? 0;
     this.metricsService.updateActiveConnections(current + 1);
   }
 
   decrementActiveConnections() {
-    const current = (this.metricsService as any)?.metrics?.activeConnections ?? 0;
+    const current = (this.metricsService as unknown as { metrics?: { activeConnections?: number } })?.metrics?.activeConnections ?? 0;
     this.metricsService.updateActiveConnections(Math.max(0, current - 1));
   }
 
@@ -150,14 +150,14 @@ export class MonitoringService {
 
   // Audit logging
 
-  getAuditLogs(filter?: any) {
+  getAuditLogs(filter?: Record<string, unknown>) {
     this.logger.debug(`Getting audit logs with filter: ${JSON.stringify(filter)}`);
     return [];
   }
 
   // Security event logging
 
-  getSecurityEvents(filter?: any) {
+  getSecurityEvents(filter?: Record<string, unknown>) {
     this.logger.debug(`Getting security events with filter: ${JSON.stringify(filter)}`);
     return [];
   }
@@ -373,7 +373,10 @@ export class MonitoringService {
           database: this.metricsService.getMetricsByCategory('database'),
           cache: this.metricsService.getMetricsByCategory('cache'),
         },
-        recommendations: this.generateRecommendations(dailyStats, detailedMetrics),
+        recommendations: this.generateRecommendations(
+            dailyStats ?? { errorRate: 0, avgResponseTime: 0, avgMemoryUsage: 0, avgCpuLoad: 0 },
+            detailedMetrics,
+          ),
       };
     } catch (error) {
       this.logger.error('Failed to generate performance report', error);
@@ -418,7 +421,10 @@ export class MonitoringService {
   }
 
   // Generate performance recommendations
-  private generateRecommendations(stats: any, detailedMetrics: any) {
+  private generateRecommendations(
+    stats: { errorRate: number; avgResponseTime: number; avgMemoryUsage: number; avgCpuLoad: number },
+    detailedMetrics: { derived?: { errorRate?: number; httpRequestDurationAvg?: number; databaseQueryDurationAvg?: number; cacheHitRate?: number } },
+  ) {
     const recommendations: Array<{
       priority: string;
       category: string;
@@ -458,7 +464,7 @@ export class MonitoringService {
     }
 
     // Add recommendations based on detailed metrics
-    if (detailedMetrics.derived && detailedMetrics.derived.errorRate > 5) {
+    if (detailedMetrics.derived && (detailedMetrics.derived.errorRate ?? 0) > 5) {
       recommendations.push({
         priority: 'high',
         category: 'http_errors',
@@ -466,7 +472,7 @@ export class MonitoringService {
       });
     }
 
-    if (detailedMetrics.derived && detailedMetrics.derived.httpRequestDurationAvg > 500) {
+    if (detailedMetrics.derived && (detailedMetrics.derived.httpRequestDurationAvg ?? 0) > 500) {
       recommendations.push({
         priority: 'medium',
         category: 'http_performance',
@@ -474,7 +480,7 @@ export class MonitoringService {
       });
     }
 
-    if (detailedMetrics.derived && detailedMetrics.derived.databaseQueryDurationAvg > 100) {
+    if (detailedMetrics.derived && (detailedMetrics.derived.databaseQueryDurationAvg ?? 0) > 100) {
       recommendations.push({
         priority: 'medium',
         category: 'database_performance',
@@ -482,7 +488,7 @@ export class MonitoringService {
       });
     }
 
-    if (detailedMetrics.derived && detailedMetrics.derived.cacheHitRate < 80) {
+    if (detailedMetrics.derived && (detailedMetrics.derived.cacheHitRate ?? 100) < 80) {
       recommendations.push({
         priority: 'low',
         category: 'cache_efficiency',

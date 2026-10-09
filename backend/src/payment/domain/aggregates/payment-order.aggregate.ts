@@ -52,16 +52,16 @@ export class RefundAggregate {
    * 标记为成功
    */
   markAsSucceeded(): void {
-    (this as any).status = RefundStatus.SUCCEEDED;
-    (this as any).completedAt = new Date();
+    (this as { status: PaymentStatus | RefundStatus }).status = RefundStatus.SUCCEEDED;
+    (this as { completedAt?: Date }).completedAt = new Date();
   }
 
   /**
    * 标记为失败
    */
   markAsFailed(): void {
-    (this as any).status = RefundStatus.FAILED;
-    (this as any).completedAt = new Date();
+    (this as { status: PaymentStatus | RefundStatus }).status = RefundStatus.FAILED;
+    (this as { completedAt?: Date }).completedAt = new Date();
   }
 }
 
@@ -69,7 +69,7 @@ export class RefundAggregate {
  * 支付订单聚合根
  */
 export class PaymentOrderAggregate {
-  private uncommittedEvents: any[] = [];
+  private uncommittedEvents: unknown[] = [];
 
   constructor(
     public readonly id: PaymentOrderId,
@@ -131,7 +131,7 @@ export class PaymentOrderAggregate {
     this.gatewayOrderId = gatewayOrderId;
     if (paymentUrl) this.paymentUrl = paymentUrl;
     if (qrCode) this.qrCode = qrCode;
-    (this as any).updatedAt = new Date();
+    (this as { updatedAt: Date }).updatedAt = new Date();
   }
 
   /**
@@ -141,8 +141,8 @@ export class PaymentOrderAggregate {
     this.gatewayOrderId = gatewayOrderId;
     this.paidAmount = paidAmount;
     this.paidAt = paidAt || new Date();
-    (this as any).status = PaymentStatus.SUCCEEDED;
-    (this as any).updatedAt = new Date();
+    (this as { status: PaymentStatus | RefundStatus }).status = PaymentStatus.SUCCEEDED;
+    (this as { updatedAt: Date }).updatedAt = new Date();
   }
 
   /**
@@ -150,17 +150,17 @@ export class PaymentOrderAggregate {
    */
   markAsFailed(failureReason: string): void {
     this.failureReason = failureReason;
-    (this as any).status = PaymentStatus.FAILED;
-    (this as any).updatedAt = new Date();
+    (this as { status: PaymentStatus | RefundStatus }).status = PaymentStatus.FAILED;
+    (this as { updatedAt: Date }).updatedAt = new Date();
   }
 
   /**
    * 关闭订单
    */
   close(operatorId: string): void {
-    (this as any).status = PaymentStatus.CLOSED;
-    (this as any).closedAt = new Date();
-    (this as any).updatedAt = new Date();
+    (this as { status: PaymentStatus | RefundStatus }).status = PaymentStatus.CLOSED;
+    (this as { closedAt?: Date }).closedAt = new Date();
+    (this as { updatedAt: Date }).updatedAt = new Date();
   }
 
   /**
@@ -175,7 +175,7 @@ export class PaymentOrderAggregate {
     const refund = new RefundAggregate(refundId, refundAmount, reason, operatorId);
 
     this.refunds.push(refund);
-    (this as any).updatedAt = new Date();
+    (this as { updatedAt: Date }).updatedAt = new Date();
 
     return refund;
   }
@@ -190,7 +190,7 @@ export class PaymentOrderAggregate {
   /**
    * 获取未提交的事件
    */
-  getUncommittedEvents(): any[] {
+  getUncommittedEvents(): unknown[] {
     return [...this.uncommittedEvents];
   }
 

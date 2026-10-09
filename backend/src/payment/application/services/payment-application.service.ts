@@ -34,6 +34,33 @@ import { RefundCreatedEvent } from '../../domain/events/refund-created.event';
  * 支付应用服务
  * 负责协调领域对象和基础设施服务，实现业务用例
  */
+/**
+ * 三类支付上下文(挂账#3 接线批类型化):controller 构造的真实形状分别定义
+ */
+export interface PaymentCallbackContext {
+  paymentMethod: PaymentMethod;
+  signature?: string;
+  timestamp?: string;
+  clientIp?: string;
+  userAgent?: string;
+  rawBody?: unknown;
+}
+
+export interface PaymentRequestContext {
+  userId?: number | string;
+  idempotencyKey?: string;
+  clientIp?: string;
+  userAgent?: string;
+  notifyUrl?: string;
+  returnUrl?: string;
+}
+
+export interface PaymentRefundContext {
+  userId?: number | string;
+  operatorId?: string;
+  reason?: string;
+}
+
 @Injectable()
 export class PaymentApplicationService {
   private readonly logger = new Logger(PaymentApplicationService.name);
@@ -51,7 +78,7 @@ export class PaymentApplicationService {
    */
   async createPaymentOrder(
     dto: CreatePaymentOrderDto,
-    context: any,
+    context: PaymentRequestContext,
   ): Promise<PaymentOrderResponseDto> {
     this.logger.log(`创建支付订单开始: ${dto.merchantOrderId}`);
 
@@ -63,10 +90,10 @@ export class PaymentApplicationService {
         paymentMethod: PaymentMethod.fromString(dto.paymentMethod),
         subject: dto.subject || '',
         description: dto.description || '',
-        userId: context.userId,
-        clientIp: context.clientIp,
-        userAgent: context.userAgent,
-        idempotencyKey: context.idempotencyKey,
+        userId: String(context.userId ?? ''),
+        clientIp: String(context.clientIp ?? ''),
+        userAgent: String(context.userAgent ?? ''),
+        idempotencyKey: context.idempotencyKey ? String(context.idempotencyKey) : undefined,
         notifyUrl: dto.notifyUrl,
         returnUrl: dto.returnUrl,
         expireTime: dto.expireTime ? new Date(dto.expireTime) : undefined,
@@ -76,7 +103,7 @@ export class PaymentApplicationService {
       // 2. 幂等性检查
       if (context.idempotencyKey) {
         const existingOrder = await this.paymentOrderRepository.findByIdempotencyKey(
-          context.idempotencyKey,
+          String(context.idempotencyKey),
         );
         if (existingOrder) {
           this.logger.log(`幂等性检查：返回已存在的订单 ${existingOrder.id.value}`);
@@ -86,11 +113,11 @@ export class PaymentApplicationService {
 
       // 3. 风险检测
       const riskResult = await this.paymentRiskService.assessRisk({
-        userId: context.userId,
+        userId: String(context.userId ?? ''),
         amount: command.amount,
         paymentMethod: command.paymentMethod,
-        clientIp: context.clientIp,
-        userAgent: context.userAgent,
+        clientIp: String(context.clientIp ?? ''),
+        userAgent: String(context.userAgent ?? ''),
       });
 
       if (riskResult.isHighRisk()) {
@@ -131,7 +158,7 @@ export class PaymentApplicationService {
         command.amount.amount,
         command.amount.currency,
         command.paymentMethod.value,
-        context.userId,
+        String(context.userId ?? ''),
       );
       this.eventEmitter.emit('payment.order.created', event);
 
@@ -148,7 +175,7 @@ export class PaymentApplicationService {
    */
   async handlePaymentCallback(
     dto: PaymentCallbackDto,
-    context: any,
+    context: PaymentCallbackContext,
   ): Promise<{ success: boolean; message?: string }> {
     this.logger.log(`处理支付回调开始: ${dto.outTradeNo}`);
 
@@ -170,7 +197,7 @@ export class PaymentApplicationService {
       const gateway = this.paymentGatewayFactory.createGateway(context.paymentMethod);
       const isValidSignature = await gateway.verifyCallback({
         signature: context.signature,
-        data: dto.rawData || dto,
+        data: (dto.rawData ?? dto) as Record<string, unknown>,
         timestamp: context.timestamp,
       });
 
@@ -202,7 +229,7 @@ export class PaymentApplicationService {
 
         // 发布支付成功事件
         const event = new PaymentSucceededEvent(
-          (paymentOrder.id as any).value,
+          paymentOrder.id.value,
           paymentOrder.merchantOrderId,
           dto.receiptAmount || 0,
           paymentOrder.amount.currency,
@@ -216,7 +243,7 @@ export class PaymentApplicationService {
 
         // 发布支付失败事件
         const event = new PaymentFailedEvent(
-          (paymentOrder.id as any).value,
+          paymentOrder.id.value,
           paymentOrder.merchantOrderId,
           failureReason,
         );
@@ -239,7 +266,7 @@ export class PaymentApplicationService {
    */
   async createRefund(
     dto: RefundPaymentDto,
-    context: any,
+    context: PaymentRefundContext,
   ): Promise<{ refundId: string; status: string; refundAmount: number }> {
     this.logger.log(`创建退款开始: ${dto.paymentOrderId}`);
 
@@ -249,7 +276,7 @@ export class PaymentApplicationService {
         paymentOrderId: PaymentOrderId.create(dto.paymentOrderId),
         refundAmount: Money.create(dto.refundAmount, dto.currency),
         reason: dto.reason,
-        operatorId: context.userId,
+        operatorId: String(context.userId ?? 'system'),
       });
 
       // 2. 查找支付订单
@@ -407,7 +434,7 @@ export class PaymentApplicationService {
    */
   private toPaymentStatusResponse(paymentOrder: PaymentOrderAggregate): PaymentStatusResponseDto {
     return {
-      paymentOrderId: (paymentOrder.id as any).value,
+      paymentOrderId: paymentOrder.id.value,
       merchantOrderId: paymentOrder.merchantOrderId,
       amount: paymentOrder.amount.amount,
       currency: paymentOrder.amount.currency,
@@ -417,7 +444,7 @@ export class PaymentApplicationService {
       paidAt: paymentOrder.paidAt?.toISOString(),
       failureReason: paymentOrder.failureReason,
       createdAt: paymentOrder.createdAt.toISOString(),
-      updatedAt: (paymentOrder as any).updatedAt.toISOString(),
+      updatedAt: paymentOrder.updatedAt.toISOString(),
     };
   }
 }

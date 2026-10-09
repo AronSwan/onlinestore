@@ -42,7 +42,7 @@ export class RedpandaService implements OnModuleInit, OnModuleDestroy {
           subscribe: async () => {},
           run: async () => {},
         }),
-      } as any;
+      } as unknown as Kafka;
       this.producer = this.kafka.producer({ allowAutoTopicCreation: true });
       if (!kafkaEnabled) {
         this.logger.log('Kafka/Redpanda disabled via KAFKA_ENABLED=false; using stub client');
@@ -104,7 +104,7 @@ export class RedpandaService implements OnModuleInit, OnModuleDestroy {
           disconnect: async () => {},
           send: async () => {},
           on: () => {},
-        } as any;
+        } as unknown as Producer;
       } else {
         this.logger.error('Failed to connect to Redpanda', error);
         throw error;
@@ -122,7 +122,7 @@ export class RedpandaService implements OnModuleInit, OnModuleDestroy {
   /**
    * 兼容：publish(topic, payload) 或 publish({ topic, value, key, headers })
    */
-  async publish(topicOrMsg: TopicName | RedpandaProducerMessage, payload?: any) {
+  async publish(topicOrMsg: TopicName | RedpandaProducerMessage, payload?: unknown) {
     if (typeof topicOrMsg === 'string') {
       const msg: RedpandaProducerMessage = {
         topic: topicOrMsg,
@@ -154,7 +154,7 @@ export class RedpandaService implements OnModuleInit, OnModuleDestroy {
    * 别名：sendMessage / sendMessages - 兼容调用点
    */
   // 兼容：sendMessage(topic, value, key) 或 sendMessage({ topic, value, key })
-  async sendMessage(topicOrMsg: TopicName | RedpandaProducerMessage, value?: any, key?: string) {
+  async sendMessage(topicOrMsg: TopicName | RedpandaProducerMessage, value?: unknown, key?: string) {
     if (typeof topicOrMsg === 'string') {
       await this.publish({ topic: topicOrMsg, value, key });
       return;
@@ -211,19 +211,23 @@ export class RedpandaService implements OnModuleInit, OnModuleDestroy {
    *
    * 实际实现委托给私有方法 _createConsumerInternal，避免递归自调用。
    */
-  async createConsumer(configOrGroupId: any, topics?: TopicName[] | any, handler?: any) {
+  async createConsumer(
+    configOrGroupId: unknown,
+    topics?: TopicName[] | unknown,
+    handler?: (topic: string, value: unknown, key?: string, headers?: Record<string, string>) => Promise<void>,
+  ) {
     if (
       typeof configOrGroupId === 'object' &&
       configOrGroupId !== null &&
       !Array.isArray(configOrGroupId)
     ) {
-      const cfg = configOrGroupId as { groupId: string; topics?: TopicName[]; handler?: any };
-      return this._createConsumerInternal(cfg.groupId, cfg.topics || [], cfg.handler);
+      const cfg = configOrGroupId as { groupId: string; topics?: TopicName[]; handler?: (topic: string, value: unknown, key?: string, headers?: Record<string, string>) => void | Promise<void>; };
+      return this._createConsumerInternal(cfg.groupId, cfg.topics || [], cfg.handler as (topic: string, value: unknown, key?: string, headers?: Record<string, string>) => Promise<void>);
     }
     return this._createConsumerInternal(
       configOrGroupId as string,
       topics as TopicName[],
-      handler as any,
+      handler as (topic: string, value: unknown, key?: string, headers?: Record<string, string>) => Promise<void>,
     );
   }
 
@@ -232,7 +236,7 @@ export class RedpandaService implements OnModuleInit, OnModuleDestroy {
     topics: TopicName[],
     handler: (
       topic: string,
-      value: any,
+      value: unknown,
       key?: string,
       headers?: Record<string, string>,
     ) => Promise<void>,
@@ -243,7 +247,7 @@ export class RedpandaService implements OnModuleInit, OnModuleDestroy {
       await consumer.subscribe({ topic: t, fromBeginning: false });
     }
     await consumer.run({
-      eachMessage: async ({ topic, message }: { topic: string; message: any }) => {
+      eachMessage: async ({ topic, message }: { topic: string; message: import('kafkajs').KafkaMessage }) => {
         try {
           const val = message.value ? JSON.parse(message.value.toString('utf8')) : undefined;
           const key = message.key?.toString('utf8');
@@ -251,10 +255,10 @@ export class RedpandaService implements OnModuleInit, OnModuleDestroy {
             Object.entries(message.headers || {}).map(([k, v]) => [k, v?.toString() ?? '']),
           );
           await handler(topic, val, key, headers);
-        } catch (err: any) {
+        } catch (err: unknown) {
           this.logger.error(
-            `Consumer handler error on topic ${topic}: ${err?.message}`,
-            err?.stack,
+            `Consumer handler error on topic ${topic}: ${(err as Error)?.message}`,
+            (err as Error)?.stack,
           );
         }
       },
@@ -266,23 +270,27 @@ export class RedpandaService implements OnModuleInit, OnModuleDestroy {
   /**
    * 兼容：consumeMessages(consumer, handler) - consumer 可以是 consumer 实例或返回的对象
    */
-  async consumeMessages(consumerInstance: any, handler: (message: any) => Promise<void>) {
-    if (!consumerInstance || !consumerInstance.run) {
+  async consumeMessages(
+    consumerInstance: { run: (config: Record<string, unknown>) => Promise<void> } | unknown,
+    handler: (payload: { topic: string; value: Buffer | null; key?: string; headers?: Record<string, unknown> }) => Promise<void>,
+  ) {
+    const consumer = consumerInstance as { run?: (config: Record<string, unknown>) => Promise<void> };
+    if (!consumer || !consumer.run) {
       this.logger.error('consumeMessages: invalid consumer instance');
       return;
     }
-    await consumerInstance.run({
-      eachMessage: async ({ topic, message }: { topic: string; message: any }) => {
+    await consumer.run!({
+      eachMessage: async ({ topic, message }: { topic: string; message: import('kafkajs').KafkaMessage }) => {
         try {
           const val = message.value ? JSON.parse(message.value.toString('utf8')) : undefined;
           await handler({
             topic,
-            value: val,
-            key: message.key?.toString('utf8'),
+            value: Buffer.from(String(val ?? '')),
+            key: message.key?.toString('utf8') ?? undefined,
             headers: message.headers,
           });
-        } catch (err: any) {
-          this.logger.error(`consumeMessages handler error: ${err?.message}`, err?.stack);
+        } catch (err: unknown) {
+          this.logger.error(`consumeMessages handler error: ${(err as Error)?.message}`, (err as Error)?.stack);
         }
       },
     });
@@ -293,7 +301,7 @@ export class RedpandaService implements OnModuleInit, OnModuleDestroy {
    */
   async healthCheck(): Promise<{
     status: 'connected' | 'disconnected';
-    details?: any;
+    details?: unknown;
     brokers?: string[];
     error?: string;
   }> {
@@ -303,13 +311,13 @@ export class RedpandaService implements OnModuleInit, OnModuleDestroy {
       const metadata = await admin.fetchTopicMetadata();
       await admin.disconnect();
       // fetchTopicMetadata 返回结构未必包含 brokers，安全处理
-      const brokers = (metadata as any)?.brokers
-        ? (metadata as any).brokers.map((b: any) => `${b.host}:${b.port}`)
+      const brokers = (metadata as { brokers?: Array<{ host: string; port: number }> })?.brokers
+        ? (metadata as { brokers?: Array<{ host: string; port: number }> }).brokers!.map(b => `${b.host}:${b.port}`)
         : [];
       return { status: 'connected', details: metadata, brokers };
-    } catch (err: any) {
-      this.logger.error('Redpanda healthCheck failed', err?.stack);
-      return { status: 'disconnected', error: err?.message ?? 'unknown' };
+    } catch (err: unknown) {
+      this.logger.error('Redpanda healthCheck failed', (err as Error)?.stack);
+      return { status: 'disconnected', error: (err as Error)?.message ?? 'unknown' };
     }
   }
 
@@ -320,7 +328,7 @@ export class RedpandaService implements OnModuleInit, OnModuleDestroy {
   /**
    * 兼容：queryMessages （简单的占位实现，按需扩展）
    */
-  async queryMessages(_opts: any): Promise<any[]> {
+  async queryMessages(_opts: Record<string, unknown>): Promise<unknown[]> {
     // 复杂的消息查询通常需要专门的消费者或存储，这里返回空数组作为占位
     this.logger.warn('queryMessages called - placeholder implementation');
     return [];
