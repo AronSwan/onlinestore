@@ -374,7 +374,10 @@ export class AuditController {
       const deletedCount = await this.auditService.cleanupLogs(90);
       this.logger.log(`Scheduled cleanup completed: ${deletedCount} logs deleted`);
     } catch (error) {
-      this.logger.error('Scheduled cleanup failed:', error instanceof Error ? error.stack : String(error));
+      this.logger.error(
+        'Scheduled cleanup failed:',
+        error instanceof Error ? error.stack : String(error),
+      );
     }
   }
 

@@ -177,7 +177,10 @@ export class ProductEventsService implements OnModuleInit {
       await new Promise(resolve => setTimeout(resolve, 50));
       this.logger.log(`✅ 产品 ${event.productId} 浏览事件处理完成`);
     } catch (error) {
-      this.logger.error(`❌ 产品 ${event.productId} 浏览事件处理失败:`, error instanceof Error ? error.stack : String(error));
+      this.logger.error(
+        `❌ 产品 ${event.productId} 浏览事件处理失败:`,
+        error instanceof Error ? error.stack : String(error),
+      );
     }
   }
 
@@ -198,7 +201,10 @@ export class ProductEventsService implements OnModuleInit {
       await new Promise(resolve => setTimeout(resolve, 50));
       this.logger.log(`✅ 产品 ${event.productId} 库存更新处理完成`);
     } catch (error) {
-      this.logger.error(`❌ 产品 ${event.productId} 库存更新处理失败:`, error instanceof Error ? error.stack : String(error));
+      this.logger.error(
+        `❌ 产品 ${event.productId} 库存更新处理失败:`,
+        error instanceof Error ? error.stack : String(error),
+      );
     }
   }
 }

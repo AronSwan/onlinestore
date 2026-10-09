@@ -66,7 +66,9 @@ export class OrderEventsService implements OnModuleInit {
       // 启动消费者处理订单相关事件
       await this.startConsumers();
     } catch (error: any) {
-      this.logger.warn(`[OrderEventsService] 启动事件消费者失败（事件功能降级）: ${error?.message}`);
+      this.logger.warn(
+        `[OrderEventsService] 启动事件消费者失败（事件功能降级）: ${error?.message}`,
+      );
     }
   }
 
@@ -180,7 +182,9 @@ export class OrderEventsService implements OnModuleInit {
    */
   async reprocessOrderEvent(event: any): Promise<void> {
     if (event.metadata?.isRetry) {
-      this.logger.log(`♻️ 重试处理订单事件: ${event.orderId} (尝试 ${event.metadata.retryCount}次)`);
+      this.logger.log(
+        `♻️ 重试处理订单事件: ${event.orderId} (尝试 ${event.metadata.retryCount}次)`,
+      );
     }
     await this.handleOrderCreated(event);
   }
@@ -202,7 +206,10 @@ export class OrderEventsService implements OnModuleInit {
       await new Promise(resolve => setTimeout(resolve, 100));
       this.logger.log(`✅ 订单 ${event.orderId} 异步处理完成`);
     } catch (error) {
-      this.logger.error(`❌ 订单 ${event.orderId} 处理失败:`, error instanceof Error ? error.stack : String(error));
+      this.logger.error(
+        `❌ 订单 ${event.orderId} 处理失败:`,
+        error instanceof Error ? error.stack : String(error),
+      );
     }
   }
 
@@ -222,7 +229,10 @@ export class OrderEventsService implements OnModuleInit {
       await new Promise(resolve => setTimeout(resolve, 100));
       this.logger.log(`✅ 支付 ${event.paymentId} 异步处理完成`);
     } catch (error) {
-      this.logger.error(`❌ 支付 ${event.paymentId} 处理失败:`, error instanceof Error ? error.stack : String(error));
+      this.logger.error(
+        `❌ 支付 ${event.paymentId} 处理失败:`,
+        error instanceof Error ? error.stack : String(error),
+      );
     }
   }
 }

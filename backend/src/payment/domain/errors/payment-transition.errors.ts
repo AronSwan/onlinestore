@@ -30,9 +30,7 @@ export class PaymentFailedAfterSuccessError extends Error {
     readonly paymentOrderId: PaymentOrderId,
     readonly incomingReason: string,
   ) {
-    super(
-      `支付订单已成功,拒绝失败回调覆盖(${paymentOrderId.value},来报原因: ${incomingReason})`,
-    );
+    super(`支付订单已成功,拒绝失败回调覆盖(${paymentOrderId.value},来报原因: ${incomingReason})`);
     this.name = 'PaymentFailedAfterSuccessError';
   }
 }

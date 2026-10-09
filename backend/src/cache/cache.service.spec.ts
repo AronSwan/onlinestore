@@ -348,16 +348,13 @@ describe('CacheService', () => {
       );
 
       await service.set('search', 'records', {}, 'k', { ttl: 86400 * 30 });
-      expect(mockCache.set).toHaveBeenCalledWith(
-        'caddy_shopping:search:records:k',
-        {},
-        2592000000,
-      );
+      expect(mockCache.set).toHaveBeenCalledWith('caddy_shopping:search:records:k', {}, 2592000000);
     });
   });
 
   describe('Integration Scenarios', () => {
-    it('should handle complete cache workflow', async () => {      const module = 'products';
+    it('should handle complete cache workflow', async () => {
+      const module = 'products';
       const resource = 'product_detail';
       const id = '1';
       const value = { id: 1, name: 'Test Product' };

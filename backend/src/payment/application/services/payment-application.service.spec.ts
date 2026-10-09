@@ -4,7 +4,10 @@ import { PaymentQueryService } from './payment-query.service';
 import { PaymentApplicationService } from './payment-application.service';
 import { PaymentGatewayFactory } from '../../domain/services/payment-gateway.factory';
 import { PaymentRiskService } from '../../domain/services/payment-risk.service';
-import { PaymentOrderAggregate, PaymentStatus } from '../../domain/aggregates/payment-order.aggregate';
+import {
+  PaymentOrderAggregate,
+  PaymentStatus,
+} from '../../domain/aggregates/payment-order.aggregate';
 import { PaymentOrderId } from '../../domain/value-objects/payment-order-id.value-object';
 import { Money } from '../../domain/value-objects/money.value-object';
 import { PaymentMethod } from '../../domain/value-objects/payment-method.value-object';
@@ -48,7 +51,9 @@ describe('PaymentQueryService 行为锁（审计根因批）', () => {
     };
     gatewayFactory = {
       createGateway: jest.fn().mockReturnValue({
-        createPayment: jest.fn().mockResolvedValue({ gatewayOrderId: 'GW_1', paymentUrl: 'https://pay' }),
+        createPayment: jest
+          .fn()
+          .mockResolvedValue({ gatewayOrderId: 'GW_1', paymentUrl: 'https://pay' }),
         verifyCallback: jest.fn(),
         isPaymentSuccess: jest.fn(),
         getFailureReason: jest.fn(),
@@ -63,9 +68,20 @@ describe('PaymentQueryService 行为锁（审计根因批）', () => {
         PaymentQueryService,
         { provide: 'PaymentOrderRepository', useValue: repo },
         { provide: PaymentGatewayFactory, useValue: gatewayFactory },
-        { provide: require('../../infrastructure/health/database-health.service').DatabaseHealthService, useValue: { checkHealth: jest.fn() } },
-        { provide: require('../../infrastructure/health/redis-health.service').RedisHealthService, useValue: { checkHealth: jest.fn() } },
-        { provide: require('../../infrastructure/health/payment-gateway-health.service').PaymentGatewayHealthService, useValue: { checkHealth: jest.fn() } },
+        {
+          provide: require('../../infrastructure/health/database-health.service')
+            .DatabaseHealthService,
+          useValue: { checkHealth: jest.fn() },
+        },
+        {
+          provide: require('../../infrastructure/health/redis-health.service').RedisHealthService,
+          useValue: { checkHealth: jest.fn() },
+        },
+        {
+          provide: require('../../infrastructure/health/payment-gateway-health.service')
+            .PaymentGatewayHealthService,
+          useValue: { checkHealth: jest.fn() },
+        },
       ],
     }).compile();
     service = module.get(PaymentQueryService);
@@ -128,9 +144,7 @@ describe('PaymentApplicationService.createRefund 域错误翻译', () => {
 
   it('非成功订单退款→ConflictException(409),非裸 Error(500)', async () => {
     const { service } = buildService(makeAppOrder(PaymentStatus.PENDING));
-    await expect(
-      service.createRefund(dto, { userId: 1 }),
-    ).rejects.toThrow(ConflictException);
+    await expect(service.createRefund(dto, { userId: 1 })).rejects.toThrow(ConflictException);
   });
 
   it('订单不存在仍为裸 Error(404 契约另立批)——不误吞非域错误', async () => {
@@ -158,7 +172,13 @@ describe('PaymentApplicationService.createPaymentOrder 金额校验', () => {
     };
     const service = new PaymentApplicationService(
       repo as never,
-      { createGateway: jest.fn().mockReturnValue({ createPayment: jest.fn().mockResolvedValue({ gatewayOrderId: 'GW', paymentUrl: 'https://pay' }) }) } as never,
+      {
+        createGateway: jest.fn().mockReturnValue({
+          createPayment: jest
+            .fn()
+            .mockResolvedValue({ gatewayOrderId: 'GW', paymentUrl: 'https://pay' }),
+        }),
+      } as never,
       new PaymentRiskService(),
       { emit: jest.fn() } as never,
       { findOrderByMerchantOrderId: jest.fn().mockResolvedValue(internalOrder) } as never,
@@ -167,7 +187,10 @@ describe('PaymentApplicationService.createPaymentOrder 金额校验', () => {
   };
 
   it('站内单金额不符→ConflictException(409)', async () => {
-    const { service } = buildForPayment({ orderNumber: 'ORD1760000000000abc', totalAmount: 449.96 });
+    const { service } = buildForPayment({
+      orderNumber: 'ORD1760000000000abc',
+      totalAmount: 449.96,
+    });
     await expect(
       service.createPaymentOrder({ ...baseDto, amount: 0.01 }, { userId: 7 }),
     ).rejects.toThrow(ConflictException);
@@ -182,10 +205,9 @@ describe('PaymentApplicationService.createPaymentOrder 金额校验', () => {
 
   it('站内单金额恰等→放行到网关;外部商户号→放行', async () => {
     const ok = buildForPayment({ orderNumber: 'ORD1760000000000abc', totalAmount: 449.96 });
-    const r1 = await ok.service.createPaymentOrder(
-      { ...baseDto, amount: 449.96 } as any,
-      { userId: 7 },
-    );
+    const r1 = await ok.service.createPaymentOrder({ ...baseDto, amount: 449.96 } as any, {
+      userId: 7,
+    });
     expect(r1.paymentOrderId).toBeDefined();
 
     const ext = buildForPayment(null);

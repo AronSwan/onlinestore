@@ -362,12 +362,22 @@ describe('OrdersService', () => {
       expect(productRepo.update).toHaveBeenCalledWith({ id: 1 }, { isActive: false });
       // 审计行：系统事件形状 + 'auto: stock=0' 事实载荷
       expect(mockAuditService.log).toHaveBeenCalledTimes(1);
-      const [action, result, context, description, , , newValues] = mockAuditService.log.mock.calls[0];
+      const [action, result, context, description, , , newValues] =
+        mockAuditService.log.mock.calls[0];
       expect(action).toBe('PRODUCT_AUTO_UNLIST');
       expect(result).toBe('SUCCESS');
-      expect(context).toMatchObject({ resourceType: 'products', resourceId: '1', httpMethod: 'AUTO' });
+      expect(context).toMatchObject({
+        resourceType: 'products',
+        resourceId: '1',
+        httpMethod: 'AUTO',
+      });
       expect(String(description)).toContain('auto: stock=0');
-      expect(newValues).toMatchObject({ event: 'auto: stock=0', productId: 1, stockAfter: 0, isActive: false });
+      expect(newValues).toMatchObject({
+        event: 'auto: stock=0',
+        productId: 1,
+        stockAfter: 0,
+        isActive: false,
+      });
     });
 
     it('M5：扣减后仍有余量（stock>quantity）→ 不下架不落审计行', async () => {
@@ -1524,9 +1534,9 @@ describe('OrdersService', () => {
 
         const productRepo = {
           // 终验#5 适配: 两遍查询(定价预读+主循环新鲜读)——按 id 分流而非一次性队列
-          findOne: jest.fn().mockImplementation(({ where }: any) =>
-            where.id === 1 ? product1 : product2,
-          ),
+          findOne: jest
+            .fn()
+            .mockImplementation(({ where }: any) => (where.id === 1 ? product1 : product2)),
           createQueryBuilder: jest.fn().mockReturnValue({
             update: jest.fn().mockReturnThis(),
             set: jest.fn().mockReturnThis(),

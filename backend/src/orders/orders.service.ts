@@ -1,4 +1,11 @@
-import { Injectable, Inject, forwardRef, Logger, BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  forwardRef,
+  Logger,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Order } from './entities/order.entity';
@@ -8,10 +15,13 @@ import { Product } from '../products/entities/product.entity';
 import { OrderStatus, PaymentStatus } from './entities/order.entity';
 import { MonitoringService } from '../monitoring/monitoring.service';
 import { OrderEventsService } from '../messaging/order-events.service';
-import { AuditService, AuditAction, AuditResult, AuditSeverity } from '../common/audit/audit.service';
+import {
+  AuditService,
+  AuditAction,
+  AuditResult,
+  AuditSeverity,
+} from '../common/audit/audit.service';
 import { runExclusiveWrite } from '../common/db-write-mutex';
-
-
 
 @Injectable()
 export class OrdersService {
@@ -42,142 +52,144 @@ export class OrdersService {
     // 落自动下架审计行（AuditService.log 自带一次独立的 runExclusiveWrite）。
     const savedOrder = await runExclusiveWrite(() =>
       this.orderRepository.manager.transaction(async trx => {
-      // 生成订单号
-      const orderNumber = this.generateOrderNumber();
+        // 生成订单号
+        const orderNumber = this.generateOrderNumber();
 
-      // V13(2026-10-03): 金额一律服务端重算——忽略请求体的 totalAmount/items[].unitPrice。
-      // 定价在创建订单之前完成, 库存校验与乐观锁版本以事务内最新数据为准。
-      const itemsWithPrice: Array<{
-        productId: number;
-        quantity: number;
-        unitPrice: number;
-        totalPrice: number;
-        productSnapshot: { name: string; image: string; specifications: Record<string, any> };
-        product: Product;
-      }> = [];
-      let serverTotal = 0;
-      for (const item of orderData.items) {
-        const product = await trx.getRepository(Product).findOne({
-          where: { id: item.productId },
-        });
-        // P1-1（M3 双盲审 2026-10-05，X 组共中）：下单路径补 isActive 门禁——
-        // 前台列表/详情已过滤下架品，但直购 POST 可绕过。给 400"商品已下架"
-        // 而非 404：商品存在且可行动（等上架/换商品），错误信息能指路。
-        if (product && !product.isActive) {
-          throw new BadRequestException(
-            `商品已下架（productId=${item.productId}「${product.name}」暂不可购买）`,
-          );
-        }
-        if (!product || product.stock < item.quantity) {
-          // M3：语义化退出码——库存不足是客户端可修正的提交错误，400（与
-          // 控制器 ApiDocs "badRequest: 库存不足" 声明一致），不再裸 Error→500。
-          throw new BadRequestException(`产品 ${item.productId} 库存不足`);
-        }
-        const unitPrice = Number(product.price);
-        const lineTotal = unitPrice * item.quantity;
-        serverTotal += lineTotal;
-        itemsWithPrice.push({
-          productId: item.productId,
-          quantity: item.quantity,
-          unitPrice,
-          totalPrice: lineTotal,
-          product,
-          productSnapshot: {
-            name: product.name,
-            image: (product as { image?: string }).image || '',
-            specifications: {},
-          },
-        });
-      }
-
-      // 金额分位取整(Info #7): decimal(10,2) 列不应存浮点尾差
-      serverTotal = Math.round(serverTotal * 100) / 100;
-
-      // 创建订单(金额为服务端计算值)
-      const order = trx.getRepository(Order).create({
-        orderNumber,
-        userId: orderData.userId,
-        totalAmount: serverTotal,
-        status: OrderStatus.PENDING,
-        paymentStatus: PaymentStatus.PENDING,
-        shippingAddress: orderData.shippingAddress,
-        recipientName: orderData.recipientName,
-        recipientPhone: orderData.recipientPhone,
-        paymentMethod: orderData.paymentMethod,
-        notes: orderData.notes,
-        createdAt: new Date(),
-      });
-
-      const savedOrder = await trx.getRepository(Order).save(order);
-
-      // 创建订单项并更新库存。终验整改(2026-10-03 #5): 逐行重新查询产品——
-      // 同商品多行时, 前一行的库存更新会推进乐观锁版本, 缓存的旧 version 会令
-      // 第二行 update 命中 0 行而 500; 新鲜查询保证每行拿到当前 version。
-      for (let i = 0; i < orderData.items.length; i++) {
-        const item = orderData.items[i];
-        const priced = itemsWithPrice[i];
-        const product = await trx.getRepository(Product).findOne({
-          where: { id: item.productId },
-        });
-        // P1-1：第二处 loadProduct 同样设防（同商品多行/首循环后状态可能已变）。
-        if (product && !product.isActive) {
-          throw new BadRequestException(
-            `商品已下架（productId=${item.productId}「${product.name}」暂不可购买）`,
-          );
-        }
-        if (!product || product.stock < item.quantity) {
-          throw new BadRequestException(`产品 ${item.productId} 库存不足`);
-        }
-
-        const orderItem = trx.getRepository(OrderItem).create({
-          orderId: savedOrder.id,
-          productId: item.productId,
-          quantity: item.quantity,
-          unitPrice: priced.unitPrice,
-          totalPrice: priced.totalPrice,
-          productSnapshot: priced.productSnapshot,
-        });
-
-        await trx.getRepository(OrderItem).save(orderItem);
-
-        // 使用乐观锁更新库存，防止超卖
-        const updateResult = await trx
-          .getRepository(Product)
-          .createQueryBuilder()
-          .update(Product)
-          .set({ stock: () => `stock - ${item.quantity}` })
-          .where('id = :id', { id: item.productId })
-          .andWhere('stock >= :quantity', { quantity: item.quantity })
-          .andWhere('version = :version', { version: product.version })
-          .execute();
-
-        // 检查是否成功更新库存
-        if (updateResult.affected === 0) {
-          // M3：乐观锁冲突语义化——affected=0 是并发写竞争（库存被并发订单
-          // 扣走或版本推进），客户端可重试，409 而非裸 Error→500（双盲审 P0
-          // 验收口径：并发下单=201+201 或 201+409，绝不 500/半提交）。
-          throw new ConflictException(`产品 ${item.productId} 库存不足或已被其他订单修改，请重试`);
-        }
-
-        // M5(2026-10-05)：库存归零自动下架——与扣减同事务（原子），前台立刻不可见。
-        // 扣减守卫 stock >= quantity 且此处为新鲜读，归零判定用算术值即可精确等于 0。
-        // 重新上架走 admin.html 既有「上架」按钮（PATCH isActive=true），补货不自动上架。
-        if (product.stock - item.quantity === 0) {
-          await trx.getRepository(Product).update({ id: item.productId }, { isActive: false });
-          autoUnlisted.push({
+        // V13(2026-10-03): 金额一律服务端重算——忽略请求体的 totalAmount/items[].unitPrice。
+        // 定价在创建订单之前完成, 库存校验与乐观锁版本以事务内最新数据为准。
+        const itemsWithPrice: Array<{
+          productId: number;
+          quantity: number;
+          unitPrice: number;
+          totalPrice: number;
+          productSnapshot: { name: string; image: string; specifications: Record<string, any> };
+          product: Product;
+        }> = [];
+        let serverTotal = 0;
+        for (const item of orderData.items) {
+          const product = await trx.getRepository(Product).findOne({
+            where: { id: item.productId },
+          });
+          // P1-1（M3 双盲审 2026-10-05，X 组共中）：下单路径补 isActive 门禁——
+          // 前台列表/详情已过滤下架品，但直购 POST 可绕过。给 400"商品已下架"
+          // 而非 404：商品存在且可行动（等上架/换商品），错误信息能指路。
+          if (product && !product.isActive) {
+            throw new BadRequestException(
+              `商品已下架（productId=${item.productId}「${product.name}」暂不可购买）`,
+            );
+          }
+          if (!product || product.stock < item.quantity) {
+            // M3：语义化退出码——库存不足是客户端可修正的提交错误，400（与
+            // 控制器 ApiDocs "badRequest: 库存不足" 声明一致），不再裸 Error→500。
+            throw new BadRequestException(`产品 ${item.productId} 库存不足`);
+          }
+          const unitPrice = Number(product.price);
+          const lineTotal = unitPrice * item.quantity;
+          serverTotal += lineTotal;
+          itemsWithPrice.push({
             productId: item.productId,
-            productName: product.name,
-            orderNumber,
+            quantity: item.quantity,
+            unitPrice,
+            totalPrice: lineTotal,
+            product,
+            productSnapshot: {
+              name: product.name,
+              image: (product as { image?: string }).image || '',
+              specifications: {},
+            },
           });
         }
-      }
 
-      // 发布订单创建事件
-      this.publishOrderCreatedEvent(savedOrder, orderData.items).catch(error => {
-        this.logger.error('发布订单创建事件失败:', error);
-      });
+        // 金额分位取整(Info #7): decimal(10,2) 列不应存浮点尾差
+        serverTotal = Math.round(serverTotal * 100) / 100;
 
-      return savedOrder;
+        // 创建订单(金额为服务端计算值)
+        const order = trx.getRepository(Order).create({
+          orderNumber,
+          userId: orderData.userId,
+          totalAmount: serverTotal,
+          status: OrderStatus.PENDING,
+          paymentStatus: PaymentStatus.PENDING,
+          shippingAddress: orderData.shippingAddress,
+          recipientName: orderData.recipientName,
+          recipientPhone: orderData.recipientPhone,
+          paymentMethod: orderData.paymentMethod,
+          notes: orderData.notes,
+          createdAt: new Date(),
+        });
+
+        const savedOrder = await trx.getRepository(Order).save(order);
+
+        // 创建订单项并更新库存。终验整改(2026-10-03 #5): 逐行重新查询产品——
+        // 同商品多行时, 前一行的库存更新会推进乐观锁版本, 缓存的旧 version 会令
+        // 第二行 update 命中 0 行而 500; 新鲜查询保证每行拿到当前 version。
+        for (let i = 0; i < orderData.items.length; i++) {
+          const item = orderData.items[i];
+          const priced = itemsWithPrice[i];
+          const product = await trx.getRepository(Product).findOne({
+            where: { id: item.productId },
+          });
+          // P1-1：第二处 loadProduct 同样设防（同商品多行/首循环后状态可能已变）。
+          if (product && !product.isActive) {
+            throw new BadRequestException(
+              `商品已下架（productId=${item.productId}「${product.name}」暂不可购买）`,
+            );
+          }
+          if (!product || product.stock < item.quantity) {
+            throw new BadRequestException(`产品 ${item.productId} 库存不足`);
+          }
+
+          const orderItem = trx.getRepository(OrderItem).create({
+            orderId: savedOrder.id,
+            productId: item.productId,
+            quantity: item.quantity,
+            unitPrice: priced.unitPrice,
+            totalPrice: priced.totalPrice,
+            productSnapshot: priced.productSnapshot,
+          });
+
+          await trx.getRepository(OrderItem).save(orderItem);
+
+          // 使用乐观锁更新库存，防止超卖
+          const updateResult = await trx
+            .getRepository(Product)
+            .createQueryBuilder()
+            .update(Product)
+            .set({ stock: () => `stock - ${item.quantity}` })
+            .where('id = :id', { id: item.productId })
+            .andWhere('stock >= :quantity', { quantity: item.quantity })
+            .andWhere('version = :version', { version: product.version })
+            .execute();
+
+          // 检查是否成功更新库存
+          if (updateResult.affected === 0) {
+            // M3：乐观锁冲突语义化——affected=0 是并发写竞争（库存被并发订单
+            // 扣走或版本推进），客户端可重试，409 而非裸 Error→500（双盲审 P0
+            // 验收口径：并发下单=201+201 或 201+409，绝不 500/半提交）。
+            throw new ConflictException(
+              `产品 ${item.productId} 库存不足或已被其他订单修改，请重试`,
+            );
+          }
+
+          // M5(2026-10-05)：库存归零自动下架——与扣减同事务（原子），前台立刻不可见。
+          // 扣减守卫 stock >= quantity 且此处为新鲜读，归零判定用算术值即可精确等于 0。
+          // 重新上架走 admin.html 既有「上架」按钮（PATCH isActive=true），补货不自动上架。
+          if (product.stock - item.quantity === 0) {
+            await trx.getRepository(Product).update({ id: item.productId }, { isActive: false });
+            autoUnlisted.push({
+              productId: item.productId,
+              productName: product.name,
+              orderNumber,
+            });
+          }
+        }
+
+        // 发布订单创建事件
+        this.publishOrderCreatedEvent(savedOrder, orderData.items).catch(error => {
+          this.logger.error('发布订单创建事件失败:', error);
+        });
+
+        return savedOrder;
       }),
     );
 
@@ -197,7 +209,14 @@ export class OrdersService {
           `auto: stock=0（订单 ${p.orderNumber} 扣减归零，商品自动下架 productId=${p.productId}）`,
           AuditSeverity.LOW,
           undefined,
-          { event: 'auto: stock=0', productId: p.productId, productName: p.productName, orderNumber: p.orderNumber, stockAfter: 0, isActive: false },
+          {
+            event: 'auto: stock=0',
+            productId: p.productId,
+            productName: p.productName,
+            orderNumber: p.orderNumber,
+            stockAfter: 0,
+            isActive: false,
+          },
         );
       } catch (error) {
         this.logger.warn(
@@ -239,7 +258,7 @@ export class OrdersService {
       take: limit,
     });
     // 越权审计(2026-10-03): 列表同样剥离 user.password
-    orders.forEach((o) => {
+    orders.forEach(o => {
       if (o.user) delete (o.user as { password?: string }).password;
     });
     const endDb = process.hrtime.bigint();
@@ -258,7 +277,7 @@ export class OrdersService {
     });
     // 一审修复(2026-10-03): admin 列表同样剥离 user.password(此前误将补丁落在
     // 不加载 user 关系的 findByUserId 上——锚点撞车, 真 findAll 漏剥)
-    orders.forEach((o) => {
+    orders.forEach(o => {
       if (o.user) delete (o.user as { password?: string }).password;
     });
     const endDb = process.hrtime.bigint();
@@ -363,7 +382,6 @@ export class OrdersService {
     }
     return this.update(order.id, { paymentStatus: PaymentStatus.FAILED });
   }
-
 
   // 恢复注记(2026-10-08)：生产链零调用，但它是 orders spec 十余处事件
   // 发布断言的测试驱动器（"使用updateStatus方法，因为它总是会发布事件"）——
@@ -480,11 +498,13 @@ export class OrdersService {
       orderNumber: order.orderNumber,
       userId: order.userId,
       totalAmount: order.totalAmount,
-      items: (items as Array<{ productId: number; quantity: number; unitPrice: number }>).map(item => ({
-        productId: item.productId,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-      })),
+      items: (items as Array<{ productId: number; quantity: number; unitPrice: number }>).map(
+        item => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+        }),
+      ),
       timestamp: new Date().toISOString(),
       metadata: {
         source: 'orders-service',

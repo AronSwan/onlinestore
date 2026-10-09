@@ -4,7 +4,10 @@ import { OrdersService } from '../../../orders/orders.service';
 import { runExclusiveWrite } from '../../../common/db-write-mutex';
 
 // Domain
-import { PaymentOrderAggregate, RefundAggregate } from '../../domain/aggregates/payment-order.aggregate';
+import {
+  PaymentOrderAggregate,
+  RefundAggregate,
+} from '../../domain/aggregates/payment-order.aggregate';
 import { PaymentOrderRepository } from '../../domain/repositories/payment-order.repository';
 import { PaymentGatewayFactory } from '../../domain/services/payment-gateway.factory';
 import { PaymentRiskService } from '../../domain/services/payment-risk.service';
@@ -132,8 +135,7 @@ export class PaymentApplicationService {
       );
       if (internalOrder) {
         const expectedMinor = Math.round(
-          Number(internalOrder.totalAmount) *
-            Math.pow(10, 2), // 站内单 decimal(10,2) 单币种,2位小数口径
+          Number(internalOrder.totalAmount) * Math.pow(10, 2), // 站内单 decimal(10,2) 单币种,2位小数口径
         );
         const currencyOk = dto.currency === OrdersService.ORDER_DEFAULT_CURRENCY;
         const requestedMinor = command.amount.toMinorUnits();

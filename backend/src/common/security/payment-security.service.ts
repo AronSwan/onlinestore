@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, UnauthorizedException , Logger } from '@nestjs/common';
+import { Injectable, BadRequestException, UnauthorizedException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EncryptionService } from './encryption.service';
 import { LogSanitizerService } from './log-sanitizer.service';
@@ -233,7 +233,10 @@ export class PaymentSecurityService {
   /**
    * 验证回调签名
    */
-  private validateCallbackSignature(callback: Record<string, unknown>, expectedSignature: string): void {
+  private validateCallbackSignature(
+    callback: Record<string, unknown>,
+    expectedSignature: string,
+  ): void {
     const secret = this.configService.get<string>('PAYMENT_CALLBACK_SECRET');
     if (!secret) {
       throw new Error('PAYMENT_CALLBACK_SECRET not configured');

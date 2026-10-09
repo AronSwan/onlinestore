@@ -102,7 +102,14 @@ describe('TypeOrmPaymentOrderRepository 退款明细往返', () => {
         { no: 'shape' },
         { id: 'short', amount: 1 }, // id 不过 VO 校验（<8位）
         { id: 'PAY_VALIDREF_0001', amount: 'abc', reason: 'NaN金额' }, // Money 失明的 NaN
-        { id: 'PAY_VALIDREF_0002', amount: 5, reason: '合法行', operatorId: 'op', status: 'SUCCEEDED', createdAt: '2026-10-09T08:00:00.000Z' },
+        {
+          id: 'PAY_VALIDREF_0002',
+          amount: 5,
+          reason: '合法行',
+          operatorId: 'op',
+          status: 'SUCCEEDED',
+          createdAt: '2026-10-09T08:00:00.000Z',
+        },
       ],
     };
     await rawRepo.save(entity);
@@ -122,8 +129,8 @@ describe('TypeOrmPaymentOrderRepository 退款明细往返', () => {
 
     // 原实现:重载 refunds=[] → 累计守卫看不见在途款 → 超退放行
     const reloaded = await repo.findById(order.id);
-    expect(() =>
-      reloaded!.createRefund(new Money(0.01, 'CNY'), '超额尝试', 'admin-1'),
-    ).toThrow(RefundOverpaidError);
+    expect(() => reloaded!.createRefund(new Money(0.01, 'CNY'), '超额尝试', 'admin-1')).toThrow(
+      RefundOverpaidError,
+    );
   });
 });

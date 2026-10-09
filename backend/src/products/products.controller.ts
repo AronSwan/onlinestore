@@ -175,11 +175,16 @@ export class ProductsController {
         AuditAction.ADMIN_PRODUCT_MANAGE,
         AuditResult.SUCCESS,
         {
-          userId: (req?.user as { sub?: number } | undefined)?.sub != null ? String((req!.user as { sub: number }).sub) : undefined,
+          userId:
+            (req?.user as { sub?: number } | undefined)?.sub != null
+              ? String((req!.user as { sub: number }).sub)
+              : undefined,
           userEmail: (req?.user as { email?: string } | undefined)?.email,
           userRole: (req?.user as { role?: string } | undefined)?.role,
           httpMethod: (req as { method?: string } | undefined)?.method,
-          endpoint: req ? `${(req as { method: string }).method} ${(req as { originalUrl?: string; url?: string }).originalUrl || (req as { url?: string }).url || ''}` : undefined,
+          endpoint: req
+            ? `${(req as { method: string }).method} ${(req as { originalUrl?: string; url?: string }).originalUrl || (req as { url?: string }).url || ''}`
+            : undefined,
           resourceType: 'products',
           resourceId: String(productId),
         },
@@ -262,7 +267,12 @@ export class ProductsController {
 
   @Get()
   @ApiPaginatedQuery(Product, '获取产品列表', '分页获取产品列表，支持搜索和排序')
-  @ApiQuery({ name: 'q', required: false, description: '搜索关键词（旧参数名 search 已弃用——值被忽略不参与过滤）', example: 'iPhone' })
+  @ApiQuery({
+    name: 'q',
+    required: false,
+    description: '搜索关键词（旧参数名 search 已弃用——值被忽略不参与过滤）',
+    example: 'iPhone',
+  })
   // R4(反查 P3)：此前此处还挂了 categoryId/minPrice/maxPrice 三行 @ApiQuery，但 handler
   // 并不接收这些参数（过滤能力在 GET /products/search）——文档失实已删，只保留真实支持的 q（B10 归并）。
   findAll(
@@ -319,7 +329,12 @@ export class ProductsController {
       minPrice: minPrice ? parseFloat(minPrice) : undefined,
       maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
       inStock: inStock === 'true',
-      tags: tags ? String(tags).split(',').map(t => t.trim()).filter(Boolean) : undefined,
+      tags: tags
+        ? String(tags)
+            .split(',')
+            .map(t => t.trim())
+            .filter(Boolean)
+        : undefined,
     };
 
     return this.productsService.search(searchOptions);
@@ -531,7 +546,8 @@ export class ProductsController {
   @ApiDeleteResource('删除产品')
   @ApiDocs({
     summary: '删除产品',
-    description: '管理员删除指定产品（软删=下架，isActive=false；order_items FK NO ACTION 硬删必败）',
+    description:
+      '管理员删除指定产品（软删=下架，isActive=false；order_items FK NO ACTION 硬删必败）',
     auth: true,
     params: [
       {

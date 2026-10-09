@@ -1,8 +1,4 @@
-import {
-  PaymentOrderAggregate,
-  PaymentStatus,
-  RefundStatus,
-} from './payment-order.aggregate';
+import { PaymentOrderAggregate, PaymentStatus, RefundStatus } from './payment-order.aggregate';
 import { PaymentOrderId } from '../value-objects/payment-order-id.value-object';
 import { Money } from '../value-objects/money.value-object';
 import { PaymentMethod } from '../value-objects/payment-method.value-object';

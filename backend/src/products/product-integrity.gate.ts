@@ -30,10 +30,7 @@ export interface IntegrityGateInput {
 
 /** js/shared/integrity-rules.js 的最小契约面（只声明本闸消费的函数） */
 export interface IntegrityRulesModule {
-  lintCopy: (
-    text: string,
-    rules?: unknown[],
-  ) => { violations: Array<Record<string, unknown>> };
+  lintCopy: (text: string, rules?: unknown[]) => { violations: Array<Record<string, unknown>> };
   checkNameImage: (input: {
     name?: string;
     description?: string;
@@ -103,7 +100,6 @@ export async function loadIntegrityRules(): Promise<IntegrityRulesModule> {
       try {
         return await nativeImport(pathToFileURL(filePath).href);
       } catch {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
         try {
           return require(filePath) as IntegrityRulesModule;
         } catch {
@@ -120,7 +116,11 @@ export async function loadIntegrityRules(): Promise<IntegrityRulesModule> {
 
 /** specifications 是否带事实卡（存量商品无 → 复检走 lint-only 路径） */
 export function hasFactCard(specifications: unknown): specifications is Record<string, unknown> {
-  if (typeof specifications !== 'object' || specifications === null || Array.isArray(specifications)) {
+  if (
+    typeof specifications !== 'object' ||
+    specifications === null ||
+    Array.isArray(specifications)
+  ) {
     return false;
   }
   const fc = (specifications as Record<string, unknown>).factCard;
@@ -219,7 +219,10 @@ export async function enforceProductIntegrityGate(
   }
 
   // 词表冲突复检：合并视图带 factCard 即生效（P1-2 ②③）
-  const gate = { warnings: [] as Array<Record<string, unknown>>, blockers: [] as Array<Record<string, unknown>> };
+  const gate = {
+    warnings: [] as Array<Record<string, unknown>>,
+    blockers: [] as Array<Record<string, unknown>>,
+  };
   const fc = extractFactCard(input.specifications);
   if (fc) {
     // 存储形状 {colorGroup,bagType,hardware,occasion} → 引擎消费形状 {mainColor,bagType}；

@@ -52,9 +52,18 @@ import paymentConfig from './config/payment.config';
         strategies.set('alipay', new AlipayStrategy());
         strategies.set('wechat', new WechatPayStrategy());
         strategies.set('credit_card', new CreditCardStrategy());
-        strategies.set('usdt_trc20', new CryptoStrategy(cryptoGateway, PaymentMethodEnum.USDT_TRC20));
-        strategies.set('usdt_erc20', new CryptoStrategy(cryptoGateway, PaymentMethodEnum.USDT_ERC20));
-        strategies.set('usdt_bep20', new CryptoStrategy(cryptoGateway, PaymentMethodEnum.USDT_BEP20));
+        strategies.set(
+          'usdt_trc20',
+          new CryptoStrategy(cryptoGateway, PaymentMethodEnum.USDT_TRC20),
+        );
+        strategies.set(
+          'usdt_erc20',
+          new CryptoStrategy(cryptoGateway, PaymentMethodEnum.USDT_ERC20),
+        );
+        strategies.set(
+          'usdt_bep20',
+          new CryptoStrategy(cryptoGateway, PaymentMethodEnum.USDT_BEP20),
+        );
         strategies.set('btc', new CryptoStrategy(cryptoGateway, PaymentMethodEnum.BTC));
         strategies.set('eth', new CryptoStrategy(cryptoGateway, PaymentMethodEnum.ETH));
         return strategies;

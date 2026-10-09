@@ -85,7 +85,10 @@ export class AuthService {
           throw error;
         }
         // Redis连接错误时，继续执行注册流程
-        this.logger.error('Redis connection error during registration:', error instanceof Error ? error.stack : String(error));
+        this.logger.error(
+          'Redis connection error during registration:',
+          error instanceof Error ? error.stack : String(error),
+        );
       }
     }
     // 检查用户是否已存在
@@ -96,7 +99,10 @@ export class AuthService {
           await redis.multi().incr(regFailKey).expire(regFailKey, windowSec).exec();
         } catch (error) {
           // Redis连接错误时，继续执行流程
-          this.logger.error('Redis connection error during registration:', error instanceof Error ? error.stack : String(error));
+          this.logger.error(
+            'Redis connection error during registration:',
+            error instanceof Error ? error.stack : String(error),
+          );
         }
       }
       throw new ConflictException('用户已存在');
@@ -122,7 +128,10 @@ export class AuthService {
         await redis.del(regFailKey);
       } catch (error) {
         // Redis连接错误时，继续执行流程
-        this.logger.error('Redis connection error during registration:', error instanceof Error ? error.stack : String(error));
+        this.logger.error(
+          'Redis connection error during registration:',
+          error instanceof Error ? error.stack : String(error),
+        );
       }
     }
     return this.generateTokens(user);
@@ -212,9 +221,12 @@ export class AuthService {
     };
 
     const accessToken = this.jwtService.sign(payload);
-    const refreshToken = this.jwtService.sign({ ...payload, typ: 'refresh' }, {
-      expiresIn: this.config.jwt.refreshExpiresIn,
-    });
+    const refreshToken = this.jwtService.sign(
+      { ...payload, typ: 'refresh' },
+      {
+        expiresIn: this.config.jwt.refreshExpiresIn,
+      },
+    );
 
     return {
       access_token: accessToken,

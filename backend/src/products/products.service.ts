@@ -28,11 +28,7 @@ import { Category } from './entities/category.entity';
 import { ProductImage } from './entities/product-image.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
-import {
-  mergePriceView,
-  mergeSpecifications,
-  toNumberOrNull,
-} from './product-merge.helper';
+import { mergePriceView, mergeSpecifications, toNumberOrNull } from './product-merge.helper';
 import { runExclusiveWrite } from '../common/db-write-mutex';
 
 export interface CreateProductData {
@@ -103,7 +99,9 @@ export class ProductsService {
   private logCache(event: 'hit' | 'miss', key: string) {
     if (event === 'hit') this.cacheHits++;
     else this.cacheMisses++;
-    this.logger.log(`[cache] ${JSON.stringify({ key, event, hits: this.cacheHits, misses: this.cacheMisses })}`);
+    this.logger.log(
+      `[cache] ${JSON.stringify({ key, event, hits: this.cacheHits, misses: this.cacheMisses })}`,
+    );
   }
 
   /**
@@ -176,11 +174,15 @@ export class ProductsService {
           try {
             await this.cacheManager.del(key);
           } catch (e) {
-            this.logger.warn(`删除缓存键失败 ${JSON.stringify({ key, error: (e as Error).message })}`);
+            this.logger.warn(
+              `删除缓存键失败 ${JSON.stringify({ key, error: (e as Error).message })}`,
+            );
           }
         }
       } catch (e) {
-        this.logger.warn(`清除缓存模式失败 ${JSON.stringify({ pattern, error: (e as Error).message })}`);
+        this.logger.warn(
+          `清除缓存模式失败 ${JSON.stringify({ pattern, error: (e as Error).message })}`,
+        );
       }
     }
 
@@ -241,7 +243,10 @@ export class ProductsService {
 
     // 异步发布产品创建事件
     this.publishProductCreatedEvent(saved).catch((error: Error) => {
-      this.logger.error('发布产品创建事件失败:', error instanceof Error ? error.stack : String(error));
+      this.logger.error(
+        '发布产品创建事件失败:',
+        error instanceof Error ? error.stack : String(error),
+      );
     });
 
     // 异步索引产品到搜索引擎
@@ -376,7 +381,9 @@ export class ProductsService {
         total: searchResult.total,
       };
     } catch (error) {
-      this.logger.warn(`搜索引擎搜索失败，回退到数据库搜索: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.warn(
+        `搜索引擎搜索失败，回退到数据库搜索: ${error instanceof Error ? error.message : String(error)}`,
+      );
       // 搜索引擎失败时回退到数据库搜索
       return this.databaseSearch(options);
     }
@@ -548,14 +555,20 @@ export class ProductsService {
         details: { field: 'price', submitted: null },
       });
     }
-    const priceView = mergePriceView(updateData as Record<string, unknown>, product as unknown as Record<string, unknown>);
+    const priceView = mergePriceView(
+      updateData as Record<string, unknown>,
+      product as unknown as Record<string, unknown>,
+    );
     if (priceView.invalidPrice || priceView.invalidOriginalPrice) {
       const field = priceView.invalidPrice ? 'price' : 'originalPrice';
       throw new BadRequestException({
         message: `${field} 必须是数字（收到无法归一的形状：${JSON.stringify(
           field === 'price' ? updateData.price : updateData.originalPrice,
         )}）`,
-        details: { field, submitted: field === 'price' ? updateData.price : updateData.originalPrice },
+        details: {
+          field,
+          submitted: field === 'price' ? updateData.price : updateData.originalPrice,
+        },
       });
     }
     if (
@@ -612,75 +625,91 @@ export class ProductsService {
     // +残留字段 update"作为写序不该与事务交错。与 orders/audit 同队串行后，
     // 本段与任何显式事务互斥（根因见 common/db-write-mutex.ts 头注释）。
     await runExclusiveWrite(async () => {
-    if (priceWritten || originalPriceWritten) {
-      const qb = this.productRepository.createQueryBuilder().update(Product);
-      if (priceWritten && originalPriceWritten) {
-        // 双字段同请求：合并校验已过，条件 UPDATE 兜底复检新值配对
-        // （两值同语句原子落库，语句内不变式即终态不变式）。
-        qb.set({ price: priceView.price!, originalPrice: priceView.originalPrice! })
-          .where('id = :id AND (:pairOriginalPrice IS NULL OR :pairPrice IS NULL OR :pairOriginalPrice >= :pairPrice)', {
-            id,
-            pairOriginalPrice: priceView.originalPrice,
-            pairPrice: priceView.price,
-          });
-      } else if (priceWritten && priceView.originalPriceExplicitNull) {
-        // 抬价 + 显式清除划线价：终态 (新价, null) 不变式空集，两值同语句原子落库，
-        // 无需对存量值设守卫（存量划线价即将被清除，守它反而误伤 409）。
-        // （实体类型把 originalPrice 声明为 number，DB 列实际 nullable——显式写
-        // null 是 TypeORM 认可的合法清列值，此处断言收窄类型面。）
-        qb.set({ price: priceView.price!, originalPrice: null as unknown as number }).where('id = :id', { id });
-      } else if (priceWritten) {
-        // 单抬价：存量划线价为空或仍 ≥ 新价才允许落库
-        qb.set({ price: priceView.price! })
-          .where('id = :id AND (originalPrice IS NULL OR originalPrice >= :guardPrice)', {
-            id,
-            guardPrice: priceView.price,
-          });
-      } else {
-        // 单调划线价：存量现价为空或 ≤ 新划线价才允许落库
-        qb.set({ originalPrice: priceView.originalPrice! })
-          .where('id = :id AND (price IS NULL OR price <= :guardOriginalPrice)', {
-            id,
-            guardOriginalPrice: priceView.originalPrice,
-          });
-      }
-      const result = await qb.execute();
-      if (!result || !result.affected) {
-        // affected=0：并发交错（或行已消失）。绕过缓存直读库，按当前真值复检给冲突原因。
-        const current = await this.productRepository.findOne({ where: { id } });
-        if (!current) {
-          throw new NotFoundException();
-        }
-        const currentView = mergePriceView({}, current as unknown as Record<string, unknown>);
-        throw new ConflictException({
-          message:
-            '价格不变式并发冲突：另一并发写已先行落库，本次提交按最新库值复检不再合法（条件 UPDATE affected=0）',
-          details: {
-            price: { stored: current.price, submitted: updateData.price, effective: currentView.price },
-            originalPrice: {
-              stored: current.originalPrice,
-              submitted: updateData.originalPrice,
-              effective: currentView.originalPrice,
+      if (priceWritten || originalPriceWritten) {
+        const qb = this.productRepository.createQueryBuilder().update(Product);
+        if (priceWritten && originalPriceWritten) {
+          // 双字段同请求：合并校验已过，条件 UPDATE 兜底复检新值配对
+          // （两值同语句原子落库，语句内不变式即终态不变式）。
+          qb.set({ price: priceView.price!, originalPrice: priceView.originalPrice! }).where(
+            'id = :id AND (:pairOriginalPrice IS NULL OR :pairPrice IS NULL OR :pairOriginalPrice >= :pairPrice)',
+            {
+              id,
+              pairOriginalPrice: priceView.originalPrice,
+              pairPrice: priceView.price,
             },
-          },
-        });
+          );
+        } else if (priceWritten && priceView.originalPriceExplicitNull) {
+          // 抬价 + 显式清除划线价：终态 (新价, null) 不变式空集，两值同语句原子落库，
+          // 无需对存量值设守卫（存量划线价即将被清除，守它反而误伤 409）。
+          // （实体类型把 originalPrice 声明为 number，DB 列实际 nullable——显式写
+          // null 是 TypeORM 认可的合法清列值，此处断言收窄类型面。）
+          qb.set({ price: priceView.price!, originalPrice: null as unknown as number }).where(
+            'id = :id',
+            { id },
+          );
+        } else if (priceWritten) {
+          // 单抬价：存量划线价为空或仍 ≥ 新价才允许落库
+          qb.set({ price: priceView.price! }).where(
+            'id = :id AND (originalPrice IS NULL OR originalPrice >= :guardPrice)',
+            {
+              id,
+              guardPrice: priceView.price,
+            },
+          );
+        } else {
+          // 单调划线价：存量现价为空或 ≤ 新划线价才允许落库
+          qb.set({ originalPrice: priceView.originalPrice! }).where(
+            'id = :id AND (price IS NULL OR price <= :guardOriginalPrice)',
+            {
+              id,
+              guardOriginalPrice: priceView.originalPrice,
+            },
+          );
+        }
+        const result = await qb.execute();
+        if (!result || !result.affected) {
+          // affected=0：并发交错（或行已消失）。绕过缓存直读库，按当前真值复检给冲突原因。
+          const current = await this.productRepository.findOne({ where: { id } });
+          if (!current) {
+            throw new NotFoundException();
+          }
+          const currentView = mergePriceView({}, current as unknown as Record<string, unknown>);
+          throw new ConflictException({
+            message:
+              '价格不变式并发冲突：另一并发写已先行落库，本次提交按最新库值复检不再合法（条件 UPDATE affected=0）',
+            details: {
+              price: {
+                stored: current.price,
+                submitted: updateData.price,
+                effective: currentView.price,
+              },
+              originalPrice: {
+                stored: current.originalPrice,
+                submitted: updateData.originalPrice,
+                effective: currentView.originalPrice,
+              },
+            },
+          });
+        }
+        // 价格字段已由条件 UPDATE 落库——从普通写载荷中剥离，防二次无守卫写入
+        // （仅剥离 QB 实际写过的键；纯 originalPrice:null 清除若未走 QB 仍保留在载荷）。
+        const rest = { ...(updateData as Record<string, unknown>) };
+        if (priceWritten) delete rest.price;
+        if (originalPriceWritten || (priceWritten && priceView.originalPriceExplicitNull)) {
+          delete rest.originalPrice;
+        }
+        updateData = rest as UpdateProductData;
       }
-      // 价格字段已由条件 UPDATE 落库——从普通写载荷中剥离，防二次无守卫写入
-      // （仅剥离 QB 实际写过的键；纯 originalPrice:null 清除若未走 QB 仍保留在载荷）。
-      const rest = { ...(updateData as Record<string, unknown>) };
-      if (priceWritten) delete rest.price;
-      if (originalPriceWritten || (priceWritten && priceView.originalPriceExplicitNull)) {
-        delete rest.originalPrice;
-      }
-      updateData = rest as UpdateProductData;
-    }
 
-    if (Object.keys(updateData as Record<string, unknown>).length > 0) {
-      // originalPrice 类型面如实含 null（P1-3 清除语义）；QueryDeepPartialEntity
-      // 按 number 声明，写边界 unknown 桥接（同一语义在上方条件 UPDATE 分支已有
-      // 先例：originalPrice: null as unknown as number）
-      await this.productRepository.update(id, updateData as unknown as QueryDeepPartialEntity<Product>);
-    }
+      if (Object.keys(updateData as Record<string, unknown>).length > 0) {
+        // originalPrice 类型面如实含 null（P1-3 清除语义）；QueryDeepPartialEntity
+        // 按 number 声明，写边界 unknown 桥接（同一语义在上方条件 UPDATE 分支已有
+        // 先例：originalPrice: null as unknown as number）
+        await this.productRepository.update(
+          id,
+          updateData as unknown as QueryDeepPartialEntity<Product>,
+        );
+      }
     }); // ← runExclusiveWrite 写段到此为止：缓存失效/回读/事件在锁外（读与网络面不占写队列）
 
     // P3（三修，fix2 §三 9）：三 findById 收敛——oldProduct 复用方法开头的存量读
@@ -703,15 +732,23 @@ export class ProductsService {
 
     // 异步发布产品更新事件
     if (oldProduct && updatedProduct) {
-      this.publishProductUpdatedEvent(oldProduct, updatedProduct, updateDataForEvent).catch(error => {
-        this.logger.error('发布产品更新事件失败:', error instanceof Error ? error.stack : String(error));
-      });
+      this.publishProductUpdatedEvent(oldProduct, updatedProduct, updateDataForEvent).catch(
+        error => {
+          this.logger.error(
+            '发布产品更新事件失败:',
+            error instanceof Error ? error.stack : String(error),
+          );
+        },
+      );
     }
 
     // 异步更新产品搜索索引
     if (updatedProduct) {
       this.indexProductToSearch(updatedProduct).catch((error: Error) => {
-        this.logger.error('产品搜索索引更新失败:', error instanceof Error ? error.stack : String(error));
+        this.logger.error(
+          '产品搜索索引更新失败:',
+          error instanceof Error ? error.stack : String(error),
+        );
       });
     }
 
@@ -746,7 +783,10 @@ export class ProductsService {
 
     // 异步移除搜索索引，下架品不应再出现在搜索结果
     this.deleteProductFromSearch(id).catch((error: Error) => {
-      this.logger.error('产品搜索索引删除失败:', error instanceof Error ? error.stack : String(error));
+      this.logger.error(
+        '产品搜索索引删除失败:',
+        error instanceof Error ? error.stack : String(error),
+      );
     });
   }
 
@@ -758,7 +798,10 @@ export class ProductsService {
 
     // 异步发布产品浏览事件
     this.publishProductViewedEvent(id).catch(error => {
-      this.logger.error('发布产品浏览事件失败:', error instanceof Error ? error.stack : String(error));
+      this.logger.error(
+        '发布产品浏览事件失败:',
+        error instanceof Error ? error.stack : String(error),
+      );
     });
   }
 
@@ -991,7 +1034,9 @@ export class ProductsService {
         indexData.embedding = await this.embeddingService.embedOne(
           `${product.name} ${product.description || ''}`,
         );
-      } catch (e) { /* 模型不可用：关键词索引照常 */ }
+      } catch (e) {
+        /* 模型不可用：关键词索引照常 */
+      }
 
       await this.searchManager.indexProduct(indexData);
     } catch (error) {
@@ -1007,7 +1052,10 @@ export class ProductsService {
     try {
       await this.searchManager.deleteProduct(productId.toString());
     } catch (error) {
-      this.logger.error('产品搜索索引删除失败:', error instanceof Error ? error.stack : String(error));
+      this.logger.error(
+        '产品搜索索引删除失败:',
+        error instanceof Error ? error.stack : String(error),
+      );
       // 不抛出错误，避免影响主流程
     }
   }

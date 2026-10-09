@@ -68,7 +68,10 @@ function validateJwtSecretForEnvironment(): void {
       throw new Error(`生产环境安全校验失败，拒绝启动：${problems.join('；')}`);
     }
   } else if (isInsecureJwtSecret(jwtSecret)) {
-    Logger.warn('⚠️  JWT_SECRET 未设置或为开发默认值/占位符，仅供本地开发测试，严禁用于生产环境', 'Bootstrap');
+    Logger.warn(
+      '⚠️  JWT_SECRET 未设置或为开发默认值/占位符，仅供本地开发测试，严禁用于生产环境',
+      'Bootstrap',
+    );
   }
 }
 
@@ -292,13 +295,17 @@ export async function bootstrap() {
   logger.log(`🔗 健康检查: http://localhost:${port}/api/health`);
   // 已接线模块的真实路由清单（全局前缀 /api，控制器内不再硬编码 api/）
   logger.log('🧭 业务路由（前缀 /api）:');
-  logger.log('   🔐 认证:        /api/auth（register/login/refresh/profile/change-password/logout）');
+  logger.log(
+    '   🔐 认证:        /api/auth（register/login/refresh/profile/change-password/logout）',
+  );
   logger.log('   👤 用户:        /api/users');
   logger.log('   📦 商品:        /api/products、/api/search');
   logger.log('   🛒 购物车:      /api/cart/items/:customerUserId 等');
   logger.log('   📋 订单:        /api/orders');
   logger.log('   ✉️  验证码:      /api/customer-user/verify-code/send');
-  logger.log('   📊 监控:        /api/monitoring/*（含 /api/monitoring/metrics*）、/api/alerts/*（rules/active/history/stats）');
+  logger.log(
+    '   📊 监控:        /api/monitoring/*（含 /api/monitoring/metrics*）、/api/alerts/*（rules/active/history/stats）',
+  );
   logger.log(`🌍 环境: ${process.env.NODE_ENV || 'development'}`);
 }
 

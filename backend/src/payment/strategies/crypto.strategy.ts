@@ -55,7 +55,10 @@ export class CryptoStrategy extends PaymentStrategy {
         };
       }
     } catch (error: unknown) {
-      this.logger.error(`加密货币策略创建支付失败: ${(error as Error).message}`, (error as Error).stack);
+      this.logger.error(
+        `加密货币策略创建支付失败: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       return {
         success: false,
         message: (error as Error).message || '加密货币支付服务异常',
@@ -85,7 +88,10 @@ export class CryptoStrategy extends PaymentStrategy {
         };
       }
     } catch (error: unknown) {
-      this.logger.error(`加密货币策略查询支付失败: ${(error as Error).message}`, (error as Error).stack);
+      this.logger.error(
+        `加密货币策略查询支付失败: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       return {
         success: false,
         message: (error as Error).message || '查询加密货币支付状态异常',
@@ -129,7 +135,10 @@ export class CryptoStrategy extends PaymentStrategy {
         },
       };
     } catch (error: unknown) {
-      this.logger.error(`加密货币策略处理回调失败: ${(error as Error).message}`, (error as Error).stack);
+      this.logger.error(
+        `加密货币策略处理回调失败: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       return {
         success: false,
         message: (error as Error).message || '处理加密货币回调异常',
@@ -149,7 +158,10 @@ export class CryptoStrategy extends PaymentStrategy {
     try {
       return this.cryptoGateway.validateCallback(data, String(data.signature ?? '')); // 空串必验签失败(fail-closed语义保持)
     } catch (error: unknown) {
-      this.logger.error(`加密货币策略验证回调失败: ${(error as Error).message}`, (error as Error).stack);
+      this.logger.error(
+        `加密货币策略验证回调失败: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       return false;
     }
   }

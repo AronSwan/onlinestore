@@ -107,7 +107,10 @@ export class CacheService {
       this.monitoring.incrementCacheDelete(resource);
     } catch (error) {
       this.monitoring.incrementCacheError('delete');
-      this.logger.error('Cache delete error:', error instanceof Error ? error.stack : String(error));
+      this.logger.error(
+        'Cache delete error:',
+        error instanceof Error ? error.stack : String(error),
+      );
     }
   }
 
@@ -123,7 +126,10 @@ export class CacheService {
       this.logger.warn('Pattern-based deletion not fully implemented');
     } catch (error) {
       this.monitoring.incrementCacheError('delete_pattern');
-      this.logger.error('Cache delete pattern error:', error instanceof Error ? error.stack : String(error));
+      this.logger.error(
+        'Cache delete pattern error:',
+        error instanceof Error ? error.stack : String(error),
+      );
     }
   }
 

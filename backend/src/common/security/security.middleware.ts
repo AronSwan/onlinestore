@@ -1,4 +1,4 @@
-import { Injectable, NestMiddleware , Logger } from '@nestjs/common';
+import { Injectable, NestMiddleware, Logger } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { LogSanitizerService } from './log-sanitizer.service';
 import { SECURITY_CONSTANTS } from './security.constants';

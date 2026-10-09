@@ -83,7 +83,10 @@ export class AuthProxyService {
 
       return response.data;
     } catch (error) {
-      this.logger.error('Casdoor令牌交换失败:', error instanceof Error ? error.stack : String(error));
+      this.logger.error(
+        'Casdoor令牌交换失败:',
+        error instanceof Error ? error.stack : String(error),
+      );
       throw new UnauthorizedException('认证服务暂时不可用，请稍后重试');
     }
   }
@@ -109,7 +112,10 @@ export class AuthProxyService {
 
       return userInfo.data;
     } catch (error) {
-      this.logger.error('Casdoor令牌验证失败:', error instanceof Error ? error.stack : String(error));
+      this.logger.error(
+        'Casdoor令牌验证失败:',
+        error instanceof Error ? error.stack : String(error),
+      );
       throw new UnauthorizedException('无效的认证令牌');
     }
   }
@@ -170,7 +176,10 @@ export class AuthProxyService {
 
       return response.data;
     } catch (error) {
-      this.logger.error('Casdoor令牌刷新失败:', error instanceof Error ? error.stack : String(error));
+      this.logger.error(
+        'Casdoor令牌刷新失败:',
+        error instanceof Error ? error.stack : String(error),
+      );
       throw new UnauthorizedException('认证令牌已过期，请重新登录');
     }
   }
@@ -206,7 +215,9 @@ export class AuthProxyService {
         )
         .toPromise();
     } catch (error) {
-      this.logger.warn(`Casdoor登出失败，但继续处理本地登出: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.warn(
+        `Casdoor登出失败，但继续处理本地登出: ${error instanceof Error ? error.message : String(error)}`,
+      );
       // 即使Casdoor登出失败，也继续处理本地登出
     }
   }
@@ -232,14 +243,21 @@ export class AuthProxyService {
 
     try {
       // 交换授权码获取Casdoor令牌
-      const casdoorToken = (await this.exchangeCodeForToken(code)) as { access_token?: string; refresh_token?: string; expires_in?: number; token_type?: string };
+      const casdoorToken = (await this.exchangeCodeForToken(code)) as {
+        access_token?: string;
+        refresh_token?: string;
+        expires_in?: number;
+        token_type?: string;
+      };
 
       if (!casdoorToken.access_token) {
         throw new UnauthorizedException('认证失败，无法获取访问令牌');
       }
 
       // 验证令牌并获取用户信息
-      const casdoorUser = (await this.validateCasdoorToken(casdoorToken.access_token!)) as CasdoorUser;
+      const casdoorUser = (await this.validateCasdoorToken(
+        casdoorToken.access_token!,
+      )) as CasdoorUser;
 
       // 获取系统用户
       const user = await this.usersService.findByEmail(casdoorUser.email);
@@ -266,7 +284,10 @@ export class AuthProxyService {
         casdoor_user: casdoorUser,
       };
     } catch (error) {
-      this.logger.error('Casdoor回调处理失败:', error instanceof Error ? error.stack : String(error));
+      this.logger.error(
+        'Casdoor回调处理失败:',
+        error instanceof Error ? error.stack : String(error),
+      );
       throw new UnauthorizedException('认证失败，请重试');
     }
   }
@@ -300,7 +321,10 @@ export class AuthProxyService {
 
       return response.data.data;
     } catch (error) {
-      this.logger.error('获取Casdoor用户信息失败:', error instanceof Error ? error.stack : String(error));
+      this.logger.error(
+        '获取Casdoor用户信息失败:',
+        error instanceof Error ? error.stack : String(error),
+      );
       throw new UnauthorizedException('获取用户信息失败');
     }
   }

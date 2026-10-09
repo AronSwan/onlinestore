@@ -98,9 +98,7 @@ export class TypeOrmPaymentOrderRepository implements PaymentOrderRepository {
     return entities.map(e => this.toAggregate(e));
   }
 
-  async findByMerchantOrderId(
-    merchantOrderId: string,
-  ): Promise<PaymentOrderAggregate[]> {
+  async findByMerchantOrderId(merchantOrderId: string): Promise<PaymentOrderAggregate[]> {
     const entities = await this.repository.find({
       where: { orderId: merchantOrderId },
       order: { createdAt: 'DESC' },
@@ -108,9 +106,7 @@ export class TypeOrmPaymentOrderRepository implements PaymentOrderRepository {
     return entities.map(e => this.toAggregate(e));
   }
 
-  async findByIdempotencyKey(
-    idempotencyKey: string,
-  ): Promise<PaymentOrderAggregate | null> {
+  async findByIdempotencyKey(idempotencyKey: string): Promise<PaymentOrderAggregate | null> {
     if (!idempotencyKey) return null;
     const entity = await this.repository.findOne({
       where: { idempotencyKey },
@@ -205,14 +201,8 @@ export class TypeOrmPaymentOrderRepository implements PaymentOrderRepository {
       .select('p.method', 'method')
       .addSelect('COUNT(*)', 'count')
       .addSelect('SUM(p.amount)', 'amount')
-      .addSelect(
-        `SUM(CASE WHEN p.status = 'success' THEN 1 ELSE 0 END)`,
-        'successCount',
-      )
-      .addSelect(
-        `SUM(CASE WHEN p.status = 'failed' THEN 1 ELSE 0 END)`,
-        'failedCount',
-      )
+      .addSelect(`SUM(CASE WHEN p.status = 'success' THEN 1 ELSE 0 END)`, 'successCount')
+      .addSelect(`SUM(CASE WHEN p.status = 'failed' THEN 1 ELSE 0 END)`, 'failedCount')
       .where('p.createdAt BETWEEN :start AND :end', {
         start: startDate,
         end: endDate,
@@ -220,8 +210,7 @@ export class TypeOrmPaymentOrderRepository implements PaymentOrderRepository {
       .groupBy('p.method')
       .getRawAndEntities();
 
-    const methodStats: Array<{ method: string; count: number; amount: number }> =
-      [];
+    const methodStats: Array<{ method: string; count: number; amount: number }> = [];
     let totalCount = 0;
     let successCount = 0;
     let failedCount = 0;
@@ -286,10 +275,7 @@ export class TypeOrmPaymentOrderRepository implements PaymentOrderRepository {
    * undefined 键被丢弃）的对称读回。损坏行剔除并告警：写路径唯一（save()），
    * 坏行只可能来自库外手改，不应让附属明细炸掉主单读取。
    */
-  private restoreRefunds(
-    metadata: Record<string, any>,
-    currency: string,
-  ): RefundAggregate[] {
+  private restoreRefunds(metadata: Record<string, any>, currency: string): RefundAggregate[] {
     const raw = metadata.refunds;
     if (!Array.isArray(raw) || raw.length === 0) return [];
     const refunds: RefundAggregate[] = [];
@@ -298,18 +284,13 @@ export class TypeOrmPaymentOrderRepository implements PaymentOrderRepository {
       if (refund) {
         refunds.push(refund);
       } else {
-        this.logger.warn(
-          `metadata.refunds 损坏行已剔除: ${JSON.stringify(row)}`,
-        );
+        this.logger.warn(`metadata.refunds 损坏行已剔除: ${JSON.stringify(row)}`);
       }
     }
     return refunds;
   }
 
-  private tryRestoreRefund(
-    row: unknown,
-    currency: string,
-  ): RefundAggregate | null {
+  private tryRestoreRefund(row: unknown, currency: string): RefundAggregate | null {
     if (!row || typeof row !== 'object') return null;
     const r = row as Record<string, unknown>;
     if (typeof r.id !== 'string' || r.id.length === 0) return null;
@@ -318,9 +299,7 @@ export class TypeOrmPaymentOrderRepository implements PaymentOrderRepository {
     // 累计退款算术会让守卫比较恒 false（绕过），必须在此显式拦截
     if (!Number.isFinite(amount) || amount < 0) return null;
     const status = String(r.status ?? '');
-    const refundStatus = (
-      Object.values(RefundStatus) as string[]
-    ).includes(status)
+    const refundStatus = (Object.values(RefundStatus) as string[]).includes(status)
       ? (status as RefundStatus)
       : RefundStatus.PENDING;
     try {
@@ -365,8 +344,7 @@ export class TypeOrmPaymentOrderRepository implements PaymentOrderRepository {
   }
 
   private methodToEntity(method: PaymentMethod | string): EntityMethod {
-    const key =
-      typeof method === 'string' ? method : ((method as { value?: string })?.value ?? '');
+    const key = typeof method === 'string' ? method : ((method as { value?: string })?.value ?? '');
     const mapped = METHOD_TO_ENTITY[key.toUpperCase()];
     if (!mapped) {
       throw new Error(`未知支付方式（fail-closed 拒绝落库）: ${key}`);
@@ -380,8 +358,10 @@ export class TypeOrmPaymentOrderRepository implements PaymentOrderRepository {
       throw new Error(`未知实体支付方式: ${entityMethod}`);
     }
     // PaymentMethod VO 的实例表是 static readonly，取对应实例
-    const instances: Record<string, PaymentMethod> =
-      PaymentMethod as unknown as Record<string, PaymentMethod>;
+    const instances: Record<string, PaymentMethod> = PaymentMethod as unknown as Record<
+      string,
+      PaymentMethod
+    >;
     const instance = instances[upper];
     if (!instance) {
       throw new Error(`PaymentMethod VO 缺少实例: ${upper}`);
