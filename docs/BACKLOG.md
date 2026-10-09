@@ -191,6 +191,22 @@
 - ①"订单状态随支付联动"→**联动**（推翻调研倾向的不联动）。落地语义：支付成功且过金额闸→order.status PENDING→PAID（守卫：已 PAID 幂等；CONFIRMED/SHIPPED/DELIVERED 不回退；CANCELLED 不联动+告警留痕——钱到已取消单走人工/退款通道）；支付失败不动 order.status（枚举无对应态），paymentStatus=failed 照旧。与陈 e2e 期望（status='paid'+paymentStatus 联动）一致。随支付批一落地。
 - ②支付三批修复整体**留坑**（用户令 2026-10-10），停工待令。
 
+### 三大批施工总案（2026-10-10 用户令"着手准备施工"；勘察重测@当日）
+
+**勘察修正**：console 87✓/catch 197(原估198)/onclick=真码17+测试残留1(backend/test-simple-file-reading.html 疑垃圾件待删)/stylelint 零配置零依赖(549错系定调会临时配置跑出——批内第一步立配置)/陈旧文件头60/CONTRIBUTING+ADR 均缺/e2e 6套件全旧契约。
+
+**W-1 写法批（backend，动机=定调会写法席八条）** 分四刀按风险升序：
+- 刀1 console→Logger（87处/约20文件）：Nest 管理类→this.logger.*;main.ts 引导期与 typeorm 迁移(CLI 无DI)按惯例保留 console 并注记规则;参数签名 1:1(log/error(msg,stack)/warn/debug 兼容)。
+- 刀2 async 修正（77处重勘中:无 await 的 async/漂浮 promise/async 构造器）。
+- 刀3 catch 样板清理（197处:分类=该抛的吞掉/该记的漏记/重复包裹,逐类不盲改——反过拟合红线）。
+- 刀4 config 分域+魔法数字（config/ 现 6 文件,原"12文件"口径含根域配置重核）。
+每刀独立 commit+tsc+jest(src/orders|src/payment 口径 --no-cache --runInBand)+动机映射。
+
+**W-2 前端批（动机=视觉席+定调会）**：刀1 stylelint 配置立档+首跑真实基线(tokens.css 冻结条款=只测不改或单列豁免)+--fix 机械类;刀2 onclick 17处迁事件监听(cart.js 3/orders.js 13/email-verification 1——模板串内嵌 onclick,迁 data-*+委托);刀3 auth-state.js 统一;刀4 热门搜索面板+建议池修复(后端缓存污染病根);刀5 残留件清理(test-simple-file-reading.html 等)。
+
+**W-4 测试与文档批**：刀1 e2e 重写对齐现行契约(/api/payment/orders 等+裸 DTO+problem+json,6套件);刀2 CONTRIBUTING.md;刀3 ADR 目录(首批补录:RFC9457 决策/tokens 冻结/gopay 删除/better-sqlite3 选型/写互斥);刀4 备份双轨脚本;刀5 文件头60个清理(错乱时间戳统一为真实最近变更或删头注)。
+
+**闸门纪律**：支付域文件在本三批中如被 console/文件头类机械刀触及=允许(独立动机 hunk),支付语义一律不碰(留坑令);每刀跑 `--no-cache --runInBand` 回归;前端刀跑 vite build。
 ## 若真要接手（非承诺）
 
 安全基线：`docs/safety.md`（规则→落点→锁）；验证：README"验证"节三命令；
