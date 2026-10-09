@@ -20,6 +20,7 @@ import { CryptoGatewayService } from './gateways/crypto-gateway.service';
 
 import { MessagingModule } from '../messaging/messaging.module';
 import { SecurityModule } from '../common/security/security.module';
+import { OrdersModule } from '../orders/orders.module';
 import paymentConfig from './config/payment.config';
 
 @Module({
@@ -28,6 +29,7 @@ import paymentConfig from './config/payment.config';
     ConfigModule.forFeature(paymentConfig),
     MessagingModule,
     SecurityModule,
+    OrdersModule, // W-3Ⅳ:创建支付时的站内订单金额校验(无环:orders 不反依赖 payment)
   ],
   controllers: [PaymentController],
   providers: [

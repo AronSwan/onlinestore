@@ -99,7 +99,10 @@ describe('PaymentApplicationService.createRefund 域错误翻译', () => {
       status,
     );
 
-  const buildService = (order: PaymentOrderAggregate | null) => {
+  const buildService = (
+    order: PaymentOrderAggregate | null,
+    internalOrder: { totalAmount: number; orderNumber: string } | null = null,
+  ) => {
     const repo = {
       findById: jest.fn().mockResolvedValue(order),
       findByIdempotencyKey: jest.fn().mockResolvedValue(null),
@@ -110,6 +113,9 @@ describe('PaymentApplicationService.createRefund 域错误翻译', () => {
       { createGateway: jest.fn() } as unknown as PaymentGatewayFactory,
       new PaymentRiskService(),
       { emit: jest.fn() } as unknown as EventEmitter2,
+      {
+        findOrderByMerchantOrderId: jest.fn().mockResolvedValue(internalOrder),
+      } as never,
     );
     return { service, repo };
   };
@@ -130,5 +136,63 @@ describe('PaymentApplicationService.createRefund 域错误翻译', () => {
   it('订单不存在仍为裸 Error(404 契约另立批)——不误吞非域错误', async () => {
     const { service } = buildService(null);
     await expect(service.createRefund(dto, { userId: 1 })).rejects.toThrow('支付订单不存在');
+  });
+});
+
+/**
+ * W-3④金额校验:站内订单支付金额必须与总额精确相等(最小单位零容差)
+ */
+describe('PaymentApplicationService.createPaymentOrder 金额校验', () => {
+  const baseDto = {
+    merchantOrderId: 'ORD1760000000000abc',
+    amount: 10,
+    currency: 'CNY',
+    paymentMethod: 'ALIPAY',
+    subject: 's',
+  } as any;
+
+  const buildForPayment = (internalOrder: unknown) => {
+    const repo = {
+      findByIdempotencyKey: jest.fn().mockResolvedValue(null),
+      save: jest.fn(),
+    };
+    const service = new PaymentApplicationService(
+      repo as never,
+      { createGateway: jest.fn().mockReturnValue({ createPayment: jest.fn().mockResolvedValue({ gatewayOrderId: 'GW', paymentUrl: 'https://pay' }) }) } as never,
+      new PaymentRiskService(),
+      { emit: jest.fn() } as never,
+      { findOrderByMerchantOrderId: jest.fn().mockResolvedValue(internalOrder) } as never,
+    );
+    return { service, repo };
+  };
+
+  it('站内单金额不符→ConflictException(409)', async () => {
+    const { service } = buildForPayment({ orderNumber: 'ORD1760000000000abc', totalAmount: 449.96 });
+    await expect(
+      service.createPaymentOrder({ ...baseDto, amount: 0.01 }, { userId: 7 }),
+    ).rejects.toThrow(ConflictException);
+  });
+
+  it('站内单币种不符(总额CNY/请求USD)→ConflictException', async () => {
+    const { service } = buildForPayment({ orderNumber: 'ORD1760000000000abc', totalAmount: 100 });
+    await expect(
+      service.createPaymentOrder({ ...baseDto, amount: 100, currency: 'USD' }, { userId: 7 }),
+    ).rejects.toThrow(ConflictException);
+  });
+
+  it('站内单金额恰等→放行到网关;外部商户号→放行', async () => {
+    const ok = buildForPayment({ orderNumber: 'ORD1760000000000abc', totalAmount: 449.96 });
+    const r1 = await ok.service.createPaymentOrder(
+      { ...baseDto, amount: 449.96 } as any,
+      { userId: 7 },
+    );
+    expect(r1.paymentOrderId).toBeDefined();
+
+    const ext = buildForPayment(null);
+    const r2 = await ext.service.createPaymentOrder(
+      { ...baseDto, merchantOrderId: 'FOREIGN_MERCHANT_X', amount: 0.01 } as any,
+      { userId: 7 },
+    );
+    expect(r2.paymentOrderId).toBeDefined();
   });
 });

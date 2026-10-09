@@ -14,7 +14,7 @@ import { PaymentFailedEvent } from '../payment/domain/events/payment-failed.even
  * (EventEmitterModule 环境内 emit 即达监听器,非直调方法)。
  */
 describe('PaymentEventsListener 支付回写', () => {
-  describe('OrdersService.markPaymentOutcome', () => {
+  describe('OrdersService 回写面', () => {
     let service: OrdersService;
     let orderRow: Order;
     let updateSpy: jest.Mock;
@@ -40,20 +40,51 @@ describe('PaymentEventsListener 支付回写', () => {
       );
     };
 
-    it('orderNumber 命中:paymentStatus→paid 且 paidAt 首写', () => {
+    it('orderNumber 命中+金额恰等:paymentStatus→paid 且 paidAt 首写', () => {
       orderRow = {
         id: 7, orderNumber: 'ORD1760000000000abc', userId: 1,
         status: OrderStatus.PENDING, paymentStatus: PaymentStatus.PENDING,
+        totalAmount: 449.96,
       } as Order;
       buildService();
 
-      const updated = service.markPaymentOutcome('ORD1760000000000abc', PaymentStatus.PAID);
+      return service
+        .markPaymentSucceeded('ORD1760000000000abc', 449.96, 'CNY')
+        .then(order => {
+          expect(order).not.toBeNull();
+          expect(order!.paymentStatus).toBe(PaymentStatus.PAID);
+          expect(order!.paidAt).toBeInstanceOf(Date);
+          expect(updateSpy).toHaveBeenCalledTimes(1);
+        });
+    });
 
-      return updated.then(order => {
-        expect(order).not.toBeNull();
-        expect(order!.paymentStatus).toBe(PaymentStatus.PAID);
-        expect(order!.paidAt).toBeInstanceOf(Date);
-        expect(updateSpy).toHaveBeenCalledTimes(1);
+    it('金额闸:实付≠总额(0.01 vs 449.96)拒绝回写不落库', () => {
+      orderRow = {
+        id: 7, orderNumber: 'ORD1760000000000abc', userId: 1,
+        status: OrderStatus.PENDING, paymentStatus: PaymentStatus.PENDING,
+        totalAmount: 449.96,
+      } as Order;
+      buildService();
+
+      return service
+        .markPaymentSucceeded('ORD1760000000000abc', 0.01, 'CNY')
+        .then(order => {
+          expect(order).toBeNull();
+          expect(updateSpy).not.toHaveBeenCalled();
+        });
+    });
+
+    it('金额闸:币种不符(USD)拒绝回写', () => {
+      orderRow = {
+        id: 7, orderNumber: 'ORD_X', userId: 1,
+        status: OrderStatus.PENDING, paymentStatus: PaymentStatus.PENDING,
+        totalAmount: 100,
+      } as Order;
+      buildService();
+
+      return service.markPaymentSucceeded('ORD_X', 100, 'USD').then(order => {
+        expect(order).toBeNull();
+        expect(updateSpy).not.toHaveBeenCalled();
       });
     });
 
@@ -61,10 +92,11 @@ describe('PaymentEventsListener 支付回写', () => {
       orderRow = {
         id: 7, orderNumber: 'ORD_OTHER_NUMBER', userId: 1,
         status: OrderStatus.PENDING, paymentStatus: PaymentStatus.PENDING,
+        totalAmount: 100,
       } as Order;
       buildService();
 
-      return service.markPaymentOutcome('7', PaymentStatus.PAID).then(order => {
+      return service.markPaymentSucceeded('7', 100, 'CNY').then(order => {
         expect(order).not.toBeNull();
         expect(order!.paymentStatus).toBe(PaymentStatus.PAID);
       });
@@ -74,10 +106,11 @@ describe('PaymentEventsListener 支付回写', () => {
       orderRow = {
         id: 7, orderNumber: 'ORD_X', userId: 1,
         status: OrderStatus.PENDING, paymentStatus: PaymentStatus.PENDING,
+        totalAmount: 100,
       } as Order;
       buildService();
 
-      return service.markPaymentOutcome('FOREIGN_MERCHANT_ID', PaymentStatus.PAID).then(order => {
+      return service.markPaymentFailed('FOREIGN_MERCHANT_ID').then(order => {
         expect(order).toBeNull();
         expect(updateSpy).not.toHaveBeenCalled();
       });
@@ -88,10 +121,11 @@ describe('PaymentEventsListener 支付回写', () => {
         id: 7, orderNumber: 'ORD_X', userId: 1,
         status: OrderStatus.PENDING, paymentStatus: PaymentStatus.PAID,
         paidAt: new Date('2026-10-09T10:00:00Z'),
+        totalAmount: 100,
       } as Order;
       buildService();
 
-      return service.markPaymentOutcome('ORD_X', PaymentStatus.PAID).then(order => {
+      return service.markPaymentSucceeded('ORD_X', 100, 'CNY').then(order => {
         expect(order).toBe(orderRow);
         expect(updateSpy).not.toHaveBeenCalled();
       });
@@ -100,16 +134,21 @@ describe('PaymentEventsListener 支付回写', () => {
 
   describe('事件总线走线(真实 EventEmitter2)', () => {
     let emitter: EventEmitter2;
-    let markSpy: jest.Mock;
+    let succeededSpy: jest.Mock;
+    let failedSpy: jest.Mock;
     let moduleRef: TestingModule;
 
     beforeEach(async () => {
-      markSpy = jest.fn().mockResolvedValue(null);
+      succeededSpy = jest.fn().mockResolvedValue(null);
+      failedSpy = jest.fn().mockResolvedValue(null);
       moduleRef = await Test.createTestingModule({
         imports: [EventEmitterModule.forRoot()],
         providers: [
           PaymentEventsListener,
-          { provide: OrdersService, useValue: { markPaymentOutcome: markSpy } },
+          {
+            provide: OrdersService,
+            useValue: { markPaymentSucceeded: succeededSpy, markPaymentFailed: failedSpy },
+          },
         ],
       }).compile();
       await moduleRef.init();
@@ -120,22 +159,22 @@ describe('PaymentEventsListener 支付回写', () => {
       await moduleRef.close();
     });
 
-    it('emit payment.succeeded → 监听器以 PAID 回写(merchantOrderId 透传)', async () => {
+    it('emit payment.succeeded → 监听器携带金额/币种回写', async () => {
       emitter.emit(
         'payment.succeeded',
-        new PaymentSucceededEvent('PAY_WIRE_001', 'ORD1760000000000abc', 100, 'CNY', 'GW_1'),
+        new PaymentSucceededEvent('PAY_WIRE_001', 'ORD1760000000000abc', 449.96, 'CNY', 'GW_1'),
       );
       await new Promise(resolve => setImmediate(resolve)); // 同步监听器落定
-      expect(markSpy).toHaveBeenCalledWith('ORD1760000000000abc', PaymentStatus.PAID);
+      expect(succeededSpy).toHaveBeenCalledWith('ORD1760000000000abc', 449.96, 'CNY');
     });
 
-    it('emit payment.failed → 监听器以 FAILED 回写', async () => {
+    it('emit payment.failed → 监听器回写失败态', async () => {
       emitter.emit(
         'payment.failed',
         new PaymentFailedEvent('PAY_WIRE_002', 'ORD1760000000000abc', '余额不足'),
       );
       await new Promise(resolve => setImmediate(resolve));
-      expect(markSpy).toHaveBeenCalledWith('ORD1760000000000abc', PaymentStatus.FAILED);
+      expect(failedSpy).toHaveBeenCalledWith('ORD1760000000000abc');
     });
   });
 });

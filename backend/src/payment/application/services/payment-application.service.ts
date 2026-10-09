@@ -1,5 +1,6 @@
 import { Injectable, Logger, Inject, ForbiddenException, ConflictException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { OrdersService } from '../../../orders/orders.service';
 
 // Domain
 import { PaymentOrderAggregate, RefundAggregate } from '../../domain/aggregates/payment-order.aggregate';
@@ -76,6 +77,7 @@ export class PaymentApplicationService {
     private readonly paymentGatewayFactory: PaymentGatewayFactory,
     private readonly paymentRiskService: PaymentRiskService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly ordersService: OrdersService,
   ) {}
 
   /**
@@ -113,6 +115,28 @@ export class PaymentApplicationService {
         if (existingOrder) {
           this.logger.log(`幂等性检查：返回已存在的订单 ${existingOrder.id.value}`);
           return this.toPaymentOrderResponse(existingOrder);
+        }
+      }
+
+      // 2.5 金额校验(W-3④):商户订单号解析到站内订单时,支付金额必须与
+      // 订单总额精确相等(最小单位零容差)——防任意金额支付刷单;外部商户号
+      // (解析不到站内单)是开放契约,放行
+      const internalOrder = await this.ordersService.findOrderByMerchantOrderId(
+        dto.merchantOrderId,
+      );
+      if (internalOrder) {
+        const expectedMinor = Math.round(
+          Number(internalOrder.totalAmount) *
+            Math.pow(10, 2), // 站内单 decimal(10,2) 单币种,2位小数口径
+        );
+        const currencyOk = dto.currency === OrdersService.ORDER_DEFAULT_CURRENCY;
+        const requestedMinor = command.amount.toMinorUnits();
+        if (!currencyOk || requestedMinor !== expectedMinor) {
+          throw new ConflictException(
+            `支付金额与订单不符（订单 ${internalOrder.orderNumber} 总额 ` +
+              `${internalOrder.totalAmount} ${OrdersService.ORDER_DEFAULT_CURRENCY}，` +
+              `本次请求 ${dto.amount} ${dto.currency}）`,
+          );
         }
       }
 

@@ -194,10 +194,19 @@ export class Money {
 
   /**
    * 转换为最小单位（如分、聪等）
+   *
+   * fail-closed(W-3④): factor 超 Number.MAX_SAFE_INTEGER 时乘积必失真
+   * (ETH 18位→1e18,安全上限≈9e15)——静默失真会让金额守卫比较建立在新
+   * 造的噪声上,宁可抛错。受影响币种:仅 ETH。
    */
   toMinorUnits(): number {
     const decimalPlaces = Money.DECIMAL_PLACES[this.currency];
     const factor = Math.pow(10, decimalPlaces);
+    if (factor > Number.MAX_SAFE_INTEGER) {
+      throw new Error(
+        `${this.currency} 最小单位(${factor})超出安全整数范围,拒绝换算(须改用高精度方案)`,
+      );
+    }
     return Math.round(this.amount * factor);
   }
 

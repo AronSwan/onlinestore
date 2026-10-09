@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { OrdersService } from './orders.service';
-import { PaymentStatus } from './entities/order.entity';
 import { PaymentSucceededEvent } from '../payment/domain/events/payment-succeeded.event';
 import { PaymentFailedEvent } from '../payment/domain/events/payment-failed.event';
 
@@ -22,13 +21,16 @@ export class PaymentEventsListener {
 
   @OnEvent('payment.succeeded')
   async onPaymentSucceeded(event: PaymentSucceededEvent): Promise<void> {
-    const order = await this.ordersService.markPaymentOutcome(
+    // markPaymentSucceeded 自带金额闸:实付≠订单总额(最小单位零容差)拒绝回写
+    const order = await this.ordersService.markPaymentSucceeded(
       event.merchantOrderId,
-      PaymentStatus.PAID,
+      event.paidAmount,
+      event.currency,
     );
     if (!order) {
       this.logger.warn(
-        `payment.succeeded 无对应订单,跳过回写(merchantOrderId=${event.merchantOrderId},paymentOrderId=${event.paymentOrderId})`,
+        `payment.succeeded 未回写(无对应订单或金额不符):merchantOrderId=${event.merchantOrderId},` +
+          `paymentOrderId=${event.paymentOrderId},实付 ${event.paidAmount} ${event.currency}`,
       );
       return;
     }
@@ -39,10 +41,7 @@ export class PaymentEventsListener {
 
   @OnEvent('payment.failed')
   async onPaymentFailed(event: PaymentFailedEvent): Promise<void> {
-    const order = await this.ordersService.markPaymentOutcome(
-      event.merchantOrderId,
-      PaymentStatus.FAILED,
-    );
+    const order = await this.ordersService.markPaymentFailed(event.merchantOrderId);
     if (!order) {
       this.logger.warn(
         `payment.failed 无对应订单,跳过回写(merchantOrderId=${event.merchantOrderId},paymentOrderId=${event.paymentOrderId})`,

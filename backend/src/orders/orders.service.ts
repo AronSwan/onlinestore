@@ -297,19 +297,21 @@ export class OrdersService {
   }
 
   /**
+   * 站内订单币种——totalAmount 列 decimal(10,2) 无币种字段,系统单币种构造
+   */
+  static readonly ORDER_DEFAULT_CURRENCY = 'CNY';
+
+  /**
    * 支付结果回写（W-3 批:payment 事件监听的落库面）
    *
    * merchantOrderId 是支付侧开放契约(客户端自由传串):先按 orderNumber 精确
    * 匹配,纯数字再回落数字 id——两个唯一键各覆盖一种真实约定。
    * 解析不到返回 null(外部商户号合法存在,不回写不报错);重复事件幂等
    * (paidAt 由 update() 的 !order.paidAt 守卫保首写时间)。
-   * 注意:只写 paymentStatus 镜像字段;order.status(履约生命周期)是否随支付
+   * 注意:只写 paymentStatus 镜像;order.status(履约生命周期)是否随支付
    * 联动为用户挂账裁决——后端零消费方,不联动不破坏任何链路。
    */
-  async markPaymentOutcome(
-    merchantOrderId: string,
-    paymentStatus: PaymentStatus,
-  ): Promise<Order | null> {
+  async findOrderByMerchantOrderId(merchantOrderId: string): Promise<Order | null> {
     let order = await this.orderRepository.findOne({
       where: { orderNumber: merchantOrderId },
     });
@@ -318,14 +320,50 @@ export class OrdersService {
         where: { id: Number(merchantOrderId) },
       });
     }
+    return order ?? null;
+  }
+
+  /**
+   * 支付成功回写——带金额闸(W-3④):站内订单实付必须与订单总额精确相等
+   * (最小单位零容差),不符拒绝回写——防 0.01 元支付把订单刷成 paid。
+   */
+  async markPaymentSucceeded(
+    merchantOrderId: string,
+    paidAmount: number,
+    currency: string,
+  ): Promise<Order | null> {
+    const order = await this.findOrderByMerchantOrderId(merchantOrderId);
     if (!order) {
       return null;
     }
-    if (order.paymentStatus === paymentStatus) {
+    if (
+      currency !== OrdersService.ORDER_DEFAULT_CURRENCY ||
+      Math.round(paidAmount * 100) !== Math.round(Number(order.totalAmount) * 100)
+    ) {
+      this.logger.warn(
+        `支付金额与订单总额不符,拒绝回写(订单 ${order.orderNumber},总额 ${order.totalAmount},` +
+          `实付 ${paidAmount} ${currency})——疑似篡改或错单`,
+      );
+      return null;
+    }
+    if (order.paymentStatus === PaymentStatus.PAID) {
       return order; // 幂等:重复回调/事件重放不再落库
     }
-    return this.update(order.id, { paymentStatus });
+    return this.update(order.id, { paymentStatus: PaymentStatus.PAID });
   }
+
+  /** 支付失败回写(无金额语义) */
+  async markPaymentFailed(merchantOrderId: string): Promise<Order | null> {
+    const order = await this.findOrderByMerchantOrderId(merchantOrderId);
+    if (!order) {
+      return null;
+    }
+    if (order.paymentStatus === PaymentStatus.FAILED) {
+      return order;
+    }
+    return this.update(order.id, { paymentStatus: PaymentStatus.FAILED });
+  }
+
 
   // 恢复注记(2026-10-08)：生产链零调用，但它是 orders spec 十余处事件
   // 发布断言的测试驱动器（"使用updateStatus方法，因为它总是会发布事件"）——
