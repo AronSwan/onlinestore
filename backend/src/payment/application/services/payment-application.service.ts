@@ -323,7 +323,7 @@ export class PaymentApplicationService {
       this.logger.log(`退款创建成功: ${refund.id.value}`);
       return {
         refundId: refund.id.value,
-        status: refund.status.value,
+        status: refund.status,
         refundAmount: command.refundAmount.amount,
       };
     } catch (error) {
@@ -402,7 +402,7 @@ export class PaymentApplicationService {
       this.logger.log(`支付订单关闭成功: ${paymentOrderId.value}`);
       return {
         paymentOrderId: paymentOrder.id.value,
-        status: paymentOrder.status.value,
+        status: paymentOrder.status,
         closedAt: paymentOrder.closedAt?.toISOString(),
       };
     } catch (error) {

@@ -80,7 +80,9 @@ export class PaymentController {
     this.logger.log(`创建支付订单: ${JSON.stringify(createOrderDto)}`);
 
     // 从JWT token中获取用户ID
-    const userId = (req?.user as any)?.id || createOrderDto.userId;
+    // 双盲务实席修复:JWT 载荷为 {sub,email,role} 无 id 字段(原读 .id 恒空→下单 500);
+    // 且身份一律取令牌 sub,body 的 userId 不再参与身份判定(A 删 B 无路径)
+    const userId = Number((req?.user as { sub?: number })?.sub ?? 0);
 
     // 构建支付上下文
     const paymentContext = {
@@ -240,7 +242,7 @@ export class PaymentController {
   async createRefund(@Body() refundDto: RefundPaymentDto, @Req() req?: Request) {
     this.logger.log(`发起退款: ${JSON.stringify(refundDto)}`);
 
-    const userId = (req?.user as any)?.id;
+    const userId = Number((req?.user as { sub?: number })?.sub ?? 0);
     const refundContext = {
       userId,
       clientIp: req?.ip,
@@ -350,10 +352,10 @@ export class PaymentController {
   async closePaymentOrder(@Param('paymentOrderId') paymentOrderId: string, @Req() req?: Request) {
     this.logger.log(`关闭支付订单: ${paymentOrderId}`);
 
-    const userId = (req?.user as any)?.id;
+    const userId = Number((req?.user as { sub?: number })?.sub ?? 0);
     const orderIdVO = PaymentOrderId.create(paymentOrderId);
 
-    const result = await this.paymentApplicationService.closePaymentOrder(orderIdVO, userId);
+    const result = await this.paymentApplicationService.closePaymentOrder(orderIdVO, String(userId));
 
     this.logger.log(`支付订单关闭成功: ${paymentOrderId}`);
     return result;

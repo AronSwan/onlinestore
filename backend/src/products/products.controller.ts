@@ -260,7 +260,7 @@ export class ProductsController {
 
   @Get()
   @ApiPaginatedQuery(Product, '获取产品列表', '分页获取产品列表，支持搜索和排序')
-  @ApiQuery({ name: 'search', required: false, description: '搜索关键词', example: 'iPhone' })
+  @ApiQuery({ name: 'q', required: false, description: '搜索关键词', example: 'iPhone' })
   // R4(反查 P3)：此前此处还挂了 categoryId/minPrice/maxPrice 三行 @ApiQuery，但 handler
   // 并不接收这些参数（过滤能力在 GET /products/search）——文档失实已删，只保留真实支持的 q（B10 归并）。
   findAll(

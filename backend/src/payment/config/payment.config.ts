@@ -18,8 +18,6 @@ export class PaymentConfig {
 
   @IsNumber()
   @Transform(({ value }) => parseInt(value) || 30000)
-  gopayTimeout: number = 30000;
-
   // 加密货币网关配置
   @IsString()
   @IsOptional()
@@ -161,12 +159,7 @@ export class PaymentConfig {
 
   // 验证配置
   static validate(config: Record<string, unknown>): PaymentConfig {
-    const validatedConfig = plainToClass(PaymentConfig, {
-      gopayGatewayUrl: config.GOPAY_GATEWAY_URL || 'http://localhost:8080',
-      gopayAppId: config.GOPAY_APP_ID,
-      gopayAppSecret: config.GOPAY_APP_SECRET,
-      gopayTimeout: config.GOPAY_TIMEOUT || '30000',
-      cryptoGatewayUrl: config.CRYPTO_GATEWAY_URL || 'http://localhost:8081',
+    const validatedConfig = plainToClass(PaymentConfig, {      cryptoGatewayUrl: config.CRYPTO_GATEWAY_URL || 'http://localhost:8081',
       cryptoApiKey: config.CRYPTO_API_KEY,
       cryptoApiSecret: config.CRYPTO_API_SECRET,
       cryptoTimeout: config.CRYPTO_TIMEOUT || '30000',

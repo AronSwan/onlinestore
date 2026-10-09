@@ -66,7 +66,6 @@ const METHOD_TO_ENTITY: Record<string, string> = {
   USDT_BEP20: 'usdt_bep20',
   BTC: 'btc',
   ETH: 'eth',
-  GOPAY: 'gopay',
 };
 
 const METHOD_TO_DOMAIN: Record<string, string> = Object.fromEntries(

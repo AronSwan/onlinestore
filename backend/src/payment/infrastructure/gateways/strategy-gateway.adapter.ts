@@ -69,7 +69,7 @@ export class StrategyGatewayAdapter implements PaymentGateway {
   }): Promise<boolean> {
     // 关键细节（架构席二审预案）：挂载控制器把签名放 x-signature 头→context.signature，
     // 而策略的 verifyCallbackSignature 吃 data.signature 字段——此处合并后进策略。
-    const merged = { ...(params.data ?? {}), signature: params.signature };
+    const merged = { ...(params.data ?? {}), signature: params.signature ?? (params.data as Record<string, unknown>)?.signature };
     try {
       return this.strategy.validateCallback(merged);
     } catch (error: any) {
