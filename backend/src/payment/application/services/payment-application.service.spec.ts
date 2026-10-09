@@ -1,5 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConflictException } from '@nestjs/common';
 import { PaymentQueryService } from './payment-query.service';
+import { PaymentApplicationService } from './payment-application.service';
 import { PaymentGatewayFactory } from '../../domain/services/payment-gateway.factory';
 import { PaymentRiskService } from '../../domain/services/payment-risk.service';
 import { PaymentOrderAggregate, PaymentStatus } from '../../domain/aggregates/payment-order.aggregate';
@@ -79,5 +81,54 @@ describe('PaymentQueryService 行为锁（审计根因批）', () => {
     repo.findById.mockResolvedValue(makeOrder(PaymentStatus.SUCCEEDED));
     const result = await service.getPaymentOrderStatus(PaymentOrderId.create('PAY_TEST_001'));
     expect(result.status).toBe('SUCCEEDED');
+  });
+});
+
+/**
+ * W-3 守卫批:域退款错误→409 契约翻译锁（原裸 Error 经全局 filter 恒 500）
+ */
+describe('PaymentApplicationService.createRefund 域错误翻译', () => {
+  const makeAppOrder = (status = PaymentStatus.PENDING): PaymentOrderAggregate =>
+    new PaymentOrderAggregate(
+      PaymentOrderId.create('PAY_REFUND_409_01'),
+      'MO_REFUND_409',
+      new Money(100, 'CNY'),
+      PaymentMethod.ALIPAY,
+      's',
+      '7',
+      status,
+    );
+
+  const buildService = (order: PaymentOrderAggregate | null) => {
+    const repo = {
+      findById: jest.fn().mockResolvedValue(order),
+      findByIdempotencyKey: jest.fn().mockResolvedValue(null),
+      save: jest.fn(),
+    };
+    const service = new PaymentApplicationService(
+      repo as unknown as PaymentOrderRepository,
+      { createGateway: jest.fn() } as unknown as PaymentGatewayFactory,
+      new PaymentRiskService(),
+      { emit: jest.fn() } as unknown as EventEmitter2,
+    );
+    return { service, repo };
+  };
+  const dto = {
+    paymentOrderId: 'PAY_REFUND_409_01',
+    refundAmount: 10,
+    currency: 'CNY',
+    reason: '测试退款',
+  } as any;
+
+  it('非成功订单退款→ConflictException(409),非裸 Error(500)', async () => {
+    const { service } = buildService(makeAppOrder(PaymentStatus.PENDING));
+    await expect(
+      service.createRefund(dto, { userId: 1 }),
+    ).rejects.toThrow(ConflictException);
+  });
+
+  it('订单不存在仍为裸 Error(404 契约另立批)——不误吞非域错误', async () => {
+    const { service } = buildService(null);
+    await expect(service.createRefund(dto, { userId: 1 })).rejects.toThrow('支付订单不存在');
   });
 });

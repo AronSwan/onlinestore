@@ -2,6 +2,11 @@ import { PaymentOrderId } from '../value-objects/payment-order-id.value-object';
 import { Money } from '../value-objects/money.value-object';
 import { PaymentMethod } from '../value-objects/payment-method.value-object';
 import { CreatePaymentOrderCommand } from '../../application/commands/create-payment-order.command';
+import {
+  RefundCurrencyMismatchError,
+  RefundNotAllowedError,
+  RefundOverpaidError,
+} from '../errors/refund.errors';
 
 /**
  * 支付状态枚举
@@ -165,10 +170,38 @@ export class PaymentOrderAggregate {
 
   /**
    * 创建退款
+   *
+   * 守卫三连（W-3 席根因批）：状态前置、币种一致、累计不超可退余额。
+   * 累计口径=非 FAILED 退款（在途先占额防并发超退，FAILED 释放）；
+   * 金额比较走 toMinorUnits 整数（浮点直加有 0.1+0.2 尾差）。
+   * 已知边界：ETH(18位)的 factor=1e18 超 Number.MAX_SAFE_INTEGER，
+   * toMinorUnits 自身失真——Money 全局精度问题，随金额校验批（W-3 ④）另断。
    */
   createRefund(refundAmount: Money, reason: string, operatorId: string): RefundAggregate {
     if (this.status !== PaymentStatus.SUCCEEDED) {
-      throw new Error('只有成功的支付订单才能退款');
+      throw new RefundNotAllowedError(this.id.value, this.status);
+    }
+    if (refundAmount.currency !== this.amount.currency) {
+      throw new RefundCurrencyMismatchError(
+        this.id.value,
+        this.amount.currency,
+        refundAmount.currency,
+      );
+    }
+
+    const refundable = this.paidAmount ?? this.amount;
+    const reservedMinor = this.refunds
+      .filter(r => r.status !== RefundStatus.FAILED)
+      .reduce((sum, r) => sum + r.amount.toMinorUnits(), 0);
+    const requestedMinor = refundAmount.toMinorUnits();
+    if (reservedMinor + requestedMinor > refundable.toMinorUnits()) {
+      throw new RefundOverpaidError(
+        this.id.value,
+        refundable.currency,
+        refundable.toMinorUnits(),
+        requestedMinor,
+        reservedMinor,
+      );
     }
 
     const refundId = PaymentOrderId.generate();

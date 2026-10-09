@@ -1,11 +1,16 @@
-import { Injectable, Logger, Inject, ForbiddenException } from '@nestjs/common';
+import { Injectable, Logger, Inject, ForbiddenException, ConflictException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 // Domain
-import { PaymentOrderAggregate } from '../../domain/aggregates/payment-order.aggregate';
+import { PaymentOrderAggregate, RefundAggregate } from '../../domain/aggregates/payment-order.aggregate';
 import { PaymentOrderRepository } from '../../domain/repositories/payment-order.repository';
 import { PaymentGatewayFactory } from '../../domain/services/payment-gateway.factory';
 import { PaymentRiskService } from '../../domain/services/payment-risk.service';
+import {
+  RefundCurrencyMismatchError,
+  RefundNotAllowedError,
+  RefundOverpaidError,
+} from '../../domain/errors/refund.errors';
 
 // Value Objects
 import { PaymentOrderId } from '../../domain/value-objects/payment-order-id.value-object';
@@ -285,12 +290,24 @@ export class PaymentApplicationService {
         throw new Error('支付订单不存在');
       }
 
-      // 3. 创建退款
-      const refund = paymentOrder.createRefund(
-        command.refundAmount,
-        command.reason,
-        command.operatorId,
-      );
+      // 3. 创建退款（域守卫:状态/币种/累计占额——域错误翻 409,业务拒绝不再冒充 500）
+      let refund: RefundAggregate;
+      try {
+        refund = paymentOrder.createRefund(
+          command.refundAmount,
+          command.reason,
+          command.operatorId,
+        );
+      } catch (e) {
+        if (
+          e instanceof RefundNotAllowedError ||
+          e instanceof RefundCurrencyMismatchError ||
+          e instanceof RefundOverpaidError
+        ) {
+          throw new ConflictException(e.message);
+        }
+        throw e;
+      }
 
       // 4. 调用支付网关退款接口
       const gateway = this.paymentGatewayFactory.createGateway(paymentOrder.paymentMethod);
