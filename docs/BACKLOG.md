@@ -143,12 +143,31 @@
 
 ### 反过拟合及自洽四席审计遗留挂账（2026-10-09）
 - **closePayment 网关侧关闭缺口**：PaymentStrategy 接口无 close 方法，adapter no-op 本地关单——网关侧会话仍可支付（迟到成功回调可翻转已关订单）。修法=补 close 进接口或各策略 NotImplemented（功能批）
-- **退款链两缺陷（实践席）**：①退款明细 metadata.refunds 被 toAggregate 硬编码 [] 确定性覆盖丢失；②聚合无累计退款额≤订单额守卫+传统策略假退款 stub——资金语义缺陷（功能批）
+- ~~**退款链两缺陷（实践席）**：①退款明细 metadata.refunds 被 toAggregate 硬编码 [] 确定性覆盖丢失；②聚合无累计退款额≤订单额守卫+传统策略假退款 stub——资金语义缺陷（功能批）~~（**①②已修@2026-10-09 支付域根因批**，commits aeb5b73 起 5 连；"传统策略假退款 stub"子项仍挂——策略层退款未接真网关）
 - **枚举四套归一**：PaymentStatus 全仓 4 套同名枚举值域不齐（domain 大写/entity 小写/orders 双轨含 paid）+PaymentMethod 双轨——CLOSED↔cancelled 往返有损，refunded 被降级清除（专项批）
 - **回调协议文档缺签名方案**：README_NEW_PAYMENT_CONTROLLER.md 无 x-signature 头/HMAC-SHA256/PAYMENT_SIGNATURE_SECRET 配置说明——外部按文档无法构造可通过验签的请求
 - **adapter 层零测试覆盖**：x-signature 合并方向已修但无 spec 锁（crypto 走另一条验签链 CRYPTO_API_SECRET 亦无 spec）
 - **e2e 双侧旧契约**：cart-payment-integration.e2e-spec 打 /api/v1 全旧形状在活跃匹配集；basic-navigation 全 skip 骨架
 - **q/search 旧参已裁弃用**（非双收）：Swagger 已标注——外部迁移期（自洽B P1-1 措辞修正落账）
+
+### 支付域根因修复批 W-3（2026-10-09，用户令"系统正确,不可盲目,宁可有把握再修"）
+
+六步依赖序施工，每步独立验证（tsc+专属spec）后 commit：
+
+1. **aeb5b73 退款明细持久化读回**：toAggregate 硬编码 []→restoreRefunds 对称 save() 写入形状；NaN 金额显式拦截（Money 校验对 NaN 失明，不拦则守卫比较恒 false 被绕）。往返 spec 4 例。
+2. **退款域守卫三连+409**：RefundNotAllowed/CurrencyMismatch/Overpaid 三域错误；累计占额口径=非 FAILED 均占（在途防并发超退）；余额基准=实付 paidAmount；最小单位整数比较（0.1+0.2 尾差防线）。业务拒绝不再冒充 500。spec 9 例。
+3. **支付→订单回写监听**：全仓 @OnEvent 零监听→payment.succeeded/failed→订单 paymentStatus 镜像；merchantOrderId 解析=orderNumber→纯数字 id 双唯一键；幂等（paidAt 保首写）。spec 6 例（含真实事件总线走线）。
+4. **金额校验双侧闸+toMinorUnits fail-closed**：创建侧站内单金额须与总额最小单位零容差相等（0.01 元刷单链封死）；回写侧 markPaymentSucceeded 携金额不符拒写；ETH 18 位 factor 超安全整数改抛错不静默失真。PaymentModule→OrdersModule 接线（无环）。spec +14。
+5+6. **状态机守卫+回调时序+写互斥**：markAsSucceeded 同网关重放 no-op/异网关抛（首写胜出）；成功后失败回调不可抹收款态；已收款单不可关闭；回调重排为"排他查改存→互斥外发事件"；同步路径补发 payment.succeeded；支付写段接入 runExclusiveWrite（M3 批"支付激活前须接入"义务兑现）。spec +11。
+
+**验证**：9 套件 157 例全绿（jest --config=jest.config.cjs --testPathPattern "src/orders|src/payment"，2026-10-09）；tsc -b 0 错；build 0 错；真实引导自起"Nest application successfully started"+115 路由全映射无环（端口 3778? 否——3777 被旧实例占用 errno -4091，Nest 侧完成、listen 层环境件）。
+
+**挂账（本批新增/保留）**：
+- 策略层退款 stub 未接真网关（传统三策略 createRefund 假实现）
+- closePayment 网关侧会话关闭缺口仍在（域守卫已挡"已收款被关闭"，但关闭后网关侧仍可支付→迟到成功回调按"钱真到账"语义可翻转 CLOSED——有意行为，转账语义优先，已注记）
+- order.status 是否随支付联动→**用户裁决中**（凭据：陈 e2e 曾期望 status='paid' 联动；后端零消费方不联动不破坏）
+- e2e 旧契约（/api/v1+信封）修复仍属 W-4 批
+- 回调控制器对 STATE_CONFLICT_ACK 的 ACK 形状（{code,message} 200）未对账 RFC9457 豁免清单口径
 
 ## 若真要接手（非承诺）
 
