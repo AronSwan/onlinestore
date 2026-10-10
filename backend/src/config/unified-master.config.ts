@@ -35,6 +35,7 @@ export interface MasterConfig {
   monitoring: MonitoringConfig;
   upload: UploadConfig;
   mail: MailConfig;
+  notification: NotificationConfig;
   messaging: MessagingConfig;
   search: SearchConfig;
   i18n: I18nConfig;
@@ -221,6 +222,11 @@ export interface MailConfig {
   };
 }
 
+export interface NotificationConfig {
+  sms: { provider: string };
+  push: { provider: string };
+}
+
 export interface MessagingConfig {
   redpanda: {
     brokers: string;
@@ -282,6 +288,9 @@ const configValidationSchema = Joi.object({
   MAIL_PASS: Joi.string().optional(),
   MAIL_FROM: Joi.string().optional(),
   SENDGRID_API_KEY: Joi.string().optional(),
+  // 通知发送（短信/推送）——默认 none=日志模式零外发（通知域集成刀补刀 2026-10-10）
+  SMS_PROVIDER: Joi.string().valid('none', 'aliyun', 'tencent').default('none'),
+  PUSH_PROVIDER: Joi.string().valid('none', 'firebase', 'jpush', 'getui').default('none'),
   // 数据库配置
   DB_TYPE: Joi.string()
     .valid('postgres', 'mysql', 'tidb', 'better-sqlite3')
@@ -709,6 +718,10 @@ export const createMasterConfiguration = (): MasterConfig => {
               apiKey: env.SENDGRID_API_KEY,
             }
           : undefined,
+    },
+    notification: {
+      sms: { provider: env.SMS_PROVIDER || 'none' }, // 接入批: aliyun/tencent SDK 装入后此处生效
+      push: { provider: env.PUSH_PROVIDER || 'none' }, // 接入批: firebase/jpush/getui SDK 装入后此处生效
     },
 
     messaging: {

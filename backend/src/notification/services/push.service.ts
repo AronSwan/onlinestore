@@ -1,43 +1,50 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
+/**
+ * 推送发送服务（通知域集成刀补刀 2026-10-10——原 TODO 假实现）
+ *
+ * 同 email 模式: PUSH_PROVIDER=none=日志模式零外发;接真服务时按 BACKLOG 挂账补 SDK。
+ */
 @Injectable()
 export class PushService {
   private readonly logger = new Logger(PushService.name);
 
-  /**
-   * 发送推送通知
-   */
-  async sendPush(userId: number, title: string, content: string, data?: any): Promise<void> {
-    // TODO: 集成推送服务（如Firebase、极光推送、个推等）
-    this.logger.log(`发送推送给用户 ${userId}: ${title}`);
-    this.logger.log(`内容: ${content}`);
+  constructor(private readonly configService: ConfigService) {}
 
-    // 模拟发送延迟
-    await new Promise(resolve => setTimeout(resolve, 100));
+  private getProvider(): string {
+    const master = this.configService.get<{
+      notification?: { push?: { provider: string } };
+    }>('master');
+    return master?.notification?.push?.provider ?? 'none';
   }
 
-  /**
-   * 发送推送给多个用户
-   */
-  async sendPushToUsers(
-    userIds: number[],
+  private async sendOnce(
+    target: string | number | undefined,
+    title: string,
+    body: string,
+  ): Promise<void> {
+    const provider = this.getProvider();
+    if (provider === 'none') {
+      this.logger.log(`[PUSH:none 模式] 收件=${target ?? '?'} 标题=${title} 内容=${body}`);
+      return;
+    }
+    throw new Error(`PUSH provider '${provider}' SDK 未接入——BACKLOG 挂账:通知域集成刀补刀`);
+  }
+
+  async sendPush(userId: string | number, title: string, content: string): Promise<void> {
+    await this.sendOnce(userId, title, content);
+  }
+
+  async sendBulkPush(
+    userIds: Array<string | number>,
     title: string,
     content: string,
-    data?: any,
   ): Promise<void> {
-    // TODO: 批量推送
-    this.logger.log(`批量推送给 ${userIds.length} 个用户: ${title}`);
-
-    await new Promise(resolve => setTimeout(resolve, 200));
+    for (const u of userIds) await this.sendOnce(u, title, content);
   }
 
-  /**
-   * 发送推送给所有用户
-   */
-  async sendPushToAll(title: string, content: string, data?: any): Promise<void> {
-    // TODO: 全员推送
-    this.logger.log(`全员推送: ${title}`);
-
-    await new Promise(resolve => setTimeout(resolve, 300));
+  async sendPushToAll(title: string, content: string): Promise<void> {
+    await this.sendOnce('all', title, content);
   }
 }

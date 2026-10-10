@@ -44,6 +44,22 @@
 - 验收批 P 严重度标：本批定性为 **P1**（五席实修三项 P1 资金/数据/安全面向，已当场闭环）
 
 
+
+**【系统整改批 2026-10-10】**(用户令"系统正确负责任"——验收 E 席查 7 处真桩未做"病根+同类全扫",按纲领 V1.4 第 5 条两问系统性治本)
+
+- 整改 1（通知域同病全扫）✅ 2026-10-10: SMS/Push service 改 provider 配置闸门(同 email 模式)——provider=none 默认日志模式零外发;provider=aliyun|tencent|firebase|jpush|getui 需 SDK(未装即 throw ProviderNotConfiguredError,启动 fail-fast)。Joi schema+config 暴露+spec 5 例(模式切换+throw 锚定)三道闸全过位
+
+- 整改 2（messaging 死端点同病全扫）⏳ 挂账: 全仓事件 emit 端点 = payment-application.service.ts 4 处(payment.order.created/succeeded/failed/refund.created);@OnEvent 消费端 = orders/payment-events.listener.ts 2 处(payment.succeeded/failed)= 真实消费;messaging/ 目录 0 个 @OnEvent + 5 个文件含"模拟异步处理"setTimeout——既无 producer 触发亦无 consumer 监听,4 处桩是死端点
+  - **治本方向**: 删 messaging 死文件 OR 配真事件源(Redpanda 已 mock 装好但零使用) OR 整并入 EventEmitter 现有路径——决策权归用户
+  - 期=用户决;升级触发线=用户选方向后即开"事件流对账批",施工时强制先扫 emit 端与 @OnEvent 端对称再动工
+
+- 整改 3（短密码登录兼容 spec 夹固）⏳ 挂账（验收 C 席 #3 升级）: 补 1 例 spec,bcrypt.compare mock 8 位哈希 + 断言 200——夹固"login 路径不校验策略"契约;升级触发线=任一开发者在 login 路径加 validatePasswordForCreation 调用时本行下账
+
+- 整改 4（外部依赖账本化）⏳ 挂账: 通知域接入批需四件齐——SDK 选型+npm 安装+sms/push service 补实现+卷宗;阿里云邮件推送账号已等用户申请。账本已立"外部依赖账本"小节,触发线=任一真接批开工前强制四件核对
+
+- 整改 5（占位实现注册进活工厂的同病全扫）已扫描结果: 4 类真桩——通知域 SMS/Push(整改 1)+messaging 4 处(整改 2)。仓内"模拟异步处理 setTimeout" 模式 grep 命中 4 处,均在 messaging 死端点中,无其他生产路径
+
+
 ## 不修项
 
 **开放安全项（有缓解、未根治——fork 接手者优先看）**：
