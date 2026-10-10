@@ -83,6 +83,13 @@
 - ✅ P2 BACKLOG 计数勘正两处（上文已勘）
 - P3 挂账：~~sendOnce channel 死参数~~(已删@cd4ba28,找茬批划线)/bulk 缺逐件隔离/.env.example 缺 9 键(MAIL×6+SMS/PUSH/SENDGRID——找茬批扩正)/sendVerificationCode 文案变更未申报——归通知域接入批顺手清
 
+### 订单快照批开工（2026-10-11，用户裁决 A+开工令）
+
+- **方案 v4 定稿**（三席调研+三席审核全卷=docs/order-snapshot-research.md）：五收口/每单哈希链+git 森林锚/四项对账+第三域漂移/PII 出哈希面+ANONYMIZED 事件行/保存期 3-10-30 年分层/fail-closed/工期 6.5-7.5 天六阶段
+- **用户裁决**：注销用户历史订单=骨架保留+PII 脱敏（A）——3/10/30 年保存期优先，个保法以脱敏满足
+- **阶段 0 完成**：tag order-snapshots/start✅；verify:audit ESM 断点复活✅（1603 条链首尾相扣，dist 无毒化——标记文件被历史清理批误删而 nest-cli 排除条款仍在，恢复即活）；全卷归档✅
+- **排期声明**：快照批先于 W-1 刀2/刀3；顺带修 census⑤（orders 事务内事件外发）；支付批一/退款回写挂账行加"必须经 update() 单调用收口"注
+
 ## 不修项
 
 **开放安全项（有缓解、未根治——fork 接手者优先看）**：
