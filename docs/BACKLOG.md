@@ -267,7 +267,8 @@
 **待用户裁决项（空白呈报，未预填）**：P0-1 修法（整段入互斥/加版本列/叠加）、P0-2 退款权限语义（owner 自助/admin-only/owner-or-admin）、查询 IDOR 修复口径（admin 可见域）、404/精度 500 家族是否并入下批。
 
 **用户裁决（2026-10-10）**：
-- ①"订单状态随支付联动"→**联动**（推翻调研倾向的不联动）。落地语义：支付成功且过金额闸→order.status PENDING→PAID（守卫：已 PAID 幂等；CONFIRMED/SHIPPED/DELIVERED 不回退；CANCELLED 不联动+告警留痕——钱到已取消单走人工/退款通道）；支付失败不动 order.status（枚举无对应态），paymentStatus=failed 照旧。与陈 e2e 期望（status='paid'+paymentStatus 联动）一致。随支付批一落地。
+- ①"订单状态随支付联动"→**联动**（推翻调研倾向的不联动）。落地语义：支付成功且
+  - **快照批排期注（2026-10-11 双盲B1补）**：批一联动/退款回写施工时**必须经 orders.service.update() 单调用收口**（快照批五收口契约——另开直写=快照缺口）过金额闸→order.status PENDING→PAID（守卫：已 PAID 幂等；CONFIRMED/SHIPPED/DELIVERED 不回退；CANCELLED 不联动+告警留痕——钱到已取消单走人工/退款通道）；支付失败不动 order.status（枚举无对应态），paymentStatus=failed 照旧。与陈 e2e 期望（status='paid'+paymentStatus 联动）一致。随支付批一落地。
 - ②支付三批修复整体**留坑**（用户令 2026-10-10），停工待令。
 
 ### 三大批施工总案（2026-10-10 用户令"着手准备施工"；勘察重测@当日）
@@ -326,7 +327,7 @@
 
 五席（后端写法/健壮性/前端JS/CSS/测试基建）只读普查，全部计数带复现命令。总判：主流面在规范轨，债集中"脚手架未清偿+双侧无对账+归一不彻底"三病根。
 
-**高危新发现入账**：①captcha+auth-proxy 无界等待（登录主路径）②验证码从未真发出+通知三渠道全假（立新批"通知域集成刀"）③email-verification.js XSS 活口+token 明文关联 ④枚举双轨再添 OrderStatus×2（影子轨零引用）+UserRole×3——归一批范围扩全仓 ⑤orders 事务内事件外发（幽灵事件，payment 同源病漏网）。
+**高危新发现入账**：①captcha+auth-proxy 无界等待（登录主路径）②验证码从未真发出+通知三渠道全假（立新批"通知域集成刀"）③email-verification.js XSS 活口+token 明文关联 ④枚举双轨再添 OrderStatus×2（影子轨零引用）+UserRole×3——归一批范围扩全仓 ⑤orders 事务内事件外发（幽灵事件，payment 同源病漏网）——**快照批阶段1顺带修**（事件发布移互斥块返回后，方案v4.1§写入纪律，双盲B1补注）。
 
 **关键计数**：catch 203 块分级完毕（A11/B92/C58/D42——刀3施工清单就绪）/裸 Error 112 处 1/3 业务面误用/未使用导出 120（含 2 整模块死件）/死 class 70（orders.css 35%）/断点 9 种并存/弱断言 6.2%/mock phantom 9/env 死键 10+未文档 171+NaN 键 5/k8s meili v1.7.4 vs compose v1.54.3/前端 Dockerfile 漏拷 5 页/backend 散件 18。
 
