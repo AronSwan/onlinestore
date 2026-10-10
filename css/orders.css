@@ -680,13 +680,13 @@
    ========================================================================== */
 
 /* 订单时间线 */
-.order-timeline {
+.order-detail-timeline {
     position: relative;
     padding-left: var(--spacing-6);
 }
 
 /* 时间线垂直线 */
-.order-timeline::before {
+.order-detail-timeline::before {
     content: '';
     position: absolute;
     left: 16px;
@@ -697,17 +697,17 @@
 }
 
 /* 时间线项目 */
-.order-timeline-item {
+.order-detail-timeline-item {
     position: relative;
     padding-bottom: var(--spacing-8);
 }
 
-.order-timeline-item:last-child {
+.order-detail-timeline-item:last-child {
     padding-bottom: 0;
 }
 
 /* 时间线圆点 */
-.order-timeline-dot {
+.order-detail-timeline-dot {
     position: absolute;
     left: -16px;
     top: 0;
@@ -724,7 +724,7 @@
 }
 
 /* 时间线圆点完成状态 */
-.order-timeline-dot.completed {
+.order-detail-timeline-dot.completed {
     background: var(--ink);
     border-color: var(--ink);
     /* C1(裁决): 金幽灵 金色 rgba 记法 清除——光晕换 blush 系 */
@@ -732,22 +732,22 @@
 }
 
 /* 时间线图标 */
-.order-timeline-icon {
+.order-detail-timeline-icon {
     font-size: var(--text-sm);
     color: var(--text-tertiary);
 }
 
-.order-timeline-dot.completed .order-timeline-icon {
+.order-detail-timeline-dot.completed .order-detail-timeline-icon {
     color: var(--text-white);
 }
 
 /* 时间线内容 */
-.order-timeline-content {
+.order-detail-timeline-content {
     padding-left: var(--spacing-4);
 }
 
 /* 时间线标题 */
-.order-timeline-title {
+.order-detail-timeline-title {
     font-size: var(--text-base);
     font-weight: var(--font-semibold);
     color: var(--text-primary);
@@ -756,14 +756,14 @@
 }
 
 /* 时间线描述 */
-.order-timeline-description {
+.order-detail-timeline-description {
     font-size: var(--text-sm);
     color: var(--text-secondary); /* M0·ink-faint判定表: 时间线描述=信息正文→ink-soft */
     margin-bottom: var(--spacing-1);
 }
 
 /* 时间线时间 */
-.order-timeline-time {
+.order-detail-timeline-time {
     font-size: var(--text-xs);
     color: var(--text-secondary); /* M0·ink-faint判定表: 时间戳=信息正文→ink-soft */
     font-family: var(--brand-font-secondary);
@@ -982,21 +982,21 @@
     }
 
     /* 时间线 */
-    .order-timeline {
+    .order-detail-timeline {
         padding-left: var(--spacing-4);
     }
 
-    .order-timeline::before {
+    .order-detail-timeline::before {
         left: 12px;
     }
 
-    .order-timeline-dot {
+    .order-detail-timeline-dot {
         left: -12px;
         width: 24px;
         height: 24px;
     }
 
-    .order-timeline-content {
+    .order-detail-timeline-content {
         padding-left: var(--spacing-2);
     }
 }
