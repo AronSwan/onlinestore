@@ -11,6 +11,11 @@ WORKDIR /usr/share/nginx/html
 COPY index.html .
 COPY login.html .
 COPY orders.html .
+COPY admin.html .
+COPY product.html .
+COPY profile.html .
+COPY privacy.html .
+COPY returns.html .
 COPY css/ ./css/
 COPY js/ ./js/
 COPY images/ ./images/
