@@ -14,8 +14,8 @@ import { Logger } from '@nestjs/common';
  *   restoreNestLogger(spies);            // afterEach / finally
  */
 export function silenceNestLogger(): jest.SpyInstance[] {
-  return (['log', 'warn', 'error', 'debug', 'verbose', 'fatal'] as const).map(
-    level => jest.spyOn(Logger.prototype, level).mockImplementation(() => {}),
+  return (['log', 'warn', 'error', 'debug', 'verbose', 'fatal'] as const).map(level =>
+    jest.spyOn(Logger.prototype, level).mockImplementation(() => {}),
   );
 }
 

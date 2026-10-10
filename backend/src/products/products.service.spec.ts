@@ -143,7 +143,10 @@ const mockProductEventsService = {
   publishInventoryUpdated: createMockedFunction<(payload: any) => Promise<void>>(),
 };
 
-const mockEmbeddingService = { embedOne: jest.fn().mockResolvedValue([]), embed: jest.fn().mockResolvedValue([]) };
+const mockEmbeddingService = {
+  embedOne: jest.fn().mockResolvedValue([]),
+  embed: jest.fn().mockResolvedValue([]),
+};
 const mockSearchManagerService = {
   search:
     createMockedFunction<
@@ -164,7 +167,16 @@ const mockQueryBuilder = createMockQueryBuilder<Product>();
  * 链式方法回归 undefined 返回——凡走 QB 链的用例须先恢复链式自返回。
  */
 const restoreQbChain = () => {
-  for (const method of ['update', 'set', 'where', 'andWhere', 'leftJoinAndSelect', 'orderBy', 'skip', 'take']) {
+  for (const method of [
+    'update',
+    'set',
+    'where',
+    'andWhere',
+    'leftJoinAndSelect',
+    'orderBy',
+    'skip',
+    'take',
+  ]) {
     const m = (mockQueryBuilder as any)[method];
     if (typeof m?.mockReturnThis === 'function') m.mockReturnThis();
   }
@@ -826,7 +838,9 @@ describe('ProductsService', () => {
     });
 
     it('R1：抬价 + 显式清除划线价 → 单语句原子落库（无存量守卫，防误伤 409）', async () => {
-      await expect(service.update(1, { price: 150, originalPrice: null } as any)).resolves.toBeDefined();
+      await expect(
+        service.update(1, { price: 150, originalPrice: null } as any),
+      ).resolves.toBeDefined();
       expect(mockQueryBuilder.set).toHaveBeenCalledWith({ price: 150, originalPrice: null });
       expect(mockQueryBuilder.where).toHaveBeenCalledWith('id = :id', { id: 1 });
     });
@@ -875,7 +889,9 @@ describe('ProductsService', () => {
     });
 
     it('R2：dto 键覆盖存量同名键、未提及键保留（浅合并语义）', async () => {
-      await service.update(1, { specifications: { color: '蓝色', factCard: { bagType: '凯莉' } } } as any);
+      await service.update(1, {
+        specifications: { color: '蓝色', factCard: { bagType: '凯莉' } },
+      } as any);
       expect(mockProductRepository.update).toHaveBeenCalledWith(1, {
         specifications: {
           color: '蓝色', // 覆盖
@@ -899,7 +915,10 @@ describe('ProductsService', () => {
     });
 
     it('R2：存量 specifications 为 null（旧数据）时浅合并从空对象起步', async () => {
-      mockProductRepository.findOne.mockResolvedValue({ ...mockProduct, specifications: null } as any);
+      mockProductRepository.findOne.mockResolvedValue({
+        ...mockProduct,
+        specifications: null,
+      } as any);
       await service.update(1, { specifications: { factCard: { bagType: '托特' } } } as any);
       expect(mockProductRepository.update).toHaveBeenCalledWith(1, {
         specifications: { factCard: { bagType: '托特' } },
@@ -1074,14 +1093,18 @@ describe('ProductsService', () => {
     });
 
     it('branch2（抬价+清划线）：事件载荷含 price=150（意图完整报文）', async () => {
-      await expect(service.update(1, { price: 150, originalPrice: null } as any)).resolves.toBeDefined();
+      await expect(
+        service.update(1, { price: 150, originalPrice: null } as any),
+      ).resolves.toBeDefined();
       const event = mockProductEventsService.publishProductUpdated.mock.calls[0][0];
       expect(event.price).toBe(150);
       expect(event.oldPrice).toBe(100);
     });
 
     it('混合载荷（price+name）：事件含 price 与 name，普通写载荷已剥离 price（两层各司其职）', async () => {
-      await expect(service.update(1, { price: 90, name: '并发安全' } as any)).resolves.toBeDefined();
+      await expect(
+        service.update(1, { price: 90, name: '并发安全' } as any),
+      ).resolves.toBeDefined();
       const event = mockProductEventsService.publishProductUpdated.mock.calls[0][0];
       expect(event.price).toBe(90);
       expect(event.name).toBe('并发安全');
@@ -1113,7 +1136,10 @@ describe('ProductsService', () => {
 
     it('create：>10KB 规格 → 400 fail-clean（不落库）', async () => {
       await expect(
-        service.create({ ...createValidData, specifications: { blob: 'x'.repeat(10 * 1024) } } as any),
+        service.create({
+          ...createValidData,
+          specifications: { blob: 'x'.repeat(10 * 1024) },
+        } as any),
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(mockProductRepository.create).not.toHaveBeenCalled();
     });
@@ -1121,7 +1147,10 @@ describe('ProductsService', () => {
     it('create：恰好 10KB 边界放行（≤10240 字符）', async () => {
       mockProductRepository.save.mockResolvedValue({ ...mockProduct, id: 2 });
       await expect(
-        service.create({ ...createValidData, specifications: { blob: 'x'.repeat(10 * 1024 - 15) } } as any),
+        service.create({
+          ...createValidData,
+          specifications: { blob: 'x'.repeat(10 * 1024 - 15) },
+        } as any),
       ).resolves.toBeDefined();
     });
 

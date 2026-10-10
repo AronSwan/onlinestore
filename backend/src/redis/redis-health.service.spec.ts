@@ -3,7 +3,8 @@
 // 作者：后端开发团队
 // 时间：2025-06-17 11:35:00
 
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, TestingModule } from '@nestjs/testing';
+
 import { silenceNestLogger, restoreNestLogger } from '../../test/utils/nest-logger-silence';
 import { Logger } from '@nestjs/common';
 import Redis from 'ioredis';
@@ -87,12 +88,13 @@ describe('RedisHealthService', () => {
       // 需补齐合规测试值（JWT_SECRET>=32 / ENCRYPTION_KEY=64 / CORS_ORIGINS 必填），
       // 否则 createMasterConfiguration() 在校验期抛错（D6.7 整改）
       process.env.JWT_SECRET = 'unit-test-jwt-secret-with-at-least-32-chars!!';
-      process.env.ENCRYPTION_KEY = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+      process.env.ENCRYPTION_KEY =
+        '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
       process.env.CORS_ORIGINS = process.env.CORS_ORIGINS || 'http://localhost:3000';
 
       // 重新创建配置实例以获取更新后的环境变量
       const updatedConfig = createMasterConfiguration();
-      
+
       service = new RedisHealthService();
 
       expect(Redis).toHaveBeenCalledWith({
@@ -423,10 +425,10 @@ connected_clients:15
       // 直接测试服务内部的retryStrategy逻辑
       const client = service.getClient();
       expect(client).toBeDefined();
-      
+
       // 验证服务已正确初始化
       expect(service).toBeDefined();
-      
+
       // 这个测试现在主要验证服务在production环境下能够正确初始化
       // 实际的retryStrategy测试在standalone测试中已经覆盖
     });
@@ -442,10 +444,10 @@ connected_clients:15
       // 直接验证服务功能
       const client = service.getClient();
       expect(client).toBeDefined();
-      
+
       // 验证服务已正确初始化
       expect(service).toBeDefined();
-      
+
       // 这个测试现在主要验证服务在production环境下能够正确初始化
       // 实际的reconnectOnError测试在standalone测试中已经覆盖
     });
