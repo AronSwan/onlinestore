@@ -107,6 +107,6 @@ Shopify BasicEvent/Stripe Events/Medusa Order Versioning/Saleor OrderEvent 官�
 ### 快照 JSON 字段清单（A2 席 P2-3 补钉死）
 **进快照 JSON**：订单全标量（orderNumber/totalAmount/status/paymentStatus/notes/paymentMethod）+ 收货三件（recipientName/recipientPhone/shippingAddress）+ items 全量（含 productSnapshot）+ schemaVersion + _genesis 标记（backfill 行）。
 **不进快照 JSON**：user 对象（只存 operator_id——PII 防放大）。
-**收货三件的纪律**：进快照（?at= 时点还原需要）+ **不进哈希 canonical 键**（#24 排除 PII 路径）+ **读时脱敏对象**（#25 出口层遮罩——已脱敏用户的三件在五端点出口一律遮罩）。三层各司其职：还原保真/链完整/出口合规。
+**收货三件的纪律**：进快照（?at= 时点还原需要）+ **进哈希（snapshot JSON 整列入哈希——双盲审 B1 席 2026-10-11 定案，依据：#25 读时脱敏使快照永不改写→PII 在快照内不可变→哈希覆盖无害且防篡改更强）** + **读时脱敏对象**（#25 出口层遮罩——已脱敏用户的三件在五端点出口一律遮罩）。三层各司其职：还原保真/链完整（含 PII 不可变保护）/出口合规。~~不进哈希 canonical 键~~（#24 原文已由本定案取代——正身回写消除实现偏离）。
 **completedAt=交易完成日起算**：系解释性映射（法条原文"自交易完成之日起"，映射到 DELIVERED 时间戳）——非条文直接规定（A2 席 P3-5 标注）。
 **TiDB 建表**：复合主键默认 NONCLUSTERED，DDL 须显式 `PRIMARY KEY (order_id, version) CLUSTERED`（A2 席 P3-7——at-time KV 直达收益依赖此点；MySQL/InnoDB 侧不受影响）。

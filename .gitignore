@@ -258,4 +258,4 @@ test-cases.json
 playwright-report/
 .test-cache/
 backend/.test-cache/
-__pycache__/
+__pycache__/dumps/

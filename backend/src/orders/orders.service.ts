@@ -299,7 +299,15 @@ export class OrdersService {
    *   行差缓存（DTO 幽灵字段永不出现在 payload——构造自实体回读）
    * - census⑤：事件发布移到互斥块返回后（事务提交后）——防回滚幻影事件
    */
-  async update(id: number, updateData: UpdateOrderData): Promise<Order> {
+  async update(
+    id: number,
+    updateData: UpdateOrderData,
+    snapshotContext?: {
+      operatorType?: SnapshotOperatorType;
+      operatorId?: string | null;
+      correlationId?: string | null;
+    },
+  ): Promise<Order> {
     const updatedOrder = await runExclusiveWrite(() =>
       this.orderRepository.manager.transaction(async trx => {
         // 事务内全量 before 读（含 items——快照 payload 需要）
@@ -335,13 +343,15 @@ export class OrdersService {
         }
 
         // 快照追加（同事务 fail-closed；零变化跳过在 service 内判）
+        // 归因透传（双盲 B1 席整改：支付回写记 system_listener+correlationId，
+        // 管理端默认 admin——原硬编码 ADMIN 把支付回写也记成 admin=归因失真）
         await this.orderSnapshotService.appendSnapshot(
           trx,
           after,
           beforePayload,
-          SnapshotOperatorType.ADMIN,
-          null,
-          null,
+          snapshotContext?.operatorType ?? SnapshotOperatorType.ADMIN,
+          snapshotContext?.operatorId ?? null,
+          snapshotContext?.correlationId ?? null,
         );
 
         return after;
@@ -411,7 +421,10 @@ export class OrdersService {
     if (order.paymentStatus === PaymentStatus.PAID) {
       return order; // 幂等:重复回调/事件重放不再落库
     }
-    return this.update(order.id, { paymentStatus: PaymentStatus.PAID });
+    return this.update(order.id, { paymentStatus: PaymentStatus.PAID }, {
+      operatorType: SnapshotOperatorType.SYSTEM_LISTENER,
+      correlationId: `payment:${merchantOrderId}`,
+    });
   }
 
   /** 支付失败回写(无金额语义) */
@@ -423,7 +436,10 @@ export class OrdersService {
     if (order.paymentStatus === PaymentStatus.FAILED) {
       return order;
     }
-    return this.update(order.id, { paymentStatus: PaymentStatus.FAILED });
+    return this.update(order.id, { paymentStatus: PaymentStatus.FAILED }, {
+      operatorType: SnapshotOperatorType.SYSTEM_LISTENER,
+      correlationId: `payment:${merchantOrderId}`,
+    });
   }
 
   // 恢复注记(2026-10-08)：生产链零调用，但它是 orders spec 十余处事件
