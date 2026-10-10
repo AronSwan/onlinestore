@@ -241,6 +241,19 @@
 - 结论：**非本阶段引入**（10-09 快启动那次未测起跑点，缺口疑一直存在）；E 席"90 秒"非新病。
 - 修法入账（启动瘦身刀，归 W-1刀2 async/或独立小刀）：重客户端（Meili/Zinc/Redpanda/Redis）连接从 import/构造期移 onModuleInit+有界超时；不与当前批混做（盲改模块初始化无测试护航=另一种短视）。
 - 环境注记：Windows Defender 对 dist 首次加载的扫描税为环境项，不进代码账。
+### 低质量代码全面普查（2026-10-10 五席，用户令；全卷=docs/quality-census-2026-10-10.md）
+
+五席（后端写法/健壮性/前端JS/CSS/测试基建）只读普查，全部计数带复现命令。总判：主流面在规范轨，债集中"脚手架未清偿+双侧无对账+归一不彻底"三病根。
+
+**高危新发现入账**：①captcha+auth-proxy 无界等待（登录主路径）②验证码从未真发出+通知三渠道全假（立新批"通知域集成刀"）③email-verification.js XSS 活口+token 明文关联 ④枚举双轨再添 OrderStatus×2（影子轨零引用）+UserRole×3——归一批范围扩全仓 ⑤orders 事务内事件外发（幽灵事件，payment 同源病漏网）。
+
+**关键计数**：catch 203 块分级完毕（A11/B92/C58/D42——刀3施工清单就绪）/裸 Error 112 处 1/3 业务面误用/未使用导出 120（含 2 整模块死件）/死 class 70（orders.css 35%）/断点 9 种并存/弱断言 6.2%/mock phantom 9/env 死键 10+未文档 171+NaN 键 5/k8s meili v1.7.4 vs compose v1.54.3/前端 Dockerfile 漏拷 5 页/backend 散件 18。
+
+**结清销账**：漂浮 promise=0（刀2 该子项结清）；事务吞错 0；skip/only 0。
+
+**新批注册**：通知域集成刀（9 TODO 假实现）/env 对账单批（死键+缺键+NaN）/部署对账批（k8s/compose/漏拷页）/products 分层批（上帝类 1155 行）/死件清理批扩容（2 死模块+110 导出+18 散件+14 前端死函数+70 死 class）。
+
+**待裁决 4 项**（呈报中）：密码下限 6vs8/email-verification 适配器去留/Dockerfile 漏拷 5 页死活/order-timeline 对齐方向。
 ## 若真要接手（非承诺）
 
 安全基线：`docs/safety.md`（规则→落点→锁）；验证：README"验证"节三命令；
