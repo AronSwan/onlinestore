@@ -8,7 +8,7 @@ import { ProviderNotConfiguredError } from './provider-not-configured.error';
  * 同 email 模式: SMS_PROVIDER=none（默认）=日志模式零外发——本地零配置可跑；
  * provider=aliyun|tencent 接真服务时调用 SDK（依赖未装前抛 ProviderNotConfiguredError，
  * 由接入批补 SDK）。单实例部署。
- * 接发信：期=SMS 通道 SDK 接入批，W-1刀2/3 之后或独立小刀（BACKLOG 挂账）。
+ * 预期: SMS 通道 SDK 接入批，W-1刀2/3 之后或独立小刀（BACKLOG 挂账）。
  */
 @Injectable()
 export class SmsService {

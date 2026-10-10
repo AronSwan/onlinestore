@@ -102,7 +102,7 @@ describe('VerifyCodeService 语义四件', () => {
       expect(sendHtmlEmail).not.toHaveBeenCalled();
     });
 
-    it('大邮件拒入:RFC 5321 上限 254——1MB 攻击在 service 层挡', async () => {
+    it('大邮件拒入:RFC 5321 上限 254——1KB 级攻击在 service 层挡(构造 1028 字符——找茬批勘正)', async () => {
       const huge = 'a'.repeat(1024) + '@x.c';
       await expect(makeService().sendLoginMailCode(huge)).rejects.toThrow(
         /邮箱长度需在 1–254 之间/,

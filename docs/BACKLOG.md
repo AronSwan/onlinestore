@@ -47,9 +47,9 @@
 
 **【系统整改批 2026-10-10】**(用户令"系统正确负责任"——验收 E 席查 7 处真桩未做"病根+同类全扫",按纲领 V1.4 第 5 条两问系统性治本)
 
-- 整改 1（通知域同病全扫）✅ 2026-10-10: SMS/Push service 改 provider 配置闸门(同 email 模式)——provider=none 默认日志模式零外发;provider=aliyun|tencent|firebase|jpush|getui 需 SDK(未装即 throw ProviderNotConfiguredError,启动 fail-fast)。Joi schema+config 暴露+spec 5 例(模式切换+throw 锚定)三道闸全过位
+- 整改 1（通知域同病全扫）✅ 2026-10-10: SMS/Push service 改 provider 配置闸门(同 email 模式)——provider=none 默认日志模式零外发;provider=aliyun|tencent|firebase|jpush|getui 需 SDK(未装即 throw ProviderNotConfiguredError——勘误@找茬批:实为首次 send 时 throw 非 startup fail-fast)。Joi schema+config 暴露+spec 5 例(模式切换+throw 锚定)三道闸全过位
 
-- 整改 2（messaging 死端点同病全扫）⏳ 挂账: 全仓事件 emit 端点 = payment-application.service.ts 4 处(payment.order.created/succeeded/failed/refund.created);@OnEvent 消费端 = orders/payment-events.listener.ts 2 处(payment.succeeded/failed)= 真实消费;messaging/ 目录 0 个 @OnEvent + 5 个文件含"模拟异步处理"setTimeout——既无 producer 触发亦无 consumer 监听,4 处桩是死端点
+- 整改 2（messaging 死端点同病全扫）⏳ 挂账: 全仓事件 emit 端点 = payment-application.service.ts 4 处(payment.order.created/succeeded/failed/refund.created);@OnEvent 消费端 = orders/payment-events.listener.ts 2 处(payment.succeeded/failed)= 真实消费;messaging/ 目录 0 个 @OnEvent + 2 个文件 4 处含(找茬批勘正——原误记 5 个文件)"模拟异步处理"setTimeout——既无 producer 触发亦无 consumer 监听,4 处桩是死端点
   - **治本方向**: 删 messaging 死文件 OR 配真事件源(Redpanda 有 3 个真实使用点(notification.controller×2+notification.consumer×1——双盲审 A1 席勘正,原误记零使用)) OR 整并入 EventEmitter 现有路径——决策权归用户
   - 期=用户决;升级触发线=用户选方向后即开"事件流对账批",施工时强制先扫 emit 端与 @OnEvent 端对称再动工
 
@@ -68,20 +68,20 @@
 | 外部依赖 | 状态 | 触发线/升级判据 | 责任人 |
 |---|---|---|---|
 | 阿里云邮件推送（DirectMail）账号+MAIL_* 全套 | 待申请 | 用户去阿里云开"邮件推送"（营业执照申请，免费 200 封/日）；到手填 MAIL_PROVIDER=smtp+MAIL_HOST/USER/PASS/FROM 即真发 | 用户 |
-| SMS SDK（阿里云/腾讯云） | 待选型+安装 | 选一→npm i SDK→sms.service.ts:32 throw 替换真实现→本行下账 | 用户选/施工 |
+| SMS SDK（阿里云/腾讯云） | 待选型+安装 | 选一→npm i SDK→sms.service.ts:33 throw 替换真实现→本行下账 | 用户选/施工 |
 | Push SDK（Firebase/极光/个推） | 待选型+安装 | 同上 | 用户选/施工 |
 | AccessKey 凭证管理 | 套餐前置 | 发信/短信/推送共用，单独管理 | 用户 |
 
 ## 双盲审整改批（2026-10-10，用户令"双盲审组每组多agents严格盲审"后四席归案）
 
-**组间交叉高置信采纳**（3 席共中×2 + 2 席共中×1）：
+**组间交叉高置信采纳**（P1 三项=3/2 席共中;P2 三项=交叉/变异实证——共 6 项,找茬批勘正）：
 - ✅ P1 外部依赖账本虚报→本批落地（上方小节）
 - ✅ P1 "启动 fail-fast"失实→**勘误**：provider≠none 时 throw 在首次 send 调用时（非启动期）；被 processNotification catch 转 NotificationStatus.FAILED——应用不挂不崩，行为安全但文档失真已勘正
-- ✅ P1 谓词漏扫两处→**入账**：notification.consumer.ts:24 TODO（活消费端 no-op 分发——有活生产者 POST /notifications/test）+redpanda.service.ts:329 queryMessages 占位返[]（有活调用方 order-events.service.ts:172）——归"通知域集成刀补刀"挂账批
+- ✅ P1 谓词漏扫两处→**入账**：notification.consumer.ts:24 TODO（活消费端 no-op 分发——有活生产者 POST /notifications/test）+redpanda.service.ts:330 queryMessages 占位返[]（有活调用方 order-events.service.ts:172）——归"通知域集成刀补刀"挂账批
 - ✅ P2 ProviderNotConfiguredError 立类（原注释/spec 标题提及但类不存在）
 - ✅ P2 none 模式 spec 补断言（变异 M1 证假绿——补 logger spy 锚定）
 - ✅ P2 BACKLOG 计数勘正两处（上文已勘）
-- P3 挂账：sendOnce channel 死参数/bulk 缺逐件隔离/.env.example 缺 SMS/PUSH/MAIL_PROVIDER 三键/sendVerificationCode 文案变更未申报——归通知域接入批顺手清
+- P3 挂账：~~sendOnce channel 死参数~~(已删@cd4ba28,找茬批划线)/bulk 缺逐件隔离/.env.example 缺 9 键(MAIL×6+SMS/PUSH/SENDGRID——找茬批扩正)/sendVerificationCode 文案变更未申报——归通知域接入批顺手清
 
 ## 不修项
 

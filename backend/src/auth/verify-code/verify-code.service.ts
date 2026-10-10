@@ -37,7 +37,8 @@ export class VerifyCodeService {
   constructor(private readonly emailService: EmailService) {
     if (!VerifyCodeService.cleanupTimer) {
       VerifyCodeService.cleanupTimer = setInterval(() => VerifyCodeService.sweepExpired(), 60_000);
-      // Node 进程关闭时不解引用 timer——进程退出自然回收
+      VerifyCodeService.cleanupTimer.unref(); // 找茬批:不 unref 挂住事件循环(jest open handle 实证)
+      // unref 后不阻止进程退出(找茬批修正:原注释语义反了)
     }
   }
 
@@ -83,7 +84,7 @@ export class VerifyCodeService {
       );
     }
     const code = String(randomInt(100000, 999999));
-    // 先发信后落账：发送失败不留码（fail-closed，防“码已存但用户没收到”的幽灵码）
+    // 先发信后落账：发送失败不留码（fail-closed，防“码已存但用户没收到"的幽灵码）
     await this.emailService.sendHtmlEmail(mail, '您的登录验证码', this.renderTemplate(code));
     memoryStore.set(key, {
       code,
@@ -119,9 +120,9 @@ export class VerifyCodeService {
 
   private renderTemplate(code: string): string {
     return (
-      '<div style=”font-family:sans-serif;max-width:480px;margin:0 auto”>' +
+      '<div style="font-family:sans-serif;max-width:480px;margin:0 auto">' +
       '<p>您好，您的验证码是：</p>' +
-      `<p style=”font-size:28px;letter-spacing:6px;font-weight:700”>${code}</p>` +
+      `<p style="font-size:28px;letter-spacing:6px;font-weight:700">${code}</p>` +
       `<p>${this.ttlMs / 60000} 分钟内有效。若非本人操作请忽略本邮件。</p>` +
       '</div>'
     );

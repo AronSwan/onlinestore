@@ -19,7 +19,7 @@ describe('PushService 模式切换(通知域集成刀补刀 2026-10-10)', () => 
     logSpy.mockRestore();
   });
 
-  it('PUSH_PROVIDER=firebase 但 SDK 未装: throw — 启动时配错即挂', async () => {
+  it('PUSH_PROVIDER=firebase 但 SDK 未装: throw — 首次 send 时抛(被 catch 转 FAILED,应用不挂——找茬批勘正)', async () => {
     const s = build({ notification: { push: { provider: 'firebase' } } });
     await expect(s.sendPush(1, 't', 'c')).rejects.toThrow(ProviderNotConfiguredError);
   });
