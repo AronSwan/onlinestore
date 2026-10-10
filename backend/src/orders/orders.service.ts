@@ -187,14 +187,18 @@ export class OrdersService {
           }
         }
 
-        // 发布订单创建事件
-        this.publishOrderCreatedEvent(savedOrder, orderData.items).catch(error => {
-          this.logger.error('发布订单创建事件失败:', error);
-        });
-
         return savedOrder;
       }),
     );
+
+    // census⑤ 修复（反过拟合席B P1-1 打回重修，2026-10-11）：
+    // 原发点=事务回调体内 fire-and-forget 事件（回滚=幻影 created 事件）。
+    // 移到互斥块返回后（事务已提交）——与 update()/updateStatus() 同纪律。
+    // 原宣称"修"的三处（commit message/代码注释/BACKLOG:91）只修了 update
+    // 侧的两个 status 事件，漏了 census 点名的 create() 原始位置。
+    this.publishOrderCreatedEvent(savedOrder, orderData.items).catch(error => {
+      this.logger.error('发布订单创建事件失败:', error);
+    });
 
     // M5：事务已提交——自动下架事件落审计行（哈希链化走 AuditService.log 统一入口）。
     // 订单既已成立，审计失败只告警不回滚（与商品写审计同纪律）。

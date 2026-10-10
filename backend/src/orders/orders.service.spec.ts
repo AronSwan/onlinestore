@@ -546,6 +546,8 @@ describe('OrdersService', () => {
       const consoleSpy = jest.spyOn((service as any).logger, 'error').mockImplementation(() => {});
 
       const result = await service.create(createOrderData);
+      // census⑤修复后事件在互斥块外异步 fire——等微任务落定再验
+      await new Promise(resolve => setImmediate(resolve));
 
       expect(result).toEqual(mockOrder);
       expect(consoleSpy).toHaveBeenCalledWith('发布订单创建事件失败:', expect.any(Error));

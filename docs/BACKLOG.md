@@ -102,6 +102,18 @@
 - **A1 总判"dev/test 里程碑可交付"**+两附带条件（①生产禁行直至迁移落地②appendSnapshot 测试覆盖债须偿还）
 - **A1 承重断言全部复验对上**：46/873/tsc 0/eslint 0/verify:audit 1603 链 7ebc9f6e 实测吻合
 
+### 自洽及反过拟合小组归案整改（2026-10-11，两席——里程碑1审后第三轮）
+
+**席A（自洽）+ 席B（反过拟合）双席归案。总评：修因成色高，失分集中在"宣称与实况的缝隙"。**
+
+- ✅ **P1-1 census⑤ 原发点打回重修**（席B）：create() 的 publishOrderCreatedEvent 仍在事务回调体内（orders.service.ts:191），三处宣称"已修"失实。已外移到互斥块返回后+spec 补 setImmediate 等。**本批最重发现——census 点名的原始位置被漏，只修了 update 侧两个 status 事件。**
+- ⏳ **P1（席A F1）链核双端加载声明失实**：order-snapshot-chain.ts 头注释宣称可 strip-types 加载，实测 orders/ 目录无 ESM 标记即抛 SyntaxError。阶段 2 verify:orders 通道开工前必修。期=阶段 2 前置。
+- ⏳ **P2（席A F2）B1 整改零断言保护**：operator 归因透传（snapshotContext）全被 mock 掩蔽，回退后 75 测试仍绿。期=阶段 1 余量（appendSnapshot 真库 spec 同批）。
+- ⏳ **P2（席B）哈希 Date 分支字节不稳定**：TiDB/mysql2 回读 Date，String(Date)=TZ/locale 依赖字节；audit 先例 formatCanonicalDate 被引用未使用。**方言 drift——spec 与 dev 全绿但生产分支既零测试又实现有缺陷。**期=P2-1 迁移同批。
+- ⏳ **P2（席B）FOR UPDATE 防线为注释非代码**：注释宣称"TiDB 由调用方 FOR UPDATE+主键冲突兜底"，全仓 grep 无 setLock/pessimistic。期=阶段 1 余量。
+- ⏳ **P2（席B）字节不变护栏自言反复**：spec 无 64-hex 字面常量，全部用当前实现自算。#29 任务书"断言 headHash 常量"未落实。期=阶段 1 余量。
+- P3 入账：correlationId 语义漂移(merchantOrderId 非 paymentOrderId)/8 键序无设计锚/spec fixture .SSS vs 写侧秒级/update 返回丢 user+观测消失未标注/mock 复制品 drift/prevHash NULL 兜底不 fail-closed/六档边界文档缺口/列名风格迁移耦合/dev 主库尚无 order_snapshots 表
+
 ## 不修项
 
 **开放安全项（有缓解、未根治——fork 接手者优先看）**：
