@@ -13,6 +13,6 @@ import { NotificationConsumer } from './consumers/notification.consumer';
   imports: [TypeOrmModule.forFeature([Notification]), forwardRef(() => MessagingModule)],
   controllers: [NotificationController],
   providers: [NotificationService, EmailService, SmsService, PushService, NotificationConsumer],
-  exports: [NotificationService],
+  exports: [NotificationService, EmailService], // EmailService 随邮件验证批导出(verify-code 消费)
 })
 export class NotificationModule {}

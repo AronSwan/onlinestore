@@ -17,9 +17,7 @@ function isInsecureEncryptionKey(key: string | undefined): boolean {
   if (!key) {
     return true;
   }
-  return (
-    KNOWN_INSECURE_ENCRYPTION_KEYS.includes(key) || /^CHANGE[_-]?ME/i.test(key)
-  );
+  return KNOWN_INSECURE_ENCRYPTION_KEYS.includes(key) || /^CHANGE[_-]?ME/i.test(key);
 }
 
 // ================================
@@ -272,8 +270,17 @@ const configValidationSchema = Joi.object({
   APP_VERSION: Joi.string().default('1.0.0'),
   API_PREFIX: Joi.string().default('api'),
 
+  // 邮件发送（验证码/通知）——默认 none=日志模式零外发（邮件验证批 2026-10-10）
+  MAIL_PROVIDER: Joi.string().valid('none', 'smtp', 'sendgrid').default('none'),
+  MAIL_HOST: Joi.string().optional(),
+  MAIL_PORT: Joi.number().default(465),
+  MAIL_USER: Joi.string().optional(),
+  MAIL_PASS: Joi.string().optional(),
+  MAIL_FROM: Joi.string().optional(),
   // 数据库配置
-  DB_TYPE: Joi.string().valid('postgres', 'mysql', 'tidb', 'better-sqlite3').default('better-sqlite3'),
+  DB_TYPE: Joi.string()
+    .valid('postgres', 'mysql', 'tidb', 'better-sqlite3')
+    .default('better-sqlite3'),
   DB_HOST: Joi.string().when('DB_TYPE', {
     is: Joi.string().valid('postgres', 'mysql', 'tidb'),
     then: Joi.required(),
@@ -357,7 +364,16 @@ export const createMasterConfiguration = (): MasterConfig => {
   if (error) {
     if (!skipValidation) {
       // 统一生产环境下的错误文案，使与强校验分支一致
-      const firstDetail = (error as { details?: Array<{ message?: string; context?: { key?: string }; path?: string[]; type?: string }> }).details?.[0];
+      const firstDetail = (
+        error as {
+          details?: Array<{
+            message?: string;
+            context?: { key?: string };
+            path?: string[];
+            type?: string;
+          }>;
+        }
+      ).details?.[0];
       const key = firstDetail?.context?.key || firstDetail?.path?.[0];
       const type = firstDetail?.type;
       if (key === 'JWT_SECRET' && type && type.startsWith('string.')) {
@@ -376,7 +392,17 @@ export const createMasterConfiguration = (): MasterConfig => {
       throw new Error(`配置验证失败: ${error.message}`);
     } else {
       // 在开发或显式跳过验证时，统一中文警告文案并继续
-      const details = (error as { details?: Array<{ message?: string; context?: { key?: string }; path?: string[]; type?: string }> }).details || [];
+      const details =
+        (
+          error as {
+            details?: Array<{
+              message?: string;
+              context?: { key?: string };
+              path?: string[];
+              type?: string;
+            }>;
+          }
+        ).details || [];
       const msgs: string[] = [];
       for (const d of details) {
         const k = d?.context?.key || d?.path?.[0];
@@ -667,11 +693,11 @@ export const createMasterConfiguration = (): MasterConfig => {
 
     mail: {
       host: env.MAIL_HOST,
-      port: parseInt(env.MAIL_PORT, 10),
+      port: Number(env.MAIL_PORT) || 465, // Joi default 已给 465,此处兜底防未过校验路径 NaN
       user: env.MAIL_USER,
       pass: env.MAIL_PASS,
       from: env.MAIL_FROM,
-      provider: env.MAIL_PROVIDER || 'smtp',
+      provider: env.MAIL_PROVIDER || 'none', // 默认 none=日志模式(原 'smtp' 系死值:无 host 时真发必炸)
       sendgrid:
         env.MAIL_PROVIDER === 'sendgrid'
           ? {
