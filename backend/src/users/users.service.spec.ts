@@ -73,7 +73,7 @@ describe('UsersService', () => {
       const createUserDto: CreateUserDto = {
         username: 'testuser',
         email: 'test@example.com',
-        password: 'password123',
+        password: 'MyPassw0rd!2026',
       };
 
       mockUserRepository.findOne.mockResolvedValue(null);
@@ -85,7 +85,7 @@ describe('UsersService', () => {
       expect(mockUserRepository.findOne).toHaveBeenCalledWith({
         where: { email: 'test@example.com' },
       });
-      expect(bcrypt.hash).toHaveBeenCalledWith('password123', 12);
+      expect(bcrypt.hash).toHaveBeenCalledWith('MyPassw0rd!2026', 12);
       expect(mockUserRepository.create).toHaveBeenCalledWith({
         ...createUserDto,
         password: 'hashedPassword',
@@ -105,7 +105,7 @@ describe('UsersService', () => {
       const createUserDto: CreateUserDto = {
         username: 'testuser',
         email: 'test@example.com',
-        password: 'password123',
+        password: 'MyPassw0rd!2026',
       };
 
       mockUserRepository.findOne.mockResolvedValue(mockUser);
@@ -162,7 +162,17 @@ describe('UsersService', () => {
 
       expect(mockUserRepository.findOne).toHaveBeenCalledWith({
         where: { email: 'test@example.com' },
-        select: { id: true, email: true, password: true, username: true, role: true, isActive: true, avatar: true, phone: true, createdAt: true },
+        select: {
+          id: true,
+          email: true,
+          password: true,
+          username: true,
+          role: true,
+          isActive: true,
+          avatar: true,
+          phone: true,
+          createdAt: true,
+        },
       });
       expect(monitoringService.observeDbQuery).toHaveBeenCalledWith(
         'detail',
@@ -285,7 +295,7 @@ describe('UsersService', () => {
 
     it('should hash password if provided', async () => {
       const updateUserDto: UpdateUserDto = {
-        password: 'newpassword',
+        password: 'MyNewPassw0rd!26',
       };
 
       const updatedUser = { ...mockUser, password: 'newHashedPassword' };
@@ -296,7 +306,7 @@ describe('UsersService', () => {
 
       const result = await service.update(1, updateUserDto);
 
-      expect(bcrypt.hash).toHaveBeenCalledWith('newpassword', 12);
+      expect(bcrypt.hash).toHaveBeenCalledWith('MyNewPassw0rd!26', 12);
       expect(result).toEqual(updatedUser);
     });
   });

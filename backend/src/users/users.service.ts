@@ -3,7 +3,13 @@
 // 作者：后端开发团队
 // 时间：2025-09-26 18:21:30
 
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
+import { validatePasswordForCreation } from '../common/policies/password.policy';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
@@ -35,6 +41,11 @@ export class UsersService {
     }
 
     // 唯一哈希点：调用方必须传明文
+    // 密码标准批(用户裁决 2026-10-10):建立/变更走策略单源(长度+字节+黑名单),登录不校验
+    const policy = validatePasswordForCreation(createUserDto.password);
+    if (!policy.ok) {
+      throw new BadRequestException(policy.reason);
+    }
     const hashedPassword = await bcrypt.hash(createUserDto.password, 12);
 
     const user = this.userRepository.create({
@@ -145,6 +156,10 @@ export class UsersService {
 
     // 如果更新密码，需要加密
     if (updateUserDto.password) {
+      const policy = validatePasswordForCreation(updateUserDto.password);
+      if (!policy.ok) {
+        throw new BadRequestException(policy.reason);
+      }
       updateUserDto.password = await bcrypt.hash(updateUserDto.password, 12);
     }
 

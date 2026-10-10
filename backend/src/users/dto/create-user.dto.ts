@@ -4,7 +4,9 @@
 // 时间：2025-09-26 18:37:00
 
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsString, MinLength, IsOptional, IsEnum } from 'class-validator';
+import { IsEmail, IsString, MinLength, MaxLength, IsOptional, IsEnum } from 'class-validator';
+
+import { PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } from '../../common/policies/password.policy';
 import { UserRole } from '../entities/user.entity';
 
 export class CreateUserDto {
@@ -12,9 +14,15 @@ export class CreateUserDto {
   @IsEmail({}, { message: '邮箱格式不正确' })
   email: string;
 
-  @ApiProperty({ description: '密码', example: 'password123', minLength: 6 })
+  @ApiProperty({
+    description: '密码（12-64 位，无组合规则要求）',
+    example: 'MyPassw0rd!2026',
+    minLength: 12,
+    maxLength: 64,
+  })
   @IsString()
-  @MinLength(6, { message: '密码长度不能少于6位' })
+  @MinLength(PASSWORD_MIN_LENGTH, { message: `密码长度不能少于${PASSWORD_MIN_LENGTH}位` })
+  @MaxLength(PASSWORD_MAX_LENGTH, { message: `密码长度不能超过${PASSWORD_MAX_LENGTH}位` })
   password: string;
 
   @ApiProperty({ description: '用户名', example: 'john_doe' })

@@ -10,6 +10,7 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
+import { validatePasswordForCreation } from '../common/policies/password.policy';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -270,6 +271,10 @@ export class AuthService {
       throw new UnauthorizedException('原密码错误');
     }
 
+    const policy = validatePasswordForCreation(changePasswordData.newPassword);
+    if (!policy.ok) {
+      throw new BadRequestException(policy.reason);
+    }
     const hashedNewPassword = await bcrypt.hash(changePasswordData.newPassword, 12);
     await this.userRepository.update(changePasswordData.userId, { password: hashedNewPassword });
   }

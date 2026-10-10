@@ -82,6 +82,7 @@ export class AuthController {
   }
 
   @Post('change-password')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
   @ApiCreateResource(Object, Object, '修改密码')

@@ -16,10 +16,7 @@ import {
   IsObject,
   MaxLength,
 } from 'class-validator';
-
-// 定义密码复杂度要求
-export const PASSWORD_REGEX =
-  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+import { PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } from '../../common/policies/password.policy';
 
 // 定义角色枚举
 export enum UserRole {
@@ -36,13 +33,16 @@ export class UpdateUserDto {
   @Matches(/^[a-zA-Z0-9_]+$/, { message: '用户名只能包含字母、数字和下划线' })
   username?: string;
 
-  @ApiProperty({ description: '密码', required: false, minLength: 8 })
+  @ApiProperty({
+    description: '密码（12-64 位，无组合规则要求）',
+    required: false,
+    minLength: 12,
+    maxLength: 64,
+  })
   @IsOptional()
   @IsString()
-  @MinLength(8, { message: '密码长度不能少于8位' })
-  @Matches(PASSWORD_REGEX, {
-    message: '密码必须包含大小写字母、数字和特殊字符',
-  })
+  @MinLength(PASSWORD_MIN_LENGTH, { message: `密码长度不能少于${PASSWORD_MIN_LENGTH}位` })
+  @MaxLength(PASSWORD_MAX_LENGTH, { message: `密码长度不能超过${PASSWORD_MAX_LENGTH}位` })
   password?: string;
 
   @ApiProperty({ description: '邮箱地址', required: false })
@@ -125,75 +125,7 @@ export class UpdateUserDto {
   };
 }
 
-// 密码更新专用DTO，用于密码重置和修改密码
-export class UpdatePasswordDto {
-  @ApiProperty({ description: '当前密码', required: true })
-  @IsString()
-  @MinLength(8, { message: '当前密码长度不能少于8位' })
-  currentPassword: string;
-
-  @ApiProperty({ description: '新密码', required: true, minLength: 8 })
-  @IsString()
-  @MinLength(8, { message: '新密码长度不能少于8位' })
-  @Matches(PASSWORD_REGEX, {
-    message: '新密码必须包含大小写字母、数字和特殊字符',
-  })
-  newPassword: string;
-
-  @ApiProperty({ description: '确认新密码', required: true })
-  @IsString()
-  @MinLength(8, { message: '确认密码长度不能少于8位' })
-  confirmPassword: string;
-}
-
-// 用户注册DTO
-export class RegisterUserDto {
-  @ApiProperty({ description: '用户名', required: true })
-  @IsString()
-  @MinLength(3, { message: '用户名长度不能少于3位' })
-  @Matches(/^[a-zA-Z0-9_]+$/, { message: '用户名只能包含字母、数字和下划线' })
-  username: string;
-
-  @ApiProperty({ description: '密码', required: true, minLength: 8 })
-  @IsString()
-  @MinLength(8, { message: '密码长度不能少于8位' })
-  @Matches(PASSWORD_REGEX, {
-    message: '密码必须包含大小写字母、数字和特殊字符',
-  })
-  password: string;
-
-  @ApiProperty({ description: '邮箱地址', required: true })
-  @IsEmail({}, { message: '请输入有效的邮箱地址' })
-  email: string;
-
-  @ApiProperty({ description: '手机号码', required: false })
-  @IsOptional()
-  @IsString()
-  @Matches(/^1[3-9]\d{9}$/, { message: '请输入有效的手机号码' })
-  phone?: string;
-
-  @ApiProperty({ description: '用户角色', required: false, enum: UserRole, default: UserRole.USER })
-  @IsOptional()
-  @IsEnum(UserRole, { message: '无效的用户角色' })
-  role?: UserRole = UserRole.USER;
-}
-
-// 用户登录DTO
-export class LoginUserDto {
-  @ApiProperty({ description: '用户名或邮箱', required: true })
-  @IsString()
-  identifier: string;
-
-  @ApiProperty({ description: '密码', required: true })
-  @IsString()
-  password: string;
-
-  @ApiProperty({ description: '记住我', required: false })
-  @IsOptional()
-  @IsBoolean()
-  rememberMe?: boolean;
-}
-
+// （UpdatePasswordDto/RegisterUserDto/LoginUserDto 三个死 DTO 于密码标准批删除——全仓零引用,密码标准批 commit 2026-10-10）
 // 用户响应DTO，用于API响应，排除敏感信息
 export class UserUpdateResponseDto {
   @ApiProperty({ description: '用户ID' })

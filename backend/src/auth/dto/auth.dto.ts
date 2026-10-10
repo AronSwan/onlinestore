@@ -1,4 +1,13 @@
-import { IsEmail, IsString, MinLength, MaxLength, Matches, IsOptional } from 'class-validator';
+import {
+  IsString,
+  IsEmail,
+  IsOptional,
+  MinLength,
+  MaxLength,
+  IsNotEmpty,
+  Matches,
+} from 'class-validator';
+import { PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } from '../../common/policies/password.policy';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class LoginDto {
@@ -10,12 +19,11 @@ export class LoginDto {
   email: string;
 
   @ApiProperty({
-    description: '用户密码',
-    example: 'Password123!',
-    minLength: 8,
+    description: '用户密码（登录不校验策略——存量短密码兼容）',
+    example: 'MyPassw0rd!2026',
   })
   @IsString({ message: '密码必须是字符串' })
-  @MinLength(8, { message: '密码长度至少8位' })
+  @IsNotEmpty({ message: '密码不能为空' })
   password: string;
 
   @ApiProperty({
@@ -36,15 +44,14 @@ export class RegisterDto {
   email: string;
 
   @ApiProperty({
-    description: '用户密码',
-    example: 'Password123!',
-    minLength: 8,
+    description: '用户密码（12-64 位，无组合规则要求）',
+    example: 'MyPassw0rd!2026',
+    minLength: 12,
+    maxLength: 64,
   })
   @IsString({ message: '密码必须是字符串' })
-  @MinLength(8, { message: '密码长度至少8位' })
-  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).*/, {
-    message: '密码必须包含大小写字母、数字和特殊字符',
-  })
+  @MinLength(PASSWORD_MIN_LENGTH, { message: `密码长度至少${PASSWORD_MIN_LENGTH}位` })
+  @MaxLength(PASSWORD_MAX_LENGTH, { message: `密码长度不能超过${PASSWORD_MAX_LENGTH}位` })
   password: string;
 
   @ApiProperty({
@@ -78,15 +85,14 @@ export class ChangePasswordDto {
   oldPassword: string;
 
   @ApiProperty({
-    description: '新密码',
-    example: 'NewPassword123!',
-    minLength: 8,
+    description: '新密码（12-64 位，无组合规则要求）',
+    example: 'MyNewPassw0rd!2026',
+    minLength: 12,
+    maxLength: 64,
   })
   @IsString({ message: '新密码必须是字符串' })
-  @MinLength(8, { message: '新密码长度至少8位' })
-  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).*/, {
-    message: '新密码必须包含大小写字母、数字和特殊字符',
-  })
+  @MinLength(PASSWORD_MIN_LENGTH, { message: `新密码长度至少${PASSWORD_MIN_LENGTH}位` })
+  @MaxLength(PASSWORD_MAX_LENGTH, { message: `新密码长度不能超过${PASSWORD_MAX_LENGTH}位` })
   newPassword: string;
 }
 
