@@ -225,6 +225,22 @@
 
 **闸门纪律修正**：阶段闸门自 tsc+jest 两道加为三道（+eslint 改动文件 --no-fix 零 error）。
 **验收后新债入账**：suppressors 随迁缺口(P2)/远端底线口径更新(P2,本条已正)/docs 提交动机正文规范(P2)/P3 卫生四项。
+### 系统性整改令落实（2026-10-10 用户令"整改或修复必须是系统性的不短视的"→纲领 v1.3）
+
+**整改两问入宪**（quality-charter v1.3 第 5 条增补）：①病根修了吗（闸门/模式/约定进流程）②同类面全扫了吗。治标可并行，治本同批落地或入账有期。
+
+**升格整改① spec 消声器（验收 P2-1"往后排"→当场系统性修）**：
+- 同类面全扫结果=4 处（B 席点名 2 + redis-health 陈年 2——后者该服务历来走 Logger，console 消声器从未生效过）。
+- 病根=实现侧日志统一走 Nest Logger 后 console 侧消声器整类失效。
+- 治本=test/utils/nest-logger-silence.ts 统一模式（钉 Logger.prototype 六级方法）+四处全迁；断言型钉点仍钉服务实例（既有模式不变）。
+- 验证=3 套件 130 例绿+噪声残留 0（'Cache get/set/delete error'从 jest 输出消失=拦截生效实证）+闸门自恰（迁移文件自身 18 格式错当场清零）。
+
+**升格整改② 启动时长（验收"留观"→当场病根诊断）**：
+- 干净基线实测（无并发负载）：进程起跑→首条 Nest 日志 **43 秒**；其中 app.module import 链 **23.2 秒**（分账：@nestjs/core 3.6s/typeorm 2.5s/kafkajs 1s/meilisearch SDK 等重依赖加载+模块顶层代码 redis 2s/search-manager 2.2s/redpanda 1.6s+级联）+NestFactory 实例化约 15s。
+- 验收时的 90 秒=43 秒基线+当时 D 席全量回归并发抢占（ contender 实证）。
+- 结论：**非本阶段引入**（10-09 快启动那次未测起跑点，缺口疑一直存在）；E 席"90 秒"非新病。
+- 修法入账（启动瘦身刀，归 W-1刀2 async/或独立小刀）：重客户端（Meili/Zinc/Redpanda/Redis）连接从 import/构造期移 onModuleInit+有界超时；不与当前批混做（盲改模块初始化无测试护航=另一种短视）。
+- 环境注记：Windows Defender 对 dist 首次加载的扫描税为环境项，不进代码账。
 ## 若真要接手（非承诺）
 
 安全基线：`docs/safety.md`（规则→落点→锁）；验证：README"验证"节三命令；
