@@ -200,13 +200,13 @@
 - 刀2 async 修正（77处重勘中:无 await 的 async/漂浮 promise/async 构造器）。
 - 刀3 catch 样板清理（197处:分类=该抛的吞掉/该记的漏记/重复包裹,逐类不盲改——反过拟合红线）。
 - 刀4 config 分域+魔法数字（config/ 现 6 文件,原"12文件"口径含根域配置重核）。
-每刀独立 commit+tsc+jest(src/orders|src/payment 口径 --no-cache --runInBand)+动机映射。
+每刀独立 commit+tsc+jest(src/orders|src/payment 口径 --no-cache --runInBand)+eslint 改动文件 --no-fix 零 error(第三道闸,2026-10-10 验收D席立法)+动机映射。
 
 **W-2 前端批（动机=视觉席+定调会）**：刀1 stylelint 配置立档+首跑真实基线(tokens.css 冻结条款=只测不改或单列豁免)+--fix 机械类;刀2 onclick 17处迁事件监听(cart.js 3/orders.js 13/email-verification 1——模板串内嵌 onclick,迁 data-*+委托);刀3 auth-state.js 统一;刀4 热门搜索面板+建议池修复(后端缓存污染病根);刀5 残留件清理(test-simple-file-reading.html 等)。
 
 **W-4 测试与文档批**：刀1 e2e 重写对齐现行契约(/api/payment/orders 等+裸 DTO+problem+json,6套件);刀2 CONTRIBUTING.md;刀3 ADR 目录(首批补录:RFC9457 决策/tokens 冻结/gopay 删除/better-sqlite3 选型/写互斥);刀4 备份双轨脚本;刀5 文件头60个清理(错乱时间戳统一为真实最近变更或删头注)。
 
-**闸门纪律**：支付域文件在本三批中如被 console/文件头类机械刀触及=允许(独立动机 hunk),支付语义一律不碰(留坑令);每刀跑 `--no-cache --runInBand` 回归;前端刀跑 vite build。
+**闸门纪律**：支付域文件在本三批中如被 console/文件头类机械刀触及=允许(独立动机 hunk),支付语义一律不碰(留坑令);每刀跑 `--no-cache --runInBand` 回归;前端刀跑真 vite build(2f1a657 起 terser 已补,此前'vite8 全 200'系 preview 冒烟口径——升级批验证缺口勘误)+eslint;依赖变更加 npm ls invalid=0。
 ### 影子施工者处置（用户裁决 B，2026-10-10 执行完毕）
 
 **案情**：10-09 23:45~00:01 一非本会话编排的执行体（git 作者=ZCode Agent；本工作区 cron/offpeak 全空；stash"seatC/F3"命名对不上我方席位——疑似前会话遗留后台 agent）在仓库活动：提交 62669a0（150 行并发回归 spec，**带红测试提交**——测试先行实现未写完即死）+ 在途未提交乐观锁桥半成品（6 文件+101 行，方向与调研推荐一致但未经审查）+ diag.spec.ts 残留。全部活动早于用户留坑令，非抗令。
@@ -254,6 +254,19 @@
 **新批注册**：通知域集成刀（9 TODO 假实现）/env 对账单批（死键+缺键+NaN）/部署对账批（k8s/compose/漏拷页）/products 分层批（上帝类 1155 行）/死件清理批扩容（2 死模块+110 导出+18 散件+14 前端死函数+70 死 class）。
 
 **待裁决 4 项**（呈报中）：密码下限 6vs8/email-verification 适配器去留/Dockerfile 漏拷 5 页死活/order-timeline 对齐方向。
+### 用户四裁决+法规组审核+双调研（2026-10-10）
+
+**裁决执行**：③镜像补 5 页（d6bca83）/④时间线对齐=css 跟 js（bd3f18a，我方意见：js 活面改之伤广、css 零引用改之零险，类目 8:8 全对齐）。
+
+**裁决①密码（对齐业界严格标准线）——调研定谳待施工**：NIST SP 800-63B-4（2025-07-31 Final）单因素 SHALL=15+禁组合规则+强制泄露黑名单；OWASP=8(MFA)/15(无)；平台实测无一强制 15（Google 推荐 12/Microsoft 推荐 14/GitHub 8|15 双轨/Apple 8+组合）。**工程取档 A：min 12+max 64+全删组合规则+服务端 HIBP 黑名单+登录端免策略校验+bcrypt 72 字节防截断**（12 系对 NIST 单因素 15 的申报偏离：业界无 15 先例；改 15 只动单源常量一处）。仓内校验点 8 处全清单在手（含 PASSWORD_REGEX 实为 UpdateUserDto 活规则+3 死 DTO），施工归新批"密码标准批"。**login 端 MinLength(8) 挡存量用户系现存缺陷同批修**。
+
+**裁决②邮件验证（接上写好）——调研推翻前提，呈报改道**：562 行适配器做的是"地址可达性校验"而非"邮箱所有权验证"——且整条 Express 链现状=容器里跑正则（客户端调的 /v1/{email}/verification 端点容器根本没有，永远降级）；真正该接的是 verify-code 线（从未真发）。**建议改道方案 C**：nodemailer 接进 notification 发信内核（MAIL_* 配置已有壳无消费者）+verify-code 补全（Redis 化/尝试上限/单次使用/重发冷却）+地址校验域维持独立容器现状（遵 10-09"不进 Nest"裁决，与"接适配器"字面令相抵故呈报待确认）。SMTP 选型：阿里云 DirectMail>腾讯云 SES>QQ SMTP(联调)。
+
+**法规组审核（两席）判定**：两问骨架立住，六维各有病——**修正案包 17 条**（A 席 12+B 席 G1-G5，合并去重后待立 v1.4）：P1 级=闸门正身归 charter（现无住所）/同类面边界按病根签名划定（B席实证：消声器按语法谓词扫漏了同文件 2 处直接赋值式+1 陷阱面）/safety.md PaymentModule 失真（app.module 已挂载而文档称未接线）/入账有期定义（三选一：批名+锚/日期/触发事件，B席实证启动瘦身刀锚批错位）。B席三案模拟：lint 治本当时仅账面未进流程（本条已当场修）/消声器问②按病类未过（谓词病，修正案 G1）/启动诊断期不合格。**账本机制病 M1-M8**（无对账周期/锚无 fire 义务/同病分账无互引等）。**v1.4 立法包待用户批准后施工**。
+
+**新 P1（快修执行时抓出）**：vite 生产构建在 HEAD 上即坏（terser 配置了未装，升级批 e208ab6 遗漏）——2f1a657 补装修复；升级批"vite8 全 200"验证口径勘误（preview 冒烟≠生产构建），前端闸门自此=真 build。
+
+**census 复现命令未入仓自违记账规则 3**（A席抓）——五席命令补录归 W-4 文档批。
 ## 若真要接手（非承诺）
 
 安全基线：`docs/safety.md`（规则→落点→锁）；验证：README"验证"节三命令；
