@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { ProviderNotConfiguredError } from './provider-not-configured.error';
 
 /**
  * 短信发送服务（通知域集成刀补刀 2026-10-10——原 TODO 假实现）
@@ -22,25 +23,25 @@ export class SmsService {
     return master?.notification?.sms?.provider ?? 'none';
   }
 
-  private async sendOnce(channel: 'sms', target: string | undefined, body: string): Promise<void> {
+  private async sendOnce(target: string | undefined, body: string): Promise<void> {
     const provider = this.getProvider();
     if (provider === 'none') {
       this.logger.log(`[SMS:none 模式] 收件=${target ?? '?'} 内容=${body}`);
       return;
     }
     // 接入批实现: provider=aliyun 调 @alicloud/dysmsapi20170525, provider=tencent 调 tencentcloud-sdk-nodejs-sms
-    throw new Error(`SMS provider '${provider}' SDK 未接入——BACKLOG 挂账:通知域集成刀补刀`);
+    throw new ProviderNotConfiguredError('sms', provider);
   }
 
   async sendSms(phone: string, content: string): Promise<void> {
-    await this.sendOnce('sms', phone, content);
+    await this.sendOnce(phone, content);
   }
 
   async sendVerificationCode(phone: string, code: string): Promise<void> {
-    await this.sendOnce('sms', phone, `[验证码] ${code}`);
+    await this.sendOnce(phone, `[验证码] ${code}`);
   }
 
   async sendBulkSms(phones: string[], content: string): Promise<void> {
-    for (const p of phones) await this.sendOnce('sms', p, content);
+    for (const p of phones) await this.sendOnce(p, content);
   }
 }

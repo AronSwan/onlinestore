@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ProviderNotConfiguredError } from './provider-not-configured.error';
 import { ConfigService } from '@nestjs/config';
 
 /**
@@ -29,7 +30,7 @@ export class PushService {
       this.logger.log(`[PUSH:none 模式] 收件=${target ?? '?'} 标题=${title} 内容=${body}`);
       return;
     }
-    throw new Error(`PUSH provider '${provider}' SDK 未接入——BACKLOG 挂账:通知域集成刀补刀`);
+    throw new ProviderNotConfiguredError('push', provider);
   }
 
   async sendPush(userId: string | number, title: string, content: string): Promise<void> {
