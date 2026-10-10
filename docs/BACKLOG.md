@@ -18,6 +18,32 @@
 - 后端进程单次无日志死亡（升级批双盲审计遗留+W-3 批同款）——判单例依据：仅一次且未复现、归因不唯一；记录 2026-10-09；升级触发线：再出现同形无日志死亡即升格挂账行（谓词=进程退出码非零且无对应日志行）。
 - cart count 与 summary.totalItems 口径不一致（前端未消费 count）——判单例依据：无消费方=无实害面；记录 2026-10-07（#3 批遗留）；升级触发线：前端开始消费 count 字段即升格。
 
+
+**【验收整改批 2026-10-10】**(五席验收归案, P1 三项当场整改+ P2/P3/账务入账)
+
+- P1-1 ✅ verify-code service 漏洞修复（service 守门 typeof+长度/memoryStore 10k 上限+定时清理/maskMail 日志脱敏）
+
+- P1-2 ✅ common-passwords.data 头注释 off-by-1 勘正（9997→9996 实测）
+
+- P1-3 ✅ MAIL_HOST Joi `when(MAIL_PROVIDER, {is:'smtp|sendgrid', then:Joi.required()})` smtp 缺 host 启动 fail-fast（验收 C 席 Item1b）
+
+- P2-1 ✅ 429 抛对象含 retryAfter 数字（filter line 96 已支持透传为 Retry-After 响应头）
+
+- P2-2 ⏳ SENDGRID_API_KEY 入 Joi schema（已立，邮件批余量保留 apiKey 配置位）
+
+- 软项 → 转入账本观察/挂账行：
+
+  - **挂账行**：sms.service 2 处 TODO + push.service 3 处 TODO — 归"通知域集成刀补刀（短信/推送通道）"，期=W-1 刀 2/3 之后或独立小刀（已立批量通知通道被本批未触动的事实，下批开工时强制走账本读取再施工）；升级触发线=任一通道被新批接真时本行下账
+
+  - **挂账行**：safety.md:17 接线类批必查条款——2026-10-10 立法批已落（"接线/卸载模块施工批验收必含本表对应行复核"，charter 闸门节与触发表同源联动），期=已入法（无需再开；本行仅记档）
+
+  - **挂账行**：审计 c/接 e 抓出的 specs 类缺口——"存量 8 位密码账户登录兼容 spec 无回归断言"（验收 C 席 #3），期=下次 auth 域相关批时补，升级触发线=任一开发者在 login 路径加 validatePasswordForCreation 调用时本行下账
+
+  - **观察行**：cadence 报 "verify-code memoryStore 跨进程/多实例无共享态（目前单实例 OK）" — 判单例依据：单实例部署现状；升级触发线=多实例/迁 Redis 需求时升格挂账行
+
+- 验收批 P 严重度标：本批定性为 **P1**（五席实修三项 P1 资金/数据/安全面向，已当场闭环）
+
+
 ## 不修项
 
 **开放安全项（有缓解、未根治——fork 接手者优先看）**：

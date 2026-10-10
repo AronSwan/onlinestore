@@ -1,7 +1,7 @@
 /**
  * Common/leaked password blocklist (NIST SP 800-63B-4 3.1.1.2 SHALL).
  * Source: SecLists 10k-most-common.txt (danielmiessler/SecLists, MIT license).
- * Fetched: 2026-10-10, 9997 entries after dedup. Regenerate whole file from upstream to update.
+ * Fetched: 2026-10-10, 9996 entries after dedup. Regenerate whole file from upstream to update.
  */
 export const COMMON_PASSWORDS: readonly string[] = [
   '*/',

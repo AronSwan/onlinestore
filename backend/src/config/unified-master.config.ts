@@ -272,11 +272,16 @@ const configValidationSchema = Joi.object({
 
   // 邮件发送（验证码/通知）——默认 none=日志模式零外发（邮件验证批 2026-10-10）
   MAIL_PROVIDER: Joi.string().valid('none', 'smtp', 'sendgrid').default('none'),
-  MAIL_HOST: Joi.string().optional(),
+  MAIL_HOST: Joi.string().when('MAIL_PROVIDER', {
+    is: Joi.string().valid('smtp', 'sendgrid'),
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
   MAIL_PORT: Joi.number().default(465),
   MAIL_USER: Joi.string().optional(),
   MAIL_PASS: Joi.string().optional(),
   MAIL_FROM: Joi.string().optional(),
+  SENDGRID_API_KEY: Joi.string().optional(),
   // 数据库配置
   DB_TYPE: Joi.string()
     .valid('postgres', 'mysql', 'tidb', 'better-sqlite3')
