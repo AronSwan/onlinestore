@@ -90,6 +90,18 @@
 - **阶段 0 完成**：tag order-snapshots/start✅；verify:audit ESM 断点复活✅（1603 条链首尾相扣，dist 无毒化——标记文件被历史清理批误删而 nest-cli 排除条款仍在，恢复即活）；全卷归档✅
 - **排期声明**：快照批先于 W-1 刀2/刀3；顺带修 census⑤（orders 事务内事件外发）；支付批一/退款回写挂账行加"必须经 update() 单调用收口"注
 
+### 订单快照批·双盲审 A1+B1 归案整改（2026-10-11，里程碑1审后）
+
+- ✅ PII 哈希定案回写正身卷（B1——snapshot JSON 整列入哈希，#25 读时脱敏使 PII 不可变）
+- ✅ operator 归因透传（B1——update() 加 snapshotContext 可选参数；markPaymentSucceeded/Failed 传 SYSTEM_LISTENER+correlationId）
+- ✅ dumps/ 入 .gitignore（B1 卫生项）
+- ✅ 0cf6f94 prettier 8 error 修复（A1 范围外移交项）
+- ⏳ **P2-1 生产建表缺口**（A1）：order_snapshots 无迁移文件——生产 synchronize=false 下首 INSERT 即 fail-closed 全中断。期=阶段1余量（CLUSTERED 迁移与 create()/delete() 收口同批）
+- ⏳ **P2-2 appendSnapshot 零直接测试**（A1）：最高风险逻辑（原生 SQL/MAX+1/两步写哈希/零变化跳过）全被 mock 掩蔽。期=阶段1余量（backfill 时补真库 spec——repository.spec 先例 :memory:）
+- ⏳ P3 挂账：appendSnapshot 无运行时守卫拒互斥外调用/occurredAt 秒级格式 vs audit .SSS/buildPayload items 无 Array.isArray 守卫/update 返回值丢 user 关系/spec buildPayload 是真实现的复制品（mock 漂移隐患）
+- **A1 总判"dev/test 里程碑可交付"**+两附带条件（①生产禁行直至迁移落地②appendSnapshot 测试覆盖债须偿还）
+- **A1 承重断言全部复验对上**：46/873/tsc 0/eslint 0/verify:audit 1603 链 7ebc9f6e 实测吻合
+
 ## 不修项
 
 **开放安全项（有缓解、未根治——fork 接手者优先看）**：

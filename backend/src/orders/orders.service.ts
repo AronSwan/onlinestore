@@ -421,10 +421,14 @@ export class OrdersService {
     if (order.paymentStatus === PaymentStatus.PAID) {
       return order; // 幂等:重复回调/事件重放不再落库
     }
-    return this.update(order.id, { paymentStatus: PaymentStatus.PAID }, {
-      operatorType: SnapshotOperatorType.SYSTEM_LISTENER,
-      correlationId: `payment:${merchantOrderId}`,
-    });
+    return this.update(
+      order.id,
+      { paymentStatus: PaymentStatus.PAID },
+      {
+        operatorType: SnapshotOperatorType.SYSTEM_LISTENER,
+        correlationId: `payment:${merchantOrderId}`,
+      },
+    );
   }
 
   /** 支付失败回写(无金额语义) */
@@ -436,10 +440,14 @@ export class OrdersService {
     if (order.paymentStatus === PaymentStatus.FAILED) {
       return order;
     }
-    return this.update(order.id, { paymentStatus: PaymentStatus.FAILED }, {
-      operatorType: SnapshotOperatorType.SYSTEM_LISTENER,
-      correlationId: `payment:${merchantOrderId}`,
-    });
+    return this.update(
+      order.id,
+      { paymentStatus: PaymentStatus.FAILED },
+      {
+        operatorType: SnapshotOperatorType.SYSTEM_LISTENER,
+        correlationId: `payment:${merchantOrderId}`,
+      },
+    );
   }
 
   // 恢复注记(2026-10-08)：生产链零调用，但它是 orders spec 十余处事件
