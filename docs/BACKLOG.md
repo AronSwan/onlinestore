@@ -114,6 +114,39 @@
 - ⏳ **P2（席B）字节不变护栏自言反复**：spec 无 64-hex 字面常量，全部用当前实现自算。#29 任务书"断言 headHash 常量"未落实。期=阶段 1 余量。
 - P3 入账：correlationId 语义漂移(merchantOrderId 非 paymentOrderId)/8 键序无设计锚/spec fixture .SSS vs 写侧秒级/update 返回丢 user+观测消失未标注/mock 复制品 drift/prevHash NULL 兜底不 fail-closed/六档边界文档缺口/列名风格迁移耦合/dev 主库尚无 order_snapshots 表
 
+### 低质量代码检查小组归案标注（2026-10-11，两席——只查只标注不修）
+
+**席C（简明/重复/可读）评分：6.5/10；席D（性能/并发/低效）评分：6.0/10。**
+
+**真冗余（最高价值——席C C-2）**：
+- ⚠️ `src/orders/enums/order.enums.ts`（25 行）**全文冗余且值集合与 entity 不一致**：同模块 `entities/order.entity.ts:22-36` 定义 `OrderStatus/PaymentStatus`，`enums/order.enums.ts:1-25` 又定义一份——两边并存且**互斥字段不同**（entity 有 `PAID` 无 `PROCESSING/REFUNDED`，enums 反之）。生产零引用（grep 全仓零命中）。是**真定时炸弹**——任何依 enums 版本的代码会因 entity 不同而炸，依赖反之。期=阶段 1 余量同批治本（清理残留 + 修正值集合），治本路径=删 enums/order.enums.ts 整体，迁 PaymentMethod 至 entities/（PaymentMethod 仍有引用），OrderStatus/PaymentStatus 单源 entity。
+
+**真并发病（席D P0/C5）**：
+- ⚠️ `create()` 不写 v1 genesis 快照——链完整性 bug。期=阶段 1 余量同批治本（create() 收口时一并落 v1，与 delete() 软删 + user-deletion 同一 commit）。
+
+**真性能/并发隐患（席D）**：
+- C1 MAX+1 并发（FOR UPDATE 防线注释悬空）——期=阶段 1 余量（真库 spec 同批补）
+- C4 runExclusiveWrite 全局写串行（TiDB 1 路/秒）——期=迁移同批（拆桶到表键哈希分桶）
+- X1 二级索引 DDL 缺迁移文件（索引活在 TS 元数据层）——期=P2-1 迁移同批
+- I4 computeChangedFields 算两次——期=任一批修（同批单笔写精简）
+
+**可合并（席C C-1/C-3/C-6）**：
+- `update()`/`updateStatus()` 35 行重复——挂账（updateStatus 是 spec 测试驱动器，合并改 spec 路径）
+- markPayment* 5×2 行模板——可合并
+- `payment:` 魔字符串 2 处——可提取常量
+
+**过期 API（席C B-4）**：`String.prototype.substr` 弃用建议（recommend substring/slice）——挂账，可改 `slice(2, 11)`。
+
+**review-批内** 已发现的"硬编码 5 收口"非真硬编码——设计点是 `SnapshotOperatorType` 枚举六档，调用端按上下文显式拼装（管理员/系统监听/支付回调等），多态抽离收益<维护成本。
+
+**性能/资源量化（席D）**：
+- 30 单/日×5 更新/3 年=16 万行（~250 MB，SQLite OK）
+- 1 000 单/日×5/3 年=550 万行（~8 GB，**方案无 TTL/归档策略——待补**）
+- update() 累计延迟：SQLite ×3（~1ms→3-4ms）/ TiDB ×2（~20-30ms→50-70ms）
+
+**索引评估**：
+- 文档 #31 承诺 (operator_type, occurred_at) 二级索引——**与端点诉求不匹配**（现无任何跨单快照读取端点）。X3 实证 (orderId, version) 复合主键已覆盖全部现有读侧查询；如非必要——**索引 #31 多余**，建之浪费维护成本。
+
 ## 不修项
 
 **开放安全项（有缓解、未根治——fork 接手者优先看）**：
