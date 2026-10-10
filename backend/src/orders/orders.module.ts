@@ -10,6 +10,8 @@ import { OrdersService } from './orders.service';
 import { OrdersController } from './orders.controller';
 import { PaymentEventsListener } from './payment-events.listener';
 import { Order } from './entities/order.entity';
+import { OrderSnapshot } from './entities/order-snapshot.entity';
+import { OrderSnapshotService } from './order-snapshot.service';
 import { OrderItem } from './entities/order-item.entity';
 import { UsersModule } from '../users/users.module';
 import { ProductsModule } from '../products/products.module';
@@ -20,14 +22,14 @@ import { Product } from '../products/entities/product.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Order, OrderItem, User, Product]),
+    TypeOrmModule.forFeature([Order, OrderItem, User, Product, OrderSnapshot]),
     UsersModule,
     ProductsModule,
     MonitoringModule,
     MessagingModule,
   ],
   controllers: [OrdersController],
-  providers: [OrdersService, PaymentEventsListener],
+  providers: [OrdersService, PaymentEventsListener, OrderSnapshotService],
   exports: [OrdersService],
 })
 export class OrdersModule {}

@@ -69,22 +69,29 @@ export function canonicalValue(value: unknown): string | null {
 }
 
 /** 整行归一：按 CANONICAL_KEYS 定键序产出 {key: string|null}（JSON.stringify 键序即此序） */
-export function canonicalizeRow(row: Record<string, unknown>): Record<string, string | null> {
+export function canonicalizeRow(
+  row: Record<string, unknown>,
+  keys: readonly string[] = CANONICAL_KEYS,
+): Record<string, string | null> {
   const out: Record<string, string | null> = {};
-  for (const key of CANONICAL_KEYS) out[key] = canonicalValue(row[key]);
+  for (const key of keys) out[key] = canonicalValue(row[key]);
   return out;
 }
 
 /**
  * 记录哈希 = SHA-256(`${prevHash}\n${canonical}`)，hex 小写 64。
  * seq 用参数值（写侧插入回读时 DB 里还是 NULL，链列尚未补），不从 row 取。
+ * keys 参数（订单快照批阶段 1 泛化）：默认 CANONICAL_KEYS——audit 侧调用
+ * 不传参即字节不变（护栏=audit-chain 字节回归 spec）；其他链（订单快照）
+ * 传自己的定键序。seqKey 同理：默认 'seq'，订单快照链用 'version'。
  */
 export function computeRecordHash(
   prevHash: string,
   seq: number,
   row: Record<string, unknown>,
+  keys: readonly string[] = CANONICAL_KEYS,
 ): string {
-  const canonical = JSON.stringify(canonicalizeRow({ ...row, seq }));
+  const canonical = JSON.stringify(canonicalizeRow({ ...row, seq }, keys));
   return createHash('sha256').update(`${prevHash}\n${canonical}`).digest('hex');
 }
 
@@ -119,7 +126,10 @@ export interface ChainVerificationResult {
  * - 同一 prevHash 被两行引用 → FORK（分叉）
  * 断点后续行按"该行自身存档哈希"继续比对，把损伤定位到行而非全线报错。
  */
-export function verifyChain(rows: ReadonlyArray<Record<string, unknown>>): ChainVerificationResult {
+export function verifyChain(
+  rows: ReadonlyArray<Record<string, unknown>>,
+  keys: readonly string[] = CANONICAL_KEYS,
+): ChainVerificationResult {
   const problems: ChainProblem[] = [];
   const chained: Array<Record<string, unknown>> = [];
 
@@ -193,7 +203,7 @@ export function verifyChain(rows: ReadonlyArray<Record<string, unknown>>): Chain
     }
 
     const storedHash = row.recordHash == null ? null : String(row.recordHash);
-    const recomputed = computeRecordHash(prevHash, seq, row);
+    const recomputed = computeRecordHash(prevHash, seq, row, keys);
     if (storedHash !== recomputed) {
       problems.push({
         type: 'CONTENT',

@@ -17,6 +17,7 @@ import { OrderStatus, PaymentStatus } from './entities/order.entity';
 import { MonitoringService } from '../monitoring/monitoring.service';
 import { OrderEventsService } from '../messaging/order-events.service';
 import { AuditService } from '../common/audit/audit.service';
+import { OrderSnapshotService } from './order-snapshot.service';
 import { createMockedFunction } from '../../test/utils/typed-mock-factory';
 
 // Mock entities
@@ -127,6 +128,28 @@ const mockOrderEventsService = {
 };
 
 // M5(2026-10-05)：OrdersService 新增 AuditService 依赖——自动下架审计行 mock。
+const mockOrderSnapshotService = {
+  buildPayload: jest.fn((order: any) => ({
+    orderNumber: order.orderNumber,
+    userId: order.userId,
+    totalAmount: order.totalAmount,
+    status: order.status,
+    paymentStatus: order.paymentStatus,
+    paymentMethod: order.paymentMethod ?? null,
+    notes: order.notes ?? null,
+    recipientName: order.recipientName ?? null,
+    recipientPhone: order.recipientPhone ?? null,
+    shippingAddress: order.shippingAddress ?? null,
+    createdAt: order.createdAt ?? null,
+    paidAt: order.paidAt ?? null,
+    shippedAt: order.shippedAt ?? null,
+    completedAt: order.completedAt ?? null,
+    items: (order.items ?? []).map((i: any) => i),
+    schemaVersion: 1,
+  })),
+  computeChangedFields: jest.fn((b: any, a: any) => []),
+  appendSnapshot: jest.fn().mockResolvedValue(1),
+};
 const mockAuditService = {
   log: createMockedFunction<(...args: any[]) => Promise<any>>(),
 };
@@ -181,6 +204,10 @@ describe('OrdersService', () => {
         {
           provide: AuditService,
           useValue: mockAuditService,
+        },
+        {
+          provide: OrderSnapshotService,
+          useValue: mockOrderSnapshotService,
         },
       ],
     }).compile();
@@ -280,6 +307,8 @@ describe('OrdersService', () => {
       const orderRepo = {
         create: jest.fn().mockReturnValue(mockOrder),
         save: jest.fn().mockResolvedValue(mockOrder),
+        findOne: jest.fn().mockResolvedValue(mockOrder),
+        update: jest.fn().mockResolvedValue({ affected: 1 }),
       };
 
       const orderItemRepo = {
@@ -343,6 +372,8 @@ describe('OrdersService', () => {
       const orderRepo = {
         create: jest.fn().mockReturnValue(mockOrder),
         save: jest.fn().mockResolvedValue(mockOrder),
+        findOne: jest.fn().mockResolvedValue(mockOrder),
+        update: jest.fn().mockResolvedValue({ affected: 1 }),
       };
       const orderItemRepo = {
         create: jest.fn().mockReturnValue(mockOrderItem),
@@ -395,6 +426,8 @@ describe('OrdersService', () => {
       const orderRepo = {
         create: jest.fn().mockReturnValue(mockOrder),
         save: jest.fn().mockResolvedValue(mockOrder),
+        findOne: jest.fn().mockResolvedValue(mockOrder),
+        update: jest.fn().mockResolvedValue({ affected: 1 }),
       };
       const orderItemRepo = {
         create: jest.fn().mockReturnValue(mockOrderItem),
@@ -428,6 +461,8 @@ describe('OrdersService', () => {
       const orderRepo = {
         create: jest.fn().mockReturnValue(mockOrder),
         save: jest.fn().mockResolvedValue(mockOrder),
+        findOne: jest.fn().mockResolvedValue(mockOrder),
+        update: jest.fn().mockResolvedValue({ affected: 1 }),
       };
       const orderItemRepo = {
         create: jest.fn().mockReturnValue(mockOrderItem),
@@ -490,6 +525,8 @@ describe('OrdersService', () => {
       const orderRepo = {
         create: jest.fn().mockReturnValue(mockOrder),
         save: jest.fn().mockResolvedValue(mockOrder),
+        findOne: jest.fn().mockResolvedValue(mockOrder),
+        update: jest.fn().mockResolvedValue({ affected: 1 }),
       };
 
       const orderItemRepo = {
@@ -969,6 +1006,8 @@ describe('OrdersService', () => {
       const orderRepo = {
         create: jest.fn().mockReturnValue(mockOrder),
         save: jest.fn().mockResolvedValue(mockOrder),
+        findOne: jest.fn().mockResolvedValue(mockOrder),
+        update: jest.fn().mockResolvedValue({ affected: 1 }),
       };
 
       const orderItemRepo = {
@@ -1054,6 +1093,8 @@ describe('OrdersService', () => {
       const orderRepo = {
         create: jest.fn().mockReturnValue(mockOrder),
         save: jest.fn().mockResolvedValue(mockOrder),
+        findOne: jest.fn().mockResolvedValue(mockOrder),
+        update: jest.fn().mockResolvedValue({ affected: 1 }),
       };
 
       const orderItemRepo = {

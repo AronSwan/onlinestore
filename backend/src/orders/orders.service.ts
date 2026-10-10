@@ -22,6 +22,8 @@ import {
   AuditSeverity,
 } from '../common/audit/audit.service';
 import { runExclusiveWrite } from '../common/db-write-mutex';
+import { OrderSnapshotService } from './order-snapshot.service';
+import { SnapshotOperatorType } from './entities/order-snapshot.entity';
 
 @Injectable()
 export class OrdersService {
@@ -39,6 +41,7 @@ export class OrdersService {
     @Inject(forwardRef(() => OrderEventsService))
     private readonly orderEventsService: OrderEventsService,
     private readonly auditService: AuditService,
+    private readonly orderSnapshotService: OrderSnapshotService,
   ) {}
 
   async create(orderData: CreateOrderData): Promise<Order> {
@@ -286,33 +289,73 @@ export class OrdersService {
     return { orders, total };
   }
 
+  /**
+   * 更新订单（订单快照批阶段 1 重构——TOCTOU 修复+快照收口+事件外移）
+   *
+   * 三病一治（方案 v4.1）：
+   * - TOCTOU：原"事务外 findById→update"窗口内单据可能被并发改掉——现改为
+   *   runExclusiveWrite+事务内"全量 before 读→UPDATE→全量 after 回读"
+   * - 快照：after 回读构造全量快照 INSERT（同事务 fail-closed）+changed_fields
+   *   行差缓存（DTO 幽灵字段永不出现在 payload——构造自实体回读）
+   * - census⑤：事件发布移到互斥块返回后（事务提交后）——防回滚幻影事件
+   */
   async update(id: number, updateData: UpdateOrderData): Promise<Order> {
-    const order = await this.findById(id);
-    if (!order) {
-      throw new Error('订单不存在');
-    }
+    const updatedOrder = await runExclusiveWrite(() =>
+      this.orderRepository.manager.transaction(async trx => {
+        // 事务内全量 before 读（含 items——快照 payload 需要）
+        const before = await trx.getRepository(Order).findOne({
+          where: { id },
+          relations: { items: true },
+        });
+        if (!before) {
+          throw new Error('订单不存在');
+        }
+        const beforePayload = this.orderSnapshotService.buildPayload(before);
 
-    // 更新状态相关的时间戳
-    if (updateData.status === OrderStatus.SHIPPED && !order.shippedAt) {
-      (updateData as { shippedAt?: Date }).shippedAt = new Date();
-    }
-    if (updateData.paymentStatus === PaymentStatus.PAID && !order.paidAt) {
-      (updateData as { paidAt?: Date }).paidAt = new Date();
-    }
-    if (updateData.status === OrderStatus.DELIVERED && !order.completedAt) {
-      (updateData as { completedAt?: Date }).completedAt = new Date();
-    }
+        // 时间戳守卫（原逻辑保留——但现在读的是事务内最新值）
+        if (updateData.status === OrderStatus.SHIPPED && !before.shippedAt) {
+          (updateData as { shippedAt?: Date }).shippedAt = new Date();
+        }
+        if (updateData.paymentStatus === PaymentStatus.PAID && !before.paidAt) {
+          (updateData as { paidAt?: Date }).paidAt = new Date();
+        }
+        if (updateData.status === OrderStatus.DELIVERED && !before.completedAt) {
+          (updateData as { completedAt?: Date }).completedAt = new Date();
+        }
 
-    await this.orderRepository.update(id, updateData);
-    const updatedOrder = await this.findById(id);
+        await trx.getRepository(Order).update(id, updateData);
 
-    if (updateData.status && updatedOrder) {
+        // 事务内全量 after 回读（快照=真实现状，changed_fields=行差）
+        const after = await trx.getRepository(Order).findOne({
+          where: { id },
+          relations: { items: true },
+        });
+        if (!after) {
+          throw new Error(`订单更新后回读失败(id=${id})`);
+        }
+
+        // 快照追加（同事务 fail-closed；零变化跳过在 service 内判）
+        await this.orderSnapshotService.appendSnapshot(
+          trx,
+          after,
+          beforePayload,
+          SnapshotOperatorType.ADMIN,
+          null,
+          null,
+        );
+
+        return after;
+      }),
+    );
+
+    // census⑤ 修复：事件发布移到互斥块外（事务已提交，无幻影风险）
+    if (updateData.status) {
       this.publishOrderStatusUpdatedEvent(updatedOrder, updateData.status).catch(error => {
         this.logger.error('发布订单状态更新事件失败:', error);
       });
     }
 
-    return updatedOrder!;
+    return updatedOrder;
   }
 
   /**
@@ -387,28 +430,51 @@ export class OrdersService {
   // 发布断言的测试驱动器（"使用updateStatus方法，因为它总是会发布事件"）——
   // 测试基建价值保留
   async updateStatus(id: number, status: OrderStatus): Promise<Order> {
-    const order = await this.findById(id);
-    if (!order) {
-      throw new Error('订单不存在');
-    }
+    const updatedOrder = await runExclusiveWrite(() =>
+      this.orderRepository.manager.transaction(async trx => {
+        const before = await trx.getRepository(Order).findOne({
+          where: { id },
+          relations: { items: true },
+        });
+        if (!before) {
+          throw new Error('订单不存在');
+        }
+        const beforePayload = this.orderSnapshotService.buildPayload(before);
 
-    // 更新状态相关的时间戳
-    const updateData: UpdateOrderData = { status };
-    if (status === OrderStatus.SHIPPED && !order.shippedAt) {
-      (updateData as { shippedAt?: Date }).shippedAt = new Date();
-    }
-    if (status === OrderStatus.DELIVERED && !order.completedAt) {
-      (updateData as { completedAt?: Date }).completedAt = new Date();
-    }
+        const updateData: UpdateOrderData = { status };
+        if (status === OrderStatus.SHIPPED && !before.shippedAt) {
+          (updateData as { shippedAt?: Date }).shippedAt = new Date();
+        }
+        if (status === OrderStatus.DELIVERED && !before.completedAt) {
+          (updateData as { completedAt?: Date }).completedAt = new Date();
+        }
 
-    await this.orderRepository.update(id, updateData);
-    const updatedOrder = await this.findById(id);
+        await trx.getRepository(Order).update(id, updateData);
+        const after = await trx.getRepository(Order).findOne({
+          where: { id },
+          relations: { items: true },
+        });
+        if (!after) {
+          throw new Error(`订单状态更新后回读失败(id=${id})`);
+        }
 
-    this.publishOrderStatusUpdatedEvent(updatedOrder!, status).catch(error => {
+        await this.orderSnapshotService.appendSnapshot(
+          trx,
+          after,
+          beforePayload,
+          SnapshotOperatorType.ADMIN,
+          null,
+          null,
+        );
+        return after;
+      }),
+    );
+
+    this.publishOrderStatusUpdatedEvent(updatedOrder, status).catch(error => {
       this.logger.error('发布订单状态更新事件失败:', error);
     });
 
-    return updatedOrder!;
+    return updatedOrder;
   }
 
   async delete(id: number): Promise<void> {

@@ -33,12 +33,26 @@ describe('PaymentEventsListener 支付回写', () => {
           return options.where.id === orderRow.id ? orderRow : null;
         });
       service = new OrdersService(
-        { findOne: findOneMock, update: updateSpy } as never,
+        {
+          findOne: findOneMock,
+          update: updateSpy,
+          manager: {
+            transaction: async (cb: (trx: unknown) => Promise<unknown>) =>
+              cb({
+                getRepository: () => ({
+                  findOne: async (opts: unknown) => findOneMock(opts), // 事务内 before/after 读同 findOneMock
+                  update: updateSpy,
+                }),
+                query: async () => [{ maxV: 0 }, { recordHash: null }],
+              }),
+          },
+        } as never,
         {} as never,
         {} as never,
         { observeDbQuery: jest.fn() } as never,
         { publishOrderStatusUpdated: jest.fn() } as never,
         {} as never,
+        { buildPayload: jest.fn(() => ({})), computeChangedFields: jest.fn(() => []), appendSnapshot: jest.fn().mockResolvedValue(1) } as never,
       );
     };
 
