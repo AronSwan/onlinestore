@@ -274,6 +274,8 @@
 
 **勘察修正**：console 87✓/catch 197(原估198)/onclick=真码17+测试残留1(backend/test-simple-file-reading.html 疑垃圾件待删)/stylelint 零配置零依赖(549错系定调会临时配置跑出——批内第一步立配置)/陈旧文件头60/CONTRIBUTING+ADR 均缺/e2e 6套件全旧契约。
 
+**排期注（2026-10-11）**：订单快照批（阶段1）先于本批刀2/刀3 动 orders.service——同文件冲突，快照批完工后再开。
+
 **W-1 写法批（backend，动机=定调会写法席八条）** 分四刀按风险升序：
 - 刀1 console→Logger（87处/约20文件）：Nest 管理类→this.logger.*;main.ts 引导期与 typeorm 迁移(CLI 无DI)按惯例保留 console 并注记规则;参数签名 1:1(log/error(msg,stack)/warn/debug 兼容)。
 - 刀2 async 修正（77处重勘中:无 await 的 async/漂浮 promise/async 构造器）。

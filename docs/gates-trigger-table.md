@@ -4,7 +4,7 @@
 
 | 触发条件（改动面命中即挂） | 查验动作（证据附 commit 或验收卷） |
 |---|---|
-| package.json / package-lock 变更 | `npm ls invalid=0` + `npm ci --dry-run` exit 0 |
+| 依赖清单变更（package.json/package-lock 指 npm 清单；src 内模块解析标记 json 不触发本行）| `npm ls invalid=0` + `npm ci --dry-run` exit 0 |
 | schema / 迁移文件变更 | `migration:show` 输出附卷 + 方言核对（批内验收级） |
 | .env / .env.example 变更 | 两文件逐键对账 diff 附卷 |
 | 新增页面 / 部署物变更（html/Dockerfile/compose/k8s） | 部署面互相对账（部署清单立件前，以 docker/ 与 k8s/ 目录 + Dockerfile COPY 面对账代位；部署清单随部署对账批立件） |

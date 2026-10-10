@@ -70,7 +70,7 @@ Kafka/独立快照服务（四家业界零采用+Outbox 原文场景=跨服务�
 ## 四、三席审核必改项落实对照
 席A 4 项（L1 version 递增/L2 漏写检测→四项对账/L3 delete 收口/L4 PII 出哈希面+ANONYMIZED 事件）+席B 10 项（第五收口/第三域漂移/⑥读库/fail-closed 选边/backfill/schemaVersion/canonical 纪律/监控回滚性能三面/排期/双方言表述）+席C 3 前置（verify:audit 通道复活✅阶段0 已修/seq 合一+TiDB 序列化策略✅/delete+双向对账✅）——**全部纳入 v4 上文**
 
-## 五、工期（六阶段 6.5-7.5 天）
+## 五、工期（阶段 0-4 五段，下限和 6.0 天+风险缓冲=6.5-7.5 天）
 | 阶段 | 内容 | 工期 |
 |---|---|---|
 | 0 | tag+verify:audit 通道复活+本卷归档 | 0.5 天 ✅ |
@@ -83,3 +83,16 @@ Kafka/独立快照服务（四家业界零采用+Outbox 原文场景=跨服务�
 
 ## 出处（调研+审核引用的一手源，全文略——详见会话卷宗）
 Shopify BasicEvent/Stripe Events/Medusa Order Versioning/Saleor OrderEvent 官方文档；RFC 6962+Russ Cox；AWS CloudTrail digest；电商法 31 条/税法实施细则 29 条/会计档案办法/个保法 19 条；TiDB 官方（Unsupported features/GC/Stale Read/JSON/聚簇/auto-random）；TypeORM issues #2246/#4947/#717；microservices.io Outbox；arXiv 2609.01931
+
+## 六、v4.1 增补（双盲审 B2 席盲扫采纳，2026-10-11——2 P0+5 P1 全部落方案）
+
+24. **update() 快照构造算法定稿（P0-1）**：事务内**全量 before 读（含 items relations）→UPDATE→全量 after 回读（含 items）**；snapshot=after 回读；changed_fields=**行差**（before 全量 vs after 回读逐字段比——DTO 幽灵字段 shippingCompany/trackingNumber 永不作源）。守卫时间戳判断仍用轻量读（进事务前预读仅作 fast-path，事务内以全量 before 为准）。
+25. **历史快照 PII 注销归宿=读时脱敏（P0-2，裁决 A 的实现层定案）**：快照 JSON 永不改写（at-time 保真+链完整）；已脱敏用户的 PII 字段在**五端点出口层遮罩**（含 ?at= 还原）——出口合规+时点保真两全；遮罩由订单关联用户的脱敏标记驱动。
+26. **闭口 5 互斥+INSERT 语义（P1-3/4）**：user-deletion 事务接入 runExclusiveWrite（现状裸跑=复现 M3 交叉事务病）；快照链写一律 **INSERT 语义（禁 save()**——探针实证 save() 撞复合主键静默变 UPDATE，TiDB 409 重试兜底永不触发）。
+27. **deleted_at 加列入阶段 1（P1-2）**：迁移文件+触发表行 2 义务（migration:show 附卷）；软删查询语义定案——findAll/findByUserId/getStatistics 一律排除 deletedAt 非空行；软删单 status=CANCELLED 与用户取消以 operator_type 区分。
+28. **backfill 三定（P1-5）**：operator_type 第六档 **'backfill'**；occurred_at=订单 createdAt（时间线诚实）；snapshot JSON 带 `"_genesis":true` 标记（管理端展示"创世回填"徽标）。
+29. **回归护栏载体（P1-1）**：哈希核心泛化的字节不变证明=committed fixture spec（链核函数直测：固定输入行→断言 headHash 常量+行数下限）；本机 dev 库 verify 为辅（headHash 记入施工令）。空库+无锚=exit 0 的 vacuous 窗口在 spec 层堵死。
+30. **锚续锚触发器（P2-1）**：每阶段 tag 前必 `verify:orders --anchor`+锚文件随同 commit（阶段 2-4 验收单条目）——audit 锚 158 行/6 天漂移先例不再复制。
+31. **查询索引+列型（P3-1/2）**：管理跨单视图加 (operator_type, occurred_at) 二级索引；occurred_at=UTC ISO 字符串（对齐 audit canonical 先例，跨方言比较语义一致）。
+
+**B1 席治理项同步落实**：G1 支付挂账行收口注✅/G2 W-1 排期注✅/G3 census⑤ 回指✅/G4 step0 tag✅/G5 工期计数勘正✅/触发表行 1 措辞改"依赖清单（package.json/lock）变更"（消除字面/语义两读缺口）。
