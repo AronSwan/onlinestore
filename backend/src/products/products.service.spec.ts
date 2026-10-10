@@ -4,6 +4,7 @@
 // 时间：2025-10-01 00:22:00
 
 import { Test, TestingModule } from '@nestjs/testing';
+import { silenceNestLogger, restoreNestLogger } from '../../test/utils/nest-logger-silence';
 import { Repository, In, QueryBuilder } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
@@ -1494,8 +1495,8 @@ describe('ProductsService', () => {
 
   describe('Error Handling', () => {
     it('should handle cache errors gracefully', async () => {
-      // 捕获console.error以避免测试输出中的错误信息
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      // Logger 通道消声(系统性整改:console 侧消声器在刀1后失效)
+      const loggerSpies = silenceNestLogger();
 
       mockCacheManager.get.mockRejectedValue(new Error('Cache error'));
       mockProductRepository.findOne.mockResolvedValue(mockProduct);
@@ -1507,7 +1508,7 @@ describe('ProductsService', () => {
       expect(result).toEqual(mockProduct);
 
       // 恢复console.error
-      consoleSpy.mockRestore();
+      restoreNestLogger(loggerSpies);
     });
 
     it('should handle database errors gracefully', async () => {

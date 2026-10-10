@@ -3,7 +3,8 @@
 // 作者：后端开发团队
 // 时间：2025-06-17 11:35:00
 
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, TestingModule } from '@nestjs/testing';
+import { silenceNestLogger, restoreNestLogger } from '../../test/utils/nest-logger-silence';
 import { Logger } from '@nestjs/common';
 import Redis from 'ioredis';
 import { RedisHealthService } from './redis-health.service';
@@ -34,10 +35,15 @@ describe('RedisHealthService', () => {
 
   const originalEnv = process.env;
 
+  let loggerSilencers: jest.SpyInstance[];
+
   beforeAll(() => {
-    // 跳过数据库连接设置
-    jest.spyOn(console, 'log').mockImplementation(() => {});
-    jest.spyOn(console, 'error').mockImplementation(() => {});
+    // Logger 通道消声(系统性整改:该服务历来走 Logger,console 侧消声器一直失效)
+    loggerSilencers = silenceNestLogger();
+  });
+
+  afterAll(() => {
+    restoreNestLogger(loggerSilencers);
   });
 
   beforeEach(() => {

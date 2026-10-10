@@ -8,6 +8,7 @@ import { CacheService } from './cache.service';
 import { Cache } from 'cache-manager';
 import { ConfigService } from '@nestjs/config';
 import { MonitoringService } from '../monitoring/monitoring.service';
+import { silenceNestLogger, restoreNestLogger } from '../../test/utils/nest-logger-silence';
 
 // Mock Cache
 const mockCache = {
@@ -38,7 +39,7 @@ describe('CacheService', () => {
   let cache: Cache;
   let configService: ConfigService;
   let monitoringService: MonitoringService;
-  let consoleErrorSpy: jest.SpyInstance;
+  let loggerSilencers: jest.SpyInstance[];
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -72,11 +73,12 @@ describe('CacheService', () => {
   });
 
   beforeEach(() => {
-    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    // Logger 通道消声(系统性整改:console 侧消声器在刀1后失效)
+    loggerSilencers = silenceNestLogger();
   });
 
   afterEach(() => {
-    consoleErrorSpy?.mockRestore();
+    restoreNestLogger(loggerSilencers);
   });
 
   describe('Service Initialization', () => {
