@@ -187,6 +187,17 @@ export class OrdersService {
           }
         }
 
+        // 订单快照批 v4.1 #28: create() 事务内落 v1 genesis(同事务 fail-closed;
+        // before=null 强制写入零变化跳过=false;operator=USER)
+        await this.orderSnapshotService.appendSnapshot(
+          trx,
+          savedOrder,
+          null,
+          SnapshotOperatorType.USER,
+          String(orderData.userId ?? ''),
+          `create:${savedOrder.orderNumber}`,
+        );
+
         return savedOrder;
       }),
     );
