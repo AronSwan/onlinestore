@@ -3,6 +3,7 @@ import { EntityManager } from 'typeorm';
 import { OrderSnapshot, SnapshotOperatorType } from './entities/order-snapshot.entity';
 import { Order } from './entities/order.entity';
 import { computeSnapshotRecordHash, ZERO_HASH } from './order-snapshot-chain';
+import { queryRunnerUsesForUpdate } from './order-snapshot.db-utils';
 
 /**
  * 订单快照写入服务（订单快照批阶段 1，方案 v4.1）
@@ -122,26 +123,39 @@ export class OrderSnapshotService {
   ): Promise<number> {
     const afterPayload = this.buildPayload(after);
 
-    // 零变化跳过（防支付双发点重复快照——C 坑H）
-    if (before && this.computeChangedFields(before, afterPayload).length === 0) {
-      return 0;
+    // 零变化跳过（防支付双发点重复快照——C 坑H）——diff 缓存算一次跨短路判+INSERT
+    let changedFields: Array<{ field: string; from: unknown; to: unknown }> | null = null;
+    if (before) {
+      changedFields = this.computeChangedFields(before, afterPayload);
+      if (changedFields.length === 0) {
+        return 0;
+      }
     }
 
-    // version 递增：事务内 MAX+1（sqlite 全局互斥串行保证；TiDB 靠调用方锁+主键冲突）
-    const maxRow = await em.query(
-      'SELECT MAX(version) as maxV FROM order_snapshots WHERE orderId = ?',
-      [after.id],
-    );
-    const version = (Number(maxRow?.[0]?.maxV) || 0) + 1;
-
-    // 链前驱：同单上一版哈希（v1 前驱=ZERO_HASH）
+    // version 递增：D-C1 真防（select...for update 锁同单 MAX 行——MySQL/PG/TiDB 串行；
+    // sqlite 无 FOR UPDATE，依赖主键冲突兜底+全局写互斥串行——已在 db-write-mutex.ts 头注明示）
+    // 顺带取 prevHash（同一锁内同单同 SELECT——一次往返省 RTT）。
+    const lockSql = queryRunnerUsesForUpdate(em)
+      ? `SELECT version, recordHash FROM order_snapshots
+         WHERE orderId = ? ORDER BY version DESC LIMIT 1 FOR UPDATE`
+      : `SELECT MAX(version) AS maxV, NULL AS recordHash FROM order_snapshots
+         WHERE orderId = ?`;
+    const headRow = (await em.query(lockSql, [after.id])) as Array<{ version?: number; maxV?: number; recordHash?: string }>;
+    const version = headRow?.[0]?.version != null
+      ? Number(headRow[0].version) + 1
+      : (Number(headRow?.[0]?.maxV) || 0) + 1;
     let prevHash = ZERO_HASH;
     if (version > 1) {
-      const prevRow = await em.query(
-        'SELECT recordHash FROM order_snapshots WHERE orderId = ? AND version = ?',
-        [after.id, version - 1],
-      );
-      prevHash = prevRow?.[0]?.recordHash ?? ZERO_HASH;
+      if (headRow?.[0]?.recordHash != null) {
+        prevHash = String(headRow[0].recordHash);
+      } else if (headRow?.[0]?.version != null) {
+        // sqlite 单查询 MAX 分支——再查一次取 prevHash（同事务内单 read 已够）
+        const prevRow = await em.query(
+          'SELECT recordHash FROM order_snapshots WHERE orderId = ? AND version = ?',
+          [after.id, version - 1],
+        );
+        prevHash = prevRow?.[0]?.recordHash ?? ZERO_HASH;
+      }
     }
 
     // 两步写（audit 先例）：先插内容列（链列 NULL），回读原生行算哈希，再补链列
