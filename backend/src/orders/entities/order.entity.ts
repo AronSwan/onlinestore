@@ -35,6 +35,13 @@ export enum PaymentStatus {
   REFUNDED = 'refunded',
 }
 
+export enum PaymentMethod {
+  ALIPAY = 'alipay',
+  WECHAT = 'wechat',
+  BANK_TRANSFER = 'bank_transfer',
+  CASH_ON_DELIVERY = 'cash_on_delivery',
+}
+
 @Entity('orders')
 export class Order {
   @PrimaryGeneratedColumn()
@@ -76,8 +83,8 @@ export class Order {
   @Column({ name: 'recipient_phone', nullable: true })
   recipientPhone?: string;
 
-  @Column({ name: 'payment_method', nullable: true })
-  paymentMethod?: string;
+  @Column({ name: 'payment_method', type: 'simple-enum', enum: PaymentMethod, nullable: true })
+  paymentMethod?: PaymentMethod;
 
   @Column({ nullable: true })
   notes?: string;

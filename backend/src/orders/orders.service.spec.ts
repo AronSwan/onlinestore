@@ -8,7 +8,7 @@ import { Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Inject, forwardRef } from '@nestjs/common';
 
-import { PaymentMethod } from './enums/order.enums';
+import { PaymentMethod } from './entities/order.entity';
 import { OrdersService } from './orders.service';
 import { Order } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';

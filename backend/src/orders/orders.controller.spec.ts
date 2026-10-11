@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PaymentMethod } from './enums/order.enums';
+import { PaymentMethod } from './entities/order.entity';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
 import { ProductsService } from '../products/products.service';

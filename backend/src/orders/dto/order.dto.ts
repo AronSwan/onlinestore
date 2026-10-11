@@ -10,7 +10,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { PaymentMethod } from '../enums/order.enums';
+import { PaymentMethod } from '../entities/order.entity';
 import { OrderStatus, PaymentStatus } from '../entities/order.entity';
 
 export class OrderItemDto {
