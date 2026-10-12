@@ -147,6 +147,21 @@
 **索引评估**：
 - 文档 #31 承诺 (operator_type, occurred_at) 二级索引——**与端点诉求不匹配**（现无任何跨单快照读取端点）。X3 实证 (orderId, version) 复合主键已覆盖全部现有读侧查询；如非必要——**索引 #31 多余**，建之浪费维护成本。
 
+### 双盲审第二轮归案标注（2026-10-13，审 4 批系统治本）
+
+两席归案。三承重级折扣（双盲 A）——本批已当场修：
+- ✅ 算 1 次真兑现：changedFields 缓存变量在 line 172 INSERT 构造复用（line 178 直接引用，不再二次 computeChangedFields 调）——短路判与 INSERT 构造共用
+- ✅ migration dead code 清：删 isMysql 变量及其冗余 SELECT 1
+- ✅ dumps/ 真入 .gitignore（双盲B1批 0cf6f94 仅提了 __pycache__/dumps/ 作用域错——本批补 dumps/+库 dump 卫生项）
+
+余下待修/挂账续属：
+- ⏳ **FOR UPDATE genesis 路径盲区**（双盲A 抓）：v=1 时 SELECT 无行可锁→并发双事务同 MAX=1→双 INSERT(v=1)→PK 唯一约束兜底→user 视角偶发 500/409。可加 "ON DUPLICATE 冲突重试（最稳 PK 兜底语义）"——非未修，是兜底语义的精细化。期=阶段 1 余量真库 spec 同批治本。
+- ⏳ **PG 方言独立分支+JSON 列退化**（双盲B 抓）：当前 else 走 SQLite 形（TEXT+双引号标识符+INTEGER）——PG 接受 SQL 但 JSON 列退化为 TEXT 而非 JSONB。期=PG 部署前独立批。
+- ⏳ **TiDB CLUSTERED 显式落实**（v4.1 #P3-7 抓）：DDL 文本"PRIMARY KEY (orderId, version)" 未带 CLUSTERED；功能等价（InnoDB/TiDB 默认聚簇）但与方案文本直接抵触。期=DDL 补 commit。
+- ⏳ **数字三件套口径限定语**：本批 commit message 已附"46 套件=backend/jest.config.cjs 全量(2026-10-13)"，下次批保持。
+- ⏳ **F2 ESM 通道修**（自洽反拟合 B 抓，阶段 2 前置）：order-snapshot-chain.ts 头注释说可 strip-types 加载但 orders/ 无 ESM 标记——verify:orders 脚本会 SyntaxError。期=阶段 2 开工前。
+- ⏳ 真库 appendSnapshot spec / 二级索引按需 / 日期分支 formatCanonical / 拆分写串行（挂账续）
+
 ## 不修项
 
 **开放安全项（有缓解、未根治——fork 接手者优先看）**：
