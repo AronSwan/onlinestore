@@ -169,7 +169,7 @@ export class OrderSnapshotService {
         after.id,
         version,
         JSON.stringify(afterPayload),
-        before ? JSON.stringify(this.computeChangedFields(before, afterPayload)) : null,
+        changedFields !== null ? JSON.stringify(changedFields) : null,
         operatorType,
         operatorId,
         correlationId,

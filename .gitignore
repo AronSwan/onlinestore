@@ -258,4 +258,7 @@ test-cases.json
 playwright-report/
 .test-cache/
 backend/.test-cache/
+
+# 数据库 dump 证据仓——按"证据仓外+离场自清"卫生纪律，备份在仓外另存
+dumps/
 __pycache__/dumps/

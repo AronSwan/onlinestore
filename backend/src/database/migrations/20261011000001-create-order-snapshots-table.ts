@@ -20,11 +20,6 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  */
 export class CreateOrderSnapshotsTable20261011000001 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
-    const isMysql = await queryRunner.query('SELECT 1').then(() => {
-      // 极简方言探针：MySQL/MariaDB 暴露 @@version_comment 含 mysql；PG 含 PostgreSQL
-      // SQLite 不支持该变量——try/catch 兜底；下游判定用 LIMIT 1 探表。
-      return false;
-    }).catch(() => false);
     let isMysqlLike = false;
     try {
       const r = await queryRunner.query('SELECT @@version AS v');
