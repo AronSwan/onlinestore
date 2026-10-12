@@ -20,6 +20,10 @@
     // node10 resolution 是 CJS 兼容路径，TS6 弃用告警用 ignoreDeprecations 压制（TS7 前有效）
     "moduleResolution": "node",
     "ignoreDeprecations": "6.0",
+    // 双端加载通道（订单快照批 F2 修复）：源码相对 import 可带 .ts 扩展名——
+    // Node strip-types 裸加载需显式扩展名（ESM 规则），tsc 编译产物自动重写为 .js
+    //（CJS dist 正常 require）。仅影响带 .ts/.tsx 扩展名的相对 import，其余不受影响。
+    "rewriteRelativeImportExtensions": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "allowJs": false,

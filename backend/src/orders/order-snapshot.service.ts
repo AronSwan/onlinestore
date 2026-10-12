@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { EntityManager } from 'typeorm';
 import { OrderSnapshot, SnapshotOperatorType } from './entities/order-snapshot.entity';
 import { Order } from './entities/order.entity';
-import { computeSnapshotRecordHash, ZERO_HASH } from './order-snapshot-chain';
+import { computeSnapshotRecordHash, ZERO_HASH } from './snapshot/order-snapshot-chain.ts';
 import { queryRunnerUsesForUpdate } from './order-snapshot.db-utils';
 
 /**

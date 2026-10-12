@@ -159,7 +159,7 @@
 - ⏳ **PG 方言独立分支+JSON 列退化**（双盲B 抓）：当前 else 走 SQLite 形（TEXT+双引号标识符+INTEGER）——PG 接受 SQL 但 JSON 列退化为 TEXT 而非 JSONB。期=PG 部署前独立批。
 - ⏳ **TiDB CLUSTERED 显式落实**（v4.1 #P3-7 抓）：DDL 文本"PRIMARY KEY (orderId, version)" 未带 CLUSTERED；功能等价（InnoDB/TiDB 默认聚簇）但与方案文本直接抵触。期=DDL 补 commit。
 - ⏳ **数字三件套口径限定语**：本批 commit message 已附"46 套件=backend/jest.config.cjs 全量(2026-10-13)"，下次批保持。
-- ⏳ **F2 ESM 通道修**（自洽反拟合 B 抓，阶段 2 前置）：order-snapshot-chain.ts 头注释说可 strip-types 加载但 orders/ 无 ESM 标记——verify:orders 脚本会 SyntaxError。期=阶段 2 开工前。
+- ~~**F2 ESM 通道修**~~（**已修@2026-10-13**：链核挪 orders/snapshot/ 子目录+自带 ESM 标记+nest-cli brace 排除+tsconfig rewriteRelativeImportExtensions+jest spec 通道剥后缀；探针=strip-types 裸加载绑定完整 PASS；dist 防毒化=find dist -name package.json 空）
 - ⏳ 真库 appendSnapshot spec / 二级索引按需 / 日期分支 formatCanonical / 拆分写串行（挂账续）
 
 ## 不修项

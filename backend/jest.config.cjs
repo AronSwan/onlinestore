@@ -32,6 +32,10 @@ module.exports = {
   testEnvironment: 'node',
   extensionsToTreatAsEsm: ['.ts'],
   moduleNameMapper: {
+    // 双端加载通道配套（F2 修复）：生产 TS 源码相对 import 带 .ts 扩展名
+    //（Node strip-types 裸加载需显式扩展名），ts-jest 转 CJS 后 jest resolver
+    // 会把 .ts 当 .js 找——映射回真源。仅作用于相对路径的 .ts 后缀。
+    '^(\\.{1,2}/.*)\\.ts$': '$1',
     '^src/(.*)$': '<rootDir>/$1',
     '^test/(.*)$': '<rootDir>/../test/$1',
     '^@/(.*)$': '<rootDir>/$1',

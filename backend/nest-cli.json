@@ -8,7 +8,7 @@
     "assets": [
       {
         "include": "**/*.json",
-        "exclude": "common/audit/package.json"
+        "exclude": "{common/audit,orders/snapshot}/package.json"
       },
       "**/*.md"
     ],

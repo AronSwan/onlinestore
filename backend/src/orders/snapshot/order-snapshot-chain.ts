@@ -2,8 +2,12 @@
 // 单源纪律：与 audit-chain.ts 同族但键序独立——audit 链核已泛化 keys 参数（本批），
 // 本文件定义订单快照自己的 canonical 键序并复用泛化后的哈希/校验函数。
 // 运行形态约束：同 audit-chain.ts（node --experimental-strip-types 双端加载，
-// 不用装饰器/枚举/参数属性）——本文件放 orders/ 而非 common/audit/，
-// 因其 ESM 标记目录排他（进 common/audit/ 会要求改 nest-cli 排除条款）。
+// 不用装饰器/枚举/参数属性）。本文件居 orders/snapshot/ 子目录——自带
+// package.json {"type":"module"} ESM 标记（脚本裸加载通道=verify:orders 用），
+// nest-cli.json assets 排除条款同步（标记不进 dist——dist 为 CJS，标记漏进=毒化）。
+// 加载通道修复史：F2（自洽席A）——原居 orders/ 无标记=脚本 SyntaxError，
+// 挪子目录立标记=双端通（jest 经 transform 不受影响，tsc moduleResolution
+// node 不看 type 字段）。
 // 哈希覆盖面决策（v4.1 #24×#25 交互定案）：snapshot JSON 整列入哈希——
 // 快照永不改写（#25 读时脱敏使 PII 不可变），哈希覆盖无害且更强；
 // changedFields 系派生缓存不入哈希（diff 端点以相邻快照推导为准，#5）。
@@ -13,7 +17,7 @@ import {
   verifyChain,
   ZERO_HASH,
   type ChainVerificationResult,
-} from '../common/audit/audit-chain';
+} from '../../common/audit/audit-chain.ts'; // .ts 扩展名=Node 裸加载需(rewriteRelativeImportExtensions 使编译产物重写为 .js)
 
 export { ZERO_HASH };
 export type { ChainVerificationResult };

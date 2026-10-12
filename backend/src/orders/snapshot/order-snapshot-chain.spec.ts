@@ -15,13 +15,13 @@ import {
   ZERO_HASH,
   computeRecordHash,
   verifyChain,
-} from '../common/audit/audit-chain';
+} from '../../common/audit/audit-chain.ts';
 import {
   ORDER_SNAPSHOT_CANONICAL_KEYS,
   ZERO_HASH as ORDER_ZERO,
   computeSnapshotRecordHash,
   verifyOrderSnapshotChain,
-} from './order-snapshot-chain';
+} from './order-snapshot-chain.ts';
 
 describe('哈希链核回归护栏（audit 字节不变 + 订单链核）', () => {
   // ===== 1. 空命名空间断言形态（#29a）=====

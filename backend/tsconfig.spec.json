@@ -2,7 +2,12 @@
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "types": ["jest", "node"]
+    "types": ["jest", "node"],
+    "rewriteRelativeImportExtensions": false,
+    // 测试通道允许 .ts 扩展名 import（ts-jest 不产 dist——noEmit 场景零风险;
+    // 生产侧 tsconfig.base.json 由 rewriteRelativeImportExtensions 兜底重写为 .js）
+    "allowImportingTsExtensions": true,
+    "noEmit": true
   },
   "include": [
     "src/**/*",
