@@ -623,3 +623,42 @@
 **【挂账：债-13 drift=1 数据回填】**
 - **债-13** dev 库 1 处 drift=1（order=199, payment=PAY_MV0V2RBY_8N10U4_D579BAF6）数据回填——为什么不做：业务侧需决定"接受 0.01 元为真实支付"（订单 total_amount 改为 0.01）还是"标记该支付异常退款"（orders.payment_status='failed'，payments.status='refunded'）；本批是代码闸治本，不含业务侧决策。**触发事件** = dev 库 snapshot 模块对账时 drift 不归零（这是事实）→ 业务侧启动"清理历史脏数据"批时。**排期锚** = "drift 数据回填批"（独立小刀）。【三选一齐+为什么不做】
 
+
+### 债-10 事故级未决风险治本（2026-10-13 用户令"先处理 3 个事故级未决风险"）
+
+**【债-1 已治本（commit bb455ac）】** 锚文件漂移 158 行 / 9 天累计
+- 治本：跑 scripts/backfill-audit-chain.mjs 重算 1603 行 + verify --anchor 追写
+- 末行：2026-10-13T12:42:40.870Z seq 1603 hash 7ebc9f6e...
+- 数字三件套：dev_caddy_shopping.db 单文件 / 2026-10-13 实测 / 158 行 drift 已消
+
+**【债-3 已治本（dev 库运行时操作）】** 9 条 fixture 孤儿
+- 治本：dev 库 9 条 snapshot 迁至 _test_fixtures_archive 表（加 is_fixture 标记 + archived_at + reason），原表 DELETE 清空
+- dev 库 verify 验证：R3 = 0 ✅（治本前 R3=1，治本后 R3=0）
+- 不入 git（dev 库 .gitignore 排除）——纯运行时操作
+- v5 治本范围：dev fixture schema 隔离 / test_fixtures archive 自动化
+
+**【债-2 暂挂：R3 永真告警】** audit_logs 0 行 module='orders'（30 单 orders 业务事件 0 行 audit）
+- 不在本批治本范围（5 席盲审共识：这是 v5 双写治本范围）
+- BACKLOG 既有债-10 已挂账——v5 实施时自动消除
+
+**【债-14 新挂账：R4 错位债】** R4 名称"森林↔锚"但锚文件是 audit 链，森林是 snapshot 链——两链根本不是同一链
+- 实查：dev 库清 fixture 后 R4 报红 = 森林（空链）hash ≠ 锚末行 hash (7ebc9f6e...)
+- v3 留下的 R4 错位债——v5 重写 R3 时一并修
+- 治本路径：R4 改判词为"snapshot 森林 hash 完整性 = 无断裂"（不与 audit 锚比）
+
+**5 席业务/合规盲审方向共识**（5/5 全 B 不必要 / 5/5 全 A 清 fixture / 4/5 C queryability / 4/5 B+C 业务诉求）：
+- 主方向：**C 保留双链 + 重写 R3 + 归档 fixture + 监控分层**
+- 次方向：架构师方向 E（单表事件溯源，治本 100% 但迁移成本高）
+- 落地路径：v5 提案 = 多数派共识 + 5 席修订清单
+
+---
+
+### 债-10 文档层五轮失败归档（2026-10-14 用户拍板 γ 路径）
+
+**【γ 路径生效：13 席盲审文档 = 债-10 治理决策唯一正身卷宗】**
+- 正身：`docs/debt-10-coordination-summary-13-seats.md`（496 行，§7 3 个 P0 系统根因 + §8 治理层 6 项动作建议 + §10 治理决策卷宗建议）
+- 归档：`docs/debt-10-archive/`（v1-v5 五轮文档 + README 归档说明 + audit-outputs/ 20 份 6 路审核员原始输出）
+- 为什么归档：v3 / v4 / v5 三轮 6 路多路立体审核实证——文档层"重做"路径连续三轮产生同等或更大规模失败（35 → 33 → 37 项独立问题），4 治理纪律每轮全违，"修齐上轮失败项"模式自身失败（v5 §4 "落地"+"不写全部落地"自相矛盾 = v3 §1 "自查通过"失败路径的结构性复刻）
+- 数字三件套：6 路审核 20 份原始输出实测（`ls -la docs/debt-10-archive/audit-outputs/`）/ 2026-10-14 00:28 CST 归档 / 口径 = v3 第 2 轮重派 6 路 + v4 6 路 + v5 6 路独立审核（v3 第 1 轮 4 路僵死未返回，其发现由第 2 轮完整覆盖）
+- 后续新协调汇总起点 = 13 席 §10"债-10 治理决策卷宗（建议）"——不是 v5
+- 不再重做 v6（文档层重做路径已实证失败）
