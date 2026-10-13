@@ -223,7 +223,7 @@ describe('PaymentApplicationService.createPaymentOrder 金额校验', () => {
  * W-3⑤⑥:回调时序(先落库后发事件)+互斥+状态冲突首写胜出ACK
  */
 describe('PaymentApplicationService.handlePaymentCallback 时序与冲突', () => {
-  const buildCallbackHarness = (order: PaymentOrderAggregate | null) => {
+  const buildCallbackHarness = (order: PaymentOrderAggregate | null, internalOrderTotal?: number) => {
     const calls: string[] = [];
     const repo = {
       findByMerchantOrderId: jest.fn().mockResolvedValue(order ? [order] : []),
@@ -244,12 +244,16 @@ describe('PaymentApplicationService.handlePaymentCallback 时序与冲突', () =
       queryPaymentStatus: jest.fn(),
       closePayment: jest.fn(),
     };
+    // 债-11 修：回调路径金额闸需读 internalOrder——harness 支持注入 internalOrderTotal
+    const internalOrder = internalOrderTotal !== undefined
+      ? { id: 199, orderNumber: 'ORD1791544037238r5v62x9ly', totalAmount: internalOrderTotal, paymentStatus: 'pending' }
+      : null;
     const service = new PaymentApplicationService(
       repo as never,
       { createGateway: jest.fn().mockReturnValue(gateway) } as never,
       new PaymentRiskService(),
       { emit } as never,
-      { findOrderByMerchantOrderId: jest.fn().mockResolvedValue(null) } as never,
+      { findOrderByMerchantOrderId: jest.fn().mockResolvedValue(internalOrder) } as never,
     );
     return { service, calls, emit, repo };
   };
@@ -332,5 +336,40 @@ describe('PaymentApplicationService.handlePaymentCallback 时序与冲突', () =
       paymentMethod: PaymentMethod.ALIPAY,
     });
     expect(result).toEqual({ success: false, message: 'ORDER_NOT_FOUND' });
+  });
+
+  // ===== 债-11 修：handlePaymentCallback 加金额闸（与下单路径 line 137-148 同模式）=====
+  describe('handlePaymentCallback 金额闸（W-3 修复盲点补救）', () => {
+    it('回调金额与订单总额不符（drift=1 场景:0.01 vs 897）→ ConflictException,拒绝标 success', async () => {
+      // 债-11 实测：order.totalAmount=897 元, payment.amount=0.01 元 → 闸拒绝
+      const h = buildCallbackHarness(makePending(), 897);
+      const driftDto = { ...cbDto, totalAmount: '0.01', receiptAmount: 0.01 };
+      await expect(
+        h.service.handlePaymentCallback(driftDto as any, {
+          paymentMethod: PaymentMethod.ALIPAY,
+        }),
+      ).rejects.toThrow(ConflictException);
+      // 闸拒绝后:不 save 不 emit
+      expect(h.calls).toEqual([]);
+    });
+
+    it('回调金额=订单总额（100 vs 100）→ 放行到 save+emit', async () => {
+      const h = buildCallbackHarness(makePending(), 100);
+      const result = await h.service.handlePaymentCallback(cbDto, {
+        paymentMethod: PaymentMethod.ALIPAY,
+      });
+      expect(result.success).toBe(true);
+      expect(h.calls).toEqual(['save', 'emit:payment.succeeded']);
+    });
+
+    it('站内查不到订单（外部商户号场景）→ 放行(W-3 已定:开放契约不验金额)', async () => {
+      // 不传 internalOrderTotal → harness 返 null → 闸跳过
+      const h = buildCallbackHarness(makePending());
+      const result = await h.service.handlePaymentCallback(cbDto, {
+        paymentMethod: PaymentMethod.ALIPAY,
+      });
+      expect(result.success).toBe(true);
+      expect(h.calls).toEqual(['save', 'emit:payment.succeeded']);
+    });
   });
 });

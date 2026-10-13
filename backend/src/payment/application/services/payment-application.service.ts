@@ -243,6 +243,30 @@ export class PaymentApplicationService {
         return { success: false, message: 'INVALID_SIGNATURE' };
       }
 
+      // 2.5 金额闸（债-11 治因——W-3 修复盲点补救）:
+      // 回调接收路径缺金额校验，第三方回调 totalAmount 必须与 internalOrder.totalAmount
+      // 精确相等（分单位零容差）——防任意金额回调刷 success 状态（与下单路径 line 137-148 同模式）。
+      // W-3 修了"创建支付订单"路径的金额闸，未修"接收支付回调"路径——本次补齐。
+      const internalOrder = await this.ordersService.findOrderByMerchantOrderId(
+        dto.outTradeNo,
+      );
+      if (internalOrder) {
+        const expectedMinor = Math.round(
+          Number(internalOrder.totalAmount) * Math.pow(10, 2),
+        );
+        const callbackMinor = Math.round(Number(dto.totalAmount) * Math.pow(10, 2));
+        if (callbackMinor !== expectedMinor) {
+          this.logger.warn(
+            `支付回调金额与订单总额不符,拒绝标 success(订单 ${internalOrder.orderNumber},` +
+              `订单总额 ${internalOrder.totalAmount} 元,回调金额 ${dto.totalAmount} 元)`,
+          );
+          throw new ConflictException(
+            `支付回调金额与订单总额不符(订单 ${internalOrder.orderNumber} 期望 ${expectedMinor} 分,` +
+              `回调 ${callbackMinor} 分)——疑似网关数据异常或中间人篡改`,
+          );
+        }
+      }
+
       // 3+4+5. 排他读改写后发事件（W-3⑤⑥）
       // - 互斥:支付真仓储激活即接入 runExclusiveWrite(M3 批义务——sqlite 单
       //   连接并发写段交叉=悬挂事务);查改存整段入队
@@ -330,6 +354,12 @@ export class PaymentApplicationService {
       this.logger.log(`支付回调处理成功: ${dto.outTradeNo}, 状态: ${dto.tradeStatus}`);
       return { success: true };
     } catch (error) {
+      // 债-11 修：ConflictException 等域错误透传——NestJS 异常过滤器会映射 4xx。
+      // 原实现 catch-all 转 SYSTEM_ERROR 会吞掉金额不匹配的具体原因,controller
+      // 拿不到 409 语义——闸拒绝了但 caller 只看到 SYSTEM_ERROR。
+      if (error instanceof ConflictException) {
+        throw error;
+      }
       this.logger.error(`处理支付回调失败: ${error.message}`, error.stack);
       return { success: false, message: 'SYSTEM_ERROR' };
     }
