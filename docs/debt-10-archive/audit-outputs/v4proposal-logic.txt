@@ -1,0 +1,45 @@
+# 债-10 方案 v4 逻辑路独立评审（第四轮送审）
+
+条款援引：（无争议不填）
+对象：`C:\Users\Administrator\onlinestore_remediation\docs\debt-10-architecture-research-proposal-v4.md`；对照 v3 稿、三审六路归档（`docs\debt-10-archive\audit-outputs\v3proposal-*.txt`）、正身仓代码与 dev 库。日期 2026-10-13，代码口径=正身仓 `backend/src` + `backend/data/dev_caddy_shopping.db`。
+
+---
+
+## 一、T9 规格推演（重点项）
+
+**[L4-01｜P1] 规格 a 收窄后状态机漏第四出口——“持续不决”无终态、attempts 满后行为未定义、无告警纪律**。规格 a 定义的三态（§3.9 status 注：PENDING_GATEWAY/CONFIRMED/FAILED）收窄 FAILED 后产生新路径：歧义错误与“回查不决”都留 PENDING_GATEWAY 交扫描，而扫描自身可能永远不决（网关持续返回 unknown/查询键缺失见 L4-02/回填事务持续失败）。v4 补了 attempts/lastError 列但仅标注“扫描退避依据”（§3.9）——**满 attempts 后落什么态无定义**：domain_events 腿有 relayState='DEAD'+告警（§3.4/判据 3），payment_refunds 腿对称件只补了两列没补终态与死信行为；§6.1-9 的“人工对账兜底”仅覆盖“网关无查询能力”情形，不覆盖“查而不决”。后果链：规格 b 规定 PENDING_GATEWAY 计入保留额（保守方向正确，无超退）→ 但永久占额 + 无出口 + 无告警 = 该支付单可退余额被无限期冻结（活性缺口，且无人知道）。修复方向：定义第四态（如 NEEDS_REVIEW）或“attempts 达 N 冻结扫描+告警+人工裁决”成文，并写明该态在守卫的计入语义（应计入——保守）。
+
+**[L4-02｜P1] 规格 c 条件转换协议本身正确，但其输入端（回查键形状+查询结果裁决表）未定义——误归因与误分类两条路都能穿透协议**。协议推演：同源网关真值下，事务 2 与扫描的竞争由 `UPDATE … WHERE status='PENDING_GATEWAY'` 决胜，胜者插事件、败者 affected=0 跳过——无重复事件、无双终态，**协议自洽**（含“网关查询读延迟→not-visible 应归歧义类不落 FAILED”的情形，前提是分类纪律存在，见下）。缺口在其承重前提：①**查询键形状**——三审 P1-2 原文明言“崩溃点若在 gateway.createRefund 调用前 gatewayRefundId=NULL，回查键只剩 paymentOrderId+refundId——连查询键形状都没定义”；v4 §1.2 行 6 声称已响应（规格 c/d + §6.1-9 前提），但 §6.1-9 只升级了“方法存在性”，键形状全文仍零字。按 paymentOrderId 查可命中**同支付单另一笔退款**的状态→误归因 CONFIRMED/FAILED 到本行→条件 UPDATE 先胜→事务 2 持真实结果静默败退（affected=0）→终态错+事件错。②**查询结果裁决表**——“网关查询不可见”（读延迟/传播中/未创建）与“网关明确拒绝”必须分账：前者归歧义留 PENDING，后者才落 FAILED；v4 未写此分类纪律，若实现者把 not-visible 误分类为拒绝→FAILED→释放配额，而网关侧实际在途成功→规格 a 要堵的“误判 FAILED→超额退款”从扫描腿回开。另外 payment_refunds DDL 无退款域标识列（id 为自增整数，见 L4-06），三审所说“paymentOrderId+refundId”键中的 refundId 在表内无承载列。
+
+**[L4-03｜P2] 规格 a 的实施面（错误分类维度）未排产**。现行 `GatewayResult = {success, data?, message?}`（backend/src/payment/common/gateway-result.ts:1-8）无错误类别维度，适配器对 `!result.success` 一律 throw 打平（strategy-gateway.adapter.ts:131-133，v4 引 ：128-131 微偏）——规格 a“FAILED 仅收网关明确拒绝”要求策略层返回可分类结果（明确拒绝/歧义）且适配器不再打平。§4.1 P2 行只点名“queryRefundStatus 接口方法+4 策略实现”，分类接口扩展+4 策略改造+适配器改写三件无行。与三审 P1-8（排产件隐身）同类，但规格 a 语义可倒推出该需求，故 P2 不升 P1。
+
+**[L4-04｜P2] 规格 e“读写同切（同一 commit）”是代码原子性，不是运行时原子性——切换工序次序未写；存量行状态映射未定义**。任务书假设的矛盾（“切换日前新表已积累 PENDING 行而守卫还读旧源”）**经独立推演不成立**：v4 方案下 P1 只建表、P2 切写即切换日，切换日前新表零写入，“两个 PENDING 计入时机”无双源并存窗——切换边界的代码层自洽性验证通过。真实缺口：①“同一 commit”只保证三处代码同版；运行时切换工序（停旧写→迁移存量→对账核对→开新写）的**次序**未成文——若迁移脚本快照后旧路径仍在产 metadata.refunds 行（部署重叠/停机不彻底），该行不入表→守卫失明→超退，恰是 v4 自引的 W-3 失明模式（typeorm-payment-order.repository.ts:265-267 注释实锚）；过渡期对账腿（已入 P2 行）能事后抓但超退可能已发生。②dev 存量行实测（复现：`sqlite3 backend/data/dev_caddy_shopping.db "SELECT paymentId,metadata FROM payments WHERE metadata LIKE '%refunds%'"`，2026-10-13，口径=dev 库，命中 1 行）status=**'PENDING'** 且带非空 gatewayRefundId（REFUND_ALIPAY_…）——旧词表值迁移到三态词表映射到哪一态未写（合理缺省=PENDING_GATEWAY 交扫描用 gatewayRefundId 回查裁决，但须成文；映射到 FAILED 即释放配额，方向错误）。生产切换存量回补另挂 §6.2-12 未决（已露面，合规）。
+
+**[L4-05｜P3] 规格 d 推演通过；一处小缺**。互斥段组成=条件 UPDATE+读链头+事件插行，段内无网络 I/O ✓；事件插行按 §3.1 API 契约骑调用方 EntityManager→与条件 UPDATE 同事务→插事件失败整体回滚→行留 PENDING_GATEWAY→重扫幂等，无“态转了事件丢”窗口 ✓；链头读在写队列内见最新已提交头 ✓；双扫描实例互斥外重复查询网关无害（条件 UPDATE 决胜）✓。小缺：规格 c“payment_refunds 扫描腿与 domain_events 腿各自 tryClaim”——payment_refunds 无 relayState 列，认领谓词（status='PENDING_GATEWAY' AND attempts<?？）未写。另与 L4-01 咬合：回填事务持续失败→无限重试无上限。
+
+## 二、T5 与判据
+
+**[L4-06｜P2] T5 消解声明本身成立，但 T9 规格自计数三处漂移+§6.1 同簇**。T5 重写（§2）：存储侧归 B 员教义（全类同事务 fail-closed，§3.1 已如此）、送达侧保留类 2 延迟链化、争议轴（存储 fail 语义）归一后三分类降为链化时机区分——经推演为真综合非贴牌，与 §3.1/§3.4 不变式 0 无矛盾；§6.4 撤除 T5 保留声明与消解一致。但 **T9 规格的自身计数三处三个数**：§0-3“三审逻辑路**三句**”（三审逻辑路推荐原文为四句：歧义不落 FAILED/守卫改读表/回填胜者插事件/扫描锁纪律，v3proposal-logic.txt:54）、§2 实列 **a-f 六款**、§6.4“T9 规格**四句（a-d）**为执笔人成文”——免责范围声明（承重）漏 e/f 的成文定性。同簇第二实例：§6.1 题注“v3 的 9 项保留+▲▲ 更新 2 项” vs 编号清单 10 项（v3-9 拆为 v4 的 9+10 未联动计数；就地派生注“派生：本节编号清单”自证 10≠9）。本稿头部自宣“承重计数按生成端机械派生方法产生”，此簇即该方法自违反；同类在三审被判 P1（结构路 F-3）/P3（逻辑路 L3-08）不一，本席按影响面（免责范围+未决台账标签，非排产数）取 P2。
+
+**[L4-07｜P2] 判据 2③ 集合：时点错配+类 1 全集覆盖不足+生成源缺路由维度**。①集合含 'PAYMENT_SUCCEEDED'（W9=P2 交付）与 'REFUND_INTENT_CREATED'（W12=P2 交付）——P1 验收时点两者不可能存在（P1 只接管 W1-W3），半集合为恒绿死谓词。②类 1 全集远大于此四项：REFUND_CONFIRMED/REFUND_FAILED（v3 T9 图明标“类 1”）、W4 软删事件、W5/W6/W8/W10/W11 商品与管理 mutation 事件（v2 §3.1 明列“商品变更”属类 1/3）全不在集合——这些类型误走异步腿零检出。③ORDER_STATUS_CHANGED 经查非漏项：全稿系无此词，W3 处置为“随 W2 结构”（ORDER_UPDATED）；但 W3/W4/商品路径的事件**类型名从未在任何稿定义**，这是集合不可枚举的根因。④“实施期按白名单枚举表生成”的生成源不成立：§3.2 白名单枚举表是**逐 eventType 的字段投影白名单**（PCI 要素），不含路由维度（类 1/类 2/腿）——2③ 需要 eventType→路由映射表，该工件未定义。修复方向：P1 交付件增“eventType→路由枚举表”（兼作 2③ 生成源），或 2③ 改按白名单全列。
+
+## 三、反过拟合扫描（同类未抓实例 + 修复行为自引入同型错误）
+
+- **[L4-08｜P1] §1.2 响应台账：一项三审 P1 静默丢弃，"13"派生口径不复现**。复现（2026-10-13，口径=六份 v3proposal-*.txt 总判行）：六路 P1 合计 26（academic 1+data 2+governance 6+logic 6+practice 8+structure 3）；任何一致折叠规则得 ≥16（含并入 §1.1 P0 行的旧迁移三项与逻辑自判#7①），**v4 表 13 行只在丢弃以下三项时可达**：实操路 P1-4（轮询基建归属：worker provider 模块归属/两腿间隔参数共享）——v4 全文零响应零露面，违反本稿头部“本版逐项响应”宣称及呈报纪律③（取舍必须露面）；实操路 P1-6（判据 1 拆分）、P1-7（判据 6 执行件）——已在 §0-5/§4.2 实质响应但无台账行（台账自称“映射见 §1”）。“派生：三审六路总判行合并计数”作为生成端口径不成立。同类先例：v3 被 structure（自判#6 被跳过项无清点）与 governance 命中 P1。
+- **[L4-09｜P3] 判据 1 的 sqlite 腿无声消失**：v3 判据 1 要求“双方言跑通 sqlite+TiDB”，v4 1a/1b 无 sqlite 腿；理由（dev synchronize 真源=entity）散在 §3.9 注，验收门范围变更未标注（三审实操 P1-6 建议的是“sqlite 腿限定新迁移类隔离执行”，非删除）。
+- **[L4-10｜P3] 规格 f 一句两性**：“REFUND_CONFIRMED 不触发订单链……显式声明不裁决”——前半已裁决（不触发，选了 L3-09 选项一），后半又称不裁决；现状同构锚本身验证属实（payment-events.listener.ts 仅 @OnEvent payment.succeeded/failed，refund.created 全仓零监听）。
+- **[L4-11｜P3] §3.4 tryClaim“域内改写”标注半真**：F 员原文 (PUBLISHED, RESUBMITTED)，v3 呈现为 ('PENDING','RESUBMITTED')——RESUBMITTED 并未映射入本仓词表（domain_events 状态集 INLINE/PENDING/DEAD 无此值），L3-11 指出的异词仍在生效文本里（v3 结构不变处被引为正身），标注声称“本仓词表映射后呈现”与事实不符。
+- **修复行为自引入同型错误扫描结论**：v4 新写面共发现同型新错**两簇**——计数标签漂移簇（L4-06：三句/六款/四句+9≠10）与验收门范围无声变更（L4-09）；判据 2① 重写（cutover 谓词归位 WHERE）、判据 3 env 闸态基化、§3.9 DDL 重写（双方言注+attempts/lastError 补列+去 ON UPDATE）经核验**未引入新错**。
+- **核验通过项**（实锚复现，不立案）：P0-a 锚（20261011000001:26 toLowerCase/:27 includes/:62 吞错）；app.module.ts:40 factory、:52 type 直传；typeorm.config.ts:7 联合类型无 'tidb'；payment.entity.ts:127 @UpdateDateColumn；聚合 ：222-223 filter!==FAILED；W-3 失明注释 ：265-267；13-seats:68 逐字（“退款场景完全失语——createRefund 路径零 audit/snapshot”）；dev 库 1 行存量（PAY_MV0V2RBY_8N10U4_D579BAF6/PENDING/0.05）；四不变式=编号 4、底座路径=枚举 7、§1 两表=15、8 轮、24 处-21/35（学术路总判一致）各就地派生复现成立；P0-b 选边理由（注册集不变，Blocker 1 注释 app.module.ts:57-66 实锚）。
+
+## 四、负面项与挂账（呈报纪律③）
+
+本席无既往“可签”裁决记录，无历史命中率可报，不作背书。v4 的 3 P1 中两项（L4-01/L4-02）属三审已抓缺陷的半修复残留（L3-01/L3-03），非全新缺陷类；L4-08 属响应纪律缺陷。T9 的 queryRefundStatus 前提（§6.1-9）与生产切换存量回补（§6.2-12）仍为挂账，v4 已露面。本报告未修改任何被审文件；未参考其他评审路输出。
+
+---
+
+**总判定一行：0 P0 / 3 P1 / 5 P2 / 4 P3——T9 规格四句方向成立、条件转换协议与扫描锁纪律推演自洽、三审 2 P0 响应实锤兑现，但规格 a 留下“持续不决无出口”漏态、规格 c 留下“回查键+裁决表”缺位、响应台账静默丢弃一项三审 P1——按现稿不宜立项，修毕 3 P1 后可五送。**
+
+**推荐（工程判断，非背书）**：α 修订后五送。修单集中在成文级：①规格 a 补第四态/attempts 满值出口+告警+守卫计入语义（L4-01）；②规格 c/e 补扫描查询键形状+查询结果四分类裁决表+切换运行时工序次序+存量行状态映射+refundId 列（L4-02/L4-04/L4-06 之标识列）；③§1.2 补 P1-4 处置行（响应或显式挂账）、P1-6/P1-7 补行、“13”改真口径（L4-08）。P2 其余项（L4-03/L4-06 计数簇/L4-07）随修，每项一句至数句。无需推翻任何裁决。
+
+**输出物**：本评审报告（无文件产出，报告即交付）。

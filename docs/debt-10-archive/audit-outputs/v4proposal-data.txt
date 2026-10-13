@@ -1,0 +1,63 @@
+# 债-10 方案 v4 · 数据路独立评审报告（第四轮送审）
+
+对象：`C:\Users\Administrator\onlinestore_remediation\docs\debt-10-architecture-research-proposal-v4.md`（190 行，2026-10-14）。全部数字与锚点实测；复现环境 py -3.14 / sqlite 3.50.4。正身仓=onlinestore_remediation（AGENTS.md 钉）。
+
+## 一、常规任务实测
+
+**1. §3.9 重写版 DDL（sqlite :memory: 真跑）——通过**
+- v4 DDL 逐字拷贝执行：建表+建索引全绿；清点 11 列（id/paymentOrderId/amount/currency/reason/status/gatewayRefundId/attempts/lastError/createdAt/updatedAt），attempts NOT NULL DEFAULT 0、lastError TEXT 在位；显式索引 1 条 `idx_payment_refunds_status(status, createdAt)` 列序正确；INSERT 冒烟通过。
+- v3 DDL 同法复现炸点：`near "ON": syntax error`（v3:196 `ON UPDATE CURRENT_TIMESTAMP`）——三审炸点可复现，v4 重写消除。
+- 附注：v4 头注称“双方言通用”，但 id 行自带 “TiDB: BIGINT AUTO_INCREMENT” 改写注——通用宣称对该列不成立（有注可辩，记 P3-6）。
+
+**2. 计数派生命令复跑**
+- **T9-e “dev 库实测 1 行存量”**：派生命令原样复跑 `SELECT COUNT(*) FROM payments WHERE metadata LIKE '%refunds%'` 于 `backend/data/dev_caddy_shopping.db`（.env 钉 DB_TYPE=better-sqlite3 + synchronize=true，与 v4“dev 真源=entity”互证）= **1** ✓；四件套全中：paymentId=`PAY_MV0V2RBY_8N10U4_D579BAF6`、refund 条目 status=PENDING、amount=0.05、reason="w3 probe refund cumulative"（W-3 探针残留实证）。附带事实：该支付单自身 amount=0.01<退款 0.05，探针直写产物，v4 标“残留”定性正确。
+- §1 两表 2+13=15 行：机械数行 ✓。
+- 四不变式：v3:139-142 编号清单实测 0/1/2/3 共 4 项，v4 修正正确，v3“三不变式”确系漏计 ✓。
+- 7 条：v3 §3.7 表实测事务底座 = W4 + W5/W6/W8/W9/W10/W11 = 7（W7 冻结、W12 单列、W13 不变），v4 枚举与修正正确 ✓。
+- “44 份”：v4 全文 grep 0 命中——未引用，任务书条件项不触发（显式声明）。
+- “24 处全一致（卡口径 21/35；未验 14 卡）”：与三审学术路总判行（v3proposal-academic.txt:109）逐字一致，21+14=35 内部自洽 ✓。
+- E 员边界（18 项+5 篇+4 条）：research-E:154/:158 实读，精读 18（含 AWS 停服清单【7】）、5 篇 arXiv 条目核真、4 条线索级逐条在文 ✓。
+- “8 轮 0 过”：归档 README 轮次表（v1 47 项/v2 自陈全违/v3 35/v4 33/v5 37）+ 3 轮方案评审归档（v1/v2/v3proposal ×6）双重支撑，5+3 枚举成立 ✓。
+
+**3. T9 规格锚核验（Read 实测）**
+- `strategy-gateway.adapter.ts`：`!result.success || !result.data` 在 :131（pay 路同型 :54），throw 在 :132——**引用区间 128-131 恰缺 throw 行本身**（P3-1）；论据实质（一律 throw、超时与拒绝不可区分）成立。
+- `payment-order.aggregate.ts:222-223`：`this.refunds` / `.filter(r => r.status !== RefundStatus.FAILED)` 逐字命中 ✓。
+- `payment.entity.ts:127`：`@UpdateDateColumn()` 精确命中 ✓。
+- 次级锚：repository.ts:22-30 映射注释（refunds→metadata JSON）✓；13-seats:68 逐字 ✓；app.module.ts:40 forRootAsync+:42 useFactory+:56-66 Blocker 1 glob 冲突注释 ✓；config/typeorm.config.ts:7 联合类型 `'postgres'|'mysql'|'better-sqlite3'` 无 tidb ✓；迁移 20261011000001 :26 已 toLowerCase、:27 判定式缺 tidb（v4 P0-a 修复定位精确）、:62 `.catch(()=>[])` 在位 ✓；PaymentGateway 接口实测 7 方法、无 queryRefundStatus（§6.1-9 成立）✓；payment-events.listener.ts 仅监听 payment.succeeded(:22)/payment.failed(:42)，refund.created 有 emit（payment-application.service.ts:437）全仓零监听（T9-f“现状同构”验真）✓；package.json:18-19 verify:audit/verify:orders 先例在（verify:domain 照抄有据）✓；db-utils 双函数按 `connection.options.type` 分叉（P0-d 冒烟判据有据）✓。
+
+**4. v3→v4 错误清零（全文 grep）——七项全清**
+8≠7（§4.1 现 7 条带枚举，“8 条”仅存于废止说明）✓；三≠4（四不变式带派生）✓；37≠38（v4 已无该承重句，但见 P3-3）；判据 ON 错置（cutover 现在 WHERE，:138）✓；Stripe 腿（仅存于处置描述，零承重引用）✓；P0-18 引号（引文改逐字，但见 P3-2）；“dev 无存量”（仅存于缺陷描述行，正面句带派生实测）✓。
+
+**5. 修复行为自引入同型错误检查（新 SQL 真跑/推演）**
+- 判据 2①：谓词归位正确，ON 仅留右表 join 条件，语义正确。
+- 判据 2③：REFUND_INTENT_CREATED 与 T9 事务 1“类 1 同事务链化”一致；与 T9-e 双轨无冲突（旧 metadata.refunds 路径不写 domain_events，不会进该计数）；集非全列已自声明。遗留点见 P3-4。
+- R3''：执行件指名 verify 脚本层（node:crypto），回应三审“伪 SQL”指认，方案可行。
+- 探测配方：toLowerCase 前置于 includes——与实文件 :26-27 咬合，`'8.0.11-tidb-v7.5.1'` 推演命中 MySQL 分支，P0-a 验收判据可执行。
+
+## 二、发现清单
+
+**P1-1｜“三审 2 P0 + 13 P1”计数不可机械复现（头部 L4 + §1.2 表头 + §6.3 表）**
+三审六路总判行（v3proposal-*.txt）逐份实读：academic 0/1、data 0/2、governance 0/6、logic 0/6、practice 2/8、structure 0/3 —— **P0 合计 2 ✓，P1 原始合计 26**。§1.2 声称的派生口径“三审六路总判行合并计数”产出 26 而非 13；跨座去重后独立发现为 16 项（计数族 4→1、DDL 三座合一、判据 SQL 两座合一等）；v4 的 13 遗漏 practice 座 P1-4/P1-6/P1-7 三项——P1-6（判据 1 拆分）、P1-7（判据 6 执行件）在 §0.5/§4.2 有实质响应但无映射行，P1-4 全无响应（见 P2-1）。§6.3 行同数的派生口径换为“本表行枚举”——系 v4 自表枚举（循环），非三审产出。同一数字两处口径互相矛盾且皆不产 13。按出口定律，该承重计数无机械派生作废；属 v4 自身宣称已修的“计数族”同类新发。
+
+**P1-2｜§6.4 “v3 三审的 12 P2/12 P3 未全修”无派生标注、不可从归档复现**
+六路 P2/P3 原始合计 **22 P2 / 21 P3**（1+4+6+5+2+4 / 5+3+5+4+1+3）；12/12 既非原始合并也无去重台账，且无派生命令标注——违反本稿头部“承重计数派生命令随计数就地标注”的自设纪律。此为三审 structure F-5（“15/18 无逐项台账不可对账”）同型：把一个不可对账分母换成另一个不可对账分母。
+
+**P2-1｜三审 P1-4（退款扫描 worker 归属/调度形态/间隔参数）零响应且不入“未全修”清单**
+v4 §2 T9-c/d 只写 tryClaim 与锁纪律；§4.1 P2 行、§4.2 判据均无 worker provider 归属、@Interval 第二扫描腿、间隔参数共享与否的处置；§6.4 未全修桶仅认 P2/P3。与 §6.4 取舍判据（“影响 P0-P2 可执行性者修”）冲突——该件正属 P2 可执行性。
+
+**P3-1｜adapter 锚区间 128-131 不含 throw 行**（throw 在 :132，条件在 :131）。改为 128-132 即闭合。
+**P3-2｜P0-18 修法宣称与执行不符**：§0.4/§5 称“引号去除、改间接转述”，实际执行=保留引号、改逐字引用（13-seats:68 实测逐字，锚定律①下合法且优于宣称）；逐字引文缺日期件（13-seats 落盘 2026-10-13，可补）。
+**P3-3｜“37→38”修复项无对应承重句**：v4 实际处置是删句；若需承重，现值=44（audit-outputs 实测 44 份=6 调研+18 方案+2+6 轮次+12 v4/v5，与 structure F-4 的 a3e3d76 时点 38 演进一致）。描述应写“删句”而非“改 38”。
+**P3-4｜判据 2③ 在 P1 门内对 REFUND_INTENT_CREATED 恒空真**（W12 在 P2 才产该事件型；另三型在 P1 有载荷）。检查不伤，但该型承重时点在 P2 而门未注明。
+**P3-5｜§6.1 “9 项保留 + 更新 2 项”字面加总 11 ≠ 实列 10**（v3 第 9 项被拆为 v4 第 9/10 项；就地派生“本节编号清单”兜底成立）。
+**P3-6｜§3.9 “双方言通用”宣称与 id 行 TiDB 改写注一处张力**（有注可辩）。
+
+## 三、反过拟合扫描（同类未抓实例）
+
+已执行四类扫描：①承重计数族——v4 全文数字句逐个对源（P1-1/P1-2/P3-3/P3-5 即扫描产物，除此之外未发现其他无派生计数）；②锚点类——全部代码/文档锚实读（P3-1/P3-2 之外未发现错位锚）；③验收门 SQL——全部真跑或推演（未发现 2①/2③/R3''/探测配方之外的新 SQL 缺陷）；④响应完整性——三审六路 P1 逐项对 v4 映射（P2-1 为扫描产物）。**除上列各条外，未发现其他同类未抓实例；“44 份”在 v4 无引用。**
+
+## 四、总判定
+
+**总判定一行：v4 对三审 2 P0 与成文级缺陷的实质修复全部实测兑现（DDL 真跑绿、dev 存量四件全中、七项 v3 错误清零、锚点 8/9 精确命中、新 SQL 无自引入错误），但承重计数面新增两处不可机械复现数字（13 P1 与 12/12 P2·P3）并静默丢弃一项三审 P1——按本仓出口定律该两数作废，v4 不可原样签收，修毕 2 P1 + 1 P2（均为文档补丁量级）后可送立项裁决。**
+
+**推荐（工程判断，非背书）**：α 修订后五送。修法：①“13 P1”改为“三审六路总判行 P1 原始 26，跨座去重 16，本稿映射 13 行 + §0.5 承载 2 项（P1-6/P1-7）+ P1-4 未承接露面”或直接给出去重台账；②“12 P2/12 P3”补去重台账或改为“原始 22/21（六路总判行），高价值并入项见 §0”；③补 P1-4 处置行（哪怕“挂 §6.1 未决”）；④P3 六项随批顺手。历史命中率声明：本席本轮“实测算通过”项（DDL/存量/锚点/清零）均为真跑产出，无此前“可签”记录可援引——首次出具，命中率不适用。

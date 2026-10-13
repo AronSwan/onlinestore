@@ -1,0 +1,114 @@
+# 债-10 方案 v4 · 学术路（引证忠实度）独立评审报告（第四轮送审）
+
+> 评审对象：`C:\Users\Administrator\onlinestore_remediation\docs\debt-10-architecture-research-proposal-v4.md`（191 行，全文细读；正身仓=onlinestore_remediation，AGENTS.md 钉）
+> 基线：三审学术路归档 `docs\debt-10-archive\audit-outputs\v3proposal-academic.txt`（21/35 卡口径、24 处目标句）；底稿 research-E/F（audit-outputs）；一轮/二轮学术路归档（B 卡2 验证记录溯源）
+> 方法：任务书五项+残余 4 卡全部真取原文/实件比对；代码锚逐行核（grep -n 定位，非目测）；GDPR 条文经 gdpr-info.eu 活页+D 卷宗双锚；WP216 经二轮归档提取件 `%TEMP%\wp216.txt`（104840 字节，需 `-a` 旗标——文件含控制字符被 grep 判二进制）直检；网络通道：WebFetch（github-blob/oneuptime/microservices.io/unpkg/gdpr-info.eu）均通，npmjs.com 403（换 unpkg 复取成功，非不可达项）
+> 条款援引：承重陈述出口定律（逐字引文三件齐）＋核查器无脾气令（本报告数字均附口径与复现路径）
+> 声明：未修改任何被审文件；未读 round4-review-reports.md 及三审其他五路报告（唯一例外=对 `v3proposal-practice.txt` 执行一次“数据失明”短语 grep 溯源——用于确定 v4:63 转引句的逐字源，未读其论证内容）；不含立场推荐项
+
+---
+
+## 一、任务一：v4 引证面验证
+
+### 1. v4 §2 新增转引逐个验
+
+**① strategy-gateway.adapter.ts:128-131（代码锚）——语义成立，锚区间不含承重行（P3，发现 #5）**
+- 实测：`if (!result.success || !result.data)` 在 **:131**，`throw new Error(\`退款创建失败…\`)` 在 **:132**；所引 :128-131 起于 metadata 参数行、止于 if 行——**“一律 throw”主张本体的 throw 行落在区间外一行**。同文件 :54-55（支付创建侧）另有同型 throw（“一律”的第二足，v4 未引）。语义主张本身成立（退款路径 :131-132 两分支无差别 throw；:108 为查询分支条件判断非反例）。
+
+**② GDPR 双句改引——五处配对全部核正（一致）**
+- Art 17＝删除权：gdpr-info.eu 活页，官方标题逐字 "Right to erasure ('right to be forgotten')" ✓
+- Art 5(1)(e)＝存储限制：D 卷宗 ：50 同向（“Art. 5(1)(e) 要求‘不超必要期’”）✓
+- 白名单投影＝Art 5(1)(c)/25(1)＝D 员 Q3 原域：research-D:48 改正路径原文即“字段白名单投影”，D:30/D:33 两条引文在位 ✓
+- “Art 30 记录须写明 erasure 时限”＝D 员 Q4 并陈：research-D:34 原文含 "envisaged time limits for erasure"（D 记 Art. 30(1)，v4 记条级）✓
+- v3 原用法（v3:43“合规依据回归 GDPR Art. 5(1)(c)/25(1)”用于 b 变体整体）与 v4 新拆分（删除权/存储限制 vs 最小化/设计）各归其位，改引忠实。
+
+**③ WP216 假名化定性转引——忠实（一致）**
+- "WP216 将 keyed-hash 列入假名化技术”：与已验基线（二轮第 8 条：§4 "The most used pseudonymisation techniques are as follows:" 清单含 "Keyed-hash function with stored key"）一致；本席在 wp216.txt 复现两串均在位（各 1 次命中，另有 "keyed-hash function with deletion of the key" 同清单姊妹条目）。
+- “假名化数据仍是个人数据”：E【16】卡字面无此句，但 WP216 实文直接支撑——wp216.txt 直检得 "**pseudonymisation when used alone will not result in an anonymous dataset**" 与 "**The natural person is therefore still likely to be identified indirectly**"（另有 Singling out/Linkability 两条 still 句）。v4 为忠实压缩，非凭空扩张；后果链（“erasure 义务不因哈希化消失”）与 E【13】哈希腿（“the hash will also be considered personal data”）同向。
+- 出处标注“E 员卷宗现成定性”对 keyed-hash 部分准确；对“仍是个人数据”部分为 WP216 原文义的引申压缩（本席已直检原文坐实），不计缺陷。
+
+**④ 附带代码锚核验（v4 §2/§3/§4 新增锚全集）**：payment-order.aggregate.ts:222-223（filter!==FAILED）**精确** ✓；typeorm-payment-order.repository.ts:22-30（映射注释，:30 行“refunds…→ metadata JSON”）**精确** ✓；payment.entity.ts:127（@UpdateDateColumn）**精确** ✓；migration 20261011000001 :26 toLowerCase/:27 判定式**精确** ✓（"同点"措辞见发现 #8）；payment-gateway.factory.ts:9 接口方法手工清点＝7（createPayment/verifyCallback/isPaymentSuccess/getFailureReason/queryPaymentStatus/createRefund/closePayment），queryRefundStatus 全仓 grep 零命中 ✓；markAsSucceeded/markAsFailed 零调用方＝**生产代码口径成立**（RefundAggregate :64/:72 零参版本仅 spec 两处调用：payment-order.aggregate.spec.ts:96、typeorm-payment-order.repository.spec.ts:60——同名歧义见发现 #7）；dev 库 1 行存量**复现精确命中**（py -3.14 sqlite 直查 `payments.metadata LIKE '%refunds%'` → 1 行：id=18, PAY_MV0V2RBY_8N10U4_D579BAF6, 退款 amount=0.05, status=PENDING, reason="w3 probe refund cumulative"）✓；package.json:18 verify:audit + scripts/verify-audit-chain.mjs（动态 import 模式 ：30/:33/:36/:65 在位）✓。
+
+### 2. Stripe 腿删除验证——兑现（一致）
+- 复现：`grep -in "stripe|authorize" v4 全文` → 3 命中：:15（§0 修订说明）、:40（§1.2 响应映射行）、:150（§5 删除声明行）——**全部在声明/处置位，论证位零引用** ✓。:150 引 "Stripe authorize-then-capture 业界同构”为 v3:63 原文逐字子串 ✓。
+- “载重句**两轮**活页验逐字”：一轮归档 v1proposal-academic.txt:25（Debezium "By only modifying a single resource…" debezium.io 直取，一致×2）＋三轮归档发现 #1（活页逐字命中 Summary 节句首）＝两轮，**陈述属实** ✓。
+
+### 3. EDPB 泛化口处置验证——兑现（一致，一处残留记扫描节）
+- v4 §2（:58）泛化口仅存于处置声明（“不再用作支撑”），论证重构为自相矛盾消除；§5 表（:152）声明一致；“迁移方向保守”论证独立保留于 v3 §2 承接文本（v4 §3“结构不变处不重述”）。**v4 自身正文无一处以泛化口作论证支撑** ✓。
+- 残留：:58 引文仍为截断子串 "could prove useful for any blockchain"（全句尾为 "…any blockchain **processing personal data**"，三审 P2 已判）。本席定性：现仅识别性使用（命名被废止对象），不再承重，不另立案——记入反过拟合扫描节。
+
+### 4. P0-18 去引号验证——兑现且逐字（一致）
+- v4:100 引号内文字“退款场景完全失语——createRefund 路径零 audit/snapshot”与 13-seats:68 表行**逐字全同** ✓（出处三件齐：13-seats:68＋文档实体＋版本可定位）。
+- “退款落 metadata JSON 无结构化”改系本仓实证锚（repository.ts:22-30，精确）＋“非 13 席原文”声明**属实**：13-seats 全文 grep "metadata" 零命中 ✓。转述形态修正到位。
+
+### 5. 未验 14 卡对 v4 的零承重复验——v4 自身正文成立；有效正文有两处反例（P2，发现 #1）
+- v4 自身正文新引用卡号全集＝E【13】(:59)／C11(:77)／C10(:78)／B 卡2(:150)／WP216=E【16】(:57)／research-E:154/:158(:176，显式“不入证据链”声明)——**全部落在已验 21 卡内**，v4 未将任何未验卡新引入正文 ✓。
+- 但 v4＝v3 基座＋增量（v4:72“v3 结构不变处不重述”），有效正文含两处未验卡承重：
+  - **F C13**：v3 §3.4:151 参数表死信行“死信 | relayState='DEAD' + attempts + lastError | **F 员 C13**”——未验卡显式引用；v4 §3.4 修订未触该表，§4.2-3 死信演练沿用同一设计。
+  - **E【6】**：v3 §6.1-2“双主体行 per-subject DEK（**Red Badger 升级路径**）”——升级路径＝E【6】 MULTI_SUBJECT_DESIGN.md 内容（E【5】为单主体文档）；v4:161“1-7 同 v3”承接。
+- 三审归档自身内部矛盾（其 §三 line 74 把 C13 列入“v3 引用卡号全集”并称“均已在已验集内”，而其 line 72 把 C13 列入未验 14 卡；“Red Badger”条目把 E5 已验与 E6 升级路径引用混同）随 v4 §6.3:173 状态行原样进入。两卡本席已补验**均逐字一致**（见任务二），实质无损；缺陷在状态陈述本身。另注：v3 §3.4 批大小行“区间 5-100”经 F 底稿参数建议区间表继承自 C10(5)/**C18(100)**——C18 承重属弱继承（v3 该行自标“推断”且未引卡号），本轮已连带验 C18（一致），残余风险消除。
+
+---
+
+## 二、任务二：残余卡补验 4 条（选点＝对有效正文承重相关度：C13 显式引用＞E6 具名引用＞C18 参数区间继承＞C7 兜底轮询模式锚）
+
+**1. F C13 nestjs-outbox README（fullstackhouse，unpkg 通道）——一致（三句逐字+两负结果）**
+- `new OutboxRelay({ pool, producer }).start()` ✓ 逐字（前导注释 "Polls, publishes, marks. Safe to run more than one."）；"a failed publish leaves the row and increments `attempts`" ✓ 逐字（源内换行断点）；"a row past `maxAttempts` stops being picked up" ✓ 逐字；负结果 ✓：README **无**间隔/批量/锁数值（仅定性 "a few hundred milliseconds of latency"——与 F 卡“未载间隔/批量/锁细节”定性一致）；`pool`/`PoolClient` 用法 ✓（PostgreSQL 专属定性成立）。
+
+**2. E【6】 MULTI_SUBJECT_DESIGN.md（redbadger/journey_dynamics，github-blob 通道）——一致（四句全逐字）**
+- "a single booking journey may capture personal details for several passengers" ✓；"A GDPR erasure request for one passenger should remove only that passenger's PII, not the entire booking's data" ✓；"On erasure, shred only the target subject's PII" ✓（源文续 em-dash，与 E 卡省略号形态一致）；"preserve shared journey data (flight selections, pricing, booking reference) and other subjects' data" ✓。
+
+**3. F C18 OneUptime 博客（2026-01-30 文）——一致（三常量+清理节律全中）**
+- `const POLL_INTERVAL_MS = 1000;` ✓、`const BATCH_SIZE = 100;` ✓、`const RETENTION_DAYS = 7;` ✓ 逐字；小时清理 ✓（"// Run cleanup every hour" + `setInterval(cleanupOutbox, 60 * 60 * 1000)`；清理对象=已发布且超保留窗的行）。
+
+**4. F C7 Polling Publisher（microservices.io）——一致（三句逐字+负结果）**
+- "Publish messages by polling the database's outbox table." ✓；缺点 "Tricky to publish events in order" ✓；优点 "Works with any SQL database" ✓；负结果 ✓：页内**无**轮询间隔/批量数字（F 卡“官方模式页本就不给数”定性准确）。
+
+**本轮 4 条：一致 4 / 不符 0 / 不可达 0。**
+
+---
+
+## 三、修复行为自引入同型错误检查（每轮必查）
+
+v4 五项引证修正**本身全部兑现且忠实**：Stripe 删除 ✓（论证位零引用）；EDPB 处置 ✓；P0-18 转述 ✓（逐字+实证锚归位）；tryClaim 域内改写标注 ✓（v4:77 “C11 原文为 `status IN (PUBLISHED, RESUBMITTED)`”与已验 C11 实文精确相符）；C10 毒丸语义修正 ✓（v4:78 引 "started but did not finish (neither error nor success)"——%TEMP%\pgoutbox.md:644 逐字子串；“提前死信避免占满重试上限”标“推断”到位）。
+
+**但修复轮自引入同型新错 4 处**（发现 #2/#3/#5/#6）：引号内非逐字 ×2（#2 缺字、#3 改字）、锚区间不含承重行 ×1（#5）、口径枚举不全 ×1（#6）——其中 #3 恰在“引证修正”表（§5）自身行内；#1（零承重陈述）为三审内部矛盾随入而非 v4 新造。修复行为整体判定：修正面兑现，新文本面引入同型残留。
+
+---
+
+## 四、反过拟合扫描（同类未抓实例）
+
+- **引号串逐枚对源**（v4 全文含引号/反引号承重串）：命中 3 处非逐字——#2（v4:63 “守卫因数据失明形同虚设”，代码注释实文=“守卫因数据失明**而**形同虚设”，repository.ts:265-266 连读；三审实操路引文带“而”为逐字，v4 转引丢一字）、#3（v4:151 “本版**零**新增外部引证”引作 v3 表述，v3:262 实文“本版**未**新增外部引证”）、#4（v4:59 "EDPB 首选逐字背书”引作 v2 表述，v2 实文仅“EDPB 首选”（v2:77/:80），“逐字背书”三字非 v2 措辞——v3:44/:230 已有此形，三审未抓，v4 沿袭）。其余全部逐字或属命名性引用（P0-18/B 卡2 载重句/Stripe v3 短语/C10/C11 均验毕）。
+- **EDPB 截断残留**：识别性使用（第一节 3），显式声明：不立案，留档。
+- **锚精度扫描**：#5（:128-131）、#7（markAs 同名歧义）、#8（P0-a “同点”）；其余 10 处代码锚全部精确命中（第一节 1④）。
+- **状态陈述扫描**：#1（零承重两反例）、#6（实例口径枚举漏 WP216 定性与 Art 17/5(1)(e) 双句两个新增引文实例——均为已引来源的新实例，故“来源口径 0”仍真）；“24 处全一致”“21/35”“两轮活页验”“8 轮 0 过（＝v3:260 的 7 轮＋三审轮）”“§1 两表 2+13=15”均复核属实。
+- **幽灵引用扫描：未发现**——所有被引文献/代码/文档实体均在位可取。
+- **新源走私扫描：未发现**——“来源口径 0 新增”成立（GDPR/WP216/EDPB 均旧源；13 席/代码注释/三审报告句非外部文献）。
+- **邻道记录（不计入本路发现数）**：①v4:56 “（三审 #8）”指针在 v4 自身 §1.2 编号内无法映射（该表 #8=Stripe 腿、GDPR 项=#11；若指三审合并清单原编号则跨文档不可校）——指针卫生，结构路辖域；②v4 §1.2“十三项 P1（去重后；派生：三审六路总判行合并）”的计数本身涉其他路输出，本席未核（纪律边界）。
+
+---
+
+## 五、发现清单
+
+| # | 级 | 发现 | 锚/复现 |
+|---|----|------|---------|
+| 1 | **P2** | “未验 14 卡对正文零承重”（v4 §6.3:173）与有效正文不符：v3 §3.4:151 死信行显式引 **F C13**、v3 §6.1-2 具名引 **E【6】** 升级路径，均未验卡且经 v4“结构不变处不重述”承接；三审归档自相矛盾（C13 同时列于“v3 引用全集·已验”与“未验 14 卡”）随入 v4。两卡本轮已补验均逐字一致，实质无损——缺陷在状态陈述 | v3:151/:243；v4:72/:161/:173；三审归档 line 72 vs 74；本报告任务二 |
+| 2 | **P3** | v4:63 引号内非逐字：W-3 注释实文“守卫因数据失明**而**形同虚设”，v4 引文丢“而”（v4 新增文本，同型自引入） | repository.ts:265-266 连读；三审实操路 ：25 引文带“而” |
+| 3 | **P3** | v4:151 引号内改字：v3:262 实文“本版**未**新增外部引证”，v4 引作“本版**零**新增外部引证”（§5 引证修正表自身行内） | v3:262；v4:151 |
+| 4 | **P3** | v4:59 引号短语非 v2 逐字：“EDPB 首选逐字背书”——v2 仅有“EDPB 首选”（:77/:80）；v3:44/:230 已有此形（三审未抓），v4 沿袭 | v2:77/:80；v3:44/:230；v4:59 |
+| 5 | **P3** | v4:62 代码锚区间不含承重行：if(:131)/throw(:132)，所引 ：128-131 止于 if 行；语义主张成立（退款路径无差别 throw） | strategy-gateway.adapter.ts grep -n 实测 |
+| 6 | **P3** | v4:174 实例口径枚举不全：“实例口径含本稿转引的三审报告句”未覆盖另两类新增引文实例——WP216 keyed-hash 假名化定性（v2/v3 正文均无，本版最主要新增引证）与 GDPR Art 17/5(1)(e) 双句改引；来源口径 0 仍真 | v2/v3 grep WP216/Art 17=正文 0 命中；v4:56-57 |
+| 7 | **P3** | v4:62 “markAsSucceeded/markAsFailed 零调用方”同名歧义：RefundAggregate(:64/:72) 零参版生产零调用（仅 spec ×2）属实，但 PaymentOrderAggregate(:153/:174) 同名方法有 3 处生产调用（payment-application.service.ts:295/:318/:484）——裸方法名 grep 与陈述表面相抵，需类语境可解；建议口径带“生产/Refund 侧”限定 | grep -rn 实测（含/不含 spec 两轮） |
+| 8 | **P3** | v4:115 P0-a “同点为 `.catch(()=>[])`”：该模式实文在 **:62**（sqlite_master 探测分支），版本探测点（:26-27）的吞错为裸 `catch {}`（:28）——“同点”按字面为异点；模式在文件内实存，工单可执行性不受影响 | 20261011000001-create-order-snapshots-table.ts:24-29/:62 |
+
+---
+
+## 六、总判定
+
+**学术路发现 8 项（0 P0 + 0 P1 + 1 P2 + 7 P3）/ 本轮验 4 条：一致 4 / 不符 0 / 累计验 28/35**（口径注：28＝24+4，按三审“条＝卡＝目标句组”归一口径；卡覆盖实体 **25/35**，未验余 10 卡＝E【7】【14】【15】【17】【18】＋F C3/C6/C8/C12/C17——任务书公式“(24+M)/35”分子为句组、分母为卡数，单位异质，两数并呈）
+
+附注：①本轮 4 卡 11 句目标句+6 项负结果全部逐字/属实；②v4 五项引证修正（Stripe/EDPB/P0-18/tryClaim/C10）全部兑现且忠实；③GDPR 五处条文配对、WP216 假名化后果句、B 卡2“两轮”陈述、10 处代码锚、dev 库数字（1 行/PAY_MV0V2RBY_8N10U4_D579BAF6/0.05/PENDING）均独立复核通过——非 E/F 卡口径不计入 M；④发现 #1 的两反例卡（C13/E【6】）经本轮补验逐字一致，#1 的实质影响限于状态陈述准确性，未触及正文引文内容本身；⑤零承重结论修正后的准确口径应为：“未验 10 卡对有效正文零承重”（本轮验后），v4 §6.3:173 行需按 #1 修正——事实性修正材料随本报告呈报，不附处置推荐。
+
+---
+评审席：学术路（引证忠实度）· 独立评审员（第四轮）
+本报告未修改任何被审文件；未参考其他评审路输出（第四节声明的一处引文溯源 grep 除外）；不含立场推荐项（仅事实定性）。

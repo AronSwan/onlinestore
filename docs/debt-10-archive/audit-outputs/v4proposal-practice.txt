@@ -1,0 +1,77 @@
+# 债-10 方案 v4 实操路评审（第四轮）
+
+对象：`C:\Users\Administrator\onlinestore_remediation\docs\debt-10-architecture-research-proposal-v4.md`（正身仓）。全部仓内行号经实读核验；dev 库数字经复现（见 §六）。
+
+## 一、§4.0 P0 四子项工单可执行性
+
+**P0-a 旧迁移探测修复**
+- `20261011000001-create-order-snapshots-table.ts` 现状：:26 `const v = String(...).toLowerCase()`、:27 `v.includes('mysql') || v.includes('mariadb')`——行号引证准确，:27 加 `|| v.includes('tidb')` 为单行编辑，可行。
+- **[P1] 吞错日志定位错位**：工单写“**同点**为 `.catch(()=>[])` 补探测失败日志”——该文件 `.catch(()=>[])` 仅一处在 **:62**（else 分支 sqlite_master 探测），不在判定式 ：27 处；:27 处的吞错是 **:28-30 空 catch**（version 探测失败→静默降 sqlite 路径→TiDB 上跑 sqlite_master SQL 报错炸迁移）。按字面实施会在 ：62 加日志而漏 ：28-30 这处真正会让 TiDB 迁移炸的静默点。工单应分别点名两处。
+- 单测可行性：**迁移类可单测**——jest testMatch `**/*.spec.ts`（backend/jest.config.cjs:4）覆盖 migrations 目录（现状零 spec 先例，机制通）；mock QueryRunner 按 SQL 前缀分派返回，断言“发起 information_schema 查询=命中 MySQL 分支”。判据 1a 成立。[P3] spec 载体/mock 形状未写（约半日工作量）。
+
+**P0-b 挂载路径选边**
+- 落点正确：app.module.ts:40-52 factory `type: dbConfig.type` 直传无映射；unified-master.config.ts:530 直传 `env.DB_TYPE`（:549-559 tidb 特判仅集群元信息）——DB_TYPE=tidb 必发 MissingDriverError，工单必要性属实。“Blocker 1 先例”有源（app.module.ts:60-65 注释）。
+- **[P2] “3 行”与先例不严格对应**：database.module.ts 的映射由 **4 处**承载（:26 resolvedType、:27 defaultPort、:29 type 应用、:38 `port: dbConfig.port || defaultPort` 回退）。app.module :87 现状 `port: dbConfig.port` 直传无回退，unified-master :532 port 可 undefined——只搬 3 行且不配 DB_PORT 时连 3306 而非 4000，故障形态从 MissingDriverError 变连接失败，验收句字面已过但服务不可用。
+- **[P1] 验收资源不可得**：“DB_TYPE=tidb 启动”需要真连接。判据 1b 两条通路当前均非现成——本机 podman 与 docker 均不在 PATH（2026-10-13 实测 `which` 无输出）；TiDB Cloud 免费档需外网账号注册。v4 未给获取步骤/第三通路，P0-b/c/d 三条验收全部悬空。
+- **[P2] “启动”粒度未定义**：dev 下 DB_TYPE=tidb 默认 synchronize=true（unified-master :541）+12 条实体 glob——driver 修好后完整 bootstrap 会在 TiDB 全量建表，实体 DDL 跨方言兼容性未盘点；“无 MissingDriverError”可过而启动死在 synchronize。应指名 bootstrap 完成/首请求可服务，或显式 DB_SYNCHRONIZE=false。
+
+**P0-c CLI 迁移入口**
+- 落点正确（package.json `migration:run -d src/config/typeorm.config.ts`）。**[P3] 动作清单不完整**：仅 ：7 联合类型加 'tidb' 不够——:11 `type: dbType` 直传 'tidb' 给 DataSource，initialize 时报 invalid type；必须在 ：11 同步映射。第二个动作藏在括注“（同映射）”两字里。
+
+**P0-d db-utils 分叉验证**
+- 机制链成立：order-snapshot.db-utils.ts:17-23 `queryRunnerUsesForUpdate` 读 `connection.options.type`，映射后 'mysql' 命中返回 true。[P3] 冒烟载体（最小脚本/测试取 EntityManager）未指名。
+
+**P0 整体验收 [P3]**：迁移链共 10 腿，工单只修最后 1 腿；其余 9 腿抽验 create-users 为 MySQL 方言写实（AUTO_INCREMENT/ENUM——TiDB 兼容，预期可过），但“全链通过”未附 9 腿盘点声明，首跑即知的未盘点风险。
+
+## 二、queryRefundStatus 工作量面（4 策略仓内形状）
+
+“接口 7 方法无此方法”有源：payment-gateway.factory.ts 恰 7 方法，adapter :9-10 注释自证。策略实况（仓内，未做外网调研）：
+- alipay :59-69 / wechat-pay :58-68 / credit-card :58-68：**`// TODO` 桩，refund 恒返 success:true+SUCCESS**，无真实网关调用。
+- crypto :149-155：**明示不支持退款**（恒 success:false）。
+
+三个实操结论：
+1. **[P1] “网关真实 API 支持度”仓内不可判定**——3 桩+1 拒绝，未决 9 要排查的“网关能力”在当前策略层没有对象；4 个 queryRefundStatus 实现只能是桩上叠桩。
+2. **[P1] crypto 与“4 策略实现”矛盾**——crypto 连 refund 都恒败（无 gatewayRefundId 可查），queryRefundStatus 对它只能“恒不支持”；未决 9 的降级路径（人工对账兜底）恰该先套在 crypto 上。排产行应改“3 策略实现+1 策略降级成文”，现文本两处未咬合。
+3. **[P1] PENDING_GATEWAY 场景无产生路径**——桩 refund 恒立即 SUCCESS，T9 扫描腿核心场景（超时→PENDING_GATEWAY→回查）永不出现；无“策略可测性改造”（可注入延迟/失败）排产行，T9-a/c/d 只能单测 mock，无端到端验收路径。
+
+**[P2] 工作面漏项（P1-8 同型）**：RefundData 无 PENDING 态（gateway-result.ts:41 仅 'SUCCESS'|'FAILED'，需新 QueryRefundData 类型）；PaymentGateway 域接口+StrategyGatewayAdapter 各加第 8 方法；聚合 RefundStatus 枚举无 PENDING_GATEWAY/CONFIRMED（payment-order.aggregate.ts:32-37 仅四值）——枚举扩展与 markAsSucceeded/markAsFailed 接线（v4 自证“零调用方”）均无排产字面。
+
+## 三、双轨切换“三处同一 commit”
+
+三处均为真实代码点可同 commit 改（守卫=aggregate :222-224；仓储=repository save :148-160；事件=REFUND_*）。边界缺口：
+- **[P1] 迁移脚本不在 commit 清单**：T9-e 只列三处，存量转表脚本“切换时随迁移脚本转表”未纳入同一 commit——单独 commit 则切换落地与转表间有窗口（守卫已读新表、存量还在 metadata）。
+- **[P1] 双轨期写路径归属未定义**：P2 内 W12 落表到切换日之间，同一笔退款写两源还是一源？若 W12 只写表不 push 聚合 refunds，切换前守卫（仍读聚合内存）对新退款失明=双过守卫风险在过渡期回归。须成文。
+- **[P2] 对账腿载体未指名**（脚本/端点/cron），且两源状态词表不同（旧 PENDING vs 新 PENDING_GATEWAY），对账 SQL 状态映射未给。
+- **[P2] 回归面未挂**：切换 commit 的回归验收腿未指名——仓内现成 `npm test`/`typecheck`/`test:e2e` 可指名而未指名。
+
+## 四、验收六判据复验
+
+- **1a 可判定** ✓（见 P0-a）。
+- **1b 判据可判定但资源不可得** [P1]（见 P0-b）。
+- **2① 可判定** ✓——谓词归位正确（cutover 在 WHERE），v3 ON 错置已真修；LEFT JOIN 双方言可跑。
+- **2③ 可判定** ✓——relayState NOT NULL（v3 DDL :108）无 `!=` 漏 NULL 问题。[P3] REFUND_INTENT_CREATED 在 P1 时点零写入方（W12 在 P2），该枚举项 P1 验收空转，应标“P2 起生效”。
+- **3 [P2]**：attempts≤N 语义修正可判定（v3 批计数 flaky 已除）；但“告警可查”依赖告警通道=§6.1 第 5 项**未决**——验收判据引用未决设施，告警落地物（日志行/audit/通道）未指名。
+- **6 可判定** ✓——执行件指名到位（verify-audit-chain.mjs 实存根 scripts/，verify:audit 先例在**根** package.json）。[P3] 排产行写“package.json”未指明根/backend。[P2] 判据 5/6 及 2①③在空库上空转（COUNT 恒 0 恒绿）：seed-domain-event.mjs 排 P3 而 verify-domain-chain.mjs 在 P1——P1 验收无最小数据前提（如“≥N 行 INLINE 事件存在时”）。
+
+## 五、排产行清点 vs 三审实操路 P1-8
+
+三件隐身件**全补行**：refunds entity→P1 行 ✓；R2 扩展→P3 行 ✓；seed 脚本→P3 行 ✓。衍生 [P2]：R2 扩展（PENDING_GATEWAY 可见）在 P3，而 PENDING_GATEWAY 行 P2 即产生——P2→P3 间巡检可见性空窗，未注记。
+
+## 六、反过拟合扫描
+
+**未发现项之外，以下为 v4 自引入/同类未抓实例**（显式列出）：
+1. **[P2] §6.3 “8 轮 0 过（派生：本表行枚举）”——派生标注失灵**：表仅 4 行，枚举不出 8；8 实为行内口径（v1-v5 汇总 5+方案 3 轮）。v4 自立的“机械派生”方法在本稿首个承重计数上标注与数字对应断裂。
+2. [P1] P0-a 吞错点定位错位（三审反过拟合 B 的响应自身引用不精确，见 §一）。
+3. [P1/P2] T9 实施件五件隐身（枚举/状态机/域接口第 8 方法/Adapter/QueryRefundData/可测性改造，见 §二）——P1-8 同型复发。
+4. [P2] “3 行”vs 先例 4 处（见 §一）。
+5. [P3] §1.1 两行 P0 映射中 P0-a 被两行重复指向（呈现重叠，非执行障碍）。
+6. [P3] adapter:128-131 引用区间偏移：throw 实际在 ：131-133，:128-130 是 createRefund 调用参数——语义指向无错，行号区间不精确。
+7. 行号引证抽验其余 7 处全中（:26-27/app.module:40/typeorm.config:7/aggregate:222-223/repository:22-30/payment.entity:127=:127 正是 @UpdateDateColumn/listener 零监听 refund.created ✓）。
+
+**dev 存量承重数字复现**（复现命令：`sqlite3 backend/data/dev_caddy_shopping.db "SELECT ... FROM payments WHERE metadata LIKE '%refunds%'"`，本评审经 python sqlite3 同查，2026-10-13）：1 行 / PAY_MV0V2RBY_8N10U4_D579BAF6 / 退款 amount=0.05 / status=PENDING——与 v4 逐字一致 ✓。附注 [P3]：主单 amount=0.01<退款 0.05（探针残留畸形数据），转表脚本应只转不验，否则守卫切换后回读校验可能拒此行。
+
+## 总判定
+
+**v4 P0 四子项全部可对到真实代码点、方向与行号引证基本准确，但存在 P1 级 6 项（1b 资源不可得、P0-a 吞错点错位、crypto 矛盾、PENDING_GATEWAY 无产生路径、双轨 commit 漏转表脚本、双轨写路径归属未定义）+ P2 级 8 项 + P3 级 7 项——不可直接开工；修 P1 项后 P0-a 可先行（独立于 TiDB 资源、单测可验、半日量级），b/c/d 待资源就绪一并落。**
+
+呈报注记：本轮无历史“可签”命中率记录可比（实操路对 v4 首轮）；本判定非背书。负面项已全部列于正文，无入卷宗未露面项。
