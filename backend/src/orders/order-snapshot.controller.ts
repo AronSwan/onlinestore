@@ -11,12 +11,21 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import type { Request as ExpressRequest } from 'express';
 import { OrderSnapshotReadService } from './order-snapshot-read.service';
 import { OrdersService } from './orders.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../auth/enums/role.enum';
+
+/**
+ * 鉴权请求类型（P3-A 修因——双盲审 A 席 P3-6 抓到）：替代 `any`
+ * req.user 来自 JwtStrategy.validate 返回值，已包含 sub/role。
+ */
+type AuthedRequest = ExpressRequest & {
+  user: { sub: number; role: string };
+};
 import { RouteLabelInterceptor } from '../monitoring/route-label.interceptor';
 import { ApiDocs, ApiGetResource } from '../common/decorators/api-docs.decorator';
 import { maskSnapshotsPii } from './snapshot/pii-mask';
@@ -43,14 +52,14 @@ export class OrderSnapshotController {
   ) {}
 
   /** 归属校验（非 admin 只能看本人订单） */
-  private async assertOwnership(orderId: number, req: any): Promise<void> {
+  private async assertOwnership(orderId: number, req: AuthedRequest): Promise<void> {
     // P2-F 修因：findOwnership 投影 id+userId（不拉 items+user+bcypt），归属判定足够
     const ownership = await this.ordersService.findOwnership(orderId);
     if (!ownership) {
       throw new ForbiddenException(`订单 ${orderId} 不存在`);
     }
-    const user = req?.user;
-    if (user?.role !== Role.ADMIN && String(ownership.userId) !== String(user?.sub)) {
+    const user = req.user;
+    if (user.role !== Role.ADMIN && String(ownership.userId) !== String(user.sub)) {
       throw new ForbiddenException('只能查看本人订单');
     }
   }
@@ -76,12 +85,12 @@ export class OrderSnapshotController {
     @Param('id', ParseIntPipe) id: number,
     @Query('take', new DefaultValuePipe(50), ParseIntPipe) take: number,
     @Query('skip', new DefaultValuePipe(0), ParseIntPipe) skip: number,
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     await this.assertOwnership(id, req);
     // P2-J 修因：分页参数（默认 take=50, skip=0；生产单 history 长时整链返回放大）
     const snapshots = await this.snapshotRead.findByOrderId(id, { take, skip });
-    const isAdmin = req?.user?.role === Role.ADMIN;
+    const isAdmin = req.user.role === Role.ADMIN;
     return {
       orderId: id,
       total: snapshots.length,
@@ -103,7 +112,7 @@ export class OrderSnapshotController {
       success: { description: '链校验结果（valid/headSeq/headHash/problems）' },
     },
   })
-  async verifyChain(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+  async verifyChain(@Param('id', ParseIntPipe) id: number, @Request() req: AuthedRequest) {
     await this.assertOwnership(id, req);
     return this.snapshotRead.verifyChain(id);
   }
@@ -120,9 +129,9 @@ export class OrderSnapshotController {
       success: { description: '时间线事件数组（version/occurredAt/changes）' },
     },
   })
-  async getTimeline(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+  async getTimeline(@Param('id', ParseIntPipe) id: number, @Request() req: AuthedRequest) {
     await this.assertOwnership(id, req);
-    const isAdmin = req?.user?.role === Role.ADMIN;
+    const isAdmin = req.user.role === Role.ADMIN;
     return this.snapshotRead.getTimeline(id, isAdmin);
   }
 
@@ -166,10 +175,10 @@ export class OrderSnapshotController {
   async getSnapshotVersion(
     @Param('id', ParseIntPipe) id: number,
     @Param('version', ParseIntPipe) version: number,
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     await this.assertOwnership(id, req);
-    const isAdmin = req?.user?.role === Role.ADMIN;
+    const isAdmin = req.user.role === Role.ADMIN;
     const snapshot = await this.snapshotRead.findByVersion(id, version);
     return maskSnapshotsPii([snapshot], isAdmin)[0];
   }
