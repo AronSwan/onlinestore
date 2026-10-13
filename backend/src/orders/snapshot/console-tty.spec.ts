@@ -71,6 +71,20 @@ describe('console-tty', () => {
       });
     });
 
+    it('RED_ERR 存在且为 function（P1-D 修因锁）', () => {
+      jest.isolateModules(() => {
+        const { RED_ERR } = require('./console-tty.ts');
+        expect(typeof RED_ERR).toBe('function');
+      });
+    });
+
+    it('YELLOW_ERR 存在且为 function', () => {
+      jest.isolateModules(() => {
+        const { YELLOW_ERR } = require('./console-tty.ts');
+        expect(typeof YELLOW_ERR).toBe('function');
+      });
+    });
+
     it('空字符串也被 wrap（一致语义，不特殊化）', () => {
       jest.isolateModules(() => {
         const { RED } = require('./console-tty.ts');

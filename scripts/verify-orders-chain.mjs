@@ -222,7 +222,11 @@ async function main() {
     const line = `${ts}\t${perOrder.length}\t${forestHash}\n`;
     // R8 首次锚写注释头（与 audit-chain-head.txt 端 258-269 同步形态）
     if (!existsSync(ANCHOR_FILE) || readFileSync(ANCHOR_FILE, 'utf-8').trim() === '') {
-      const header = formatAnchorHeader({ domain: '订单快照链', singleSuffix: '受验单' });
+      const header = formatAnchorHeader({
+        domain: '订单快照链',
+        singleSuffix: '受验单',
+        command: 'npm run verify:orders -- --anchor',
+      });
       writeFileSync(ANCHOR_FILE, header, 'utf-8');
     }
     appendFileSync(ANCHOR_FILE, line, 'utf-8');

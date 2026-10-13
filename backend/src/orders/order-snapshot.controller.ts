@@ -107,6 +107,27 @@ export class OrderSnapshotController {
     return this.snapshotRead.getTimeline(id, isAdmin);
   }
 
+  // P1-B 修因（双盲审四席共中）：/snapshots/full 必须声明在 /snapshots/:version 之前——
+  // Express 按注册序匹配，:version 先注册会吞掉 "full" 导致 admin 端点 400 不可达。
+  @Get(':id/snapshots/full')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiGetResource(Object, '获取订单快照全量（管理员）')
+  @ApiDocs({
+    summary: '获取订单快照全量（管理员）',
+    description: '返回订单全量快照，含完整收货信息（PII 不脱敏）——仅供管理后台售后处理',
+    auth: true,
+    params: [{ name: 'id', description: '订单ID', example: 1 }],
+    responses: {
+      success: { description: '快照列表（PII 原样）' },
+      forbidden: '仅管理员可访问',
+    },
+  })
+  async getSnapshotsFull(@Param('id', ParseIntPipe) id: number) {
+    const snapshots = await this.snapshotRead.findByOrderId(id);
+    return { orderId: id, total: snapshots.length, snapshots };
+  }
+
   @Get(':id/snapshots/:version')
   @UseGuards(JwtAuthGuard)
   @ApiGetResource(Object, '获取单条快照')
@@ -132,24 +153,5 @@ export class OrderSnapshotController {
     const isAdmin = req?.user?.role === Role.ADMIN;
     const snapshot = await this.snapshotRead.findByVersion(id, version);
     return maskSnapshotsPii([snapshot], isAdmin)[0];
-  }
-
-  @Get(':id/snapshots/full')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
-  @ApiGetResource(Object, '获取订单快照全量（管理员）')
-  @ApiDocs({
-    summary: '获取订单快照全量（管理员）',
-    description: '返回订单全量快照，含完整收货信息（PII 不脱敏）——仅供管理后台售后处理',
-    auth: true,
-    params: [{ name: 'id', description: '订单ID', example: 1 }],
-    responses: {
-      success: { description: '快照列表（PII 原样）' },
-      forbidden: '仅管理员可访问',
-    },
-  })
-  async getSnapshotsFull(@Param('id', ParseIntPipe) id: number) {
-    const snapshots = await this.snapshotRead.findByOrderId(id);
-    return { orderId: id, total: snapshots.length, snapshots };
   }
 }

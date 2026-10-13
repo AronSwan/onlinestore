@@ -19,9 +19,9 @@ export function splitCrLfRows(text) {
   return text.split(/\r?\n/).map((l) => l.replace(/\s+$/, ''));
 }
 
-/** 单行解析为 { stamped, seq, hash } —— 形态= 守护 anchor 行 schema 落地 */
+/** 单行解析为 { stamped, seq, hash } —— P2-L 修因：先 trim 再 split（防前导空白字段错位） */
 export function parseAnchorLine(line, fieldNames = ['stamped', 'seq', 'hash']) {
-  const parts = line.split(/\s+/);
+  const parts = line.trim().split(/\s+/);
   if (parts.length < fieldNames.length) return null;
   const out = {};
   for (let i = 0; i < fieldNames.length; i++) out[fieldNames[i]] = parts[i];
@@ -40,20 +40,37 @@ export function forestHashOf(perOrder) {
     .digest('hex');
 }
 
-/** 锚 corruption 体检：历史行若有重复 forestHash = 锚文件被改写（双盲#4 抽）；返回 { corrupted, duplicate } */
+/**
+ * 锚 corruption 体检（P2-J 修因：同 hash 多行=合法幂等再锚定，不判篡改）
+ * 真正的篡改=同行不同 hash（同 seq/时间戳但 hash 被改写）或非法 hash 格式。
+ * 返回 { corrupted, duplicate }——duplicate 仅在"不同时间戳同 hash"之外的
+ * 非法重复（如同行被改写出两个不同 hash）时给出。
+ */
 export function detectAnchorCorruption(lines) {
-  const hashes = lines.map((l) => l.split(/\s+/)[2]).filter(Boolean);
-  const dup = hashes.find((h, i) => hashes.indexOf(h) !== i);
-  if (!dup) return { corrupted: false };
-  return { corrupted: true, duplicate: dup };
+  const parsed = lines.map((l) => parseAnchorLine(l)).filter(Boolean);
+  // 同 timestamp+seq 出现两个不同 hash = 锚行被改写
+  const seen = new Map();
+  for (const p of parsed) {
+    const key = `${p.stamped}:${p.seq}`;
+    const existing = seen.get(key);
+    if (existing !== undefined && existing !== p.hash) {
+      return { corrupted: true, duplicate: p.hash };
+    }
+    seen.set(key, p.hash);
+    // hash 格式非法也是篡改信号
+    if (!isValidAnchorHash(p.hash)) {
+      return { corrupted: true, duplicate: p.hash };
+    }
+  }
+  return { corrupted: false };
 }
 
-/** 标准 orders 锚文件首锚头部：与 audit-chain-head.txt 端 258-269 同步形态 */
-export function formatAnchorHeader({ domain, singleSuffix = '单' }) {
+/** 标准 orders 锚文件首锚头部（P2-K 修因：命令参数化，不再写死 npm run verify） */
+export function formatAnchorHeader({ domain, singleSuffix = '单', command = 'npm run verify -- --anchor' }) {
   return (
     `# ${domain} git 锚——每行钉住一版森林摘要（UTC时间 ${singleSuffix}数 头森林hash SHA256）\n` +
     '# 追加式：只增不改；改历史行=锚不符（verify exit 2）。\n' +
-    '# 由 npm run verify -- --anchor 生成；commit 由人工执行。\n' +
+    `# 由 ${command} 生成；commit 由人工执行。\n` +
     `# 森林摘要=各单链头 (orderId, headSeq, headHash) 按 orderId 排序后拼接 SHA256。\n` +
     '\n'
   );

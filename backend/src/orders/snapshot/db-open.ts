@@ -1,8 +1,10 @@
 /**
  * SQLite 只读开库 + 重试（阶段 3 前置修因——双盲#4 抽公共）
  *
- * 仓根 scripts/verify-{audit,orders}-chain.mjs 双端 db open 模板逐字 13 行同源。
- * F-003 修复：busy-wait→setTimeout（jest fake timer 兼容 + 不阻塞 event loop）。
+ * 仓根 scripts/verify-{audit,orders}-chain.mjs 双端 db open 模板逐字同源。
+ * P2-N 勘正：原 F-003 声称"busy-wait→setTimeout"不实——父树本无 busy-wait
+ * （双盲审 X1 席实测确认）。实际变更为：将脚本内联的 `await new Promise(setTimeout)`
+ * 重试模式抽为可复用 async 函数（openReadOnlyWithRetry），保持 setTimeout 语义。
  * 纯依赖=node:sqlite 同步接口，无 process.exit 副作用，便于 unit test 模拟失败。
  */
 

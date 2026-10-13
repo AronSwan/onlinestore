@@ -9,36 +9,45 @@
  * - recipientName：保留姓+*（如"张*"、"欧阳**"）
  * - recipientPhone：保留前 3 后 4（如"138****0000"）
  * - shippingAddress：保留前 6 字+…（如"北京市朝阳区…"）
+ *
+ * P1-A 修因（双盲审四席共中）：遮罩作用在内层 snapshot 对象（真实 PII 所在），
+ * 不是外层信封（rowToPayload 返回 {orderId,…,snapshot:{PII}}）。
  */
 
 const PII_FIELDS = ['recipientName', 'recipientPhone', 'shippingAddress'] as const;
 
 /** 遮罩收货人名：姓+* */
-export function maskName(name: string | null): string | null {
-  if (!name) return null;
-  const chars = [...name];
+export function maskName(name: string | null | undefined): string | null {
+  if (name == null) return null;
+  const s = String(name);
+  if (!s) return null;
+  const chars = [...s];
   if (chars.length <= 1) return chars[0] + '*';
   return chars[0] + '*'.repeat(chars.length - 1);
 }
 
 /** 遮罩手机号：前3后4 */
-export function maskPhone(phone: string | null): string | null {
-  if (!phone) return null;
-  if (phone.length <= 7) return '*'.repeat(phone.length);
-  return phone.slice(0, 3) + '*'.repeat(phone.length - 7) + phone.slice(-4);
+export function maskPhone(phone: string | null | undefined): string | null {
+  if (phone == null) return null;
+  const s = String(phone);
+  if (!s) return null;
+  if (s.length <= 7) return '*'.repeat(s.length);
+  return s.slice(0, 3) + '*'.repeat(s.length - 7) + s.slice(-4);
 }
 
-/** 遮罩地址：前6字+… */
-export function maskAddress(addr: string | null): string | null {
-  if (!addr) return null;
-  const chars = [...addr];
-  if (chars.length <= 6) return chars.join('') + '…';
-  return chars.slice(0, 6).join('') + '…';
+/** 遮罩地址：保留前 4 字+…（P2-10 修因：≤6 字不再全露） */
+export function maskAddress(addr: string | null | undefined): string | null {
+  if (addr == null) return null;
+  const s = String(addr);
+  if (!s) return null;
+  const chars = [...s];
+  if (chars.length <= 2) return '**';
+  return chars.slice(0, Math.min(4, chars.length - 1)).join('') + '…';
 }
 
 /**
- * 快照 payload PII 遮罩（读时脱敏主入口）
- * @param payload 快照 JSON（含 PII 字段）
+ * 快照 PII 遮罩（读时脱敏主入口）——P1-A 修因：遮内层 snapshot
+ * @param payload rowToPayload 返回的信封对象 {orderId,…,snapshot:{PII…}}
  * @param isAdmin true=不遮罩（admin 视图），false=遮罩
  * @returns 新对象（不改原 payload——快照只读）
  */
@@ -47,11 +56,24 @@ export function maskSnapshotPii<T extends Record<string, unknown>>(
   isAdmin: boolean,
 ): T {
   if (isAdmin) return payload;
+  const inner = payload.snapshot as Record<string, unknown> | undefined;
+  if (!inner || typeof inner !== 'object') {
+    // 兼容平铺形状（无 snapshot 包装层——直接遮顶层）
+    return {
+      ...payload,
+      recipientName: maskName(payload.recipientName as string | null),
+      recipientPhone: maskPhone(payload.recipientPhone as string | null),
+      shippingAddress: maskAddress(payload.shippingAddress as string | null),
+    };
+  }
   return {
     ...payload,
-    recipientName: maskName(payload.recipientName as string | null),
-    recipientPhone: maskPhone(payload.recipientPhone as string | null),
-    shippingAddress: maskAddress(payload.shippingAddress as string | null),
+    snapshot: {
+      ...inner,
+      recipientName: maskName(inner.recipientName as string | null),
+      recipientPhone: maskPhone(inner.recipientPhone as string | null),
+      shippingAddress: maskAddress(inner.shippingAddress as string | null),
+    },
   };
 }
 
@@ -61,6 +83,29 @@ export function maskSnapshotsPii<T extends Record<string, unknown>>(
   isAdmin: boolean,
 ): T[] {
   return snapshots.map((s) => maskSnapshotPii(s, isAdmin));
+}
+
+/**
+ * 遮罩 diff changes 中的 PII from/to 值（P2-F 修因）
+ */
+export function maskChangesPii(
+  changes: Record<string, { from: unknown; to: unknown }>,
+  isAdmin: boolean,
+): Record<string, { from: unknown; to: unknown }> {
+  if (isAdmin) return changes;
+  const out: Record<string, { from: unknown; to: unknown }> = {};
+  for (const [key, val] of Object.entries(changes)) {
+    if (key === 'recipientName') {
+      out[key] = { from: maskName(val.from as string | null), to: maskName(val.to as string | null) };
+    } else if (key === 'recipientPhone') {
+      out[key] = { from: maskPhone(val.from as string | null), to: maskPhone(val.to as string | null) };
+    } else if (key === 'shippingAddress') {
+      out[key] = { from: maskAddress(val.from as string | null), to: maskAddress(val.to as string | null) };
+    } else {
+      out[key] = val;
+    }
+  }
+  return out;
 }
 
 export { PII_FIELDS };

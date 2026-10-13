@@ -1,9 +1,8 @@
 /**
- * db-open 单元测试（阶段 3 前置 F-002——三连次硬重试 + 200ms busy-wait 语义锁）
+ * db-open 单元测试（P2-N 勘正：原头注释声称"busy-wait 语义锁 + fake timer"不实）
  *
- * 用 mock DatabaseSync + jest.useFakeTimers 验三连次硬重试与 200ms 间隔；
- * busy-wait→setTimeout 修复（F-003）后这些测试将改用 fake timer 推进。
- * 当前先按行为锁：断言"attempt 3 失败→onFail 触发、成功时不触发"。
+ * 实际覆盖：mock DatabaseSync 行为锁（成功/重试/耗尽/回调触发），6 条用例。
+ * 未覆盖：RETRY_INTERVAL_MS 时序断言、fake timer、非阻塞验证（真实 200ms 睡眠）。
  */
 import { openReadOnlyWithRetry } from './db-open.ts';
 

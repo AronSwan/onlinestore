@@ -142,7 +142,7 @@ describe('anchor-utils', () => {
     });
   });
 
-  describe('detectAnchorCorruption', () => {
+  describe('detectAnchorCorruption（P2-J 修因：同 hash 多行=合法幂等，不判篡改）', () => {
     it('空 lines→corrupted=false', () => {
       expect(detectAnchorCorruption([])).toEqual({ corrupted: false });
     });
@@ -160,25 +160,26 @@ describe('anchor-utils', () => {
       expect(detectAnchorCorruption(lines)).toEqual({ corrupted: false });
     });
 
-    it('出现重复 hash→corrupted=true + duplicate=首个重复值', () => {
+    it('不同时间戳同 hash→corrupted=false（合法幂等再锚定）', () => {
       const h = 'a'.repeat(64);
       const lines = [
         `2026-10-12T00:00:00Z\t1\t${h}`,
-        `2026-10-12T01:00:00Z\t2\t${'b'.repeat(64)}`,
-        `2026-10-12T02:00:00Z\t3\t${h}`, // 与第 1 行重复
+        `2026-10-12T01:00:00Z\t2\t${h}`, // 链未变再锚定=合法
+      ];
+      expect(detectAnchorCorruption(lines)).toEqual({ corrupted: false });
+    });
+
+    it('同 timestamp+seq 两个不同 hash→corrupted=true（锚行被改写）', () => {
+      const lines = [
+        `2026-10-12T00:00:00Z\t1\t${'a'.repeat(64)}`,
+        `2026-10-12T00:00:00Z\t1\t${'b'.repeat(64)}`, // 同行被改写
       ];
       const out = detectAnchorCorruption(lines);
       expect(out.corrupted).toBe(true);
-      expect(out.duplicate).toBe(h);
     });
 
-    it('三行中只有 hash 列被污染（stamped/seq 不同）也判重复', () => {
-      const h = 'c'.repeat(64);
-      const lines = [
-        `t1\t1\t${h}`,
-        `t2\t2\t${'d'.repeat(64)}`,
-        `t3\t3\t${h}`,
-      ];
+    it('非法 hash 格式→corrupted=true', () => {
+      const lines = ['2026-10-12T00:00:00Z\t1\tnot-a-valid-hash'];
       expect(detectAnchorCorruption(lines).corrupted).toBe(true);
     });
   });

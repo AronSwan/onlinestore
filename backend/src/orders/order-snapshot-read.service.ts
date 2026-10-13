@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { OrderSnapshot } from './entities/order-snapshot.entity';
 import { verifyOrderSnapshotChain } from './snapshot/order-snapshot-chain.ts';
-import { maskSnapshotPii, maskSnapshotsPii } from './snapshot/pii-mask';
+import { maskSnapshotPii, maskSnapshotsPii, maskChangesPii } from './snapshot/pii-mask';
 
 /**
  * 订单快照读服务（阶段 3——读侧端点）
@@ -56,7 +56,24 @@ export class OrderSnapshotReadService {
       where: { orderId },
       order: { version: 'ASC' },
     });
-    const result = verifyOrderSnapshotChain(rows as unknown as Record<string, unknown>[]);
+    // P1-E 修因（双盲审 X1+X2+Y1 三席共中）：TypeORM 水合行 snapshot=json 对象、
+    // occurredAt=Date，与写侧"回读原生行"（JSON 文本/字符串）算出的哈希字节不同。
+    // 验链前强制转回原生字符串形态（同写侧 Date 往返漂移防线）。
+    const nativeRows = rows.map((r) => ({
+      orderId: r.orderId,
+      version: r.version,
+      prevHash: r.prevHash,
+      recordHash: r.recordHash,
+      operatorType: r.operatorType,
+      operatorId: r.operatorId,
+      correlationId: r.correlationId,
+      occurredAt: r.occurredAt instanceof Date ? r.occurredAt.toISOString() : r.occurredAt,
+      schemaVersion: r.schemaVersion,
+      snapshot: typeof r.snapshot === 'object' && r.snapshot !== null
+        ? JSON.stringify(r.snapshot)
+        : r.snapshot,
+    }));
+    const result = verifyOrderSnapshotChain(nativeRows);
     return {
       valid: result.valid,
       length: result.length,
@@ -111,7 +128,8 @@ export class OrderSnapshotReadService {
         occurredAt: rows[i].occurredAt?.toISOString() ?? null,
         operatorType: rows[i].operatorType,
         operatorId: rows[i].operatorId,
-        changes,
+        // P2-F 修因：changes 的 PII from/to 也脱敏（否则从 diff 拿原值）
+        changes: maskChangesPii(changes, isAdmin),
         snapshot: maskSnapshotPii(current, isAdmin),
       });
     }

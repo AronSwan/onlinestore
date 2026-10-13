@@ -68,47 +68,62 @@ try {
 }
 
 // ── R2 快照↔支付状态对齐 ─────────────────────────────────
+// P2-H 修因：标记可比行数——空集/字段缺失不假绿
 try {
-  const mismatches = db.prepare(`
-    SELECT s.orderId, s.version,
-           JSON_EXTRACT(s.snapshot, '$.paymentStatus') as snapPayStatus,
-           o.payment_status as orderPayStatus
-    FROM order_snapshots s
+  const comparable = db.prepare(`
+    SELECT COUNT(*) as cnt FROM order_snapshots s
     JOIN orders o ON o.id = s.orderId
     WHERE s.version = (SELECT MAX(version) FROM order_snapshots WHERE orderId = s.orderId)
-    AND JSON_EXTRACT(s.snapshot, '$.paymentStatus') != o.payment_status
-  `).all();
-  for (const m of mismatches) {
+    AND JSON_EXTRACT(s.snapshot, '$.paymentStatus') IS NOT NULL
+  `).get();
+
+  if (comparable.cnt === 0) {
     results.r2.push({
-      orderId: m.orderId,
-      latestVersion: m.version,
-      snapshotPaymentStatus: m.snapPayStatus,
-      orderPaymentStatus: m.orderPayStatus,
-      issue: '最新快照 paymentStatus ≠ 订单表 paymentStatus',
+      issue: '可比行 0——快照缺 paymentStatus 字段或 JOIN 不命中（非"一致"）',
+      note: `快照总数与 orders JOIN 命中 0 行或字段全缺，R2 无实际比对`,
     });
+  } else {
+    const mismatches = db.prepare(`
+      SELECT s.orderId, s.version,
+             JSON_EXTRACT(s.snapshot, '$.paymentStatus') as snapPayStatus,
+             o.payment_status as orderPayStatus
+      FROM order_snapshots s
+      JOIN orders o ON o.id = s.orderId
+      WHERE s.version = (SELECT MAX(version) FROM order_snapshots WHERE orderId = s.orderId)
+      AND JSON_EXTRACT(s.snapshot, '$.paymentStatus') IS NOT NULL
+      AND JSON_EXTRACT(s.snapshot, '$.paymentStatus') != o.payment_status
+    `).all();
+    for (const m of mismatches) {
+      results.r2.push({
+        orderId: m.orderId,
+        latestVersion: m.version,
+        snapshotPaymentStatus: m.snapPayStatus,
+        orderPaymentStatus: m.orderPayStatus,
+        issue: '最新快照 paymentStatus ≠ 订单表 paymentStatus',
+      });
+    }
   }
 } catch (err) {
   results.r2.push({ error: `R2 查询失败: ${err}` });
 }
 
 // ── R3 快照↔审计日志 ─────────────────────────────────────
+// P1-C 修因（双盲审四席共中）：audit_logs 无 correlationId 列，无法逐条关联。
+// 如实改为"全局审计行存在性"检查——判词与实际逻辑一致。
 try {
-  const snapshotsWithoutAudit = db.prepare(`
-    SELECT s.orderId, s.version, s.correlationId
-    FROM order_snapshots s
-    WHERE s.correlationId IS NOT NULL
-    AND NOT EXISTS (
-      SELECT 1 FROM audit_logs a
-      WHERE a.module = 'orders' AND (a.operation LIKE '%SNAPSHOT%' OR a.url LIKE '%snapshot%')
-    )
-    LIMIT 50
-  `).all();
-  for (const s of snapshotsWithoutAudit) {
+  const snapshotAuditCount = db.prepare(`
+    SELECT COUNT(*) as cnt FROM audit_logs a
+    WHERE a.module = 'orders' AND (a.operation LIKE '%SNAPSHOT%' OR a.url LIKE '%snapshot%')
+  `).get();
+  const totalSnapshots = db.prepare(`SELECT COUNT(*) as cnt FROM order_snapshots`).get();
+  const snapshotsWithCorrelation = db.prepare(
+    `SELECT COUNT(*) as cnt FROM order_snapshots WHERE correlationId IS NOT NULL`
+  ).get();
+
+  if (snapshotAuditCount.cnt === 0 && totalSnapshots.cnt > 0) {
     results.r3.push({
-      orderId: s.orderId,
-      version: s.version,
-      correlationId: s.correlationId,
-      issue: '快照无对应审计日志（correlationId 不匹配）',
+      issue: `全库无 orders/snapshot 审计行（快照共 ${totalSnapshots.cnt} 条，correlationId 非空 ${snapshotsWithCorrelation.cnt} 条）——审计日志未覆盖快照写入`,
+      note: 'audit_logs 无 correlationId 列，本项为全局存在性检查（非逐条关联）',
     });
   }
 } catch (err) {
@@ -154,25 +169,42 @@ try {
 }
 
 // ── payments 漂移 ─────────────────────────────────────────
+// P2-M 修因：跨词表状态映射替换裸比较+排除清单（success↔paid 语义等价不判漂移）
+const PAYMENT_STATUS_MAP = {
+  // payments.status → orders.payment_status 等价映射
+  pending: ['pending', 'processing'],
+  success: ['paid', 'success'],
+  paid: ['paid', 'success'],
+  processing: ['pending', 'processing'],
+  failed: ['failed'],
+  cancelled: ['cancelled'],
+  expired: ['expired'],
+  refunded: ['refunded'],
+  partial_refunded: ['partial_refunded'],
+};
+function isPaymentDrift(orderStatus, paymentStatus) {
+  const equivalents = PAYMENT_STATUS_MAP[paymentStatus] || [paymentStatus];
+  return !equivalents.includes(orderStatus);
+}
 try {
-  const drifts = db.prepare(`
+  const joinedRows = db.prepare(`
     SELECT o.id as orderId, o.order_number as orderNumber, o.payment_status as orderStatus,
            p.status as paymentStatus, p.paymentId
     FROM orders o
     JOIN payments p ON p.orderId = o.order_number
-    WHERE p.status != o.payment_status
-    AND p.status NOT IN ('expired', 'cancelled')
-    LIMIT 50
+    LIMIT 200
   `).all();
-  for (const d of drifts) {
-    results.drift.push({
-      orderId: d.orderId,
-      orderNumber: d.orderNumber,
-      orderStatus: d.orderStatus,
-      paymentStatus: d.paymentStatus,
-      paymentId: d.paymentId,
-      issue: 'payments.status ≠ orders.payment_status（漂移）',
-    });
+  for (const d of joinedRows) {
+    if (isPaymentDrift(d.orderStatus, d.paymentStatus)) {
+      results.drift.push({
+        orderId: d.orderId,
+        orderNumber: d.orderNumber,
+        orderStatus: d.orderStatus,
+        paymentStatus: d.paymentStatus,
+        paymentId: d.paymentId,
+        issue: `payments.status=${d.paymentStatus} 与 orders.payment_status=${d.orderStatus} 语义不等价（漂移）`,
+      });
+    }
   }
 } catch (err) {
   results.drift.push({ error: `drift 查询失败: ${err}` });
