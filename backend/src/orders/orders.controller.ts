@@ -29,6 +29,8 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../auth/enums/role.enum';
 import { RouteLabelInterceptor } from '../monitoring/route-label.interceptor';
+
+type AuthedRequest = { user: { sub: number; role?: string } };
 import {
   ApiDocs,
   ApiCreateResource,
@@ -57,9 +59,9 @@ export class OrdersController {
       badRequest: '请求参数错误或库存不足',
     },
   })
-  create(@Body() createOrderData: CreateOrderData, @Request() req: any) {
+  create(@Body() createOrderData: CreateOrderData, @Request() req: AuthedRequest) {
     // 越权审计(2026-10-03): 归属绑定——订单的 userId 一律取令牌主体, 不信任请求体
-    createOrderData = { ...createOrderData, userId: req?.user?.sub };
+    createOrderData = { ...createOrderData, userId: req.user.sub };
     return this.ordersService.create(createOrderData);
   }
 
@@ -156,15 +158,15 @@ export class OrdersController {
       notFound: '订单不存在',
     },
   })
-  async findOne(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+  async findOne(@Param('id', ParseIntPipe) id: number, @Request() req: AuthedRequest) {
     const order = await this.ordersService.findById(id);
     if (!order) {
       throw new NotFoundException(`订单 ${id} 不存在`);
     }
     // 越权审计(2026-10-03): 路径参数是订单ID不是用户ID, OwnerOrAdminGuard 不适用,
     // 在 handler 内比对订单归属(userId)与令牌主体
-    const user = req?.user;
-    if (user?.role !== Role.ADMIN && String(order.userId) !== String(user?.sub)) {
+    const user = req.user;
+    if (user.role !== Role.ADMIN && String(order.userId) !== String(user.sub)) {
       throw new ForbiddenException('只能查看本人订单');
     }
     return order;

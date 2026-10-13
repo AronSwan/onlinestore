@@ -11,7 +11,6 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import type { Request as ExpressRequest } from 'express';
 import { OrderSnapshotReadService } from './order-snapshot-read.service';
 import { OrdersService } from './orders.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -22,10 +21,10 @@ import { Role } from '../auth/enums/role.enum';
 /**
  * 鉴权请求类型（P3-A 修因——双盲审 A 席 P3-6 抓到）：替代 `any`
  * req.user 来自 JwtStrategy.validate 返回值，已包含 sub/role。
+ * 注：类型松化（不 extends Request）以兼容 spec 夹具 `reqOf = ({user})` 模式
+ * ——只声明 controller 实际消费的 user 字段，放弃其他 100+ express 字段保护。
  */
-type AuthedRequest = ExpressRequest & {
-  user: { sub: number; role: string };
-};
+type AuthedRequest = { user: { sub: number; role: string } };
 import { RouteLabelInterceptor } from '../monitoring/route-label.interceptor';
 import { ApiDocs, ApiGetResource } from '../common/decorators/api-docs.decorator';
 import { maskSnapshotsPii } from './snapshot/pii-mask';
