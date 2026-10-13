@@ -1,0 +1,115 @@
+# 债-10 方案 v2 · 逻辑路独立评审报告
+
+条款援引：承重陈述出口定律（数字/复现）、diff 纪律（未动任何文件，本报告为唯一产出）
+评审对象：`C:\Users\Administrator\onlinestore_remediation\docs\debt-10-architecture-research-proposal-v2.md`（2026-10-14 版，22245 字节）
+对照件：v1 稿（同目录 `debt-10-architecture-research-proposal.md`）、6 员调研原文（`docs/debt-10-archive/audit-outputs/research-{A,B,C,D,E,F}-*.txt`）、代码（`backend/src/common/db-write-mutex.ts`、`backend/src/common/audit/audit.service.ts`、`backend/src/common/audit/audit-chain.ts`、`backend/src/orders/orders.service.ts`、`backend/src/orders/order-snapshot.service.ts`、products/audit controller 抽查）
+说明：71 项评审原文未归档（grep 全 docs 仅 v2 自引），P1-L 编号含义按 v2 §1/§2 自引行+任务书口径核。
+
+---
+
+## 一、分腿设计内部一致性（v2 最大变更）
+
+### 1a. 类 1/3 同事务一步链化 —— **推演结论：成立，无循环依赖，C2/C3 相容。P3×1**
+
+**无循环依赖**：recordHash 的 11 个 canonical 输入（§3.3 键表）中，seq/prevHash 来自链头读，其余 9 个为应用侧值——全部在 INSERT 前可知，无任何列值依赖本行 DB 生成值。DDL 中 DB 生成值仅 id（AUTOINCREMENT）与 created_at（DEFAULT CURRENT_TIMESTAMP），二者均不在 canonical（§3.2 行注+§3.3 排除清单）。时序 读链头→seq=prev+1→算 hash→INSERT 全列 是无环的。
+
+**C2 相容**：链化写在调用方事务内、调用方事务在 runExclusiveWrite 内，全程零次新增取锁——与 appendSnapshot 已验证的形状（order-snapshot.service.ts:116-206，C8 同事务纪律）同构，不触 db-write-mutex.ts:26 嵌套禁令。W7 死锁病灶（log() 自带第二 mutex+第二事务，audit.service.ts:202-218）不在此路径上。
+
+**C3 相容**：单写者下链头读与 INSERT 同互斥段串行，无竞争（v2 “同构于现行 W7” 表述与 audit.service.ts:204-208 一致）；多实例下 seq 唯一索引（§3.2 `idx_domain_events_seq`）兜底整笔回滚，且 T2 已以分歧保留形式承认多实例下 B 员外移更优——多实例边界是已声明的取舍而非漏洞。
+
+**[F-09｜P3] id 不入 canonical 的理由未成文**：老链 canonical 含 id（audit-chain.ts:22-38，16 键含 'id'），id 是 DB 生成值——若照抄入新 canonical，一步链化立即不可能。v2 恰好没放 id 进键表（正确），但 §3.2/§3.3 对这个与 occurredAt 同类的必要条件只字未提；T2 论证只讲了 Date 半边。将来若有人“补全”id 入 canonical，一步链化静默失效。建议一句通则成文：“DB 生成值（id/created_at）一律不入 canonical”。
+
+### 1b. 类 2 PENDING 行补链 —— **任务书点名的深洞：正确算法下不存在 seq 冲突，但承重算法未成文。P1×1 + P2×1**
+
+**独立推演结果（回答“窗口里 INLINE 行读到什么/seq 是否被破坏”）**：
+- DDL 行注钉死 “链列（PENDING 行 NULL；INLINE 行一步写入）”（§3.2 seq 列注）——即禁止 INSERT 时预分配 seq。
+- 在此约束下，INLINE 行的链头读（谓词须 `WHERE seq IS NOT NULL ORDER BY seq DESC LIMIT 1`，同 W7 原文 audit.service.ts:205）**读不到 PENDING 行**（其 seq 为 NULL）——窗口内 INLINE 行在现行链尾后续链，seq 单调推进，不跳号。
+- PENDING 行补链时取**当时**链头+1：中间 INLINE 行占掉的号是“当时的头”，PENDING 行排在其后拿新号。任务书假设的冲突场景（“PENDING id 小但中间 INLINE 占号→补链撞唯一索引”）只在**插入时预分配 seq** 的错误实现下发生，而该实现已被 DDL 行注排除。sqlite/MySQL 唯一索引均允许多重 NULL，PENDING 积压不撞索引。
+- **结论：无结构性 seq 冲突**。但代价是类 2 行的链序=补链序≠发生序（先发生的类 2 事件链在后的类 1 事件之后）——对链完整性无碍（verify 按 seq 验链不按时间），对“时间线查询”消费方有语义影响（须按 occurred_at 排序而非 seq）。
+
+**[F-01｜P1] 类 2 PENDING 行的 INSERT 时机未交代——分腿设计在关键节点上不可判定**。§3.1 类 2 分支全文：“业务事务 COMMIT 后 → EventEmitter2 fire-and-forget（现行 census⑤ 模式不变）→ 异步腿 worker：读 relayState=PENDING 行 → 补链列”——**图中没有 INSERT 步**。两种读法：
+- 读法 A（好）：业务事务内 INSERT PENDING 行（链列 NULL，relay_state 显式 'PENDING'，DDL 默认值 'INLINE' 说明须显式传入）、commit 后 JIT drain 只补链。此为 outbox 正统：存储 fail-closed、送达 fail-open，重试腿有持久物可重试。
+- 读法 B（坏）：commit 后 fire-and-forget 时才插行。则 COMMIT 与 INSERT 之间进程崩溃=事件永久丢失且**重试机制无物可重试**（兜底轮询扫表扫不到从未插入的行）——这正是 M5/R3 病灶（fail-open 永久缺失，D 员 Q2 判其踩 10.2.1 覆盖义务）在类 2 上的残留。
+
+文本倾向哪边？T5 裁决原文“类 2=异步腿（**fail-open**+重试+死信+告警）”把 fail-open 标到整腿（含存储），字面支持读法 B；但 T5 同句引“B 员分层”为来源，而 B 员分层教义（research-B §二）是“存储内带 fail-closed **+** 送达外带 fail-open”两条腿、存储侧不分事件类。**v2 的两个来源互相打架，方案正文不含裁决所必需的那一句 INSERT 位置**。类 2 腿在 P1 就上线（§4.1），此洞不是远期问题。修复只需一句：“类 2 行由业务事务同事务 INSERT（relay_state='PENDING'，链列 NULL）；异步腿只补链列+翻 INLINE”——但按 v2 自立的“技术前置件补齐”标准（v1 正因“五大构件停在命名层”被判不可用），这句是承重件，缺失即立案。
+
+**[F-02｜P2] 异步腿补链算法三要素未成文**：(i) 链头读谓词须排除 seq-NULL 行（W7 有先例、v2 未重述）；(ii) seq=补链时点链头+1、禁止预分配（DDL 行注隐含、算法层未写）；(iii) 多实例下的行认领语义（F 员 C11 已示范条件 UPDATE `tryClaim` 模式，§3.4 参数表未收；R2 双触发每实例一份，多实例重复 drain 无认领约定）。另类 2 链序≠发生序对时间线消费方的影响（见 1b 推演）全文零交代。三项均可由胜任实现者推出，但 v2 的自我定位是“命名层→前置件”的升级稿，承重不变式应落在纸面。
+
+### 1c. relay_state/attempts 的 UPDATE 是否破链 —— **结论：不破，机制正确；交代半句。P3×1**
+
+canonical 11 键不含 relayState/attempts/lastError（§3.3 明列排除）→ 补链 UPDATE（PENDING→INLINE+写链列）发生在 hash 计算同时或之前；链化后这些列的任何再 UPDATE 都不触碰 canonical 输入，recordHash 保持可复算。时序上也无矛盾：INLINE 后不再有 attempts 递增（行已出队）、DEAD 行 seq 恒 NULL 无 hash 可破、payload 可删（b 变体 erasure 位）而 payload_hash 是锚不删——验证侧重算不受影响。**[F-10｜P3]** v2 写了排除清单但没写收尾句“中继列 UPDATE 不影响已算好的 recordHash”——一步推理可补，属成文完备性缺口。
+
+---
+
+## 二、b 变体语义边界：R3'/R4 是否失去明文验证能力 —— **确有缺口，v2 只交代了备份面、漏了在线面。P1×1**
+
+**[F-03｜P1] 在线明文区完整性无任何机制覆盖**。链条推演：
+- 链只锚 payloadHash=HMAC(payload)（§3.2/§3.3），payload 明文不在 canonical。攻击者改 DB 中 payload 明文而不动 payload_hash：链全绿、verify 零告警——**篡改检测能力对 payload 列为零**。这不是抽象威胁：本仓链的存在理由就是防篡改检测（D 员 10.3.4 变更检测义务的可接受措施）。
+- E 员原文对选项 b 明言此缺口并给出要求：“链外明文的完整性不再被链保护（**需快照一致性另立机制**）”（research-E 选项空间表 b 行）。
+- v2 的交代盘点：§2 T3/T4 分歧保留只列“a/e 对备份/冷区副本覆盖更彻底……b 的明文区**备份副本**是残余风险”；§6.1.3 同样只列备份副本。**在线明文区的“另立机制”在 §3.8 四条对账（R1'/R2/R3'/R4）、§4 验收、§6 未决三处均无踪影**。
+- 该机制其实现成可用：对未擦除行重算 HMAC(payload) 与存量 payload_hash 比对（一条 SQL 级对账腿，兼验白名单投影未被绕过），可挂 R3'。v2 未立。备选修复：明文区完整性腿（HMAC 重算）入 §3.8 并在 §6.1.1（key 轮换会使旧行 HMAC 重算失效）挂关联未决。
+
+R4（链头→git 外锚）本身锚的是链头摘要，对明文区同样无覆盖——与“定时外锚未定”（§6.1.4 已挂账）是两回事，不能互相顶替。
+
+---
+
+## 三、§2 T2 裁决的技术论证质量 —— **occurredAt 字符串化消除 C6 的推论链成立；两处半成品。P3×2**
+
+**核心推论验证（扎实）**：C6 原文（research-C §五 C6）＝“哈希字节=驱动原生行回读（防 Date 往返漂移）→两步写是结构必然”。两步写的存在理由是 canonical 含 Date 值（老链 createTime，audit.service.ts:188 传 `new Date()`；快照链 occurredAt/snapshot 同理，order-snapshot.service.ts:181-198 须回读并做字符串矫正）。新表 canonical 11 键中：occurred_at CHAR(19) 应用生成定长字符串（§3.2 行注“不入 DB Date”）、payload_hash/prev_hash CHAR(64) hex、其余 VARCHAR/整数——**无一 Date 型、无一 JSON 列入 canonical**。字符串列在 sqlite（TEXT）与 MySQL 协议（CHAR）两侧逐字往返，无驱动归一化歧义 → 写侧应用值=存库值=验侧原生行值，回读失去必要性 → 一步写成立。推论链每一环核过代码，成立。
+
+**任务书追问的 payload JSON 往返漂移**：确认不影响链——payload TEXT 不在 canonical，链上只有 HMAC；即便驱动对 JSON 文本做往返变形，也只是（未存在的）HMAC 重算腿的假阳性面，链完整性不受触碰。快照链当年为 JSON 列做的字符串矫正（order-snapshot.service.ts:193-197）在 v2 里因 payload 出 canonical 而结构性地不需要——此点 v2 未点破但设计正确。
+
+**半成品两处**：
+- **[F-09｜P3]**（同 1a）id 排除未说明——老链 canonical 含 id 是一步写不能照抄的另一半理由，T2 论证只覆盖 Date 半边。
+- **[F-11｜P3]** §3.1 哈希公式记法 `recordHash=H(canonical‖payloadHash)` 与 §3.3 键表自相打架：payloadHash 已是 canonical 第 9 键，公式再拼接一次=重复计入；且现行实现是 `SHA256(prevHash\n + canonical)` 前缀式（audit-chain.ts:94-95）而 v2 公式无 prevHash 前缀（canonical 含 prevHash 键，可行但与复用的“anchor 机制/verify 脚本”字节格式不同族）。键表应为权威、公式应改写，否则送审轮会再抓一次“命名层”。
+
+T2 对 B 员碰撞缺失的自我标注（“此裁决未与 B 员原文碰撞——分歧保留”）与 B 员原文（research-B §一结语“链化/验链/告警全部移到事务外的中继侧”）核对属实，标注诚实。
+
+---
+
+## 四、W1-W13 覆盖表与迁移路径对应 —— **数目对不上：宣称 9 条，自身枚举=8 条。P2×1 + P2×1**
+
+**[F-04｜P2] “9 条事务底座路径”三处重复、无一口径可复现出 9**：
+- §1.2：“9 条路径标注‘先造事务底座’”；§3.7 尾行：“**9 条**‘先造事务底座’路径（W4-W6/W8-W12）”；§4.1 P2：“事务底座改造 **9 路径**（W4-W6/W8-W12）”。
+- 自身枚举 W4-W6/W8-W12 = {W4,W5,W6,W8,W9,W10,W11,W12} = **8 条**（W7 冻结、W13 不变、W1-W3 已有事务）。
+- §3.7 表内**字面**标“事务底座改造”者仅 5 行（W5/W6/W8/W11/W12；W4 为软删改写、W9/W10 为“mutex 内加 BEGIN”的功能性计入）。
+- 三个口径（9/8/5）互不一致。该数字是 P2 工作量的承重计数，按本仓出口定律“无锚数字作废”——复现口径：枚举 8 条为准。
+- 分布核对：§4.1 把全部底座改造放 P2，与 §3.7 一致；但 §4.1 P0 行“W8/W11 mutex 核查（并入 **P1 事务底座**）”与 §6.1.6 同短语——**阶段表 P1 行没有任何“事务底座”活动**，W8/W11 的底座改造按表在 P2。两处“P1 事务底座”与阶段表自相矛盾（P2 级：排期表内部不一致，修复是改字不是改设计）。
+
+覆盖表内容本身逐行对过 C 员 W1-W13 原文（锚点 orders.service.ts:532-539 裸删、payment-application.service.ts W8-W12 互斥/事务现状、audit.controller.ts:318/387 写点）——**内容忠实，无挑报**；§3.6 五写点中第 4（cleanup 已是诚实 no-op）与第 5（残余 grep 核查）严格说不是“写点”（实际写点 3 个），无害的凑数，P3 不另立案。
+
+---
+
+## 五、v1 五项逻辑问题修复验证
+
+| v1 项 | v2 是否真修 | 判定 |
+|---|---|---|
+| P0-2 §0 失真（“双链冻结/三根因消失”无限定宣称） | §0 改修订说明体、无限定承重句；§3.5 窄/宽口径分列 | **修**。残余见 F-06（过渡期动态口径） |
+| P1-L1 中继接线（中继与业务 FIFO 竞争未评估） | 类 1/3 事务内链化消灭了中继主面；类 2 异步腿 drain 的事务**仍入全局写队列**，批 50 行 drain 的持队时延对业务路径的影响未评估（v2 零字） | **部分修**——见 F-05 |
+| P1-L2 M5 去向 | §2 T5+§3.4+§3.6 写点 2（orders.service.ts:218→类 2 腿）+§3.7 W1 行，四处闭环 | **修**（受 F-01 的 INSERT 时机洞牵连） |
+| P1-L4 v5 落选“死锁不可修（结构性）”失准 | §5.1 重写：真因=log() 自带第二互斥与事务（db-write-mutex.ts:26×audit.service.ts:202，锚核过属实）；“修补版理论可修（log() 接受调用方事务）”与 C 员根因 2 的约束组（C2+C6/C1+C8 绑的是**现行 log() 形状**）推演一致——appendSnapshot 正是该形状的实证；实际死因=C5 重锚+零消费+三分类矛盾，与 C 员“附带锁死：v5 步 2 加列撞 C5”吻合 | **修** |
+| P1-L5 验收绑架 | 快照链列停用从“可分离 P4”移入 P3 方案内动作；P1 验收门五判据自含、不引用可分离项 | **修**。但替代物五判据自身有洞（F-07）；且 P2-P4 无验收门（旧问题修复方式的副产品，P3 级） |
+
+**[F-05｜P2]** P1-L1 残余面（如上表）：类 2 drain 无嵌套死锁面（顶层排队），风险是 FIFO 时延而非正确性——但 v2 对 v1 被抓的同一问题在残余面上零交代，应一句话承认并给时延上界（dev 单写者下=批事务时长）。
+**[F-06｜P2]** §3.5 宽口径“2→1”未注明过渡窗：P1 上线 domain_events 后至 P3 冻结前，audit_logs 仍在写（products 路径 P2 才改、/audit/test P3 才停）、快照链列 P3 才停用——**P1→P3 期间活跃链=3**。静态口径已修（P0-2），动态口径新增了同型瑕疵。
+**[F-07｜P1]** §4.2 五判据不可机械执行（两处）：(i) 判据 2 命名“INLINE 率 100%”但所给 SQL（`relay_state='INLINE' AND seq IS NULL` 计数=0）只测“INLINE 行已链化”，测不出类 1 行滞留 PENDING（实现 bug 时 SQL 仍绿）；(ii) 判据 5“verify 脚本全链 0 断点”与判据 3“死信演练造 DEAD 行”在现行 verifyChain 语义下互斥——verifyChain 把 seq-NULL 行计为 UNCHAINED problem 且 `valid=problems.length===0`（audit-chain.ts:136-155, 232），演练自造的永久 seq-NULL DEAD 行必使 valid=false。需成文“verify 按 relay_state='INLINE' 过滤/DEAD 行豁免”的验证侧改造，或改判据措辞与 SQL。
+**[F-12｜P3]** 头部宣称“已修 4 P0+16 P1 中 15 项”未点名未修的那 1 项；§1.2 十六行全有响应（响应≠修复），15/16 无从对账。
+
+**独立新发现（任务书五问之外）**：
+**[F-08｜P2]** §3.3 演进规则（“追加键至尾部+schemaVersion 递增……插入中部或改语义=重锚=禁止”）与验证语义不闭环：若 verify 用单一全局键序重算，任何键追加=全链 CONTENT 断裂=重锚压力复活（C5 正是本仓两次事故模式）；规则要成立，须有“按行 schema_version 分版本重算”或“新纪元新链+跨纪元锚”机制之一，全文未定义。§3.3 自称“C5 教训的兑现”，兑现了开局冻结半边、缺验证侧半边。
+**[F-13｜P2]** §3.5 窄口径“治愈”所据三个消费方中两个未落地：时间线查询在 §3.8/§4 无构件无阶段；定时外锚机制 §6.1.4 自认未决。“有消费方”是终态宣称混入交付表，与 v1 P0-2 同型（轻度）。
+**[F-14｜P3]** 杂项：表级 HMAC key 为 P1 建表即需（每行 payload_hash 依赖）而 §6.1.1 整体未决、§4.1 P1 依赖行不含它（至少需“静态 key 先行+轮换禁令”临时裁决成文）；毒丸线 3 与重试上限 5 的语义关系未定义（F 员 C10 两数并存但用途不同）；类 1 事件零变化跳过政策（快照链 C7 的对应物）未定；domain_events 链核的 C14 双端加载纪律（新链模块）未提。
+
+---
+
+## 汇总
+
+- **P0：0 项**。v1 的三处 P0 级病灶（互斥三角/失真宣称/命名层构件）在 v2 均有实质响应，分腿与 b 变体的核心代数自洽。
+- **P1：4 项**——F-01（类 2 PENDING INSERT 时机不可判定，坏读法保留崩溃丢事件窗）、F-03（b 变体在线明文区完整性零机制，E 员明令“另立机制”未立）、F-07（五判据两处不可机械执行/自相冲突）、（F-02 若按 v2 自立的成文标准可升 P1，现记 P2 上限）。
+- **P2：7 项**——F-02、F-04（9≠8≠5 三口径）、F-05、F-06、F-08、F-13、排期表“P1 事务底座”矛盾。
+- **P3：6 项**——F-09、F-10、F-11、F-12、F-14、五写点凑数。
+- 五问直答：1a 成立无循环依赖；1b 正确算法下无 seq 冲突但算法未成文+INSERT 时机洞；1c 不破链、交代半句；2 缺口确证（在线面未交代）；3 推论链扎实（id 半边未讲）；4 数目不对（8 条非 9 条，全在 P2，另有 P1/P2 排期矛盾两处）；5 五项中四项真修、P1-L1 部分修。
+
+**总判定一行**：v2 分腿+b 变体的核心逻辑经独立推演成立（无 P0），但在其自我宣称“前置件补齐”的承重节点上留有 4 项 P1 成文缺口（类 2 INSERT 时机、明文区对账腿、验收门可执行性、异步腿不变式）与一处不可复现承重数字——**方向可继续、文本不可原样立项，补 P1 项后送复审**。
+
+**推荐**（逻辑路工程判断）：按 F-01 一句话钉死 outbox 读法 → F-03 给 R3' 加 HMAC 重算腿 → F-07/F-04 修判据与计数 → F-02 三不变式成文，四项均为成文级修补（不动架构裁决），修毕可直接进 α 送审轮。

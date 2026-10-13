@@ -1,0 +1,77 @@
+# 债-10 改进方案评审 · 数据路独立评审报告
+
+**评审对象**：`C:\Users\Administrator\onlinestore_remediation\docs\debt-10-architecture-research-proposal.md`（2026-10-14 协商稿）
+**对照材料**：`docs\debt-10-archive\audit-outputs\research-{A,B,C,D}-*.txt` + 本仓代码 + dev 库 + arXiv export API
+**实测日期**：2026-10-13（复现命令全部真跑，输出附各条）
+
+---
+
+## 一、实测相符项（不计发现）
+
+1. **代码锚 5 处全部属实**（逐一 Read）：
+   - `db-write-mutex.ts:26` = “禁止嵌套：fn 内再调 runExclusiveWrite 会等待外层回落=自锁死” ✓
+   - `audit.service.ts:202` = `runExclusiveWrite(() => this.dataSource.transaction(...))` 自带互斥+事务 ✓
+   - `orders.service.ts:215-244` = M5 循环，catch 仅 `logger.warn`（:239-243），:215 注释“审计失败只告警不回滚” ✓
+   - `payment-application.service.ts:371-449` = createRefund 全函数，零 audit/零 appendSnapshot/零 runExclusiveWrite（grep 实证全文件 mutex 仅 ：283/:483 两处，均在 W9/W10）✓
+   - `orders.service.ts:532-539` = delete() 裸删，无 mutex/事务/快照/审计 ✓
+2. **DB 承重数字全部复现**（`py -3.14` + sqlite，库=`backend\data\dev_caddy_shopping.db`，2026-10-13）：audit_logs=**1603**（products 1523 + audit 80）、module='orders'=**0**、order_snapshots=**0**、orders=**30**、seq 1..1603 连续 0 断档 0 行 UNCHAINED——与 C 员卡（实测 2026-10-13）完全一致。
+3. **锚文件交叉验证**：`docs\audit-chain-head.txt` 末行 `2026-10-13T12:42:40.870Z 1603 7ebc9f6e…` ✓；`docs\order-chain-heads.txt` 仅 1 行（3 单 741df00b…）✓——“已发生 2 次重锚”有锚链可查。
+4. **负空间事实**：grep "AuditInterceptor" 于 `backend/src` 零命中 ✓；`PRAGMA table_info(audit_logs)` 18 列无 correlationId/entity_id ✓；`scripts\reconcile-orders.mjs:126-141` R3 确为全局存在性检查（修因注明“无 correlationId 列，无法逐条关联”）✓。
+5. **arXiv 核真声明独立复验**（export API，HTTPS，2026-10-13）：2305.01378→Hicks SoK、2207.00944→GlassDB（7 作者）、2008.09268→Spitz、1801.10228→Fabric（**21 作者**，与 A 卡“21 位全录”符）、2104.01146→Overeem——**5/5 标题+作者相符**。
+6. **卡数自洽**：A 自报 12 卡（卡1-12 齐）✓；B 自报 22 卡（卡1-22 齐，§6 列举清单计数=22）✓；D 自报 24 引文（13+6+2+2+1=24）✓；A“4 条未获原文仅线索”（Snodgrass 书/ESORICS/Pavlou/CONIKS 族，恰 4 条）✓。
+7. **引文忠实度抽查全真**：RFC 6962 "single, ever-growing, append-only Merkle Tree"（A 卡1 §3）、QLDB "exactly one journal"（A 卡3）、Debezium "By only modifying a single resource…"（B 卡2 逐字）、Fowler 两条引文（B 卡6）、TiDB XA 引文（B 卡22 逐字，稿问“B 卡22 TiDB 无 XA”属实）、PG "Work to add…is ongoing"（B 卡8）、Stripe 3 天退避（B 卡14）、Hicks "editorial control"（A 卡7）、Crosby-Wallach 低事件量判词（A 卡2）——稿中转述均与原文一致。D 员六裁决（Q1-Q6）在稿中的映射逐条核对无失真。
+
+---
+
+## 二、发现项
+
+**P1-1｜§5 备选方案表第 1 行：证据列"B 卡6/卡11"错标**
+- 位置：稿 §5 行 88（单表事件溯源行，证据列写 `B 卡6/卡11`）
+- 实测：B 卡11 = `sqlite3_busy_timeout`（research-B-engineering.txt:97-100）；Overeem arXiv:2104.01146 是 **A 卡11**（research-A-academic.txt:147-154）。B 全部 22 卡中无 Overeem。
+- 理由：Fowler retrofit 部分（B 卡6）标对，schema 演进部分（Overeem）归属错卡——跨卷宗引证错位，审查席按锚点纪律立案级。
+
+**P1-2｜方法行“6 路独立审核代码实测相符”与记录双不符**
+- 位置：稿行 5
+- 实测：①“6 路”= v3-round2/v4/v5 各 6 路文档层审核（BACKLOG.md:662 数字三件套口径），grep 18 份原始输出（v3-round2-*、v4-*、v5-* 各 6 份）中代码锚（orders.service/audit.service/db-write-mutex/payment-application）命中**仅 1 处**（v4-history），且无任何“代码实测”语言——6 路审的是文档不是代码；②3 个 P0 根因的独立抓出记录=13 席 §7“**7 席**互不依赖独立抓出”（debt-10-coordination-summary-13-seats.md:348）。
+- 理由：数字（6 vs 7）与性质（文档审 vs 代码实测）均与卷宗不符。本轮真正对 3 根因做代码实测的是 C 员 1 路（且我已独立复验 5 锚全真——实质成立，出处写错）。
+
+**P1-3｜"10.4.1.2 曾在 13 席 P0-7 与 v2 §1.2 流传"流传地声明证伪**
+- 位置：稿 §6 行 98
+- 实测：全仓 grep "10.4.1.2" 仅 2 处命中=方案稿自身+research-D（D 明说错误出自“**任务书**”）。13 席 P0-7 = "5 席 vs 实施方责任边界”（13-seats 文件：57）；debt-10-proposal-v2.md §1.2 = "A 席诊断（两表域重叠）”；archive 的 final-coordination-summary-v2 其 P0-7 是"BACKLOG §651 引用错位”（PCI Req **6.4.3** 事）。
+- 理由：“D 员实证纠正”部分为真（D 〇.1 确有该纠错），但流传地两处均实测无此事——无锚的历史事实断言，且指向具体卷宗编号，属虚构细节。
+
+**P1-4｜“日订单 <万”无源数字裸奔**
+- 位置：稿 §3 裁决 2（行 65）
+- 实测：grep “日订单”/“<万”于 4 员原文及全仓文档零命中；§7（行 105）自认“基于 dev 库 30 单现状推断，生产量级待证”——30 单推不出“<万”界数。
+- 理由：该数字是“链式哈希保留”裁决落在 Crosby-Wallach “低事件量可行域”的承重判据（引文本身为真），但界数无任何测量、文献或卷宗来源，违反承重陈述出口定律②三件套。
+
+**P2-1｜承重数字出口三件套不齐（稿内）**
+- 位置：稿行 20（"1603 行 0 行 orders 消费；order_snapshots 0 行空森林”）、行 64（“旧表 1603 行历史包袱”）、§7 行 105（"30 单”）
+- 实测：数字本身我已全部复现为真（见一.2）；三件套（复现命令+日期+口径）齐备处只在 C 员卡内（2026-10-13、dev_caddy_shopping.db、1523+80 分解），稿出口处"1603"两处无限定语、"30 单”有“dev 库”口径但无日期，均无复现命令。
+- 理由：数字真实故不作废，但按出口定律②，出口件内承重数字应自带三件套或显式指回 C 卡日期/库位——现状只给了“实测锚”类泛指出处。
+
+**P2-2｜"arXiv 全核真 0 丢弃”与源记录不自洽（4≠5）**
+- 位置：稿行 5、行 96
+- 实测：A 员口径行写“**4 条** ID 全部核真一致”（research-A 行 7），但 A 卡组实有 **5 个** arXiv 条目且 5 卡均带核真标记（卡7/8/9/10/11）；我独立实测 5/5 相符——实质声明为真，源记录自身计数错，稿出口时未发现未披露。
+- 附环境事实：A 所写 `http://` 通道在本环境 curl 返回空体，`https://export.arxiv.org` 才返回（核真可复现性依赖通道细节）。
+
+**P3-1｜§1 R2 行 D 栏代席表态**
+- 位置：稿 §1 表 R2 行 D 栏“（工程问题，合规无介入）”
+- 实测：D 员原文对 R2 无任何裁决（六裁决 Q1-Q6 均不涉同事务双写自锁）；最近的是 Q1“审计异步化无要求”。
+- 理由：D 栏内容为稿方推断，应标“D 未裁决”而非代写立场；实质影响轻微。
+
+**P3-2｜§1 R1 行 B 栏措辞转写非逐字**
+- 位置：稿 §1 表 R1 行 B 栏“主流电商（Stripe/Saleor/Medusa）全是单事件列表+状态派生”
+- 实测：B 原文口径为“主流电商全是‘变更记录/快照’路线”（research-B §三表格+结论行）；三家确为 B 卡14/15/18-20 所覆盖，实质无偏差，措辞系稿方改写。
+
+**P3-3｜§1 R3 行 D 栏丢失条件限定语**
+- 位置：稿 §1 表 R3 行 D 栏“踩 10.2.1 覆盖义务”
+- 实测：D 原文 Q2 为“**若 PCI 适用**”条件式（D 〇.2 明定 PCI 适用前提条件性）；稿此处去掉了条件词。§7 行 104 已自披露“PCI 适用性本身未确证”，全文档层面无隐瞒，属单处限定语缺失。
+
+---
+
+## 总判定
+
+**数据路发现 9 项（0 P0 + 4 P1 + 2 P2 + 3 P3）。**
+
+承重面结论：稿中 5 处代码锚、4 个 DB 数字、锚文件链、卡数（12/22/24）、arXiv 5 ID 核真、以及抽到的全部逐字引文经我独立实测**全部为真**；失分集中在出处纪律——1 处证据错卡（P1-1）、1 处方法行来源错写（P1-2）、1 处虚构流传地（P1-3）、1 处无源界数（P1-4），以及出口三件套不齐与源记录计数不自洽。未修改任何文件；未参考其他评审路产出；按令不给推荐。

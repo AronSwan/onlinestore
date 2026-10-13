@@ -1,0 +1,112 @@
+核查完毕，全部证据落袋。以下为学术路（引证忠实度）评审报告正文。
+
+---
+
+# 债-10 改进方案 · 学术路（引证忠实度）独立评审报告
+
+**评审对象**：`C:\Users\Administrator\onlinestore_remediation\docs\debt-10-architecture-research-proposal.md`
+**引证链**：同目录 `debt-10-archive\audit-outputs\` 下 research-A-academic.txt（12 卡）/ research-B-engineering.txt（22 卡）/ research-D-compliance.txt（24 引文）
+**核查执行日**：2026-10-13（WebFetch/WebSearch/webReader 实跑记录在案）
+
+## 总判定
+
+**学术路发现 9 项（2 P0 + 0 P1 + 3 P2 + 4 P3）/ 抽查引文 38 条：一致 35 / 近似 0 / 不符 2 / 不可达 1**（另：arXiv export API 身份核真独立复现 5/5）
+
+---
+
+## 一查 · 引文逐字对照实录（真跑记录）
+
+| # | 引文（卡内宣称逐字） | 一手渠道实测 | 结果 |
+|---|---|---|---|
+| 1 | RFC 6962 §3 "A log is a single, ever-growing, append-only Merkle Tree of such certificates." | rfc-editor.org 直取 | **一致** |
+| 2 | RFC 6962 其余三句（consistency proofs 句 / MTH 0x00·0x01 公式 / MMD 句）×3 | 同上 | **一致** ×3 |
+| 3 | C&W 摘要 "Where a classic hash chain might require an 800MB trace … our prototype returns a 3KB proof with the same semantics." | USENIX PDF（WebFetch 拒 PDF 内容型；webReader 取文）+ ACM 官方记录快照（[dl.acm.org/doi/10.5555/1855768.1855788](https://dl.acm.org/doi/10.5555/1855768.1855788)："… our prototype returns a 3 KB proof with the same semantics."） | **一致**（"3 KB"分写属排版转写差；卡 2 已声明连字归一化） |
+| 4 | C&W §3.1 "Hash chaining schemes, as such, are only feasible with low event volumes or in situations where every auditor is already receiving every event." | USENIX PDF 被搜索索引直接引出该句全文（[usenix.org PDF](https://www.usenix.org/legacy/event/sec09/tech/full_papers/crosby.pdf)） | **一致** |
+| 5 | Debezium（Morling）"By only modifying a single resource - the source service's own database - it avoids any potential inconsistencies" + 同事务 INSERT 句 ×2 | debezium.io 博客直取 | **一致** ×2 |
+| 6 | Fowler ×5（"it's easy to serialize the events to make an Audit Log" / "it's very hard to retrofit…" / Complete Rebuild / overnight snapshot / not a natural choice） | martinfowler.com 直取 | **一致** ×5 |
+| 7 | Hicks SoK ② "The operator could use editorial control to exclude specific events from the log." | **arxiv.org/html/2305.01378v3 原生 HTML + ar5iv 两路独立渲染**，穷举 "editorial control" 全部出现处（10 处，含 Table I 与 §IV-B/VI-A） | **不符**（详见 P0-1） |
+| 8 | Hicks SoK ①"are designed to broadly ensure that the log is verifiably append-only…" ③"because there is no need for an underlying cryptocurrency…" | 同上两路 | **一致** ×2 |
+| 9 | QLDB "Each ledger has exactly one journal." | AWS 官方 journal.html **404**（服务 2025-07-31 下线）；web.archive.org 三次连接超时；第三方转述（[Medium 实录](https://shahbhargav.medium.com/amazon-quantum-ledger-database-qldb-27c02f864730)）含同句 | **不可达**（本环境；旁证句存） |
+| 10 | TiDB ×3（"TiDB is highly compatible…" / "XA syntax (TiDB uses a two-phase commit internally, but this is not exposed via an SQL interface)" / "SKIP LOCKED syntax"列于不支持项） | docs.pingcap.com 直取 | **一致** ×3 |
+| 11 | PCI 10.3 "Audit logs are protected from destruction and unauthorized modifications." + 10.3.2 "Audit log files are protected to prevent modifications by individuals." | 官方镜像 PDF 本体可达，搜索快照含两句原文（[middlebury PDF](https://www.middlebury.edu/sites/default/files/2025-01/PCI-DSS-v4_0_1.pdf)） | **一致** ×2 |
+| 12 | microservices.io ×3（not viable 句 / atomically 句 / 两种 relay 模式命名句） | microservices.io 直取 | **一致** ×3 |
+| 13 | Stripe ×4（3 天指数退避 / 不保序 / Event 不可变 / Thin (recommended) or Snapshot） | docs.stripe.com 直取 | **一致** ×4 |
+| 14 | Cloudflare 卡12 ×5 | blog.cloudflare.com 直取 ×3 | 4 句**一致**；"the certificate authority is allowed a 24 hour grace period" **不符**（详见 P0-2） |
+| 15 | PG wiki ×3（"Work to add application time and system time to Postgres is ongoing." 等） | wiki.postgresql.org 直取 | **一致** ×3 |
+| 16 | Saleor "events: [OrderEvent!]! — List of events associated with the order." | docs.saleor.io 直取 | **一致** |
+
+arXiv 身份核真复现：export API 实测 2305.01378 / 2207.00944 / 2008.09268 / 1801.10228 / 2104.01146 共 5 ID，标题、作者与 A 卡全部相符——A 的“全部核真”口径**实质成立**（记录形态问题见 P3-3）。
+
+---
+
+## 发现明细
+
+### P0-1 · A 卡7 引文②为幽灵逐字引文（承重位）
+
+- **卡内宣称**："The operator could use editorial control to exclude specific events from the log."（标注：全文精读 arXiv HTML v3，逐字引文）
+- **实测**：该句在 arXiv:2305.01378 **v3 不存在**——arxiv.org 原生 HTML 与 ar5iv 两路独立渲染，"editorial control" 全部 10 处出现已穷举（Table I 标题与行、§IV-B 小节、§VI 引言与 §VI-A 四处），无此句、亦无 "exclude specific events" 字样。
+- **原文实际表述**（语义可换锚处）：Table I 行 "Control over logging (EC. IE) / Availability / System operator"；§IV-B："what remains as a threat is the ability of a malicious system operator … that attempts to compromise what makes it to the log in the first place"；§IV-B 引 Taylor & Kelsey："editorial control i.e., the ability to control what is made transparent"。
+- **波及面**：A 节2（“操作者用‘编辑控制’把特定事件排除在日志外（逐字引文见卡 7）”）与提案 §6（“每卡带逐字引文”）的逐字性宣称；提案 §1 R3 A 栏本身只引了 "editorial control" 两词（该两词在原文存在）+ 意译“选择性排除事件”，语义方向在原文有据。**该句按幽灵逐字引文立案；主张本身可经换锚存续，此为事实陈述非推荐。**
+
+### P0-2 · B 卡12 括注引文不符（卡级辅助位）
+
+- **卡内宣称**：日志宕机不阻签发+24h MMD："the certificate authority is allowed a 24 hour grace period"
+- **实测**：blog.cloudflare.com 三次抓取（末次穷举 grace period/MMD 全部句子，共 4 句）无此句。原文实际 4 句均把 MMD 归为 **log 的证书合并义务**："it must be incorporated into the list within a pre-set grace period called a maximum merge delay (MMD), which is usually 24 hours" / "Have no outage that exceeds an MMD … of more than 24 hours" 等。伪句的主语归属（CA 被给宽限）与原文（log 须按时合并）相反。
+- **波及面**：限于卡级；提案正文只用 "CT 24h MMD" 事实（有原文支撑），伪句未进提案。
+
+### P2-1 · （二查 c）“主流电商订单域无一线公开采用”——全称否定证据面未声明
+
+B 卡原文（§三 表）：“纯 ES 在主流电商订单域无公开一线采用”。其证据基座=3 系统样本（Stripe/Saleor/Medusa）+ Fowler "not a natural choice" + Overeem 19 个工业 ES 系统实证（无一被标识为一线电商订单域）；卡内与提案内均未声明该全称否定的检索覆盖面。本次抽查未获反例（Saleor 实测：`events` 为订单附属列表、`status` 为权威字段，非 ES，与卡文一致）——结论未被推翻，但承重级（落选理由）全称否定的检索面属无声明状态。
+
+### P2-2 · （二查 a）§0 承重句超出文献口径（受控超出）
+
+“三个 P0 根因在结构上同时消失，且每个构件都有文献与业界先例背书”：前半句是设计预测（若按图实施则无第二 BEGIN、无同函数双语义）——文献支持的是构件先例与方向，不构成“消失”的保证；后半句构件清单中“链化/锚定移到事务外中继”在卡组内**无直接先例**（提案 §5 落选表第 4 行自认是“‘引擎算哈希’思想被吸收进中继侧”的组合设计），其余构件（outbox 同事务存储 / 单一事件真源 / 送达外带 fail-open+重试+对账 / digest 外置）先例齐备。§7 已有“无治本率数字/生产量级待证”免责，超出程度受控，但承重句本身过强。
+
+### P2-3 · 全称否定去限定语（三处提案级 + 一处 A 级）
+
+A 卡原文两处均带限定：“两条平行哈希链、其一零消费，**在被引的全部系统中**无先例”。提案脱落限定后写成 §1 R1 “双链并行无先例”、§5 “双链并行**文献**无先例”。另 §1 R2 “文献无任何系统在业务事务内同步调用第二个自带互斥与事务的服务”——A 节2 原文即为“文献中没有任何系统”（以 12 卡样本为基的无限定全称否定，提案沿用）。
+
+### P3-1 · 卡号错指
+
+提案 §5 ES 落选行证据列 “B 卡6/卡11”：Overeem 卡在 **A 卡11**（B 卡11 = sqlite3_busy_timeout）。行内已内联 "Overeem arXiv:2104.01146"，实质可溯源，属指针笔误。
+
+### P3-2 · B 卡22 映射注 "`FOR UPDATE` 可用” 无页内支撑
+
+TiDB 兼容页通篇无 FOR UPDATE 字样（本席直核确认）。该断言未按 B 自己在卡3/卡4/卡10/卡19/卡21 的纪律标注“本页无原文”；卡内三句引文本身逐字一致。提案裁决 4 未直接引用该断言（仅用 SKIP LOCKED，有引文）。
+
+### P3-3 · “arXiv 全核真 0 丢弃”——自述形态 + 计数含混（二查 d 的答案）
+
+A 口径行写“4 条 ID 全部核真一致，0 条丢弃”，卡组实含 **5** 个 arXiv 条目（卡7 行内另注核真，拼读可齐）；输出文件内无 API 响应留档，属自述出口。本席独立复现 **5/5 一致**——实质成立，记录可复核但非留档式。
+
+### P3-4 · QLDB 引文一手渠道不可达（复现性缺口）
+
+AWS journal.html 已 404（服务 2025-07-31 下线）、web.archive.org 本环境三次超时；A 卡3 自称“经 webReader 存档副本取全文”，本席无法复走该路径，仅获第三方转述旁证。非违规，记录在案。
+
+---
+
+## 二查四问结论（除上列外）
+
+- **(a) §0 “三个 P0 根因同时消失”**：→ P2-2。
+- **(b) §3 裁决2 是否只用 C&W 一半结论**：**不成立**。原文是双分支 OR 条件（"low event volumes **or** in situations where every auditor is already receiving every event"），提案使用第一分支合法；C&W 该句语境为证明开销可行性，提案按开销语义引用；§7 自标“事件量级判断基于 dev 库 30 单现状推断，生产量级待证”。措辞注记：§1 R1 “纯哈希链仅低事件量可行”压缩掉第二分支——压缩方向偏保守（更严于原文），不构成超用。
+- **(c) ES 全称否定**：→ P2-1；Saleor OrderEvent 实测非 ES（状态权威+事件附属列表），不构成反例。
+- **(d) arXiv 全核真**：→ P3-3（可复核、已由本席复核、原记录为自述无留档）。
+
+## 三查三问结论（除上列外）
+
+- **(a) A 的 4 条“仅线索”**：隔离纪律执行到位——Snodgrass 书仅经卡12 标准化成果间接承载、未引原文；ESORICS Dowling 仅作卡7 参考文献条目转引核真；Pavlou & Snodgrass 仅作为 C&W 正文引文的一部分存在；CONIKS/RFC 9162 明示“不作独立证据”。四条均未进提案证据链。**无发现**。
+- **(b) D 的 PCI “一手”自评**：**成立**（对象=官方 PDF 原件本体，PCI SSC 版权页在卷；渠道=middlebury.edu 镜像，D 已在引文出处行内披露）。与 GDPR 标“准一手”的差别有实义：gdpr-info.eu 是转写站、middlebury 是原件 PDF 托管。10.3/10.3.2 两句在本镜像 PDF 快照级实证一致；与 PCI SSC 自有分发渠道的逐字节比对未做（其库房需注册），此为本核的边界。**无发现**。
+- **(c) B 的 2 条“仅摘要/线索”**：Stripe 审计日志博文未被提案引用；microservices.io 子页细节未被引用（裁决 4 所需的两种 relay 模式命名由卡1 主页引文覆盖，该引文已验一致）。**无发现**。
+
+---
+
+## 负面项总览（呈报纪律③：全部露面）
+
+1. 两处逐字引文不存在于原文（P0-1 Hicks / P0-2 Cloudflare）——证据链底卡存在幽灵逐字引文，提案 §6 “每卡带逐字引文”的宣称被实测推翻两例。
+2. 三处（含 A 级一处）全称否定带无限定语（P2-3）；一处承重级全称否定无检索面声明（P2-1）；§0 承重句过强（P2-2）。
+3. 一手渠道复现缺口：QLDB 三路不可达（P3-4）；arXiv 核真为自述无留档（P3-3，实质已复现成立）。
+4. 卡号错指一处（P3-1）；卡内未标来源的分析断言一处（P3-2）。
+5. 本席核查边界：QLDB 不可达、C&W 800MB 句经官方记录快照而非 PDF 全文比对、PCI 与 PCI SSC 原发渠道未做逐字节比对、Hicks v1/v2 中间版本全文提取在本环境截断（不影响判定：卡自称取自 v3，v3 两路已穷举证伪）。
+
+**总判定（重申）：学术路发现 9 项（2 P0 + 0 P1 + 3 P2 + 4 P3）/ 抽查引文 38 条：一致 35 / 近似 0 / 不符 2 / 不可达 1；arXiv 身份核真独立复现 5/5。**
+
+核查工具实录：WebFetch（rfc-editor / arxiv 原生 HTML 与 ar5iv / debezium / martinfowler / pingcap / stripe / cloudflare ×3 / saleor / PG wiki / middlebury 搜索快照 / export.arxiv.org ×2）、webReader（USENIX C&W PDF / middlebury PCI PDF / arXiv 2305.01378 v1-v3 / cloudflare / web.archive 尝试）、WebSearch（C&W §3.1 句 / 800MB 句 / QLDB 句 / PCI 10.3 / 10.3.2）。主要来源：[arXiv:2305.01378 v3 原生 HTML](https://arxiv.org/html/2305.01378v3)、[ar5iv 渲染](https://ar5iv.labs.arxiv.org/html/2305.01378)、[C&W USENIX PDF](https://www.usenix.org/legacy/event/sec09/tech/full_papers/crosby.pdf)、[ACM 记录](https://dl.acm.org/doi/10.5555/1855768.1855788)、[Cloudflare 博客](https://blog.cloudflare.com/introducing-certificate-transparency-and-nimbus/)、[PCI-DSS-v4.0.1 镜像 PDF](https://www.middlebury.edu/sites/default/files/2025-01/PCI-DSS-v4_0_1.pdf)、[TiDB 兼容页](https://docs.pingcap.com/tidb/stable/mysql-compatibility)、[Saleor Order](https://docs.saleor.io/api-reference/orders/objects/order)、[PG wiki SQL2011Temporal](https://wiki.postgresql.org/wiki/SQL2011Temporal)、[QLDB 转述旁证](https://shahbhargav.medium.com/amazon-quantum-ledger-database-qldb-27c02f864730)。

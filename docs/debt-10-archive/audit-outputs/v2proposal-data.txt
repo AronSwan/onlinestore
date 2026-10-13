@@ -1,0 +1,83 @@
+全部实测完毕。汇总评审报告。
+
+---
+
+# 债-10 方案 v2 数据路独立评审报告
+
+条款援引：承重陈述出口定律（数字/锚复现）、diff 把关总闸（v1→v2 修复逐项 grep 验证）
+评审对象：`C:\Users\Administrator\onlinestore_remediation\docs\debt-10-architecture-research-proposal-v2.md`（实测 315 行，wc -l 复现）
+
+---
+
+## 任务 1：§3.2 DDL 实测
+
+**sqlite :memory: 实跑（py -3.14 / Python 3.14.8）**：CREATE TABLE **PASS**；三索引（`idx_domain_events_seq` UNIQUE / `idx_domain_events_relay` / `idx_domain_events_agg`）**全部可建**；18 列经 `PRAGMA table_info` 确认。
+
+**语义测试**：两行 `relay_state='PENDING'` 且 `seq=NULL` 在 UNIQUE(seq) 下共存 **PASS**（NULL 互异，异步腿设计成立）；重复 seq 插入被拒 **PASS**（`UNIQUE constraint failed: domain_events.seq`）。
+
+**TiDB 侧注释语法**：`BIGINT AUTO_INCREMENT PRIMARY KEY` —— TiDB 官方 auto-increment 文档示例 `CREATE TABLE t(id int PRIMARY KEY AUTO_INCREMENT, c int);`，列约束形式有效、BIGINT 属合法自增整型。**语法正确**。
+
+- **P2｜先例迁移的方言探测在真 TiDB 上不触发**：v2 §3.2 注明“双方言迁移（仓内先例：20261011000001）”。实测该先例（`backend\src\database\migrations\20261011000001-create-order-snapshots-table.ts:23-27`）以 `v.includes('mysql')||v.includes('mariadb')` 判 MySQL 分支，而 TiDB `@@version` 形如 `8.0.11-TiDB-v7.5.1`（TiDB 官方 information-functions 文档），**不含 "mysql"** → 真 TiDB 落入 sqlite 分支。v2 若照抄该探测，§4.2 判据 1 又允许“或 MySQL 兼容库”替代实测，此缺陷可被验收掩盖。DDL 本身无误，此为照抄先例的实现层风险。
+
+样式差异（不计级）：先例用引号 camelCase 列名，v2 用 snake_case——双方言均合法。
+
+## 任务 2：§3.3 canonical 键序自洽
+
+**11 键逐一对照 DDL：全部有对应列**（schemaVersion→schema_version … payloadHash→payload_hash、seq、prevHash→prev_hash），键序与 DDL 列序一致。
+
+DDL 18 列中不入 canonical 的实为 **7 列**：payload / relay_state / attempts / last_error / created_at / id / **record_hash**。§3.3 排除声明只枚举了前 5 项。
+
+- **P3｜排除声明不完备**：`id` 与 `record_hash` 未列入“不含…”声明。record_hash 属自指不可能入 canonical（结构性必然）、id 为代理键，语义无害，但枚举口径未闭合。
+- **P2｜recordHash 公式三处表述不一**：§3.1 `recordHash=H(canonical‖payloadHash)`，但 §3.3 canonical 11 键**第 9 键已是 payloadHash** → `‖payloadHash` 构成二次计入；§2 T3+T4“链锚 = PII-free canonical + payloadHash”同样把 payloadHash 写成 canonical 之外追加项。按字面实现会产生键序/双重哈希歧义，影响 verify 脚本一致性。
+
+## 任务 3：协商记录锚核对（§2 抽查，全部对原文逐条核过）
+
+| 锚 | 实测 |
+|----|------|
+| T1 A 员 "exactly one journal"（卡3） | ✓ 逐字在 research-A 卡3 |
+| T1 C 员 §1.2（快照同事务 fail-closed/时间线/R2） | ✓ 在 research-C §1.2/第四节 |
+| T1 B 员“主流电商全是快照/变更记录路线”（§三） | ✓ 逐字命中 |
+| T2 A 员 卡4/卡5（引擎内插入事务算哈希） | ✓ |
+| T2 C 员 C6（§5“哈希字节=驱动原生行回读（防 Date 往返漂移）”） | ✓ 逐字在第五节约束表 C6 |
+| T2 B 员 §一（链化外移） | ✓（“链化/验链/告警全部移到事务外的中继侧”）；分歧保留声明属实（B 员倾向外移） |
+| T3+T4 E 员 EDPB 句（research-E【13】） | ✓ 逐字命中（省略 "in those forms"，语境相符，§5.2）；选项 a-e 强度评级与 E 员总表逐项一致；NIST 备份盲区在【2】②、Red Badger 多主体 DEK 在【6】 |
+| T5 D 员 Q2（“四标准均无明文”） | ✓ 逐字命中；三条件（补写+真告警+失效留档）属实 |
+| T6 F 员 R1-R5 评级/R2 主文献=个人博客 | ✓ 逐项一致；§3.4 参数表七个出处（C16/C10=TRX_MAX_ATTEMPTS 5/POISONOUS 3/C12/C13/区间 500ms-5s/批 5-100）全部忠实，推断项明标 |
+| T7 D 员 Q5 10.3.3 | ✓ 逐字命中 |
+| T8 C 员 30 单/0 快照/1603 行 | ✓ 且 dev 库直查命中：orders=30、order_snapshots=0、audit_logs=1603（products=1523+audit=80） |
+
+- **P3｜三处锚节号/措辞微偏**：①“统一前置事实”逐字句在 research-E“选项空间总表”节（:152），v2 标 Q3（Q3 :111 有同实质“代数根源”）；②T1“日志=真源状态=派生”括注卡3/卡6——“状态=派生”更贴 A 卡11（Overeem），卡6（immudb）只支持“单一数据面”；③T5“业界统一分层”——B 员原文为“业界**主流**”，“统一”系措辞升格。
+
+## 任务 4：数字三件套
+
+| 数字 | 实测 |
+|------|------|
+| 315 行 | ✓（wc -l = 315） |
+| 18 卡（E） | E 员内部【1】-【18】齐全 ✓；**但 v2 §5.3 对 E 的枚举合计 17 项**（漏 AWS 停服清单【7】，E 员精读清单第 18 项）→ **P2：枚举与计数 off-by-one** |
+| 18 卡/18 条（F） | **P2：不可复现**——research-F 存档文本 C 锚实测 17 个（**C9 缺号**，1-8、10-18），F 员自称 18 篇/18 条；v2 §5.3 枚举亦 17 项 |
+| 11 键 | ✓（实数 11） |
+| 13 路径 | ✓（§3.7 表 13 行 W1-W13，与 research-C“13 条写路径”一致） |
+| 9 条底座 | **P1：错——W4-W6/W8-W12 = 8 条**。§1.2、§3.7、§4.1 **三处承重**均写 9；§3.7 表内实改行 8 条；research-C 侧印证：显式事务仅 W1/W2/W3/W7，无底座者恰 8 条（W4-W6、W8-W12）。承重数字与自身枚举矛盾 |
+| 5 写点 | ✓ 表 5 行，且锚全实测命中：products.controller.ts:174（调用 :211/:539/:562 grep 恰三处）✓、orders.service.ts:218=log() 调用行 ✓、audit.controller.ts:318=@Post('cleanup') ✓、:387=@Post('test')（log 在 :407）✓、全仓 grep log() 生产调用=恰上述 3 文件 ✓ |
+| 2→1 | ✓ 内部自洽（现状 audit_logs+order_snapshots 两活跃链 → domain_events 一条，与 research-C 双链记载相符） |
+| 71 项 / “6 轮 0 过” | **P3：仓内不可独立复验**——“71 项”仅 v2 自引，无归档评审卷；归档可见 v3 两轮+v4+v5 评审文件（4 轮），其余 2 轮未见档 |
+
+## 任务 5：v1 修复验证（§5.1 五项）
+
+v1 原错逐项在 v1 原文定位，v2 正文 grep 验证旧错误零残留（仅存于更正表内描述）：
+
+1. "B 卡6/卡11"→A 卡11：v1:88 有原错；v2 更正 **✓ 兑现**——A 卡11=Overeem ✓、B 卡11=sqlite3_busy_timeout ✓（双卡原文均符）
+2. “6 路代码实测相符”→三路：v1:5 有原错；v2:259 更正，正文无残留 **✓**
+3. 流传地虚构→删除：v1:98 有原错；v2:260 删除，正文无 "13 席 P0-7" 断言 **✓**
+4. “日订单<万”→删除：v1:65 有原错；v2:261 删除+§6.1-7 列开放项，正文无残留 **✓**
+5. v5“死锁不可修（结构性）”→重写：v1:92 有原错；v2:262 重写 **✓ 且新锚全实测命中**（db-write-mutex.ts:26=“禁止嵌套…自锁死”注释行 ✓；audit.service.ts:202=runExclusiveWrite 行 ✓；C5 重锚/零消费/三分类与 research-C 根因记载相符）
+
+**超范围抽验（§5.2，本属学术路，数据路顺带实测一手源）**：Cloudflare 换锚句 "within a pre-set grace period called a maximum merge delay (MMD), which is usually 24 hours" 在 blog.cloudflare.com 原文**逐字存在**，v1 幽灵句 "the certificate authority is allowed a 24 hour grace period" 原文**不存在**——P0-4 处置经一手源复核成立；Hicks 换锚 Table I "Control over logging (EC. IE)" 与 §IV-B 恶意操作者句在 arXiv:2305.01378 原文**均存在**——P0-3 处置成立。附带事实：research-A 卡7 所引 "The operator could use editorial control to exclude specific events from the log." 经一手源核验**确为幽灵**（原文无此句），归档底料仍载此句未标废。
+
+- **P3｜头部口径未闭合**：“已修 4 P0 + 16 P1 中 15 项”——§1.2 列 16 项全有响应映射，未指明哪 1 项未修。
+
+---
+
+## 总判定
+
+**数据路判定：P1×1（“9 条事务底座路径”实为 8 条，三处承重，须改数或改枚举）+ P2×4（recordHash 公式三处不一 / 所引先例迁移的方言探测对真 TiDB 失灵 / E 员枚举 17 项称 18 卡 / F 员 18 条不可复现且 C9 缺号）+ P3 若干——DDL、canonical 键列映射、§2 全部抽查锚、v1 五项修复、核心计数（315/11/13/5/2→1/30-0-1603）实测全部通过；上列各项修复前不可原样送签。**

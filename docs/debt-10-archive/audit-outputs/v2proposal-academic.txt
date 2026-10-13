@@ -1,0 +1,110 @@
+# 债-10 方案 v2 · 学术路（引证忠实度）独立评审报告（归档件）
+
+> 归档日期：2026-10-13（会话环境时钟）
+> 评审对象：docs/debt-10-architecture-research-proposal-v2.md
+> 引证底稿：docs/debt-10-archive/audit-outputs/research-E-crypto-shredding.txt（18 卡）、research-F-relay-selection.txt（18 条）
+> 评审范围：E 员 8 条 + F 员 6 条抽验（真取原文逐字比对）；v1 幽灵引文换锚验证 2 条；EDPB 语境迁移适用性检查
+> 总判定：**学术路发现 6 项（0 P0 + 2 P1 + 2 P2 + 2 P3）/ 抽验 16 条：一致 16 / 不符 0 / 不可达 0**
+
+条款援引：承重陈述出口定律（逐字引文三件齐）＋核查器无脾气令（本报告数字均附复现路径，裸数字为零）
+
+**方法**：16 条抽验目标全部真取原文比对——网页类经 WebFetch/webReader 直取（部分超时项换 curl 通道复取），PDF 类（NIST/WP216）curl 下载后 pdftotext 提取、扁平化逐串检索（复现：%TEMP%\nist-800-88r2.pdf、wp216.pdf 及对应 .txt，检索日 2026-10-13），arXiv 经 export.arxiv.org API 核题录 + ar5iv 取正文。
+
+---
+
+## 一、E 员引文抽验（8/18 条，逐字对照实录）
+
+**1. EDPB 02/2025 v2.0 §5.2【13】——一致（逐字）**
+- E 引文："It is technically demanding and often difficult to grant the request for erasure... It is therefore **not advisable to register personal data in those forms on a blockchain. Instead, personal data in those forms should be stored off-chain.**"
+- 原文核验（edpb.europa.eu 文档页，两次独立取文）：全段逐字命中，位于 §5.2（节题 "Right to erasure and right to object"）。三条附证同核：加密腿 "even state-of-the-art encryption perfectly implemented will be overtaken by time..."（§4.2）逐字；哈希腿 "after deletion of the secret key or salt, the hash should not be linkable..." 逐字；负结果成立——全文 0 次 "crypto-shredding"。版本核验：页标 "Guidelines 02/2025 v2"、Final version 07 July 2026——与 E 称 "v2.0/2026-07-07 通过" 一致（"2"与"2.0"记法差，不计缺陷）。v2 §2 转引（省略号版）忠实。
+
+**2. NIST SP 800-88r2 §3.2【2】——一致（逐字）**
+- 原文实文（nvlpubs PDF 提取）："At a basic level, CE is based on the sanitization of keys used to encrypt data or to prevent access to the keys that encrypt data. Thus, with CE, sanitization can be performed with high assurance much faster than with other sanitization techniques."——E 主引文为其中逐字连续子串；归属 §3.2 正确（正文 "Section 3.2 addresses these dependencies" 毗邻）。
+- 三条硬限制同核全部逐字命中：
+  ① "cryptographic erase may be the only viable purge sanitization technique option" ✓
+  ② "Sanitization using CE should not be trusted on ISM that have been backed up or escrowed unless the organization has a high level of confidence regarding how and where the keys were stored" ✓（原文续 "...and managed outside of the ISM"，E 截断处未加省略号——见 P3-②）
+  ③ "For such situations, CE may not be an acceptable sanitization technique" ✓，且其上文确有 "confidentiality protections need to span decades"——E 的"数十年期"转述有据。作者题录（Ramaswamy Chandramouli）相符。
+
+**3. Hyperledger Fabric private-data【10】——一致（逐字）**
+- "even the parties sharing the private data might want — or might be required by government regulations — to periodically 'purge' the data on their peers, leaving behind a hash of the data on the blockchain to serve as immutable evidence of the private data."——逐字命中（含空格围 em-dash 与 'purge' 引号，页面 "Purging private data" 节）。同卡另两句（"A hash of that data, which is endorsed, ordered..."、PurgePrivateData 句）亦逐字命中。
+
+**4. arXiv 2105.14818【12】——一致（逐字+题录）**
+- export API 核真：标题 "Redacting Transactions from Execute-Order-Validate Blockchains"、作者 Yacov Manevich/Artem Barger/Gal Assa、published 2021-05-31、条目引用 v2——与 E 卡三件齐一致。摘要两句（"presents the first design for a redactable execute-order-validate blockchain, that grants users with the right to be forgotten" 与 "It modifies the block structure and extracts user data from the hash-chain without loosening any correctness or liveness criteria"）经 ar5iv 全文逐字命中。
+
+**5. QLDB redact_revision 存档快照【8】——抽验主句一致；卡片带 P1 缺陷（发现 A）**
+- 抽验主句："Use the redact_revision stored procedure to permanently delete an individual, inactive document revision in an Amazon QLDB ledger in both indexed storage and journal storage."——**逐字命中**（web.archive.org 20230101150426 快照，全文 6534 字符已尽读）。
+- 但 E 引文块内另外三段非逐字（语义保真、词序不同），其中一段不在所锚快照：
+  - E 段 "...redaction is not available for active document revisions"——快照无此句，实文为 "The latest active revision of a document is not eligible for redaction."
+  - E 段 "the metadata is unchanged, which indicates that the journal sequence is not modified and that it only deletes the user data"——快照无此句，实文为 "it leaves the journal sequence and the document metadata, including the document ID and hash, unchanged"＋"deletes all of the user data in the specified revision"（近似句 "deletes only the user data...unchanged" 实住姊妹页 working.redaction——即【9】锚）
+  - E 段 "dataHash – A structure containing the hash value of the removed data structure"——两快照均无 "structure containing" 串；实文为 "...is replaced by a new dataHash field. The value of this field is the (Amazon) Ion hash of the removed data structure"（内容对应、措辞与出处页均不符）
+- 附带核到【9】侧：① 2021-07-22 日期限制（"Any ledgers that were created before July 22, 2021 are currently not eligible for redaction"）与 ④ "You can redact one revision per transaction" 在快照中逐字存在；② "replicated outside of QLDB...exported to Amazon S3 or streamed to Kinesis" 为转述（实文 "Redaction has no impact on any QLDB data that is replicated outside of the QLDB service. This includes any exports to Amazon S3 and streams to Amazon Kinesis Data Streams."，且该文实在【8】页）；③ 近逐字（E 版去 "that are"、加 "QLDB" 前缀）。
+
+**6. AWS KMS deleting-keys【3】——一致（逐字）**
+- 三句全部逐字命中："After a KMS key is deleted, you can no longer decrypt the data that was encrypted under that KMS key, which means that data becomes unrecoverable." ✓；"It deletes the key material and all metadata associated with the KMS key and is irreversible." ✓；等待期实文 "AWS KMS requires you to set a waiting period of 7 – 30 days."（E 记 "7–30 days"——原文空格围杠，排版级差异，见 P3-①）。
+
+**7. GCP KMS destroy-restore【4】——两句引文一致；摘要数字不符（P2-①）**
+- "Data encrypted with a key that has been destroyed is considered crypto-shredded."——逐字命中（原文该词斜体强调，词串一致）。"Destroying a key version means that the key material is permanently deleted."——逐字命中。
+- 但 E 摘要句"GCP 24 小时调度"与现页不符：现页（"Last updated 2025-08-07"）销毁等待期为 "The default scheduled for destruction duration is 30 days"，且 "Key material can remain in Google systems for up to 45 days from the scheduled destruction time"——全页无 24 小时表述。
+
+**8. WP216【16】——一致（逐字）**
+- "anonymisation results from processing personal data in order to irreversibly prevent identification" ✓；"An important factor is that the processing must be irreversible." ✓；"A data controller can replay the function on the attribute using the secret key" ✓。归类主张核验：WP216 §4 "Pseudonymisation"（"The most used pseudonymisation techniques are as follows:" 清单）确含 "Keyed-hash function with stored key" 条目——E 的"列入假名化技术清单"定性准确。
+
+## 二、F 员引文抽验（6/18 条）
+
+**9. TiCDC Overview C1 首句——一致（逐字）**："TiCDC is a tool used to replicate incremental data from TiDB." 开篇逐字命中（docs.pingcap.com/tidb/stable/ticdc-overview）。
+
+**10. TiCDC at-least-once C1——一致（逐字）**："For all DDL or DML statements, TiCDC outputs them at least once."（Replication order 节）逐字；续句 "When the TiKV or TiCDC cluster encounters a failure, TiCDC might send the same DDL/DML statement repeatedly." 逐字（F 的省略号覆盖合规）；"As shown in the architecture diagram, TiCDC supports replicating data to TiDB, MySQL, Kafka, and storage services." 亦逐字命中。
+
+**11. litestream README C5——一致（逐字）**："Litestream is a standalone disaster recovery tool for SQLite. It runs as a background process and safely replicates changes incrementally to another file or S3."——raw README 逐字命中（所引为 markdown 换行折行，词串逐字）。
+
+**12. @nestjs-transactional/outbox-typeorm README C11——一致（逐字）**："`SELECT ... FOR UPDATE SKIP LOCKED` was tried and dropped: a pessimistic lock has to be held by a transaction wide enough to span the listener invocation, which is unsafe when listeners are slow."——逐字命中（Concurrency 节）；"`tryClaim` is one conditional `UPDATE` (`WHERE id = :id AND status IN (PUBLISHED, RESUBMITTED)`)"——逐字命中（原文续 "that reports whether the row actually transitioned"，F 截断未标——并入 P3-②）。另核：本子包 README 确无 "retried with backoff"/"dead-lettered"（F 已将其锚到 C12 父包，本次不在抽验范围，不作判定）。
+
+**13. Confluent MySQL Source Connector C15——一致（逐字+数字）**：poll.interval.ms 描述 "Frequency in ms to poll for new data in each table." 逐字；Default **5000 (5 seconds)** ✓；Valid Values "[100,…]"——F 的"有效下限 100ms" ✓。
+
+**14. JIT Outbox Polling C16——抽验句一致；同卡另有静默改字（P2-②）**
+- 抽验句 "Maybe once every 1 or 5 minutes , as opposed to every second."——逐字命中（逗号前空格系 HTML 渲染产物）；"It is the application itself who is simulating Change Data Capture." ✓；"Why not drop polling altogether? Because bad stuff happens!" ✓。
+- 但 F 卡所引 "Too frequent, and you put stress on the database. Too rare, and you miss time-critical business requirements."——博客原文（curl 直取 HTML 源码双重确认）为 "**To** frequent, ... **To** rare, ..."（作者原文如此）。F 在标为逐字的引文内静默修正了作者笔误。
+
+## 三、v1 幽灵引文换锚验证（v2 §5.2）
+
+**15. Hicks（arXiv:2305.01378 v3）——换锚正确**
+- export API 核真：v3 存在，updated 2023-09-18，作者 Alexander Hicks——与换锚材料一致。
+- 换锚句一：Table I（"Threats for transparency enhancing technologies..."表）确含威胁行 "Control over logging (EC. IE)"（affected property=Availability、threat actor=System operator）——**逐字命中**，且论文原文即以句点分隔两个代码（"EC. IE"），v2 转写与原文一致。
+- 换锚句二：§IV-B（"Threats based on essential mechanisms"→Logging 小节）确含 "...the ability of a malicious system operator...attempts to compromise what makes it to the log in the first place"（中间夹 secure hash functions/digital signatures 括注，v2 的省略号覆盖合规）——**逐字命中**。
+- v1 幽灵句 "The operator could use editorial control to exclude specific events from the log." 全文检索确认**不存在**——P0-3 定性维持。
+
+**16. Cloudflare（blog.cloudflare.com/introducing-certificate-transparency-and-nimbus/）——换锚正确**
+- 换锚句 "it must be incorporated into the list within a pre-set grace period called a maximum merge delay (MMD), which is usually 24 hours"——**逐字命中**。
+- v1 幽灵句 "the certificate authority is allowed a 24 hour grace period" 确认**不存在**——P0-4 定性维持（"主语相反"旧定性亦与原文一致：义务主语是 log 并单，非 CA 被授权）。
+
+## 四、结论超出文献检查（EDPB 语境迁移）
+
+事实基础（均为本次原文直取）：
+- EDPB §1 定义：blockchain = "a technology that implements a **distributed and consistent database without centralised management**"（分布式无中心管理）。
+- EDPB §2 范围条款："**Blockchains generated and controlled by and for a single entity are out of scope for part of these guidelines**"（单主体生成并控制的区块链不在本指南部分条款范围内），同段补：必要性评估仍应进行、缓解措施 "could prove useful for any blockchain processing personal data"。
+
+裁定事实：v2 §2 T3/T4 将 "EDPB 首选"（off-chain 不入链）列为 b 变体三足支撑之一（Fabric PDC＋EDPB＋QLDB 同型），适用场景为**单库（TiDB/sqlite）单写者事件表的链列设计**。检索 v2 全文与 E 员报告全文：**均无一处适用性论证**——未援引 EDPB 对 blockchain 的定义、未援引单主体出范围条款、未说明"分布式账本场景的监管首选"为何可迁移到非分布式单库哈希链。按 EDPB 自身定义，本仓结构（单控制器、无多方共识）严格说不在其 "blockchain" 定义内，且恰落入其明文的单主体部分出范围条款。
+减轻情节（事实并列，非辩护）：① 迁移方向是保守的（把 EDPB 对更严苛场景的建议用于更轻场景，不会扩大合规义务）；② EDPB 自己留了 "could prove useful for any blockchain" 的泛化口子；③ b 裁决另有 Fabric PDC 与 QLDB 两足可独立站立，不因 EDPB 一足失格而倾覆。定性为 P1（承重引文的语境迁移未做适用性论证）而非 P0——引文本身逐字为真、主张对源文语境忠实，缺的是 v2 侧的适用性一环。
+
+## 五、发现清单
+
+| # | 级 | 发现 | 锚 |
+|---|----|------|-----|
+| A | **P1** | QLDB 卡【8】引文块（引号内）混入三段非逐字转述，其中 "dataHash – A structure containing..." 段在所锚两快照均不存在（实文同义异词，且近似句实住姊妹页）；【9】侧②为转述、③近逐字改写，且②③实出自【8】页段落——锚点错置。承重主句（"permanently delete...journal storage"）逐字为真，语义全部保真，故不计 P0 | research-E【8】【9】；对照实录见本报告第一节第 5 条 |
+| B | **P1** | EDPB "off-chain 首选"从分布式账本语境迁移至单库哈希链，v2 与 E 员报告均零适用性论证；EDPB 单主体出范围条款与 "without centralised management" 定义两处关键语境均未被援引 | v2 §2 T3/T4；EDPB §1/§2 原文（本报告第四节） |
+| C | **P2** | E【4】摘要句"GCP 24 小时调度"与现页不符：现页为默认 30 天销毁期＋密料最长 45 天清除，全页无 24 小时；论证方向（Art.30 须计等待期）仍成立但量级失真（24h→30-45d） | research-E【4】后注段 |
+| D | **P2** | F C16 卡在标为逐字的引文内静默修正作者笔误（原文 "To frequent/To rare"，F 引作 "Too frequent/Too rare"）——逐字纪律下引文不符，语义不变 | research-F C16；对照：ledjonbehluli.com 原文 HTML 源码 |
+| E | **P3** | 排版级差异×1：AWS "7 – 30 days"（原文空格围杠）E 记 "7–30 days" | research-E【3】 |
+| F | **P3** | 引文截断不加省略号×2：NIST ②句截于 "...keys were stored"（原文续 "and managed outside of the ISM"）；F C11 tryClaim 句截于括号后（原文续 "that reports whether the row actually transitioned"）——所引子串逐字，止点无标 | research-E【2】②、research-F C11 |
+
+备注（不计缺陷）：E 员检索日期口径 2026-10-14 晚于本会话环境时钟 2026-10-13，未如 F 员那样声明时钟归一——F 报告头部已注明"跨午夜口径由协调者归一"，此项属协调者归一机制覆盖范围，仅记录。
+
+## 六、总判定
+
+**学术路发现 6 项（0 P0 + 2 P1 + 2 P2 + 2 P3）/ 抽验 16 条：一致 16 / 不符 0 / 不可达 0**
+
+（16 条抽验目标句全部在原文逐字命中；P1-P3 缺陷均出于同卡相邻段落、摘要注记或 v2 侧论证缺口，非抽验目标句本身。两项 v1 幽灵引文的换锚（Hicks / Cloudflare）经原文核验**均为正确**，v1 两句幽灵原文确认不存在。网络通道说明：cloud.google.com、web.archive.org 对 WebFetch 超时，均经 webReader/curl 复取成功，无不可达项。）
+
+---
+评审席：学术路（引证忠实度）· 独立评审员
+本报告未修改任何被审文件；未参考其他评审路输出；不含推荐项（仅事实定性）。

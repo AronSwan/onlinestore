@@ -1,0 +1,68 @@
+所有验证已完成。这是实操路评审报告。
+
+---
+
+# 债-10 方案 v2 · 实操路独立评审报告
+
+**条款援引**：无争议不填。
+**验证口径**：代码锚全部于 2026-10-13 在 `C:\Users\Administrator\onlinestore_remediation` 实测（grep/读码）；DDL 实测 = `py -3.14` + sqlite3 标准库，DDL 逐字取自 v2 §3.2（含 3 索引），临时库建于 %TEMP%，仓内零改动。本文不改文件、不给推荐、不参考其他路。
+
+---
+
+## 1. DDL 可执行性实测
+
+**1a. sqlite 真跑——通过**。§3.2 的 17 列 DDL + 3 索引在 sqlite 一次执行通过；判据 2 / 判据 4 的 SQL 建表后均可跑；`idx_domain_events_relay` 被 `WHERE relay_state='PENDING' ORDER BY id` 扫描谓词实际命中（EXPLAIN QUERY PLAN 证实）；多个 PENDING 行（seq=NULL）在 `idx_domain_events_seq` 唯一索引下合法共存（sqlite/MySQL 语义均允许多 NULL）。DDL 本体可执行。
+
+**1b. TiDB 注释分支与仓内先例——[P1]**。v2 只给了注释分支（`-- TiDB: BIGINT AUTO_INCREMENT PRIMARY KEY`），而它自称沿用的先例 `backend\src\database\migrations\20261011000001-create-order-snapshots-table.ts` 是真双分支（information_schema/sqlite_master 探测 + 幂等）。更要害的是**先例自身的方言判定在 TiDB 上是错的**：先例用 `SELECT @@version` 后 `includes('mysql')||includes('mariadb')` 判 MySQL 系，而 TiDB 版本串格式为 `8.0.11-TiDB-v…`（PingCap 官方文档），两个子串都不含 → 在 TiDB 上误走 SQLite 分支 → sqlite_master 查询失败被 catch 吞掉 → 拿双引号标识符的 SQLite 方言 DDL 在 TiDB 默认 sql_mode（无 ANSI_QUOTES）下执行必炸。该雷从未暴露，因为 DatabaseModule 从未挂载、TiDB 冒烟从未跑过（见 §6）。v2 引此先例为双方言模板 = 把未爆雷写进规范。判据 1 的"或 MySQL 兼容库"逃生口（§4.2.1）恰好测不出这一点——普通 MySQL 的版本串含 'mysql'，检测分支走对。
+
+**1c. DDL 与白名单投影的关系——[P2]**。"白名单投影（P1 schema 的组成部分——建表即有）"表述错位：投影是应用层函数，schema 里不存在任何强制它的东西；§4.1 P1 行确实列了"白名单投影函数"为交付件（工件不缺），但落点未给：函数住哪个模块、类 1（事务内 INSERT）与类 2（worker 侧）两条写腿如何被强制经投影、schema 层无约束时谁防裸 payload 直写、per-event_type 白名单枚举（"D 员六要素+资源标识为必要集"只是必要集定义，不是枚举表）均无。判据 4 只能事后烟测，不能事前防。
+
+**1d. 列名约定断裂——[P2]**。DDL 用 snake_case（`schema_version`/`event_type`），而 §3.3 canonical 键序是 camelCase，且仓内两条既有链的列名全是 camelCase（audit_logs：createTime/userId…；order_snapshots 迁移："orderId"/"operatorType"…），链核 `audit-chain.ts` 的 canonicalizeRow 是**按 canonical 键名直读 row 字段**（无映射层）。domain_events 若按 §3.2 落 snake_case 列，就引入一条此前不存在的列名↔键名映射层——对一个"开局冻结键序、字节精确即链"的承重件，这是新增失败面。
+
+**1e. dev=synchronize 现实被略过——[P2]**。先例注释明说 dev 走 `synchronize=true` 自动建表、迁移是 prod（synchronize=false）件；即 §3.2 DDL 实际是 prod 工件，dev 真源是一个尚不存在的 TypeORM entity 文件，先例的"与 entity 逐项对齐"纪律 v2 只字未提。照 §3.2 单独实施会造出 dev/prod schema 漂移面。
+
+## 2. §4.2 验收五判据可判定性
+
+| 判据 | 判定 | 级 |
+|---|---|---|
+| 1 双方言跑通 | 可跑但口径松："dry-run 实证"未定义（TypeORM 无原生 dry-run）；"或 MySQL 兼容库"逃生口 + 1b 的检测缺陷 = 可能"通过"了却没测到 TiDB | P2 |
+| 2 INLINE 率 | SQL 实测可跑。但测的是"INLINE 行 seq 非空"，**测不出事件根本没写**（W1 漏插事件时该 SQL 仍=0）——"率 100%"名不副实；真正覆盖判据 R1' 排在 P3 | P2 |
+| 3 死信演练 | 结果态可判定（attempts=5/DEAD/告警），但**注入方式零字**：仓内无任何 fault hook（grep FORCE_FAIL/fault/POISON = 0 命中），worker 是 P1 新代码，注入手段（env 闸/测试桩/手改库）未给 | P2 |
+| 4 白名单生效 | SQL 可跑。"切换后窗口"未界定——但 domain_events 是新表且 T8 裁不回填，全表即切换后，限定语是噪音（无实操障碍）；真缺口是只 LIKE 一个字段名（sellerEmail/钱包地址/嵌套改名均漏检）= 烟测非证明 | P3 |
+| 5 链验证 | **[P1] 工具不存在且未排产**：`scripts/verify-audit-chain.mjs` 的 SQL 硬编码 audit_logs（:62-66），锚文件/表名/链核键序全部 audit_logs 专属；链核 `verifyChain` 虽已参数化 keys 可复用（audit-chain.ts:88-95），但脚本+锚文件+锚格式都是新写工件——v2 的 P1-P4 阶段表**没有任何一行**排产它（P3 的 R4 只排"链头→git 外锚"，是锚定不是验链）。P1 验收门五判据之一依赖未排产物。**附带语义洞 [P1]**：现行 verifyChain 把 seq=NULL 行记为 UNCHAINED 问题（audit-chain.ts:140-151），而类 2 的 PENDING 行（瞬态）与判据 3 演练产出的 DEAD 行（永久 seq=NULL）都会踩中——"0 断点"若含 UNCHAINED 则判据 3 与判据 5 互斥（做完死信演练，链验证永红）；v2 未定义"断点"是否排除 UNCHAINED |
+
+**附带 [P1]：HMAC key 未 gate**。DDL `payload_hash NOT NULL`，计算需 HMAC key；key 管理整体是 §6.1.1 未决（v2 自己列为未决+提供选项 γ），但 §4.1 P1 依赖列只写"C 员事实卡"——P1 核心列的输入处于未决状态且阶段表无此依赖边。连"dev 固定 key"这种临时决定也未见诸文字。
+
+## 3. 事务底座改造的工作量与风险
+
+- **计数错误 [P3]**：§1.2 与 §3.7 两处均称"9 条"，但给出的区间 W4-W6（3 条）+ W8-W12（5 条）= **8 条**。以本仓数字纪律口径，承重计数与自给区间不符。
+- **零风险评估 [P1]**：v2 相对 v1 的实质进步是路径显式化了（W1-W13 覆盖表与代码现状逐条吻合，我全部核过：W2 的 runExclusiveWrite+事务+快照同事务、W3 生产零调用、W4 orders.service.ts:532-538 裸删、W5 products.service.ts:627 mutex 包无 BEGIN 的 autocommit 写段、W8/W11 无 mutex、W9/W10 mutex 包写段、W12 无 mutex——全部属实）。但 9(8) 条改造**每条的风险/回归面/测试口径一个字没有**。实测出的具体障碍：
+  - **W12 [P1]**：`createRefund`（payment-application.service.ts:371-449）在域变更与 save 之间夹着**外部网关调用**（:413 gateway.createRefund，网络往返）。事务化只有两条路：把整个流程包进 runExclusiveWrite+BEGIN = 进程级全局写互斥横跨网络 I/O（回调延迟期间 orders/audit/products 全部写排队）；或重构时序（先落 intent 事务、网关调用移到 commit 后）= 改域守卫流语义。v2 一行"事务底座改造+类 1 事件"带过。
+  - **W9/W10 [P1]**：mutex 内加 BEGIN 拉长每笔回调的占队时长，延迟转嫁给全局队列所有排队写（量级未实测=§6.1.7 自己承认）。更关键：`db-write-mutex.ts:26` 明令禁止嵌套，事件写函数若像现行 AuditService.log 那样自带 runExclusiveWrite 就是自锁死——这正是 13 席定性的 v5 死因根因②。v2 §3.1 图隐含正确用法（事件 INSERT 骑调用方事务），但"事件写 API 必须接受调用方 em、禁止自获互斥"的契约未写明——这是全方案最不该省的一句。
+  - **W6 [P2]**：控制器事后审计"改类 1（入事务）"意味着调用点必须从 controller 移进 service 的事务，而 actor 上下文（id/email/role）只在 HTTP 层可得（products.controller.ts:178-186 从 req.user 取）——actor 穿层接口改造未列。
+  - **W4 [P3]**：DELETE→软删改 API 语义与 e2e 面，一句带过。
+
+## 4. §3.4 参数表的落地件
+
+- **防抖合并 [P2]**：v2 一句"EventEmitter2 → 防抖合并 drain"，出处标"F 员 C16（JIT 原文）"。实测 C16 原文（research-F-relay-selection.txt:106-111）三段引文只谈轮询间隔两难、JIT 触发、兜底轮询，**无任何防抖/合并机制**；F 员选型表反而把"触发风暴需合并批处理"列为 R2 的**风险**（:120），即"需要合并"是待解问题不是现成机制。节流阈值/窗口/合并边界零参数。
+- **兜底轮询 worker 落点 [P2]**：v2 未说 worker 落在哪个进程/形态。仓内可行先例存在（ScheduleModule.forRoot 已在 AuditModule/monitoring 注册，@Cron 先例在 audit.controller.ts:371），但 1s/5s 级轮询用什么（@Interval provider/standalone）未指定。
+- **兜底间隔取值与出处角色错位 [P2]**：F 员区间表（:129）区分"主轮询 500ms-5s"与"兜底轮询可放宽至 1-5min"（C16 原文 "once every 1 or 5 minutes"）；v2 给**兜底**取 dev 1s/prod 5s，是拿主轮询区间给兜底角色选点——与 JIT 双触发设计"兜底放宽"的意图反向，等于退化为激进第二轮询。
+
+## 5. §3.6 冻结五写点实操性
+
+**清单本身全部实测吻合**（这是 v2 扎实部分）：auditProductWrite 定义 products.controller.ts:167、log 调用 :174、消费点 :211/:539/:562；M5 循环 orders.service.ts:216-244（log 调用 :218）；POST /audit/test 路由 audit.controller.ts:387-420；POST /audit/cleanup :318 且 cleanupLogs 在有链化行时诚实返回 0（audit.service.ts:379-388，连每日 Cron 也走此 no-op）；全仓 grep auditService.log 生产调用**恰为上述 3 文件**，第 5 条"停写达成"的判定成立。
+
+- **POST /audit/test 停用动作 [P3]**：删路由还是加开关未指明；"管理员测试入口改走 dev 脚本"——该 dev 脚本不存在（backend/scripts 仅 backfill-audit-chain.mjs 等 4 件），需新写未列。
+- **终锚 procedure [P3]**：工具链真实可用——verify-audit-chain.mjs 支持 --anchor（追加锚行+打印 git 命令+洗锚防护 MISMATCH 拒追加）、锚文件解析器剔除 # 注释行（anchor-utils.ts:82），故"头注'冻结于 <ts>'"以 # 行追加不破坏解析。但执行人（谁跑）/时点（P3 内哪个里程碑后）/记账行格式未写。
+
+## 6. P1→P2 依赖与 P0 前置
+
+- **P0 DatabaseModule 项为真**：app.module.ts:40-96 自带一套 forRootAsync 且**无 tidb→mysql 映射**（`type: dbConfig.type` 直传，'tidb' 非 TypeORM 合法类型=接线必炸）；带映射的 DatabaseModule（database.module.ts:26-27）全仓零引用。P0 前置事实成立、范围正确。
+- **P2-6"正交捆绑"未真修 [P2]**：v1 P0 行原文"DatabaseModule 挂载修复（TiDB 接线）；W8/W11 mutex 核查"，v2 同一行仍是两件事并列，只加了括注"（并入 P1 事务底座，不单独成行）"——修正=一行内加括号，捆绑结构原样；且同一事项又以未决身份出现在 §6.1.6（"并入 P1 时一并裁决"），P0 表/未决清单两处口径并行，读者无法从 §4.1 单表得知 W8/W11 核查到底属哪阶段。
+- **依赖链实际断两处**：P2 依赖"P1 验收"，而 P1 验收被 §2 的判据 5（工具未排产）与 HMAC key（未决未 gate）卡住——v2 文字上的依赖边（P0→P1→P2→P3）成立，实操上 P1 出不了门。
+
+---
+
+## 总判定
+
+**v2 事实层扎实（五写点/W 覆盖表/参数表与代码逐条吻合，DDL 在 sqlite 实测通过），但实操层未达可排产级：P1 验收门两处不可执行（判据 5 验链工具不存在且任何阶段未排产 + HMAC key 未决未挂依赖边）、类 2 腿的 PENDING 行插入点在 §3.1 规范图中缺位（按图实现=崩溃丢事件）、八条（文中误称九条）事务底座改造零风险评估（W12 外部网关调用横跨全局互斥、事件写 API 嵌套契约未写明=v5 死因复发面）、所引双方言先例的 TiDB 检测本身是错的。**
