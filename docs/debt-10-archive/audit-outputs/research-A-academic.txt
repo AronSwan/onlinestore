@@ -1,0 +1,175 @@
+文献全部到手。汇编调研卡。
+
+---
+
+# 债-10 调研卡：append-only ledger / 可审计数据库 / Merkle 日志前沿精读
+
+口径说明：检索日期一律记 2026-10-14（按任务令口径）。arXiv 条目全部经 `http://export.arxiv.org/api/query?id_list=<ID>` 核真（标题/作者与所引一致才入卡）；4 条 ID 全部核真一致，0 条丢弃。工业文档引文取自官方页面转出的 markdown（已去排版符）；PDF 引文已归一化连字（ﬃ→ffi）并在卡内注明。
+
+---
+
+## 节 1 · append-only 保证的机制谱系
+
+三条路线，保证“不重写”的机制各不相同：
+
+**(a) 协议层（RFC 6962）**：append-only 不是存储特性，而是由**外部监督结构 + 密码学证明**强制的不变量——第三方 witness 持有旧 Signed Tree Head，新树必须出具一致性证明证明旧树是新树的前缀，否则分叉可被任何持有两个 STH 的观察者发现。canonical 化规则（叶 0x00 / 内点 0x01 前缀域分离）**冻结在 RFC 正文里**，从第一天起就不可由实现者事后更改。
+
+**(b) 摘要结构层（Crosby & Wallach 2009；QLDB；GlassDB）**：不可重写的**证明效率**取决于摘要结构。线性哈希链的包含/一致性证明是 O(n)；history tree（Merkle 树）降到 O(log n)。QLDB 把这个结论产品化了：官方文档明说“ledger 增长后全链重算验证低效，所以用 Merkle 树”。
+
+**(c) 存储引擎层（Oracle Blockchain Table；Azure SQL Ledger；immudb）**：引擎在 API 层直接阻断 UPDATE/DELETE（"block updates and deletions at the API level"），哈希在**行插入的那一个事务内**由引擎计算，canonical 规则由引擎二进制独占——应用层没有任何代码路径能触发对已落链数据的重算。
+
+**对问题 4（重锚反模式）的教益**：全部 12 个系统没有一处靠“改 canonical 规则后全表重算”来演进。三条正路：① 规则冻结在协议/引擎里（RFC 6962 / Oracle / Azure）；② 内容确需事后变更时，**链结构不动、只换数据位**（QLDB redaction：数据替换为其哈希、序列号与元数据原样保留，证明仍验证）；③ 规则确需换代时，**追加新纪元 + 跨纪元一致性证明**（CT 的 consistency proof 天生就是“证明旧承诺仍是无误前缀”的工具）。已发生 2 次的全表重算在任何被引系统中都没有先例。
+
+## 节 2 · 审计与业务解耦的文献模型
+
+谱系两端加一个中间态：
+
+- **审计独立于业务（CT）**：log 是独立网络服务，业务（CA）异步提交，monitor/auditor 事后核对。审计永远不在业务事务的关键路径上。
+- **审计即业务库（QLDB）**：journal 是**唯一**真源（"Each ledger has exactly one journal"），一切“表”都是投影——系统中根本不存在第二条可冗余的链。
+- **库内 ledger 表（Oracle / Azure）**：业务行与审计保证**同事务原子生效**，哈希由引擎算——审计写不可能在业务提交后单独失败，fail-closed 是构造性属性而非策略开关；也不存在应用级第二把互斥锁（对问题 2 的直接回答：文献中没有任何系统在业务事务内同步调用第二个自带互斥与事务的服务）。
+- **Fabric**：execute（背书）与 validate（含审计性检查）分离——验证在写路径内但与业务执行解耦，ordering service 批处理。
+- **Event sourcing（Overeem）**：日志是 source of truth，状态是派生物——审计与业务天然单链单写。
+
+**对问题 1（双链冗余）的教益**：CT 明文“一条单树”，QLDB 明文“恰好一个 journal”——文献一致答案是一条全局日志 + 派生视图/映射。两条平行哈希链、其一零消费，在被引的全部系统中无先例；Crosby & Wallach 更进一步论证纯哈希链本身连“低事件量以外”的场景都不胜任。
+
+**对问题 3（fail-open/closed 矛盾）的教益**：文献把这个问题识别为威胁模型而非实现细节——Hicks SoK 列出的典型威胁之一就是操作者用“编辑控制”把特定事件排除在日志外（逐字引文见卡 7）。本仓同一函数既 fail-open 又被提案要求 fail-closed，等价于把“编辑控制”留给了实现者的运行时错误。文献的两条出路：要么引擎内一体（fail-closed 免死锁），要么业务外异步（CT monitors，接受最终一致）——没有第三条“事务内同步调用外部审计且失败不回滚”。
+
+## 节 3 · 验证与对账的文献模型
+
+- **CT**：验证三件套 = STH（对 root+tree_size 的签名承诺）+ 一致性证明（证明只追加不删改）+ 包含证明（单条 O(log n)）。审计者不需要全量数据。
+- **QLDB**：digest（外部可信处保存）+ GetRevision 证明；redaction 之后证明仍可验证。关键句：digest 必须存在 QLDB 之外才构成证据。
+- **Azure SQL Ledger**：digest 必须外置不可变存储（理由逐字入卡：攻击者若能改 digest，重算即可掩盖）；验证 = 拿历史 digest 对当前状态重算比对。且承认引擎内防线对“控制机器的管理员”不成立，只剩**可检测性**。
+- **数字对比（Crosby & Wallach）**：8000 万事件的日志，单事件包含证明——哈希链要 800MB，history tree 只要 3KB。
+- **GlassDB**：把验证效率当一等公民（证明结构 + 并发批量），并把 QLDB/CT 类系统归为“只有 KV 接口、缺事务、验证低效”的基线。
+
+**对“每单一链森林”（问题 1 的验证面）的教益**：森林的验证成本 = 链数 × 链长（线性），且**森林没有跨链一致性证明**——删掉一整条单链在纯哈希链森林中不可检测。CT 的一致性证明恰好就是防“整段日志消失”的机制（证明新树包含旧树全部叶子）。本仓 R1-R4 对账若走全局单树 + 各单包含证明，可同时获得 O(log n) 与防整链删除两个性质。**对问题 5（多态 FK）的教益**：Oracle 用三元组 (instance_id, chain_id, sequence_id) 定位链上行——链身份天然带类型维度；CONIKS 类 prefix tree 用键类型化命名空间；SQL:2011 时态列由系统 `GENERATED ALWAYS` 生成、应用不可伪造。审计行 entity_id 单 int 无类型标记，在这三种模型中都无处安放。
+
+---
+
+## 节 4 · 逐篇精读卡（12 卡）
+
+---
+
+### 卡 1 · RFC 6962 "Certificate Transparency" —【相关性：高】
+Laurie, Langley, Kasper（Google）· 2013 · RFC 6962（Experimental）· 检索日期 2026-10-14 · **全文精读**（rfc-editor.org 纯文本）
+核心机制：CA 证书进单棵 append-only Merkle 树；叶哈希 0x00 前缀、内点 0x01 前缀（域分离，防跨结构哈希歧义）；树头（root + tree_size）定期签名成 STH；客户端用包含证明对任一 STH 验单条目，用一致性证明验证新旧 STH 间只追加。canonical 规则全部写在 RFC 正文。
+逐字引文：
+> "A log is a single, ever-growing, append-only Merkle Tree of such certificates."（§3）
+> "Merkle consistency proofs prove the append-only property of the tree."（§2.1.2）
+> "MTH({d(0)}) = SHA-256(0x00 || d(0)). ... MTH(D[n]) = SHA-256(0x01 || MTH(D[0:k]) || MTH(D[k:n])),"（§2.1）
+另："Each log MUST produce on demand a Signed Tree Head that is no older than the Maximum Merge Delay."（§3.5）
+问题映射：**P1**（单树是规范用语，双链无先例）· **P3**（append-only 是协议不变量，不是服务自身承诺）· **P4**（canonical 规则冻结在 RFC，无处“改规则重锚”）。
+
+### 卡 2 · "Efficient Data Structures for Tamper-Evident Logging" —【相关性：高】
+Scott A. Crosby, Dan S. Wallach（Rice University）· 2009 · USENIX Security 2009（无 DOI，USIX 论文，PDF 全文已读）· 检索日期 2026-10-14 · **全文精读**（usenix.org legacy PDF；引文已归一化连字 ﬃ/ﬂ）
+核心机制：提出 history hash tree——把“当前日志树可证明为历史承诺的无误扩展”作为证明目标；对比线性哈希链 Ci=H(Ci−1 ∥ Xi) 的 O(n) 证明；给出监督承诺（witness 定期签树头）与抗抵赖设计；并引 Pavlou & Snodgrass 的 RDBMS 内篡改证明工作作数据库侧先例。
+逐字引文：
+> "The logger must be able to prove that individual logged events are still present, and that the log, as seen now, is consistent with how it was seen in the past."（§1，p.2）
+> "Where a classic hash chain might require an 800MB trace to prove that a randomly chosen event is in a log with 80 million events, our prototype returns a 3KB proof with the same semantics."（摘要，p.1）
+> "Hash chaining schemes, as such, are only feasible with low event volumes or in situations where every auditor is already receiving every event."（§3.1，p.3）
+> "Pavlou and Snodgrass [51] show how to integrate tamper-evidence into a relational database, and can prove the existence of tampering, if suspected."（§2，p.2）
+问题映射：**P1**（哈希链被逐字判死：本仓两条链都是纯哈希链；每单一链森林 = 审计者必须收全量才能验证）· **P4**（演进靠跨承诺一致性证明，不靠重算）。
+
+### 卡 3 · Amazon QLDB《Data verification in Amazon QLDB》（官方文档）—【相关性：高】
+Amazon Web Services · 文档（访问 2026-10-14 时已随服务下线收缩，经 webReader 存档副本取全文）· 检索日期 2026-10-14 · **全文精读**
+核心机制：每 ledger 恰好一个 journal（不可变事务日志）；journal 块按序哈希成链；digest = journal 的 Merkle 树密码学表示；验证 = 外存 digest + GetRevision 的 Merkle 证明；redaction 不动链结构只换数据位。
+逐字引文：
+> "QLDB uses an immutable transactional log, known as a journal, for data storage. Each ledger has exactly one journal. A journal is append-only, and journal blocks are sequenced and hash-chained similar to blockchains."
+> "As the size of your ledger grows, it becomes increasingly inefficient to recalculate the journal's full hash chain for verification. QLDB uses a Merkle tree model to address this inefficiency."
+> "The redaction operation deletes only the user data in the specified revision, and leaves the journal sequence and the document metadata unchanged."
+另："As long as the previously saved digest is known and trusted outside of QLDB, the integrity of your document is proven cryptographically — regardless of how or by whom the current state of your data was altered."（引文内 markdown 排版符已去）
+旁证（AWS《Services in Full Shutdown》官方页，同日取）：Amazon QLDB "End of support: 2025-07-31"——任务书所言 2025 deprecated 成立。
+问题映射：**P1**（"exactly one journal"——单链单真源是产品级规范）· **P4**（redaction = 变更内容而不重锚的示范）· **P3**（验证依赖外部 digest，系统自身不担保）。
+
+### 卡 4 · Oracle《DBMS_BLOCKCHAIN_TABLE》官方文档 —【相关性：高】
+Oracle Corporation · Oracle Database 19c/21c PL/SQL 包文档 · 检索日期 2026-10-14 · **全文精读**
+核心机制：append-only 表；行哈希输入 = 各列字节 + **前一行的哈希**（每链一个链式结构）；删除仅限超出保留期（DELETE_EXPIRED_ROWS）；VERIFY_ROWS 全链验证，链完整性破坏抛异常；行可由插入者补签数字签名。链上行定位三元组 instance_id/chain_id/sequence_id。
+逐字引文：
+> "A blockchain table is an append-only table designed for centralized blockchain applications." / "In Oracle Blockchain Table, peers are database users who trust the database to maintain a tamper-resistant ledger."
+> "These bytes are a concatenation of metadata and data bytes for each column of the table in column position order, followed by the hash value for the previous row in the chain."
+> "Verifies all rows on all applicable chains for integrity of HASH column value and optionally the SIGNATURE column value ... An appropriate exception is thrown if the integrity of chains is compromised."
+问题映射：**P2**（ledger 保证在业务库内、同事务生效——无第二服务、无第二把锁）· **P3**（引擎内构造性 fail-closed）· **P5**（chain_id 类型化定位 = 多态 FK 的文献参照）· **P4**（canonical 化由引擎独占，应用无重算路径）。
+
+### 卡 5 · Microsoft《Ledger Overview - SQL Server》官方文档 —【相关性：高】
+Microsoft（SQL Server 2022 / Azure SQL Database）· learn.microsoft.com，页首 ms.date 2025-08-07 · 检索日期 2026-10-14 · **全文精读**
+核心机制：两级结构——事务内被改行经 Merkle 树出事务根，事务根再 Merkle 成块，块哈希含前块根（链）；块根 = database digest，必须存到库外不可变存储；append-only 表在 API 层阻断改删；updatable ledger 表 = system-versioned 表 + 自动 history 表；验证 = 拿历史 digest 对当前状态重算比对。
+逐字引文：
+> "Any rows modified by a transaction in a ledger table are cryptographically SHA-256 hashed using a Merkle tree data structure that creates a root hash representing all rows in the transaction."
+> "Append-only ledger tables block updates and deletions at the API level." / "Ledger can't prevent such attacks but guarantees that any tampering will be detected when the ledger data is verified."
+> "Because database digests represent the state of the database at the time that they were generated, protecting the digests from tampering is paramount."
+另："An updatable ledger table is a system-versioned table that contains a reference to another table with a mirrored schema."
+问题映射：**P2/P3**（同事务引擎内一体化：fail-closed 且零死锁面）· **P4**（digest 是时点承诺，演进不重锚）· **P5**（system-versioned 历史表 = 审计轨迹的标准形态）。
+
+### 卡 6 · immudb 官方文档/站点 —【相关性：中高】
+Codenotary · immudb.io（官方站点全文；README PDF 通道不可达）· 检索日期 2026-10-14 · **全文级（官方自述文本）**
+核心机制：append-only KV 存储 + 读取附密码学证明；服务端持续校验盘内一致性，客户端验证证明；主打场景即“防篡改审计日志”。注：站点文本未展开 Merkle 细节，机制细节以其 GitHub/docs 为线索（本次未获 README 原文，标注为线索）。
+逐字引文：
+> "immudb is a database with built-in cryptographic proof and verification."
+> "Data can only be added, never changed or deleted, and every read can be answered with a cryptographic proof."
+> "Keep tamper-proof audit logs and log streams"
+问题映射：**P1**（单一数据面：读即带证明，无双结构冗余）· **P3**（不信任服务端自证，客户端验）。
+
+### 卡 7 · "SoK: Log Based Transparency Enhancing Technologies" —【相关性：高】
+Alexander Hicks（UCL）· 2023（v3 2023-09-18）· arXiv:2305.01378（export API 核真：标题/作者一致）· 检索日期 2026-10-14 · **全文精读**（arXiv HTML v3；含 CT 与加密货币两案例研究、威胁/pitfalls 系统化）
+核心机制：把日志型透明性技术系统化为目的—机制—陷阱；机制覆盖 logging、sanitisation、隐私、数据发布、查询；威胁清单含操作者“编辑控制”（选择性收录）；结构上区分追加型 Merkle 树与 CONIKS 类前缀树（前者 append-only 证明廉价、后者查询廉价）。
+逐字引文（HTML 版内嵌公式在转出中留空，以下选无空隙句）：
+> "are designed to broadly ensure that the log is verifiably append-only, can be used to lookup information, and is consistent i.e., shows the same information to everyone and does not equivocate."
+> "The operator could use editorial control to exclude specific events from the log."
+> "because there is no need for an underlying cryptocurrency, the system could be set up to include new events to the chain as they arrive rather than at the wishes of an uninterested miner."
+问题映射：**P3**（"editorial control" = fail-open 审计的威胁学定性：允许静默丢审计行等于给操作者留编辑权）· **P1**（去 Token 的许可式设计有学理位置）。
+
+### 卡 8 · "GlassDB: An Efficient Verifiable Ledger Database System Through Transparency" —【相关性：高】
+Cong Yue, Tien Tuan Anh Dinh, Zhongle Xie, Meihui Zhang, Gang Chen, Beng Chin Ooi, Xiaokui Xiao（NUS/SUTD 系）· 2022 · arXiv:2207.00944（export API 核真一致）· 检索日期 2026-10-14 · **摘要 + 正文 §1 精读**（全文 HTML 已取，深读限于摘要与引言）
+核心机制：指出 CT/区块链类透明日志只有 KV 接口、缺事务、验证低效；GlassDB 保留透明日志的可验证性，加事务与高并发（证明结构 + 批处理并发控制）；用扩展 YCSB/TPC-C 基准对比 QLDB、SQL Ledger 类基线。注：检索引擎一度以旧题"Practical Verifiable..."指认本 ID，以 export API 与 abs 页为准（API 核真即防张冠李戴的实例）。
+逐字引文：
+> "Verifiable ledger databases protect data history against malicious tampering."（摘要首句）
+> "The hash values are chained together to protect the integrity of the log."（§1）
+> "We survey existing systems and identify their two limitations, namely, the lack of transaction support and the inferior efficiency."（摘要，经 webReader 取自 ACM/arXiv 摘要页）
+问题映射：**P1**（把“验证结构”与“业务接口”统一在一个核心账本上）· **P3**（事务与审计一体是学术前沿方向，反对独立审计写路径）。
+
+### 卡 9 · "Spitz: A Verifiable Database System" —【相关性：中】
+Meihui Zhang, Zhongle Xie, Cong Yue, Ziyue Zhong（Renmin University of China）· 2020 · arXiv:2008.09268（export API 核真一致）；VLDB 版 DOI 10.14778/3415478.3415567（PVLDB Vol 13，线索级）· 检索日期 2026-10-14 · **摘要精读**
+核心机制：给“可验证数据库”立需求清单：同时保护“数据、历史、执行的完整性”；指出核心张力 = 不可变性、篡改证据、性能三者平衡；Spitz 为不可变+防篡改事务管理专造。
+逐字引文：
+> "Today, it is common for a business to involve multiple independent, distrustful parties."（摘要）
+> "We observe that the main challenges come from the need to balance data immutability, tamper evidence, and performance."（摘要，经 abs 页全文取）
+问题映射：**P1/P3**（审计性是数据库本体属性而非外挂服务的立场声明）。
+
+### 卡 10 · "Hyperledger Fabric: A Distributed Operating System for Permissioned Blockchains" —【相关性：中】
+E. Androulaki, A. Barger, V. Bortnikov, C. Cachin 等 21 人（IBM Research 等）· 2018 · arXiv:1801.10228（export API 核真：21 位作者全录一致）· 检索日期 2026-10-14 · **摘要精读**
+核心机制：许可式（无 Token、无挖矿）区块链；execute-order-validate 架构——背书（业务执行）与验证（含审计性检查）分离，排序服务批量提交；模块化共识可按信任模型裁剪。EuroS&P 2018 正式版（DOI 10.1109/EuroSP.2018.00014，未核，标注线索）。
+逐字引文：
+> "Fabric is a modular and extensible open-source system for deploying and operating permissioned blockchains and one of the Hyperledger projects hosted by the Linux Foundation (www.hyperledger.org)."
+> "Fabric is the first truly extensible blockchain system for running distributed applications."
+> "It supports modular consensus protocols, which allows the system to be tailored to particular use cases and trust models."
+问题映射：**P2**（写路径内验证与业务执行解耦的正统做法）· 去 Token 审计链的工程先例。
+
+### 卡 11 · "An Empirical Characterization of Event Sourced Systems and Their Schema Evolution — Lessons from Industry" —【相关性：中】
+Michiel Overeem, Marten Spoor, Slinger Jansen, Sjaak Brinkkemper（Utrecht University）· 2021 · arXiv:2104.01146（export API 核真一致）· 检索日期 2026-10-14 · **摘要精读**
+核心机制：对 19 个工业 event-sourced 系统的扎根理论实证——事件日志为真源、状态派生；考察采用动因与 schema 演进实践。与本仓 order_snapshots“每单一链”最相近的工业模式的学术画像。
+逐字引文：
+> "Event sourced systems are increasing in popularity because they are reliable, flexible, and scalable."
+> "In this article, we point a microscope at a software architecture pattern that is rapidly gaining popularity in industry, but has not received as much attention from the scientific community."
+> "Based on the discussion of 19 event sourced systems we explore the rationale for and the context of the event sourcing pattern."（经 abs 页全文取）
+问题映射：**P1**（日志单真源 + 派生状态 = 反双链的架构学理）· **P4**（schema 演进是 ES 一等难题，正路是演进兼容而非重写历史）。
+
+### 卡 12 · "Temporal features in SQL:2011" —【相关性：中高】
+Krishna Kulkarni, Jan-Eike Michels（Microsoft）· 2012 · ACM SIGMOD Record 41(3):34-43 · DOI 10.1145/2380776.2380786（ACM 页核真标题/作者/卷期）· 检索日期 2026-10-14 · **摘要精读**（全文付费墙，Scribd 有非官方副本未引）
+核心机制：SQL:2011 引入 system-versioned 时态表（系统生成的有效期列，`GENERATED ALWAYS AS ROW START/END`，应用不可注入）与 application-time period 表；审计轨迹由此获得 SQL 标准形态。Snodgrass 传统（bi-temporal）的标准 化终点。
+逐字引文（ACM 摘要页）：
+> "SQL:2011 was published in December of 2011, replacing SQL:2008 as the most recent revision of the SQL standard."
+> "This paper covers the most important new functionality that is part of SQL:2011: the ability to create and manipulate temporal tables."（摘要页 description，截于页元数据）
+问题映射：**P5**（时间/身份维度由系统生成并约束——entity_id 无类型、无 FK、无系统时间列的审计行在标准形态外）· **P3**（历史保留是声明式 DDL 属性，不是应用函数的运行时行为）。
+
+---
+
+## 未获原文、仅作线索（不入证据链）
+
+- **Snodgrass《Developing Time-Oriented Database Applications in SQL》**（Morgan Kaufmann, 1999，bi-temporal 圣经；ISBN 1-55860-436-7）：原文 PDF 已定位（cs.arizona.edu/~rts/tdbbook.pdf，重定向 www2.cs.arizona.edu/~rts/tdbbook.pdf），两次自动提取均失败（WebFetch 拒 PDF；webReader 返回二进制乱码）——**未获原文，仅线索**，其逐字引文经由卡 12 的 SQL:2011 标准化成果间接承载。
+- **"Secure Logging Schemes and Certificate Transparency"**（ESORICS 2016，Dowling 等，Stebila 参与）：原始 PDF 两路 404/拒收——**未获原文，仅线索**；其条目本身在卡 7 参考文献中逐字出现（"In Douglas Dowling, ... ESORICS 2016"），标题/作者/会议三件经 Hicks SoK 参考文献表转引核真。
+- **Pavlou & Snodgrass**（RDBMS 篡改检测，C&W 引文 [51]）：仅经由卡 2 的正文逐字转述存在——线索级。
+- **CONIKS / verifiable map、RFC 9162（CT v2）**：在卡 7 SoK 中被系统化覆盖，未单独取原文，不作独立证据。
+
+---
+
+精读 12 篇（全文 7 篇 / 摘要 5 篇 / 丢弃 0 条ID不符）/ 引文全部三件齐 / 问题映射：1双链 2自锁 3fail语义 4重锚 5多态FK

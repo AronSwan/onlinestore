@@ -1,0 +1,163 @@
+调研完成。所有必查文献原文到手，本仓病灶代码也已精确定位（自锁=进程级写互斥禁止嵌套 + 审计服务自带第二事务）。以下为完整调研卡。
+
+---
+
+# 债-10 工程前沿调研卡：P0×5 的业界标准解法（2026-10-14）
+
+**本仓病灶锚点（精读所得，供映射）**
+- `C:\Users\Administrator\onlinestore_remediation\backend\src\common\db-write-mutex.ts`（L26）：「禁止嵌套：fn 内再调 runExclusiveWrite 会等待外层回落=自锁死」；L1-17 记录根因=TypeORM sqlite 驱动全库单共享连接，两路并发 `manager.transaction()` 交叉 BEGIN/COMMIT 即悬挂事务。
+- `C:\Users\Administrator\onlinestore_remediation\backend\src\common\audit\audit.service.ts`（L202-218）：`AuditService.log()` 自身包 `runExclusiveWrite(() => this.dataSource.transaction(...))`——审计写=第二笔独立事务+独立排队。
+- `C:\Users\Administrator\onlinestore_remediation\backend\src\orders\orders.service.ts`（L190-244）：订单 create 事务内同步写快照（注释原话「同事务 fail-closed」）→ 事务提交后 fire-and-forget 事件（census⑤ 修，注释「回滚=幻影 created 事件」）→ 事后 try/catch 补审计（注释「审计失败只告警不回滚」=fail-open）。**同一函数体内三种语义并存**。
+- `C:\Users\Administrator\onlinestore_remediation\backend\src\orders\order-snapshot.service.ts`（L135-157）：每单一链 `order_snapshots`（version+prevHash+recordHash），SQL 已双方言分叉（`FOR UPDATE` 分支 vs `MAX(version)` 分支）。
+
+---
+
+## 一、同事务双写的业界答案谱系
+
+| 路线 | 原子性来源 | 前提 | 代价 | 卡号 |
+|---|---|---|---|---|
+| ① 2PC/XA | 分布式事务协调器 | 两端都支持 XA | 业界一致弃用：不可用+耦合（microservices.io 明言"not viable"）；**本仓 prod 目标 TiDB 本身不暴露 XA SQL 接口**（卡22） | 卡1、卡22 |
+| ② 同库同事务（outbox 行） | 同一本地 DB 事务 | 审计/事件=同库一张表 | 事务内多一行 INSERT，零新资源；消费方必须异步 | 卡1、卡2 |
+| ②+CDC（log tailing 中继） | 同库同事务存储 + WAL/binlog 尾读发布 | 需 CDC 管道（Debezium 等） | 最终一致、at-least-once、运维成本 | 卡2、卡4、卡5 |
+| ②+轮询中继（polling publisher） | 同库同事务存储 + 轮询投递 | 一张 outbox 表+一个 relay | 轮询延迟/表扫描；**无需 Kafka，dev(sqlite)→prod(TiDB) 全程可用** | 卡1 |
+| ③ 查询式 CDC（按时段扫表） | 无事务保证 | — | Shopify 实证弃用：漏硬删、丢中间态、小时级延迟（卡17） | 卡17 |
+
+**我们的病在 outbox 框架下的定位**：本仓「同事务双写自锁」既不是①的分布式事务问题，也不是②的存储问题——而是**把②该做的事（审计行随业务事务同库同写）错误地实现为“第二笔独立事务”，再用进程级互斥串行化两笔事务，嵌套即死锁**。Debezium 博客给出诊断原则（卡2）："By only modifying a single resource - the source service's own database - it avoids any potential inconsistencies"——一个请求只碰一个事务资源。且本仓 census⑤ 修复（事件移到 commit 后）已独立重新发明了 outbox 纪律的“发布半边”，缺的是“存储半边”（审计行同事务落库）。业界答案下，`audit_logs` 应退化为 outbox 表（随订单事务同 INSERT，无第二 BEGIN），链化/验链/告警全部移到事务外的中继侧——自锁从结构上消失而非被更大锁盖住。
+
+## 二、审计/事件语义谱系（fail-open vs fail-closed）
+
+**业界主流=fail-closed 存储 + fail-open 送达**，二者分层不混谈：
+- **存储内带（in-band，fail-closed）**：事件行随业务事务同写，业务成功⇒事件必然存在（卡1、卡2）。这正是 outbox 的定义性行为。
+- **送达外带（out-of-band，fail-open 但安全化）**：重试+幂等+对账兜底。Stripe：live 模式"attempts to deliver events to your destination for up to three days with an exponential back off"（卡14）；不保序（"Stripe doesn't guarantee the delivery of events in the order that they are generated"）、消费端记 event ID 去重（卡14）；Debezium at-least-once："no changes are missed; however, in some cases, a record may be delivered more than once"（卡5）；Sequin 实测 Stripe `/events` 端点本身最终一致，消费侧必须防御式游标+定期对账（"We then ran audits comparing the state of our synced database over time to the state of Stripe's API"，卡16）。Certificate Transparency 是 fail-open 带死线的样本：日志宕机不阻塞签发（fallback 策略），但 24 小时 MMD 内必须补齐，由独立审计者事后核验（卡12）。
+- **fail-closed 适用域**：钱与合规的“不可没有记录”场景（本仓订单快照 v1 genesis 同事务写入即此类）；Harness 补充审计侧特殊约束——"Audit logs are forever"，格式一经上线近乎不可改，须开局做泛型设计（卡21）。
+- **审计与领域事件是否同一物**：Fowler 的回答是**审计=事件流的投影**（"it's easy to serialize the events to make an Audit Log"，卡6）——一份原始日志，多种投影视图；Stripe 同构：Event 不可变（"You can't change Event objects after creation"，卡14），Activity Log 是另一视图。业界没有“业务事件流+独立审计链”双链并行的先例（本仓现状），CT 生态的“日志”也只有一条，审计者读同一条。
+
+## 三、订单历史建模谱系
+
+| 路线 | 迁移成本 | 查询性 | 验证性 | 业界实证 |
+|---|---|---|---|---|
+| 手写快照/变更表（本仓现状） | 最低（已在） | 高（SQL 直查） | 自管哈希链：**验单条 O(n)线性**（Cloudflare 数学，卡12） | Stripe snapshot 事件=事件时点对象快照（卡14/15）；Saleor OrderEvent=订单挂事件列表（卡20）；Medusa=OrderChange+Action+version 递增（卡18/19）——主流电商全是“变更记录/快照”路线 |
+| SQL:2011 system-versioned table | 中（DDL 改造） | 最优（`FOR SYSTEM_TIME AS OF`） | 引擎托管 | SQL Server 原生（卡7）；**PostgreSQL 未入核心**（"Work to add...is ongoing"，卡8）；MySQL/TiDB 无此特性（卡22）——**本仓 sqlite+TiDB 双方言两侧都断路，此路线不可用** |
+| 事件溯源（单表 ES） | 最高（"it's very hard to retrofit these patterns onto a system that wasn't built with Event Sourcing"，卡6） | 需 replay/投影 | 最强（fold 可重放验证） | 纯 ES 在主流电商订单域无公开一线采用；Fowler 本人也说"not a natural choice"（卡6）；快照在 ES 里只是 replay 优化（overnight snapshot，卡6），不是独立真源 |
+
+**结论性对照（问题4）**：本仓“每单一链哈希森林”≈Stripe/Saleor 的“事件时点快照”变体，方向与主流一致；架构师席方向E“单表事件溯源”在业界属高迁移成本少数派。增量建议来自卡12：短链（每单几节）用 hash chain 无碍；若为防篡改，全局验证需求应走 Merkle（log₂n≈30 哈希）而非线性链——且**没有独立消费者/锚定的链不产生安全价值**（对应问题3：1603 行零消费的双链，其防篡改宣称无验证方即无实证力）。
+
+## 四、每篇一卡（检索日期统一 2026-10-14）
+
+**卡1 · Transactional Outbox — microservices.io（Chris Richardson）**
+URL: https://microservices.io/patterns/data/transactional-outbox.html
+引文："The command must atomically update the database and send messages in order to avoid data inconsistencies and bugs." ／ "it is not viable to use a traditional distributed transaction (2PC) that spans the database and the message broker" ／ "There are two patterns for implementing the Message relay: The Transaction log tailing pattern / The Polling publisher pattern"
+映射：问题1（同事务双写的标准答案与 2PC 弃用论据）、问题2（存储/送达分层）。
+
+**卡2 · Reliable Microservices Data Exchange With the Outbox Pattern — Debezium 官方博客（Gunnar Morling，2019-02-19）**
+URL: https://debezium.io/blog/2019/02/19/reliable-microservices-data-exchange-with-the-outbox-pattern/
+引文："not only an INSERT into the PurchaseOrder table is done, but, as part of the same transaction, also a record representing the event" ／ "By only modifying a single resource - the source service's own database - it avoids any potential inconsistencies" ／ "Debezium tails the transaction log ('write-ahead log', WAL)... it doesn't examine the actual contents of the table in the database, but instead it tails the append-only transaction log."
+映射：问题1（“为什么 outbox 行而双写不行”的原始论证——单资源原则）、问题2（read-your-own-writes+异步最终一致）。
+
+**卡3 · Outbox Event Router — Debezium 官方文档（stable）**
+URL: https://debezium.io/documentation/reference/stable/transformations/outbox-event-router.html
+引文："The outbox pattern is a way to safely and reliably exchange data between multiple (micro) services." ／ "An outbox pattern implementation avoids inconsistencies between a service's internal state... and state in events"
+说明：原子性论证本页无原文，官方页指向卡2 博客（已取证）。映射：问题1（现成 SMT 降实现成本）。
+
+**卡4 · Debezium Architecture — Debezium 官方文档（stable）**
+URL: https://debezium.io/documentation/reference/stable/architecture.html
+引文："The MySQL connector uses a client library for accessing the binlog." ／ "The PostgreSQL connector reads from a logical replication stream."
+说明：“低侵入”表述本页无逐字原文，低开销原文在卡2（"with a very low overhead in near-realtime"）。映射：问题1/3（审计可从业务事务彻底解耦=WAL/binlog 派生）。
+
+**卡5 · Exactly once delivery — Debezium 官方文档（stable）**
+URL: https://debezium.io/documentation/reference/stable/configuration/eos.html
+引文："Debezium provides at-least-once delivery guarantees." ／ "This means that no changes are missed; however, in some cases, a record may be delivered more than once." ／ "Kafka Connect introduced support for exactly-once delivery for source connectors in KIP-618."
+映射：问题2（fail-open 送达的语义=至少一次+消费端幂等）。
+
+**卡6 · Event Sourcing — Martin Fowlerbliki（2005）**
+URL: https://martinfowler.com/eaaDev/EventSourcing.html
+引文："Capture all changes to an application state as a sequence of events." ／ "Complete Rebuild: We can discard the application state completely and rebuild it by re-running the events from the event log" ／ "it's very hard to retrofit these patterns onto a system that wasn't built with Event Sourcing."（另："it's easy to serialize the events to make an Audit Log"；快照=replay 优化："started at the beginning of the day from an overnight snapshot"）
+映射：问题3（审计=事件投影，非双链）、问题4（ES 的 state=fold(events)、快照角色、retrofit 成本直接回应架构师席方向E）。
+
+**卡7 · Temporal Tables（system-versioned）— Microsoft Learn（SQL Server）**
+URL: https://learn.microsoft.com/en-us/sql/relational-databases/tables/temporal-tables（现 canonical：…/temporal/overview）
+引文："A system-versioned temporal table is a type of user table designed to keep a full history of data changes, allowing point-in-time analysis." ／ "the system manages the period of validity for each row (that is, the Database Engine)" ／ "SELECT * FROM Employee FOR SYSTEM_TIME BETWEEN '2021-01-01 00:00:00.0000000' AND '2022-01-01 00:00:00.0000000'"
+映射：问题4（DB 原生订单历史版本的标准形态，与手写快照表逐项对照）。
+
+**卡8 · SQL2011Temporal — PostgreSQL 官方 wiki**
+URL: https://wiki.postgresql.org/wiki/SQL2011Temporal
+引文："System period temporal tables maintain historical versions of data." ／ "Work to add application time and system time to Postgres is ongoing." ／ "(It is not fully compliant with SQL:2011.)"
+映射：问题4/5（PG 侧无原生 temporal→SQL:2011 路线在本仓栈上不可作为依赖）。
+
+**卡9 · Write-Ahead Logging — sqlite.org 官方**
+URL: https://www.sqlite.org/wal.html
+引文："WAL provides more concurrency as readers do not block writers and a writer does not block readers." ／ "However, since there is only one WAL file, there can only be one writer at a time." ／ "WAL works best with smaller transactions."
+映射：问题1/5（dev 库读写并发上限=单写者；**单写者是引擎事实而非可配置问题**，进程级互斥是正对层的解，但代价=任何嵌套写即自锁→outbox 单事务写更契合）。
+
+**卡10 · BEGIN CONCURRENT — sqlite.org（begin-concurrent 分支文档）**
+URL: https://sqlite.org/cgi/src/doc/begin-concurrent/doc/begin_concurrent.md
+引文："The BEGIN CONCURRENT enhancement allows multiple writers to process write transactions simultanously if the database is in 'wal' or 'wal2' mode"（原文拼写如此）／ "although the system still serializes COMMIT commands" ／ "if the transaction does conflict, it cannot be committed and an SQLITE_BUSY_SNAPSHOT error is returned."
+说明：“未合入主线”页内无原文——旁证=挂载于 begin-concurrent 分支路径、主站事务语法文档无此语法（状态判断非引文）。映射：问题5（乐观并发写仍是实验分支，不可作 dev 解）。
+
+**卡11 · sqlite3_busy_timeout — sqlite.org 官方 C API**
+URL: https://www.sqlite.org/c3ref/busy_timeout.html
+引文："This routine sets a busy handler that sleeps for a specified amount of time when a table is locked. The handler will sleep multiple times until at least 'ms' milliseconds of sleeping have accumulated. After at least 'ms' milliseconds of sleeping, the handler returns 0 which causes sqlite3_step() to return SQLITE_BUSY."
+映射：问题5（多连接写冲突的标准缓解=等待重试；与进程内互斥互补）。
+
+**卡12 · Introducing Certificate Transparency and Nimbus — Cloudflare 官方博客（2018-03）**
+URL: https://blog.cloudflare.com/introducing-certificate-transparency-and-nimbus/
+引文："The naïve data structure to use for an append-only database is a hash chain." ／ "You need approximately n/2 elements to verify an average element in a chain of length n. In computer science terms, this is called 'linear scaling.'" ／ "because of the efficiency of Merkle trees, inclusion proofs only require around 30 hashes"（另：“A certificate transparency log is a Merkle tree where the leaf elements are certificates”；日志宕机不阻签发+24h MMD："the certificate authority is allowed a 24 hour grace period"）
+映射：问题3（hash chain 无消费者=无验证方；线性验证 vs Merkle log₂n——**直接命中 1603 行零消费链的评估**）、问题4（森林结构选择）、问题2（fail-open 带 MMD 死线先例）。
+
+**卡13 · S3 Object Lock — AWS 官方文档**
+URL: https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html
+引文："Object Lock uses a write-once-read-many (WORM) model to store objects." ／ "In compliance mode, a protected object version can't be overwritten or deleted by any user, including the root user in your AWS account." ／ "S3 Object Lock has been assessed by Cohasset Associates for use in environments that are subject to SEC 17a-4, CFTC, and FINRA regulations."
+映射：问题3（审计独立的正确姿势=存储层 WORM/合规保留，而非应用层第二哈希链）。
+
+**卡14 · Stripe Webhooks — Stripe 官方文档**
+URL: https://docs.stripe.com/webhooks
+引文："Stripe attempts to deliver events to your destination for up to three days with an exponential back off in live mode." ／ "Stripe doesn't guarantee the delivery of events in the order that they are generated." ／ "You can't change Event objects after creation. For example, if you update a charge, the original charge event remains unchanged."（另：payload 格式"Thin (recommended) or Snapshot"；幂等=记 event ID；"Configure your handler to process incoming events with an asynchronous queue"）
+映射：问题2（fail-open 送达全套工程件：重试/不保序/幂等/异步消费）、问题4（thin vs snapshot 事件=业界正把“事件内快照”降级为可选）。
+
+**卡15 · The Event object — Stripe API 官方文档**
+URL: https://docs.stripe.com/api/events/object
+引文："`pending_webhooks` (integer) Number of webhooks that haven't been successfully delivered (for example, to return a 20x response) to the URLs you specify." ／ "`type` (string) Description of the event (for example, `invoice.created` or `charge.refunded`)" ／ "When you create a snapshot event handler, use the API object definition at the time of the event by accessing the event's data.object fields."
+映射：问题4（事件时点快照语义=本仓 order_snapshots 的“事件即快照”路线同构）。
+
+**卡16 · Finding and fixing eventual consistency with Stripe events — Sequin 工程博客**
+URL: https://blog.sequin.io/finding-and-fixing-eventual-consistency-with-stripe-events
+引文："Our investigation revealed: the /events endpoint is eventually consistent!" ／ "If we paginate through the endpoint using Event IDs, we're subject to skipping events." ／ "We then ran audits comparing the state of our synced database over time to the state of Stripe's API."
+映射：问题2（对账兜底的一线实操作业——连事件流本身都最终一致，重试队列不能没有对账腿）。
+
+**卡17 · Capturing Every Change From Shopify's Sharded Monolith — Shopify Engineering（2021-03）**
+URL: https://shopify.engineering/capturing-every-change-shopify-sharded-monolith
+引文："Shopify is moving from existing query-based CDC (Change-Data Capture) tooling (Longboat) to an immutable, append-only, log-based mechanism." ／ "Query-based capture will miss all hard-deletes... The extractor can only report the most recent state of a row, so any intermediate state is permanently lost." ／ "Of the open-source options available, Debezium emerged as the clear winner."（另：p99<10s 入 Kafka）
+映射：问题1/3（订单域一线：审计/变更捕获业界终态=log CDC 派生，业务事务零侵入）。
+
+**卡18 · Order Change — Medusa 官方文档（v2）**
+URL: https://docs.medusajs.com/resources/commerce-modules/order/order-change
+引文："The OrderChange data model represents any kind of change to an order, such as a return, exchange, or edit." ／ "The actions performed on the original order by an order change, such as adding an item, are represented by the OrderChangeAction data model." ／ "Once the order change is confirmed, its changes are applied to the order."
+映射：问题4（主流开源电商订单变更=变更记录+动作明细，非 ES、非哈希链）。
+
+**卡19 · Order Edit — Medusa 官方文档（v2）**
+URL: https://docs.medusajs.com/resources/commerce-modules/order/edit
+引文："A merchant can edit an order to add new items or change the quantity of existing items." ／ "When an order edit is confirmed, the order's version is incremented."
+说明：pending/declined 生命周期细节本页无原文（仅见 `order-edit.requested`/`order-edit.confirmed` 事件）——按引证纪律不补写。映射：问题4（订单版本递增=本仓 order_snapshots version 列的同构先例）。
+
+**卡20 · Order Object — Saleor Commerce 官方 API 文档**
+URL: https://docs.saleor.io/api-reference/orders/objects/order
+引文："events: [OrderEvent!]! — List of events associated with the order. Requires the MANAGE_ORDERS permission." ／ "Represents an order in the shop."
+映射：问题3/4（订单聚合直接挂事件列表=“业务消费”内建——反衬本仓 1603 行零消费）。
+
+**卡21 · The Surprising Complexities of Building Audit Logs — Harness 工程博客**
+URL: https://www.harness.io/blog/complexities-of-building-audit-logs
+引文："Audit logs are forever" ／ "You absolutely can not delete that log, lose that log, or stop showing it because it is in an old format." ／ "Would it make sense to only have the last month or two of logs in fast-access storage?"
+说明：同步 vs 异步阻塞本篇无明说（仅问"Is there an SLA on when that delivery needs to happen relative to the time of the event?"）。映射：问题2/3（审计格式不可变性+冷热分层——审计表的长期维护成本账）。
+
+**卡22 · Compatibility with MySQL — TiDB 官方文档（stable）**
+URL: https://docs.pingcap.com/tidb/stable/mysql-compatibility
+引文："TiDB is highly compatible with the MySQL protocol and the common features and syntax of MySQL 5.7 and MySQL 8.0." ／ "XA syntax (TiDB uses a two-phase commit internally, but this is not exposed via an SQL interface)" ／ "SKIP LOCKED syntax"（列于不支持项）
+映射：问题1（prod 目标库无 XA→2PC 路线在本仓不可行）、问题5（双方言硬约束清单：outbox 轮询中继常用的 `SKIP LOCKED` 在 TiDB 不可用，`FOR UPDATE` 可用——与本仓 order-snapshot.db-utils 已分叉的 `FOR UPDATE` 分支一致）。
+
+**仅摘要/线索（未获原文，按纪律标注）**
+- Stripe 审计日志工程博文：未检索到公开工程实现文——仅产品文档线索 https://docs.stripe.com/activity-logs（Activity Logs API），不作逐字引证。
+- microservices.io 的 Polling Publisher / Transaction Log Tailing 子页：本卡组仅引主 outbox 页对其命名（卡1 引文③），子页细节未逐一取证。
+
+---
+
+**一行总结**：精读 22 篇 / 引文三件齐（逐字引文+URL+检索日期 2026-10-14，2 项无原文处已标“仅线索/旁证”）/ 映射：1双写自锁=第二事务违“单资源原则”→outbox 同库同事务行 2fail语义=存储内带fail-closed+送达外带fail-open（重试+幂等+对账） 3双链冗余=审计应为主日志投影+无消费者链无验证力（chain O(n) vs Merkle log₂n） 4快照vs事件=主流电商皆快照/变更记录路线、ES retrofit 成本高、SQL:2011 在 sqlite/TiDB 双断 5双方言=TiDB 无XA无SKIP LOCKED有FOR UPDATE、sqlite单写者互斥对层但禁嵌套。

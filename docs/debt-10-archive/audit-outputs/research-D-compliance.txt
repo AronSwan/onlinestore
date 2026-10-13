@@ -1,0 +1,63 @@
+# 债-10 治理合规边界员 · 调研裁决报告
+
+**检索日期：2026-10-14**（实际执行于 10-13 深夜至 10-14 凌晨，本地时钟跨午夜；任务书要求 2026-10-14+，满足）。引文层级：PCI=官方 PDF 全文逐字（一手）；GDPR/SOX=忠实镜像站条文（准一手，标注）；SOC 2/NIST=二手转引 AICPA/NIST 原文（标注）。**全部检索日期统一 2026-10-14。**
+
+## 〇、先决纠错与适用性边界（影响全部裁决成色）
+
+1. **任务书所指 "PCI 10.4.1.2 'protect logs from modification'" 在 v4.0.1 不存在**。官方 PDF 全文检索 "10.4.1.2" 零命中。v4.0.1 的真实编号：防篡改=**Req 10.3**（10.4 是“日志审查”）。任务书编号系版本混淆，本报告按真实编号裁决。（出处：PCI DSS v4.0.1 Requirements and Testing Procedures, June 2024, 官方 PDF（middlebury.edu 镜像），检索 2026-10-14）
+2. **PCI 适用前提（条件性硬边界）**：PCI DSS 适用于 "entities that store, process, or transmit cardholder data (CHD) and/or sensitive authentication data (SAD) or could impact the security of"（同上，Applicability 节，检索 2026-10-14）。本仓支付回调 DTO 实勘**无 PAN/CVV 字段**（见 Q3），若系统全程不碰卡数据，Req 10 本体不在强制适用范围——PCI 维度全部结论为“若适用则……”的条件式。GDPR/SOC 2 无此门槛。
+
+## 一、必查项原文要点
+
+**1. PCI-DSS v4.0.1 Requirement 10**（官方 PDF 逐字，出处同上，检索 2026-10-14）
+- 10.2.1: "Audit logs are enabled and active for all system components and cardholder data."
+- 事件清单 10.2.1.1–10.2.1.7：个人对卡数据的每次访问 / "all actions taken by any individual with administrative access" / "all access to audit logs" / "all invalid logical access attempts" / 认证凭据变更（建号/提权/管理员账变）/ "All initialization of new audit logs, and all starting, stopping, or pausing of the existing audit logs" / 系统级对象建删。
+- 10.2.2 每条记录六要素："User identification / Type of event / Date and time / Success and failure indication / Origination of event / Identity or name of affected data, system component, resource, or service"。
+- 10.3 总则: "Audit logs are protected from destruction and unauthorized modifications."；10.3.1 读权限限职务需要；10.3.2: "Audit log files are protected to prevent modifications by individuals."；10.3.3: "promptly backed up to a secure, central, internal log server(s) or other media that is difficult to modify"；10.3.4: "File integrity monitoring or change-detection mechanisms is used on audit logs to ensure that existing log data cannot be changed without generating alerts."
+- 10.5.1: "Retain audit log history for at least 12 months, with at least the most recent three months immediately available for analysis."
+- 10.7.2（2025-03-31 起对全体实体强制）: "Failures of critical security control systems are detected, alerted, and addressed promptly"，清单明列 "**Audit logging mechanisms**"；10.7.3 响应要素含 "Restoring security functions"、记录失效起止时间与原因、"Identifying and addressing any security issues that arose during the failure"。
+- 10.2.1 Good Practice（非强制）: "Care should be taken to only store essential information in the audit logs to minimize risk."
+- **“审计写入失败时业务该怎么处理”——穷尽检索（logging failure/fail closed/halt/prevent transactions 等十余词形）全文零命中。无明文。** 标准给的路径是 10.7.2/.3：检测、告警、及时处置、失效期问题评估——不是阻断业务。
+
+**2. SOX ITGC**（法条原文=law.cornell.edu 15 U.S.C. §7262，检索 2026-10-14，准一手；ITGC 日志要求=二手共识层）
+- §404(a) 要求年报含 "an internal control report"，内含对内控有效性的评估；适用对象 = "issuer"（上市公司）。**SOX 法条本身对日志零明文**；订单/支付系统入 SOX 范围的判据=是否重大影响财务报告（收入/现金认定）——非上市自用系统不在 SOX 法定义务内（二手共识：[Bitsight](https://www.bitsight.com/learn/compliance/sox-compliance-checklist)、[Crowe](https://www.crowe.com/insights/sox-section-404-compliance-a-public-company-road-map)，检索 2026-10-14）。ITGC 四域（访问/变更/运维/开发）中日志是证据载体——**审计师要求的是“控制可举证”，未闻“审计同步写”或“fail-closed”成文要求**。
+
+**3. SOC 2 CC7.2 / A1.2**（AICPA TSC 2017 r2022 原文经二手转引：[SANS](https://www.sans.org/blog/soc-2-trust-services-categories)、[Secureframe](https://secureframe.com/blog/soc-2-trust-principles)，检索 2026-10-14）
+- CC7.2: "The entity monitors system components and the operation of those components for anomalies that are indicative of malicious acts, natural disasters, and errors that impact the entity's ability to meet its objectives."
+- A1.2: 持续 "environmental protections, software, data back-up processes, and recovery infrastructure" 的授权/实施/运维/监控——**要求备份与恢复基础设施，对日志写入时序、fail 模式无明文**。
+
+**4. GDPR**（gdpr-info.eu，OJ 文本忠实镜像，检索 2026-10-14，准一手）
+- Art. 5(1)(c): "adequate, relevant and limited to what is necessary in relation to the purposes for which they are processed ('data minimisation')"
+- Art. 5(1)(b): "collected for specified, explicit and legitimate purposes and not further processed in a manner that is incompatible with those purposes"
+- Art. 5(1)(e): "kept in a form which permits identification of data subjects for no longer than is necessary for the purposes"
+- Art. 25(1): 控制者须 "both at the time of the determination of the means for processing and at the time of the processing itself, implement appropriate technical and organisational measures"，且措施 "designed to implement data-protection principles, such as data minimisation, in an effective manner"
+- Art. 30(1): "Each controller ... shall maintain a record of processing activities"，含 "envisaged time limits for erasure of the different categories of data"
+- Art. 32(1)(b): "the ability to ensure the ongoing confidentiality, integrity, availability and resilience of processing systems and services"——**审计日志的合法性挂钩（作为安全措施）在此，但 GDPR 无一处要求“同步审计”或“fail-closed”，也无日志豁免条款**。
+
+**5. 审计独立性与哈希链地位**
+- NIST SP 800-53 AU-9（csf.tools 转引，检索 2026-10-14，二手）: "Protect audit information and audit logging tools from unauthorized access, modification, and deletion" + 检出未授权修改须告警。NIST SP 800-92（[官方页](https://csrc.nist.gov/pubs/sp/800/92/final)，检索 2026-10-14）为日志保护/留存指南，**未强制哈希链**。
+- 哈希链的法规级先例=德国 KassenSichV 收银机法规族 **BSI TR-03151/03152/03153**（[BSI 官方页](https://www.bsi.bund.de/EN/Themen/Unternehmen-und-Organisationen/Standards-und-Zertifizierung/Technische-Richtlinien/TR-nach-Thema-sortiert/tr03151/tr03151_node.html)，检索 2026-10-14）：监管强制交易日志哈希链化。re-anchoring（Nachverankerung）细节在公开可检索文本中**未逐字验证**，标注存疑。
+- **PCI/SOC 2/ISO 27001 均无明文要求或禁止哈希链**——其合规地位=满足“防篡改/变更检测”义务（PCI 10.3.4、AU-9）的可接受技术措施之一。
+
+## 二、六条裁决
+
+**Q1 审计异步化（最终一致+对账兜底）→【无要求】**。PCI Req 10 全文无同步/事务内写入要求，10.2.1 要的是“enabled and active”（覆盖能力），不是写入时序。附带硬边界两条：①异步链路的失效（队列积压/消费者死）落入 10.7.2 “Audit logging mechanisms” 检测告警义务；②留存义务不变（10.5.1）。ITGC/SOC 2 实务要求完整性可举证（对账报告=证据）。**站得住。**
+
+**Q2 fail-open（告警+补写队列）→【无要求（明文层）】**。“审计失败须阻断业务”在四标准均无明文（PCI 穷尽检索零命中）。但拆开看：现状（orders.service.ts:215-244，正身仓实测）是**纯 warn 无补写**——失败窗口事件永久缺失，踩 10.2.1 “enabled and active” 覆盖义务（若 PCI 适用）→ **补写队列不是可选项而是覆盖义务的兑现手段**；告警通道须真实可审计（现状 logger.warn 落 30 天滚动清理的应用日志，OpenObserve 配置为证，作为 10.7.2 “alerted” 证据链偏弱）；10.7.3 要求失效起止/原因/期间安全问题留档。**fail-open 站得住，条件=补写+真告警+失效留档。**
+
+**Q3 requestParams/responseData 原文落库 →【硬边界】**。α 席 Art. 5(1)(c) 判定**复核成立**，精化两点：①**目的限制 Art. 5(1)(b) 不豁免日志里的 PII**——兼容性只解决“可为安全目的处理”，不豁免“量须必要”，最小化对日志内容照常适用（且 Art. 25(1) 要求设计期落实）；②实勘纠偏：支付回调 DTO **无卡号/CVV 字段**（payment-callback.dto.ts 逐字段核过），“可能含卡号”不成立——但 audit.service.ts:183-184 落库是裸 `JSON.stringify` 无掩码，log-sanitizer.service.ts（含 password/token/cardNumber 掩码+16 位卡号正则）存在却未接审计链路；日志实际含 buyerLogonId（支付宝账号）、sellerEmail、钱包地址（GDPR 个人数据）+ rawData `Record<string,any>` 未验证透传。PCI 侧条件性硬边界：一旦 PAN 落日志即撞 3.5.1 "PAN is rendered unreadable anywhere it is stored"（"anywhere" 含日志），SAD 禁存。**改正路径：字段白名单投影（10.2.2 六要素+资源标识为必要集）/接线既有 LogSanitizer/rawData 收窄。**
+
+**Q4 order_snapshots PII 留存 →【硬边界】**。GDPR 无固定期限，但 Art. 5(1)(e) 要求“不超必要期”+ Art. 30(1) 要求处理记录写明 "envisaged time limits for erasure"。现状=永久留存（BACKLOG.md 白纸黑字：“链式台账不参与滚动清理……归档/分表策略挂账”；rights-group-verdict.md“保留期限”未落）→ **无 erasure 预期时限=Art 30 记录缺陷+5(1)(e) 风险**。PCI 10.5.1 若适用仅给 12 个月下限。读时脱敏（快照实体注释自证）不解决留存问题。**必须定书面期限并写入处理记录。**
+
+**Q5 双链合一（日志=事件流同一物）→【本体无要求+硬边界附带】**。PCI 无“审计日志须与业务数据分库”的明文；事件流只要含 10.2.2 六要素并满足 10.3.x 保护即可充当“日志”。硬边界附带：10.3.3 要求日志 "promptly backed up to a secure, central, internal log server(s) or other media that is difficult to modify"——**同库同权限不满足“导出到难改介质”**，合一后事件流仍须及时外发（WORM/独立日志库/外锚）；10.3.4 变更检测照常。独立性：标准无明文，NIST AU-9+审计师实务（软建议）偏好独立 append-only 存储——**能改业务数据的主体不应同时能改审计流**。
+
+**Q6 重锚（重写历史哈希）→【软建议+条件硬边界】**。无标准明文定义。性质：重锚=事后批量覆写链完整性元数据，与篡改者在能力上同构——链的证明力仅对“无重锚权限者”成立。条件硬边界：若重锚无留痕（旧值存档/告警/变更记录/独立锚点），则 PCI 10.3.4 "cannot be changed without generating alerts" 被运营方自己架空，审计师定性=记录篡改风险暴露；有留痕有变更管理=可辩护的完整性修复。BSI TR-03151 族是有规范流程的法规先例（细节未逐字验证，标注）。**本仓 backfill-audit-chain.mjs 的存量重锚必须按“留痕+变更记录”补齐，且锚点须独立于可写链路的权限域。**
+
+## 三、负面项与挂账（呈报纪律③）
+
+- PCI 适用性本身未确证（取决于是否碰卡数据）——所有 PCI 结论是条件式，非“已确认合规”。
+- 现状 fail-open 无补写队列（提案≠现状）；告警通道弱（30 天滚动应用日志）。
+- audit_logs 无掩码落库+永久留存+rawData 透传，均挂账未修。
+- SOC 2/NIST 引文为二手转引（AICPA 原文需注册），BSI re-anchoring 未逐字验证。
+
+**总结行：6 裁决：硬边界 2 条（Q3/Q4）/ 软建议 1 条（Q6）/ 无要求 3 条（Q1/Q2/Q5，各附硬边界件：10.7.2 检测告警、补写义务、10.3.3 外发）/ 引文 24 条三件齐（PCI 13 一手 + GDPR 6 准一手 + SOX 2 + SOC 2 2 + NIST 1 二手）；另纠错 1 处：任务书 "10.4.1.2" 在 v4.0.1 不存在，防改写真身=10.3/10.3.2。**

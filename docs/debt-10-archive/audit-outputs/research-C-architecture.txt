@@ -1,0 +1,195 @@
+全部精读与实测完成。以下为产出。
+
+---
+
+# 现状约束事实卡——onlinestore_remediation 架构现状（只读调研，2026-10-13）
+
+正身仓：`C:\Users\Administrator\onlinestore_remediation`（下文相对路径均以此为根）。标注约定：【实证】=代码/DB/文件直接读到；【推演】=由代码结构推出未执行复现；【记载】=BACKLOG/卷宗记录。
+
+---
+
+## 第一节 组件清单与依赖图
+
+### 1.1 审计子系统（audit 全局单链）
+
+| 组件 | 位置 | 职责（实证） |
+|---|---|---|
+| AuditService | `backend/src/common/audit/audit.service.ts` | log()（:163-237）=唯一链化写入口；查询/统计/清理 |
+| audit-chain 纯函数核 | `backend/src/common/audit/audit-chain.ts` | CANONICAL_KEYS 16 键（:21-38）、computeRecordHash（:88-96）、verifyChain 六判型（:129-233） |
+| AuditLogEntity | `backend/src/common/audit/entities/audit-log.entity.ts` | 18 列；seq/prevHash/recordHash 三列 nullable（:57-64）+ seq 唯一索引 `idx_audit_logs_seq_unique`（:13） |
+| AuditController | `backend/src/common/audit/audit.controller.ts` | GET /audit/verify（:58，调同一 verifyChain）、POST /audit/test（:387，写 SYSTEM_MAINTENANCE 行）、POST /audit/cleanup（:318，链化后诚实 no-op） |
+| 离线验侧 | `scripts/verify-audit-chain.mjs` | node:sqlite 只读全链校验 + git 锚比对/追加（--anchor 洗锚防护 :236-251） |
+| 重锚脚本 | `backend/scripts/backfill-audit-chain.mjs` | 全链重算：`UPDATE … SET seq=NULL…` 清链后按 createTime ASC,id ASC 重赋（:70-92），单事务 |
+
+### 1.2 快照子系统（每单一链森林）
+
+| 组件 | 位置 | 职责（实证） |
+|---|---|---|
+| OrderSnapshotService | `backend/src/orders/order-snapshot.service.ts` | appendSnapshot()（:116-206）——**只在调用方事务内执行**（:12-14 头注：“绝不自开事务、绝不调 AuditService.log=嵌套自锁死 C 坑A”） |
+| OrderSnapshot 实体 | `backend/src/orders/entities/order-snapshot.entity.ts` | 复合主键 (orderId,version)（:31-35）；prevHash/recordHash nullable（:58-63）；operator 六档（:6-13） |
+| order-snapshot-chain | `backend/src/orders/snapshot/order-snapshot-chain.ts` | 8 键定键序（:30-39）；复用泛化后的 audit-chain 哈希/验链（:45-51）；per-order 隔离验链（:60-93） |
+| db-utils 方言探针 | `backend/src/orders/order-snapshot.db-utils.ts` | queryRunnerUsesForUpdate（:17-23） |
+| 读服务 | `backend/src/orders/order-snapshot-read.service.ts` | 列表/单条/验链/时间线；读时 PII 脱敏（:7-13） |
+| 森林摘要 | `backend/src/orders/snapshot/order-snapshot-forest.ts` + `anchor-utils.ts` | forestHashOf=各单链头 (orderId,headSeq,headHash) 排序拼接 SHA256（anchor-utils.ts:36-41） |
+| 对账/验侧 | `scripts/reconcile-orders.mjs`、`scripts/verify-orders-chain.mjs` | R1-R4+漂移；森林锚定 |
+
+### 1.3 互斥件
+
+- `backend/src/common/db-write-mutex.ts`：进程级写队列 runExclusiveWrite（:28-35）；**明文禁嵌套**（:26 “fn 内再调 runExclusiveWrite 会等待外层回落=自锁死”）；粒度=进程级全部写事务（:10）。
+
+### 1.4 调用关系图（实证：grep 全仓非 spec）
+
+**AuditService.log() 生产调用方只有 3 处文件、4 个调用点**：
+1. `products.controller.ts:174`（auditProductWrite，M1-B4 :164-166 “审计失败只告警不阻断主流程”）——被 create/update/delete 三处调用（:211/:539/:562）；
+2. `orders.service.ts:218`（PRODUCT_AUTO_UNLIST，M5，事务提交后循环落）；
+3. `audit.controller.ts:408`（POST /audit/test 测试行——dev 库 80 行 module='audit' 全部由此产生，实测 2026-10-13）。
+
+**appendSnapshot() 调用方只有 orders.service 三处**：create :192（genesis，before=null）、update :376、updateStatus :513。快照与审计两子系统在写侧**零交集**（order-snapshot.service.ts:13 明文禁止交集）。
+
+**拦截器层**：`backend/src/common/interceptors/` 下只有 LoggingInterceptor（纯 console 日志，不写库）。全仓 grep "AuditInterceptor" 零命中；【记载】BACKLOG.md:199 ① “AuditInterceptor 全仓从未注册，注销事件零审计行”——即拦截器层**不存在且从未活过**。
+
+**支付→订单接线**：`payment.module.ts` imports OrdersModule（W-3Ⅳ，:43）；`PaymentEventsListener`（orders 域，`backend/src/orders/payment-events.listener.ts:22-52`）@OnEvent('payment.succeeded'/'payment.failed') → `ordersService.markPaymentSucceeded/Failed` → 复用 update()。事件总线=进程内 EventEmitter2（app.module.ts:27）。
+
+**模块注册**（app.module.ts:114-131）：Auth/Users/Products/Orders/Cart/Audit(@Global)/Payment/Address/BasicData/Notification。【实证矛盾】db-write-mutex.ts:13-15 头注宣称“address/payment 服务事务不在 app.module 注册（不活跃）”——该声明已过时：Payment/Address 已于 2026-10-08 恢复挂载（app.module.ts:17-21），支付回调/同步两路径已入互斥（W-3⑤⑥），但**退款路径未入**（见第二节 W12）。
+
+---
+
+## 第二节 写路径全景（13 条）
+
+### W1 订单创建（POST /orders）
+`orders.controller.ts:62-66`（userId 强绑令牌）→ `orders.service.ts create()`：
+- **mutex**: :56 runExclusiveWrite；**BEGIN**: :57 manager.transaction（唯一显式事务）；
+- 事务体：商品新鲜读+isActive 门禁（:73-104，两处）→ Order save（:124）→ 逐项 OrderItem save + 乐观锁条件 UPDATE 扣库存（:157-175，affected=0→409）→ 归零自动下架置位（:180-187，与扣减同事务）→ **appendSnapshot(trx, before=null, USER)**（:192-199，genesis，同事务 fail-closed）；
+- **互斥块返回后**（事务已提交）：created 事件 fire-and-forget（:210-212，census⑤）；M5 审计循环（:216-244）——**锁外、事务外**，逐条 try/catch，失败仅 `logger.warn`（:239-243）。**fail-open 语义锚：orders.service.ts:215 “订单既已成立，审计失败只告警不回滚（与商品写审计同纪律）”**。
+
+### W2 订单更新（PATCH /orders/:id，admin）
+`orders.controller.ts:191-193`（不传 snapshotContext）→ `update()`（orders.service.ts:330-397）：mutex :339 + 事务 :340；事务内全量 before 读（:342-349）→ 时间戳守卫（:352-360）→ UPDATE（:362）→ 全量 after 回读（:365-371）→ appendSnapshot（:376-383，operatorType 默认 ADMIN :380）；事件移出互斥块（:390-394）。
+
+### W3 updateStatus（测试驱动器）
+`orders.service.ts:484-530`：与 W2 同构（mutex+事务+appendSnapshot ADMIN）；【实证】 :481-483 注记“生产链零调用”，仅 spec 测试驱动。
+
+### W4 订单删除（DELETE /orders/:id）
+`orders.service.ts:532-539`：findById → `orderRepository.delete(id)` 裸删。**无 mutex、无事务、无快照、无审计**；且删单会留孤儿快照（R1 只查“订单无快照”单向，见第四节）。
+
+### W5 商品更新（PATCH）
+`products.service.ts:627-713`：runExclusiveWrite 包“价格条件 UPDATE（守卫+写同语句，affected=0→409 复检）+ 残留字段 update”写段；缓存失效/回读/事件在锁外（:713 注）。审计行由控制器层事后落（W6）。
+
+### W6 商品创建/删除 + 控制器层审计
+`products.controller.ts`：写服务调用（单语句 autocommit，不入队——db-write-mutex.ts:16-17 声明单语句写无需排队）后 `auditProductWrite`（:211/:539/:562）——审计走 log() 自带 mutex+事务，**与业务写不同事务**，失败仅告警（:166，fail-open）。
+
+### W7 审计写（AuditService.log）
+`audit.service.ts:202-218`：runExclusiveWrite → dataSource.transaction{ 读链头（:204-205，`ORDER BY seq DESC LIMIT 1`）→ seq=+1/prevHash=头 → INSERT（:210，链列 NULL）→ **回读原生行**（:211-213）→ computeRecordHash（:214）→ UPDATE 补链列（:215）}。即**审计链写=事务内两步写**，每行一笔独立事务。
+
+### W8 支付单创建（POST /payment/payment-orders）
+`payment-application.service.ts:95-208`：幂等查（:120-128）→ 站内单金额闸（:133-149）→ 风控 → 网关 → `paymentOrderRepository.save`（:189，**单行 autocommit，无 mutex 无显式事务**）→ 事件 emit（:200）。仓储实现 `typeorm-payment-order.repository.ts:133-190`：find-then-update/save，退款明细全进 metadata JSON（:148-158），无 refunds 独立表。
+
+### W9 支付回调（POST /payment/callback/:method）
+`payment-application.service.ts:213-366`：验签（:234-244）→ 回调金额闸（:250-268，债-11 修，ConflictException 透传 :360-362）→ **runExclusiveWrite 包“查改存”写段**（:283-332）：find → markAsSucceeded/markAsFailed（域守卫幂等，changed=false 不落库）→ save。**块内无显式 BEGIN**——单语句 autocommit 靠互斥保写序（:271-275 注）。事件在互斥块外 emit（:350-352）。状态冲突（首写胜出）ACK 网关（:333-343）。
+
+### W10 支付状态同步
+同文件 :454-521：mutex 包 markAsSucceeded+save（:483-493），事件锁外（:501-512）。
+
+### W11 支付关闭
+同文件 :526-569：`paymentOrder.close()` + 网关 + save（:557）——**无 mutex**。
+
+### W12 退款创建（POST /payment/refunds）
+`payment-application.service.ts:371-449`：域守卫（:394-409，RefundNotAllowed/CurrencyMismatch/Overpaid→409）→ 网关退款 → `paymentOrderRepository.save`（:425）→ RefundCreatedEvent（:437）。**全函数 0 次 audit 引用、0 次 appendSnapshot、0 次 runExclusiveWrite**（grep 实证；13-seats 卷 P0-18 同判）。退款落库形态=payments 行 metadata JSON 里的 refunds 数组（仓储 :148-158；读回对称恢复 ：274-275 注）。
+
+### W13 支付事件→订单回写
+`payment-events.listener.ts:22-52`：markPaymentSucceeded（orders.service.ts:430-460，含金额闸 ：439-448 与幂等 ：449-451）→ 复用 update()（W2 路径，operatorType=SYSTEM_LISTENER，correlationId=`payment:${merchantOrderId}`，:452-459）；failed 同理（:471-478）。因支付侧事件在互斥块外 emit，监听器重新入队取 mutex——**时序上无嵌套**（实证）。
+
+**回滚语义总表**：显式事务只有 W1/W2/W3/W7 四条（且各被 mutex 串行）；W8-W12 全部为单语句 autocommit（W9/W10 有 mutex、W8/W11/W12 无）；快照永远与订单写同事务（fail-closed）；审计永远在业务事务外（fail-open）；事件永远在互斥块外（防幻影）。
+
+---
+
+## 第三节 两条哈希链的物理形态
+
+### 3.1 audit_logs：全局单链
+- **形态**：全库一链，seq 从 1 连续递增（entity :57；audit.service.ts :204-208 头读推进）；seq 唯一索引=并发最后防线（entity :13，冲突整笔回滚）。创世前驱=64 个 '0'（audit-chain.ts:15）。
+- **写侧两步写**：INSERT NULL 链列→事务内回读原生行→算哈希→UPDATE 补链列（audit.service.ts:210-215）。
+- **实测**（2026-10-13，dev_caddy_shopping.db）：1603 行，products=1523 + audit=80（全为 SYSTEM_MAINTENANCE，即 POST /audit/test 测试行），**orders=0**；seq 1..1603 无断档、0 行 UNCHAINED。
+
+### 3.2 order_snapshots：每单一链=森林
+- **形态**：复合主键 (orderId, version)，version≡每单 seq（entity :18-19）；只增不改（:21-23 “禁 save()——探针实证撞复合主键静默变 UPDATE”）；迁移在 TiDB 端显式 CLUSTERED（migrations/20261011000001:7,39）。
+- **写侧两步写**（order-snapshot.service.ts:161-200）：原生 SQL INSERT 链列 NULL（:163-179）→回读原生行（:182-185，JSON 列保字符串 ：193-197）→computeSnapshotRecordHash（:191）→em.update 补链列（:200）。
+- **version 推进**：事务内 `SELECT MAX(version)+1`（sqlite 分支 ：141-142）或 `…ORDER BY version DESC LIMIT 1 FOR UPDATE`（mysql/postgres 分支 ：139-140）；sqlite 分支需二次查询取 prevHash（:151-158）。
+- **验链 per-order 隔离**：FORK 判定按 orderId 分组逐单验（order-snapshot-chain.ts:60-93）；森林摘要=各单头拼接 SHA256（anchor-utils.ts:36-41）。
+
+### 3.3 重锚历史（backfill 为什么存在 / 两次重锚怎么发生）
+- **脚本存在理由**【实证】：M6 上线时存量 audit_logs 无链列值——链列 nullable 即为存量行预留（entity :5-8）；backfill 按 createTime ASC,id ASC 全链重算、幂等、单事务（backfill-audit-chain.mjs:2-10,70-92）。
+- **第 1 次重锚=创世**【实证锚文件】：2026-10-05 M6（commit a408615）；锚文件 `docs/audit-chain-head.txt` 当日两行 seq=1421、1445。
+- **第 2 次重锚**【记载+锚文件】：2026-10-13 commit bb455ac（BACKLOG.md:626-630 “债-1 锚文件漂移 158 行/9 天累计——治本：跑 backfill 重算 1603 行 + verify --anchor 追写”；锚末行 2026-10-13T12:42:40 seq=1603）。成因=链头自 10-05 锚定后持续增长而锚 9 天未追（audit 时间窗实测 10-04 10:33 ~ 10-05 09:34 为 dev 库写满即停的窗，其后链行增长来自 verify/test 等运维路径）。**重锚=全链重算**（backfill 先 `SET seq=NULL…` 全表清链再重赋，:70-77）——每次重锚使全部历史行的哈希作废重签。
+- **快照链锚**【实证】：`docs/order-chain-heads.txt` 仅 1 行（2026-10-13T04:26:14，受验 3 单，hash 741df00b…）。
+- **dev 库快照现状**【实测】：order_snapshots 当前 **0 行**（30 单 orders 全无快照；9 条 fixture 已迁 `_test_fixtures_archive` 表——BACKLOG 债-3 :634-639，sqlite_master 实查该归档表存在）。即**森林当前为空集**。【推演】当前跑 reconcile R4 必红：空森林 hash=sha256('')≠锚末行 741df00b（BACKLOG 债-14 :640-644 亦记载 R4 报红）。
+
+---
+
+## 第四节 不变式与对账（reconcile-orders.mjs 实读）
+
+`scripts/reconcile-orders.mjs`（只读打开，退出码 3>1>2>0，:221-247）：
+
+- **R1 订单↔快照覆盖**（:66-69）：`SELECT … FROM orders o WHERE NOT EXISTS (SELECT 1 FROM order_snapshots s WHERE s.orderId=o.id)`——每单至少 1 条 genesis。**单向**：不查孤儿快照（W4 删单不留痕即源于此缺口）。
+- **R2 快照↔支付状态**（:81-118）：先数可比行（最新版快照 JSON_EXTRACT $.paymentStatus 非空，:81-87；0 行=“非一致”显式不假绿）；窗口函数取每单最新版比对 `JSON_EXTRACT(snapshot,'$.paymentStatus') != o.payment_status`（:95-109）。
+- **R3 快照↔审计**（:129-141）：**全局存在性检查而非逐条关联**——`audit_logs WHERE module='orders' AND (operation LIKE '%SNAPSHOT%' OR url LIKE '%snapshot%')` 计数为 0 且快照总数>0 → 报“审计日志未覆盖快照写入”。修因注明：audit_logs **无 correlationId 列**，无法逐条 JOIN（:126-128）。dev 库现状=**R3 永真告警**（module='orders' 0 行，BACKLOG 债-2 :632-634）。
+- **R4 森林哈希↔锚**（:151-168）：全表读→buildForestFromRows→与 `docs/order-chain-heads.txt` 末行 hash 比对。【记载】债-14（BACKLOG :640-644）：“R4 名称‘森林↔锚’但锚文件是 audit 链、森林是 snapshot 链——两链根本不是同一链”。
+- **payments 漂移**（:177-216）：`JOIN payments p ON p.orderId = o.order_number LIMIT 200`，跨词表状态映射（success↔paid 等价不判漂移，:177-192）。【记载】dev 库存 1 处历史 drift（order 897 元 vs 支付 0.01 元，债-13，BACKLOG :618-625）。
+
+**R3 三件套（R3a/b/c）= v5 提案语义（尚未实施）**【记载，docs/debt-10-proposal-v5.md:76-87】：R3a=订单业务态不变式（最新快照=orders 行，纯 snapshot 域）；R3b=user/admin/敏感 admin mutation 双写率 100%（必有 audit_logs 行）；R3c=双链按 order_id 可合并视图 `v_order_audit_trail` 可独立验证。现行代码中只有 R3（全局存在性版）。
+
+**verifyChain 六判型**（audit-chain.ts:99,129-233，双链共用）：UNCHAINED（三链列 NULL 或残缺，R4 修注 ：137-143）/GAP/DUPLICATE_SEQ/BREAK/CONTENT/FORK；断点后就地重同步定位损伤到行。
+
+**锚体系**：audit 锚三态 ANCHORED/PENDING_ANCHOR/MISMATCH（verify-audit-chain.mjs:156-166）；洗锚防护——MISMATCH 拒追加 exit 2（:236-251）；锚文件同 seq 异哈希=损坏 exit 3（:141-154）；git 一致性黄警（:193-229）；锚窗口无界为已知限制（:231-232）。
+
+---
+
+## 第五节 不可变约束清单（14 条）
+
+| # | 约束 | 锚 |
+|---|---|---|
+| C1 | sqlite 单写者：TypeORM sqlite 驱动全库共享单连接，并发 BEGIN 交叉=双 500/悬挂事务/幽灵写 | db-write-mutex.ts:2-9 |
+| C2 | 互斥粒度=进程级**全部**写事务；**禁止嵌套**（fn 内再调=等待自己=死锁）；FIFO 失败隔离 | db-write-mutex.ts:10,26,28-35 |
+| C3 | audit 链全局单链：seq 唯一索引，冲突整笔回滚绝不留分叉；seq 从 1 连续 | audit-log.entity.ts:13；audit.service.ts:150-151 |
+| C4 | order_snapshots 复合主键 (orderId,version)、只增不改、一律 INSERT 语义（save() 撞复合主键静默变 UPDATE） | order-snapshot.entity.ts:31-35；order-snapshot.service.ts:14-16 |
+| C5 | canonical 定键序冻结：键序即哈希输入，追加字段必须排尾部且**全链重锚**，不得插入中部 | audit-chain.ts:18-19（audit 16 键 / order-snapshot-chain.ts:30-39 8 键） |
+| C6 | 哈希字节=驱动原生行回读（防 Date 往返漂移）→ 两步写是结构必然（INSERT NULL 链列→回读→UPDATE） | audit.service.ts:198-215；order-snapshot.service.ts:21-22,161-200 |
+| C7 | 零变化跳过（防支付双发重复快照）；genesis 以 before=null 强制写 | order-snapshot.service.ts:17-18,128-133 |
+| C8 | 快照同事务 fail-closed（写失败=订单整体失败）；appendSnapshot 绝不自开事务、绝不调 AuditService.log | order-snapshot.service.ts:12-16 |
+| C9 | FOR UPDATE 方言分支：sqlite better-sqlite3 无行锁（LockNotSupportedOnGivenDriverError 实证）→走 MAX(version)+互斥+主键冲突兜底；mysql/postgres（含 TiDB）走 FOR UPDATE | order-snapshot.db-utils.ts:7-23；order-snapshot.service.ts:134-142 |
+| C10 | 生产禁 sqlite（启动抛错）；dev/test 默认 synchronize=true、prod 恒 false | unified-master.config.ts:468-473,542 |
+| C11 | 链行不参与滚动清理（删行即断链）——cleanup 成为诚实 no-op | audit.service.ts:373-388 |
+| C12 | 事件发布必须移出互斥块（事务提交后）——防回滚幻影事件（census⑤） | orders.service.ts:205-212,389-394 |
+| C13 | 审计现行语义=业务已提交后落、失败仅告警不回滚（M5 与商品写同纪律）——注意：这是现状不变式，同时是 P0-3 病灶 | orders.service.ts:215,239-243；products.controller.ts:165 |
+| C14 | 链核单源双端加载：audit-chain.ts / order-snapshot-chain.ts 须保持 `node --experimental-strip-types` 可裸加载（无装饰器/枚举），子目录 package.json {"type":"module"} ESM 标记且被 nest-cli assets 排除不进 dist | audit-chain.ts:5-10；order-snapshot-chain.ts:4-10 |
+
+**TiDB 双方言现状补遗**：
+- 配置面：DB_TYPE 枚举含 'tidb'（unified-master.config.ts:296），tidb 专属连接块 ：549-560；TiDBOptimizer 仅做端口/连接池建议（tidb-optimizer.ts:11-40）。当前 `.env` DB_TYPE=better-sqlite3（实测）。
+- 【实证矛盾】app.module.ts:52 把 `dbConfig.type` 原样传 TypeORM；唯一的 tidb→mysql 驱动映射在 `backend/src/database/database.module.ts:26-27`，而 **DatabaseModule 从未被任何模块 import**（grep 实证，仅 orders.module/products.service 旧注释提及）。【推演】DB_TYPE=tidb 直启时 TypeORM 收到不存在的驱动名 'tidb'——生产 TiDB 路径按当前接线不可启动，除非走 docker/k8s 侧另行装配（未在本仓 app 引用链内找到）。
+- 迁移面已做方言分支：audit 链列迁移为 MySQL/TiDB 方言（20261005000001:16-32 information_schema 探测）；快照表迁移 TiDB 显式 CLUSTERED/sqlite 双分支（20261011000001:27-78）。
+
+---
+
+## 第六节 问题-约束映射表（3 根因 × 锁死它的约束）
+
+### 根因 1：双链架构本身是债（audit 链从不被 orders 业务用）
+- **实证**：audit_logs 1603 行 0 行 module='orders'（2026-10-13 sqlite 实测 products 1523 + audit 80）；ORDER_CREATE 等 8 个订单枚举（audit.service.ts:30-37）**全仓零调用**；AuditService.log 的 module 取值=`context.resourceType||'unknown'`（:176），orders 域从未传 'orders'。
+- **锁死约束**：C8（appendSnapshot 明文禁止调 log——order-snapshot.service.ts:13 “自带互斥+独立事务=嵌套自锁死 C 坑A”）+ C2/C6（log 自带 mutex+独立事务，无法嵌入订单事务）→ orders 写路径在结构上**只能**与 audit 链分离。R3（全局存在性版）的“永真告警”是该结构的必然输出（reconcile:138-141）。
+- **触发组合**：任何 orders 业务事件（30 单全量）× 现有 log() 形状 → 要么 0 行（现状），要么引渡根因 2 的死锁。
+
+### 根因 2：db-write-mutex 与双写嵌套不可能三角
+- **锁死约束**：C2（禁嵌套，db-write-mutex.ts:26）+ C6/C1（log 的链化必须“读头→插→回读→补列”一事务原子，且该事务本身就在互斥内——audit.service.ts:202-203）+ C8（快照必须在调用方订单事务内）。
+- **触发组合**【推演，结构必然；13-seats 卷 P0-2 同判】：订单事务（W1/W2，:56/:339 已持 mutex）内部任何点调 `auditService.log()` → log 的 runExclusiveWrite 排在 writeTail 尾（=外层 run 之后）而外层 run 正等待该内层调用返回 → promise 环=永等。v5 提案步 3 的示例代码（debt-10-proposal-v5.md:119-136）恰好把 log() 放进 runExclusiveWrite 的 transaction 回调内——“v5 步 3 必复现 v1 自锁死”。
+- **现行代码的规避方式**（即为什么今天没死锁）：审计一律移到互斥块外事后落（W1 :216、W6 控制器层）——这正是根因 3 的 fail-open 来源。支付侧同理：监听器回写在事件（锁外 emit，payment-application.service.ts:350-352）之后重新入队。
+
+### 根因 3：M5 fail-open 与 v5 fail-closed 同函数并存
+- **fail-open 语义**【实证】：M5（commit a408615，2026-10-05）在 orders.service.ts:214-244 引入——事务提交后逐条落审计，catch 仅 `logger.warn`；注释 ：215 “订单既已成立，审计失败只告警不回滚”。同哲学先例=商品写审计（products.controller.ts:164-166，M1-B4 2026-10-04）。**前提**：该审计行是“库存归零自动下架”事件（PRODUCT_AUTO_UNLIST），订单本体确已提交。
+- **fail-closed 要求**【记载】：v5 提案步 3（debt-10-proposal-v5.md:110-141）——“双写同事务——任意一失败全回滚”，适用类 1（user/admin mutation）与类 3（敏感 admin 动作），与 M5 的类 2（系统派生事件）在同一函数 create()/update() 内并存。
+- **锁死约束**：C13（现行 fail-open 是既定纪律）× 根因 2 的 C2/C6（fail-closed 要求 log 入事务=死锁）→ 同一函数内两种语义只能靠“事件分类”区分，而事件分类又依赖 audit 能入事务——三角闭合。13-seats 卷 P0-15 亦判“同 orders 域两套审计哲学=审计员难解释”。
+- **附带锁死**：v5 步 2 给 audit_logs 加 entity_id/entityType 列（v5:98-107）撞 C5（键序追加=全链重锚）→“第 3 次重锚必发生”（13-seats 卷 P0-12；前两次重锚见第三节 3.3）。
+
+---
+
+**附：关键负空间事实**（改进组需知的“不存在”清单）——无 AuditInterceptor（从未注册，BACKLOG:199）；orders 域无任何 ORDER_* 审计调用；退款路径（W12）无 audit/无 snapshot/无 mutex；订单删除（W4）无审计无快照且留孤儿快照（R1 单向不查）；DatabaseModule（含 tidb→mysql 映射）从未挂载；audit_logs 无 correlationId/entity_id 列（R3 修因 ：126-128、v5 P0-11）。
+
+---
+
+现状约束事实卡：16 组件 / 13 条写路径 / 14 条不可变约束 / 3 根因映射齐
