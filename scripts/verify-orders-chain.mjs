@@ -45,14 +45,16 @@ const tty = await import(
   pathToFileURL(path.join(ROOT, 'backend/src/orders/snapshot/console-tty.ts')).href
 );
 const {
-  splitCrLfRows,
   parseAnchorLine,
-  isValidAnchorHash,
   forestHashOf,
   detectAnchorCorruption,
   formatAnchorHeader,
   readAnchorFile,
 } = util;
+const forest = await import(
+  pathToFileURL(path.join(ROOT, 'backend/src/orders/snapshot/order-snapshot-forest.ts')).href
+);
+const { buildForestFromRows } = forest;
 const { openReadOnlyWithRetry } = openMod;
 const { RED, GREEN, YELLOW } = tty;
 
@@ -117,32 +119,12 @@ async function main() {
     )
     .all();
 
-  // 按 orderId 分组并对账——每单链单独 verifyOrderSnapshotChain
-  const byOrder = new Map();
-  for (const r of rawRows) {
-    if (!byOrder.has(r.orderId)) byOrder.set(r.orderId, []);
-    byOrder.get(r.orderId).push(r);
-  }
-
-  // 各单链校验结果 + 异常项收集
-  const perOrder = [];
-  let totalProblems = 0;
-  for (const [orderId, rows] of byOrder) {
-    const result = chain.verifyOrderSnapshotChain(rows);
-    perOrder.push({
-      orderId,
-      valid: result.valid,
-      length: result.length,
-      headSeq: result.headSeq,
-      headHash: result.headHash,
-      problemTypes: [...new Set(result.problems.map((p) => p.type))],
-    });
-    if (!result.valid) totalProblems += result.problems.length;
-  }
-  perOrder.sort((a, b) => a.orderId - b.orderId);
-
-  // 森林摘要：按 orderId 排序后拼接 (orderId, headSeq, headHash) → SHA256
-  const forestHash = forestHashOf(perOrder);
+  // 按 orderId 分组+逐单验链+森林摘要（P2-E 修因：抽共享 buildForestFromRows）
+  const { perOrder, forestHash } = buildForestFromRows(rawRows);
+  const totalProblems = perOrder.reduce(
+    (n, o) => n + (o.valid ? 0 : o.problemTypes.length),
+    0,
+  );
 
   // 读现有锚（CRLF 兼容 + tab/space 兼容——双盲#4 抓 R1 真护栏破）
   const existingLines = existsSync(ANCHOR_FILE) ? readAnchorFile(ANCHOR_FILE) : [];

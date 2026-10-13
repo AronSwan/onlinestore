@@ -262,6 +262,19 @@ export class OrdersService {
     return result;
   }
 
+  /**
+   * 轻量归属查询（P2-F 修因——双盲审 A+B 席共中）：
+   * 归属校验只需 id+userId，不拉 items 关系也不 join user。
+   * 相比 findById 减少 1 个 items join + 1 个 user join + 整包 bcrypt 字段。
+   */
+  async findOwnership(id: number): Promise<{ id: number; userId: number } | null> {
+    const row = await this.orderRepository.findOne({
+      where: { id },
+      select: { id: true, userId: true },
+    });
+    return row ? { id: row.id, userId: row.userId } : null;
+  }
+
   async findByUserId(
     userId: number,
     page: number = 1,

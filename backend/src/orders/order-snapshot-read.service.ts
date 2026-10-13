@@ -27,10 +27,16 @@ export class OrderSnapshotReadService {
   ) {}
 
   /** 按 orderId 查快照列表（version ASC） */
-  async findByOrderId(orderId: number): Promise<Array<Record<string, unknown>>> {
+  // P2-J 修因（双盲审 B 席）：加可选 take/skip 分页参数；生产单 history 长时整链返回放大
+  async findByOrderId(
+    orderId: number,
+    options?: { take?: number; skip?: number },
+  ): Promise<Array<Record<string, unknown>>> {
     const rows = await this.snapshotRepo.find({
       where: { orderId },
       order: { version: 'ASC' },
+      ...(options?.take !== undefined ? { take: options.take } : {}),
+      ...(options?.skip !== undefined ? { skip: options.skip } : {}),
     });
     return rows.map((r) => this.rowToPayload(r));
   }
@@ -59,16 +65,11 @@ export class OrderSnapshotReadService {
     // P1-E 修因（双盲审 X1+X2+Y1 三席共中）：TypeORM 水合行 snapshot=json 对象、
     // occurredAt=Date，与写侧"回读原生行"（JSON 文本/字符串）算出的哈希字节不同。
     // 验链前强制转回原生字符串形态（同写侧 Date 往返漂移防线）。
+    // P2-H 修因（双盲审 B 席）：原 14 字段 map 精简——只补 snapshot/occurredAt 两项即可，
+    // verifyChain 只读 keys 列表覆盖到的字段，缺字段视作 null，传递 r 本体更省。
     const nativeRows = rows.map((r) => ({
-      orderId: r.orderId,
-      version: r.version,
-      prevHash: r.prevHash,
-      recordHash: r.recordHash,
-      operatorType: r.operatorType,
-      operatorId: r.operatorId,
-      correlationId: r.correlationId,
+      ...r,
       occurredAt: r.occurredAt instanceof Date ? r.occurredAt.toISOString() : r.occurredAt,
-      schemaVersion: r.schemaVersion,
       snapshot: typeof r.snapshot === 'object' && r.snapshot !== null
         ? JSON.stringify(r.snapshot)
         : r.snapshot,
@@ -81,7 +82,8 @@ export class OrderSnapshotReadService {
       headHash: result.headHash,
       problems: result.problems.map((p) => ({
         type: p.type,
-        seq: p.seq ?? null,
+        // P2-A 修因（双盲审 A 席）：显式 undefined 判断替代 `?? null`——避免吞合法 0
+        seq: p.seq === undefined ? null : p.seq,
         detail: p.detail,
       })),
     };
@@ -119,10 +121,10 @@ export class OrderSnapshotReadService {
       snapshot: Record<string, unknown>;
     }> = [];
 
+    let prevPayload: Record<string, unknown> | null = null; // P2-G 修因：缓存前一轮 curr，不重 rowToPayload
     for (let i = 0; i < rows.length; i++) {
       const current = this.rowToPayload(rows[i]);
-      const prev = i > 0 ? this.rowToPayload(rows[i - 1]) : null;
-      const changes = prev ? this.diffSnapshots(prev, current) : {};
+      const changes = prevPayload ? this.diffSnapshots(prevPayload, current) : {};
       events.push({
         version: rows[i].version,
         occurredAt: rows[i].occurredAt?.toISOString() ?? null,
@@ -132,6 +134,7 @@ export class OrderSnapshotReadService {
         changes: maskChangesPii(changes, isAdmin),
         snapshot: maskSnapshotPii(current, isAdmin),
       });
+      prevPayload = current; // P2-G 缓存本轮 curr 作下轮 prev
     }
 
     return {
@@ -147,8 +150,10 @@ export class OrderSnapshotReadService {
     try {
       snapshot = typeof row.snapshot === 'string' ? JSON.parse(row.snapshot) : row.snapshot;
     } catch {
+      // P1-A 修因：catch 不返 raw 防 PII 泄漏（双盲审 A 席 P2-10 抓到——
+      // 原实现 `raw: row.snapshot` 把含 PII 的原文经 `_parseError:true` 旁路 maskSnapshotPii 出口）
       this.logger.warn(`快照 JSON 解析失败: orderId=${row.orderId} version=${row.version}`);
-      snapshot = { _parseError: true, raw: row.snapshot };
+      snapshot = { _parseError: true };
     }
     return {
       orderId: row.orderId,

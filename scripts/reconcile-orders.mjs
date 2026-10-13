@@ -36,8 +36,12 @@ const tty = await import(
 const anchorUtil = await import(
   pathToFileURL(path.join(ROOT, 'backend/src/orders/snapshot/anchor-utils.ts')).href
 );
+const forestMod = await import(
+  pathToFileURL(path.join(ROOT, 'backend/src/orders/snapshot/order-snapshot-forest.ts')).href
+);
 const { RED, GREEN, YELLOW } = tty;
-const { readAnchorFile, parseAnchorLine, forestHashOf } = anchorUtil;
+const { readAnchorFile, parseAnchorLine } = anchorUtil;
+const { buildForestFromRows } = forestMod;
 
 const exitJson = (code, payload) => {
   process.stdout.write(JSON.stringify(payload) + '\n');
@@ -53,6 +57,9 @@ if (!existsSync(dbPath)) {
 const db = new DatabaseSync(dbPath, { readOnly: true });
 
 const results = { r1: [], r2: [], r3: [], r4: [], drift: [] };
+// P1-B 修因（双盲审 A 席 P1-2 抓到）：envError 独立标志——SQL 失败应 exit 3（环境错），
+// 不能再伪装成对账问题（被计进 results.r*.length → exit 1）。优先级：3 > 1 > 2 > 0。
+let envError = false;
 
 // ── R1 订单↔快照覆盖 ─────────────────────────────────────
 try {
@@ -64,6 +71,7 @@ try {
     results.r1.push({ orderId: o.id, orderNumber: o.order_number, issue: '无快照（缺 genesis）' });
   }
 } catch (err) {
+  envError = true;
   results.r1.push({ error: `R1 查询失败: ${err}` });
 }
 
@@ -83,15 +91,21 @@ try {
       note: `快照总数与 orders JOIN 命中 0 行或字段全缺，R2 无实际比对`,
     });
   } else {
+    // P2-I 修因（双盲审 B 席）：窗口函数一次扫，替代 N+1 相关子查询（每行触发一次 MAX 全表扫）
     const mismatches = db.prepare(`
-      SELECT s.orderId, s.version,
-             JSON_EXTRACT(s.snapshot, '$.paymentStatus') as snapPayStatus,
+      WITH latest AS (
+        SELECT orderId, version, snapshot,
+               ROW_NUMBER() OVER (PARTITION BY orderId ORDER BY version DESC) AS rn
+        FROM order_snapshots
+      )
+      SELECT l.orderId, l.version,
+             JSON_EXTRACT(l.snapshot, '$.paymentStatus') as snapPayStatus,
              o.payment_status as orderPayStatus
-      FROM order_snapshots s
-      JOIN orders o ON o.id = s.orderId
-      WHERE s.version = (SELECT MAX(version) FROM order_snapshots WHERE orderId = s.orderId)
-      AND JSON_EXTRACT(s.snapshot, '$.paymentStatus') IS NOT NULL
-      AND JSON_EXTRACT(s.snapshot, '$.paymentStatus') != o.payment_status
+      FROM latest l
+      JOIN orders o ON o.id = l.orderId
+      WHERE l.rn = 1
+      AND JSON_EXTRACT(l.snapshot, '$.paymentStatus') IS NOT NULL
+      AND JSON_EXTRACT(l.snapshot, '$.paymentStatus') != o.payment_status
     `).all();
     for (const m of mismatches) {
       results.r2.push({
@@ -104,6 +118,7 @@ try {
     }
   }
 } catch (err) {
+  envError = true;
   results.r2.push({ error: `R2 查询失败: ${err}` });
 }
 
@@ -127,29 +142,17 @@ try {
     });
   }
 } catch (err) {
+  envError = true;
   results.r3.push({ error: `R3 查询失败: ${err}` });
 }
 
 // ── R4 森林哈希↔锚 ───────────────────────────────────────
 try {
-  const chain = await import(
-    pathToFileURL(path.join(ROOT, 'backend/src/orders/snapshot/order-snapshot-chain.ts')).href
-  );
   const rows = db.prepare(
     'SELECT orderId, version, prevHash, recordHash, operatorType, operatorId, correlationId, occurredAt, schemaVersion, snapshot FROM order_snapshots',
   ).all();
-  const byOrder = new Map();
-  for (const r of rows) {
-    if (!byOrder.has(r.orderId)) byOrder.set(r.orderId, []);
-    byOrder.get(r.orderId).push(r);
-  }
-  const perOrder = [];
-  for (const [orderId, orderRows] of byOrder) {
-    const result = chain.verifyOrderSnapshotChain(orderRows);
-    perOrder.push({ orderId, headSeq: result.headSeq, headHash: result.headHash });
-  }
-  perOrder.sort((a, b) => a.orderId - b.orderId);
-  const currentForest = forestHashOf(perOrder);
+  // P2-E 修因：抽共享 buildForestFromRows（与 verify-orders-chain.mjs 同源）
+  const { forestHash: currentForest } = buildForestFromRows(rows);
 
   if (existsSync(ANCHOR_FILE)) {
     const anchorLines = readAnchorFile(ANCHOR_FILE);
@@ -165,6 +168,7 @@ try {
     }
   }
 } catch (err) {
+  envError = true;
   results.r4.push({ error: `R4 查询失败: ${err}` });
 }
 
@@ -207,6 +211,7 @@ try {
     }
   }
 } catch (err) {
+  envError = true;
   results.drift.push({ error: `drift 查询失败: ${err}` });
 }
 
@@ -219,7 +224,9 @@ const totalDrift = results.drift.length;
 const report = { dbPath, totalIssues, totalDrift, ...results };
 
 if (JSON_MODE) {
-  exitJson(totalIssues === 0 && totalDrift === 0 ? 0 : totalIssues > 0 ? 1 : 2, report);
+  // P1-B 修因：envError 优先于对账/漂移
+  const code = envError ? 3 : totalIssues === 0 && totalDrift === 0 ? 0 : totalIssues > 0 ? 1 : 2;
+  exitJson(code, report);
 }
 
 console.log(`四项对账：R1 订单↔快照=${results.r1.length ? RED(results.r1.length + ' 问题') : GREEN('OK')}`);
@@ -237,4 +244,4 @@ for (const d of results.drift.slice(0, 5)) {
   console.log(`  [漂移] ${d.issue ?? d.error ?? JSON.stringify(d)}`);
 }
 
-process.exit(totalIssues === 0 && totalDrift === 0 ? 0 : totalIssues > 0 ? 1 : 2);
+process.exit(envError ? 3 : totalIssues === 0 && totalDrift === 0 ? 0 : totalIssues > 0 ? 1 : 2);

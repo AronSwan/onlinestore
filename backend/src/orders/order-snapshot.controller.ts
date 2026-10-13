@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   Param,
+  Query,
+  DefaultValuePipe,
   ParseIntPipe,
   Request,
   UseGuards,
@@ -42,12 +44,13 @@ export class OrderSnapshotController {
 
   /** 归属校验（非 admin 只能看本人订单） */
   private async assertOwnership(orderId: number, req: any): Promise<void> {
-    const order = await this.ordersService.findById(orderId);
-    if (!order) {
+    // P2-F 修因：findOwnership 投影 id+userId（不拉 items+user+bcypt），归属判定足够
+    const ownership = await this.ordersService.findOwnership(orderId);
+    if (!ownership) {
       throw new ForbiddenException(`订单 ${orderId} 不存在`);
     }
     const user = req?.user;
-    if (user?.role !== Role.ADMIN && String(order.userId) !== String(user?.sub)) {
+    if (user?.role !== Role.ADMIN && String(ownership.userId) !== String(user?.sub)) {
       throw new ForbiddenException('只能查看本人订单');
     }
   }
@@ -57,19 +60,35 @@ export class OrderSnapshotController {
   @ApiGetResource(Object, '获取订单快照列表')
   @ApiDocs({
     summary: '获取订单快照列表',
-    description: '按版本号升序返回订单全量快照，非管理员收货信息已脱敏',
+    description: '按版本号升序返回订单快照（分页参数 take/skip 可选），非管理员收货信息已脱敏',
     auth: true,
     params: [{ name: 'id', description: '订单ID', example: 1 }],
+    queries: [
+      { name: 'take', description: '每页条数（默认 50）', required: false, type: 'number' },
+      { name: 'skip', description: '跳过条数（默认 0）', required: false, type: 'number' },
+    ],
     responses: {
       success: { description: '快照列表（含版本链哈希）' },
       forbidden: '只能查看本人订单',
     },
   })
-  async getSnapshots(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+  async getSnapshots(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('take', new DefaultValuePipe(50), ParseIntPipe) take: number,
+    @Query('skip', new DefaultValuePipe(0), ParseIntPipe) skip: number,
+    @Request() req: any,
+  ) {
     await this.assertOwnership(id, req);
-    const snapshots = await this.snapshotRead.findByOrderId(id);
+    // P2-J 修因：分页参数（默认 take=50, skip=0；生产单 history 长时整链返回放大）
+    const snapshots = await this.snapshotRead.findByOrderId(id, { take, skip });
     const isAdmin = req?.user?.role === Role.ADMIN;
-    return { orderId: id, total: snapshots.length, snapshots: maskSnapshotsPii(snapshots, isAdmin) };
+    return {
+      orderId: id,
+      total: snapshots.length,
+      take,
+      skip,
+      snapshots: maskSnapshotsPii(snapshots, isAdmin),
+    };
   }
 
   @Get(':id/snapshots/verify')

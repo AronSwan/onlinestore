@@ -15,6 +15,14 @@
  */
 
 const PII_FIELDS = ['recipientName', 'recipientPhone', 'shippingAddress'] as const;
+type PiiField = (typeof PII_FIELDS)[number];
+
+/** PII 字段→遮罩函数映射（P2-B 修因：单源——新增 PII 字段时改一处生效） */
+const PII_MASKERS: Record<PiiField, (v: unknown) => string | null> = {
+  recipientName: (v) => maskName(v as string | null | undefined),
+  recipientPhone: (v) => maskPhone(v as string | null | undefined),
+  shippingAddress: (v) => maskAddress(v as string | null | undefined),
+};
 
 /** 遮罩收货人名：姓+* */
 export function maskName(name: string | null | undefined): string | null {
@@ -86,7 +94,7 @@ export function maskSnapshotsPii<T extends Record<string, unknown>>(
 }
 
 /**
- * 遮罩 diff changes 中的 PII from/to 值（P2-F 修因）
+ * 遮罩 diff changes 中的 PII from/to 值（P2-F 修因；P2-B 修因：消费 PII_FIELDS 单源）
  */
 export function maskChangesPii(
   changes: Record<string, { from: unknown; to: unknown }>,
@@ -95,12 +103,9 @@ export function maskChangesPii(
   if (isAdmin) return changes;
   const out: Record<string, { from: unknown; to: unknown }> = {};
   for (const [key, val] of Object.entries(changes)) {
-    if (key === 'recipientName') {
-      out[key] = { from: maskName(val.from as string | null), to: maskName(val.to as string | null) };
-    } else if (key === 'recipientPhone') {
-      out[key] = { from: maskPhone(val.from as string | null), to: maskPhone(val.to as string | null) };
-    } else if (key === 'shippingAddress') {
-      out[key] = { from: maskAddress(val.from as string | null), to: maskAddress(val.to as string | null) };
+    if ((PII_FIELDS as readonly string[]).includes(key)) {
+      const masker = PII_MASKERS[key as PiiField];
+      out[key] = { from: masker(val.from), to: masker(val.to) };
     } else {
       out[key] = val;
     }
