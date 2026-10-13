@@ -8,10 +8,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { OrdersService } from './orders.service';
 import { OrdersController } from './orders.controller';
+import { OrderSnapshotController } from './order-snapshot.controller';
 import { PaymentEventsListener } from './payment-events.listener';
 import { Order } from './entities/order.entity';
 import { OrderSnapshot } from './entities/order-snapshot.entity';
 import { OrderSnapshotService } from './order-snapshot.service';
+import { OrderSnapshotReadService } from './order-snapshot-read.service';
 import { OrderItem } from './entities/order-item.entity';
 import { UsersModule } from '../users/users.module';
 import { ProductsModule } from '../products/products.module';
@@ -28,8 +30,8 @@ import { Product } from '../products/entities/product.entity';
     MonitoringModule,
     MessagingModule,
   ],
-  controllers: [OrdersController],
-  providers: [OrdersService, PaymentEventsListener, OrderSnapshotService],
+  controllers: [OrdersController, OrderSnapshotController],
+  providers: [OrdersService, PaymentEventsListener, OrderSnapshotService, OrderSnapshotReadService],
   exports: [OrdersService],
 })
 export class OrdersModule {}
