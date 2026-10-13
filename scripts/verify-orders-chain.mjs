@@ -29,9 +29,32 @@ import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 
+// 仓根（脚本自身位置推导，非 CWD——脚本被任意目录调起都正确）
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DB_DEFAULT = path.join(ROOT, 'backend', 'data', 'dev_caddy_shopping.db');
 const ANCHOR_FILE = path.join(ROOT, 'docs', 'order-chain-heads.txt');
+
+// F2 双端加载通道（脚本裸加载 .ts 工具+链核——F2 已修 ESM 标记子目录）
+const util = await import(
+  pathToFileURL(path.join(ROOT, 'backend/src/orders/snapshot/anchor-utils.ts')).href
+);
+const openMod = await import(
+  pathToFileURL(path.join(ROOT, 'backend/src/orders/snapshot/db-open.ts')).href
+);
+const tty = await import(
+  pathToFileURL(path.join(ROOT, 'backend/src/orders/snapshot/console-tty.ts')).href
+);
+const {
+  splitCrLfRows,
+  parseAnchorLine,
+  isValidAnchorHash,
+  forestHashOf,
+  detectAnchorCorruption,
+  formatAnchorHeader,
+  readAnchorFile,
+} = util;
+const { openReadOnlyWithRetry } = openMod;
+const { RED, GREEN, YELLOW } = tty;
 
 const ARGS = process.argv.slice(2);
 const ANCHOR = ARGS.includes('--anchor');
@@ -39,9 +62,7 @@ const JSON_MODE = ARGS.includes('--json');
 const dbArgIdx = ARGS.indexOf('--db');
 const dbPath = dbArgIdx >= 0 ? path.resolve(ARGS[dbArgIdx + 1]) : DB_DEFAULT;
 
-const RED = (s) => `\u001b[31m${s}\u001b[0m`;
-const GRN = (s) => `\u001b[32m${s}\u001b[0m`;
-const YEL = (s) => `\u001b[33m${s}\u001b[0m`;
+// 颜色（RED/GREEN/YELLOW）已从 console-tty 共享模块导入；旧局部定义删除
 
 function exitJson(code, payload) {
   process.stdout.write(JSON.stringify(payload) + '\n');
@@ -74,26 +95,20 @@ async function main() {
     process.exit(3);
   }
 
-  // 开库（readOnly + 重试）
+  // 开库（readOnly + 重试——共享模块 db-open.ts）
   if (!existsSync(dbPath)) {
     if (JSON_MODE) exitJson(3, { error: 'db not found', dbPath });
     console.error(RED(`环境错：数据库文件不存在 ${dbPath}`));
     process.exit(3);
   }
-  let db;
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    try {
-      db = new DatabaseSync(dbPath, { readOnly: true });
-      break;
-    } catch (err) {
-      if (attempt === 3) {
-        if (JSON_MODE) exitJson(3, { error: 'open failed', dbPath, detail: String(err) });
-        console.error(RED(`环境错：打开数据库失败（第 3 次重试后放弃）——${err}`));
-        process.exit(3);
-      }
-      await new Promise((r) => setTimeout(r, 200));
-    }
-  }
+  const db = await openReadOnlyWithRetry({
+    dbPath,
+    jsonMode: JSON_MODE,
+    emitError: JSON_MODE
+      ? (code, payload) => exitJson(code, payload)
+      : (msg) => console.error(RED(msg)),
+    onFail: () => process.exit(3),
+  });
 
   // 取所有快照行（原生 SQL——避免 ORM 拉 items 等大字段）
   const rawRows = db
@@ -127,23 +142,14 @@ async function main() {
   perOrder.sort((a, b) => a.orderId - b.orderId);
 
   // 森林摘要：按 orderId 排序后拼接 (orderId, headSeq, headHash) → SHA256
-  const forestHash = createHash('sha256')
-    .update(
-      perOrder
-        .map((o) => `${o.orderId}:${o.headSeq}:${o.headHash}`)
-        .join('|'),
-    )
-    .digest('hex');
+  const forestHash = forestHashOf(perOrder);
 
   // 读现有锚（CRLF 兼容 + tab/space 兼容——双盲#4 抓 R1 真护栏破）
-  let existingLines = [];
-  if (existsSync(ANCHOR_FILE)) {
-    existingLines = readFileSync(ANCHOR_FILE, 'utf-8')
-      .split(/\r?\n/)
-      .map((l) => l.replace(/\s+$/, '')) // 去行尾空白（CRLF/LF/spc 统一）
-      .filter((l) => l && !l.startsWith('#'));
-  }
-  const existingForest = existingLines[existingLines.length - 1]?.split(/\s+/)[2];
+  const existingLines = existsSync(ANCHOR_FILE) ? readAnchorFile(ANCHOR_FILE) : [];
+  const existingForest =
+    existingLines.length > 0
+      ? parseAnchorLine(existingLines[existingLines.length - 1])?.hash
+      : undefined;
 
   // 报告
   const report = {
@@ -164,8 +170,8 @@ async function main() {
     if (existingForest) {
       console.log(
         existingForest === forestHash
-          ? GRN(`锚比对：与上次锚 ${existingForest.slice(0, 8)}… 一致`)
-          : YEL(
+          ? GREEN(`锚比对：与上次锚 ${existingForest.slice(0, 8)}… 一致`)
+          : YELLOW(
               `锚比对：与上次锚 ${existingForest.slice(0, 8)}… 不一致（链已变化——可能为新正常态或被改，需复核）`,
             ),
       );
@@ -181,11 +187,10 @@ async function main() {
   // 锚 corruption 体检（R6 双盲#4 抓）：同一行是否出现两个不同的 forestHash？
   // 正常锚=单行单 hash；若历史行被改写/多行被合=同行有重复→ 锚文件被篡改，拒追加 exit 3。
   if (existingLines.length > 1) {
-    const hashes = existingLines.map((l) => l.split(/\s+/)[2]).filter(Boolean);
-    const dup = hashes.find((h, i) => hashes.indexOf(h) !== i);
-    if (dup) {
-      const msg = `锚文件被篡改：存在重复 forestHash ${dup.slice(0, 8)}…——拒绝追加。复核后再锚。`;
-      if (JSON_MODE) exitJson(3, { error: 'anchor corrupted: duplicate forest hash', duplicate: dup, ...report });
+    const corruption = detectAnchorCorruption(existingLines);
+    if (corruption.corrupted) {
+      const msg = `锚文件被篡改：存在重复 forestHash ${corruption.duplicate.slice(0, 8)}…——拒绝追加。复核后再锚。`;
+      if (JSON_MODE) exitJson(3, { error: 'anchor corrupted: duplicate forest hash', duplicate: corruption.duplicate, ...report });
       console.error(RED(msg));
       process.exit(3);
     }
@@ -217,24 +222,19 @@ async function main() {
     const line = `${ts}\t${perOrder.length}\t${forestHash}\n`;
     // R8 首次锚写注释头（与 audit-chain-head.txt 端 258-269 同步形态）
     if (!existsSync(ANCHOR_FILE) || readFileSync(ANCHOR_FILE, 'utf-8').trim() === '') {
-      const header =
-        '# 订单快照链 git 锚——每行钉住一版森林摘要（UTC时间 受验单数 头森林hash SHA256）\n' +
-        '# 追加式：只增不改；改历史行=锚不符（verify exit 2）。\n' +
-        '# 由 npm run verify:orders -- --anchor 生成；commit 由人工执行。\n' +
-        '# 森林摘要=各单链头 (orderId, headSeq, headHash) 按 orderId 排序后拼接 SHA256。\n' +
-        '\n';
+      const header = formatAnchorHeader({ domain: '订单快照链', singleSuffix: '受验单' });
       writeFileSync(ANCHOR_FILE, header, 'utf-8');
     }
     appendFileSync(ANCHOR_FILE, line, 'utf-8');
     const appendedMsg = `已追加订单链锚: ${ts} 头hash=${forestHash.slice(0, 8)}… (${perOrder.length} 单)`;
     if (JSON_MODE) exitJson(0, { ...report, appended: line.trim() });
-    console.log(GRN(appendedMsg));
+    console.log(GREEN(appendedMsg));
     // R7 git 单件提示（与 audit 端 line 195-225 同源但减半——双盲#4 抓）
     // 仅判"未 commit"（一种状态）；其他两态（已 commit 未 push / 已 commit 已 push）合并为"已 commit"，避免状态机复杂度超收益
     try {
       const diffQuiet = execFileSync('git', ['diff', '--quiet', ANCHOR_FILE], { cwd: ROOT }).status === 0;
       if (!diffQuiet) {
-        console.log(YEL(`\n  ⚠ ${ANCHOR_FILE} 尚未 commit（git status 可见）。请执行：\n  git add ${ANCHOR_FILE} && git commit -m "orders: 锚定 ${perOrder.length} 单订单链头 (${forestHash.slice(0, 8)}...)"`));
+        console.log(YELLOW(`\n  ⚠ ${ANCHOR_FILE} 尚未 commit（git status 可见）。请执行：\n  git add ${ANCHOR_FILE} && git commit -m "orders: 锚定 ${perOrder.length} 单订单链头 (${forestHash.slice(0, 8)}...)"`));
       }
     } catch (_) { /* 非 git 环境——跳过 */ }
   } else if (totalProblems === 0) {

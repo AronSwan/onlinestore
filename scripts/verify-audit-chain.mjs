@@ -26,6 +26,20 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DEFAULT_DB = path.join(ROOT, 'backend', 'data', 'dev_caddy_shopping.db');
 const ANCHOR_FILE = path.join(ROOT, 'docs', 'audit-chain-head.txt');
 
+// 共享模块（B-Q5 双端切共享——颜色/DB open/锚行拆分）
+const tty = await import(
+  pathToFileURL(path.join(ROOT, 'backend/src/orders/snapshot/console-tty.ts')).href
+);
+const openMod = await import(
+  pathToFileURL(path.join(ROOT, 'backend/src/orders/snapshot/db-open.ts')).href
+);
+const anchorUtil = await import(
+  pathToFileURL(path.join(ROOT, 'backend/src/orders/snapshot/anchor-utils.ts')).href
+);
+const { RED, GREEN, YELLOW } = tty;
+const { openReadOnlyWithRetry } = openMod;
+const { splitCrLfRows, isValidAnchorHash } = anchorUtil;
+
 // ── 参数 ────────────────────────────────────────────────────
 const argv = process.argv.slice(2);
 const flag = (name) => {
@@ -39,10 +53,6 @@ const opt = (name) => {
 const dbPath = opt('db') || DEFAULT_DB;
 const ANCHOR_MODE = flag('anchor');
 const JSON_MODE = flag('json');
-const TTY = process.stdout.isTTY;
-const RED = (s) => (TTY ? `\x1b[31m${s}\x1b[0m` : s);
-const GREEN = (s) => (TTY ? `\x1b[32m${s}\x1b[0m` : s);
-const YELLOW = (s) => (TTY ? `\x1b[33m${s}\x1b[0m` : s);
 
 const exitJson = (code, payload) => {
   process.stdout.write(JSON.stringify(payload, null, 2) + '\n');
@@ -59,26 +69,20 @@ try {
   process.exit(3);
 }
 
-// ── 开库（readOnly + 3×200ms 重试） ─────────────────────────
+// ── 开库（readOnly + 重试——共享模块 db-open.ts） ────────────
 if (!existsSync(dbPath)) {
   if (JSON_MODE) exitJson(3, { error: 'db not found', dbPath });
   console.error(RED(`环境错：数据库文件不存在 ${dbPath}`));
   process.exit(3);
 }
-let db;
-for (let attempt = 1; attempt <= 3; attempt++) {
-  try {
-    db = new DatabaseSync(dbPath, { readOnly: true });
-    break;
-  } catch (err) {
-    if (attempt === 3) {
-      if (JSON_MODE) exitJson(3, { error: 'open failed', dbPath, detail: String(err) });
-      console.error(RED(`环境错：打开数据库失败（第 3 次重试后放弃）——${err}`));
-      process.exit(3);
-    }
-    await new Promise(r => setTimeout(r, 200));
-  }
-}
+const db = await openReadOnlyWithRetry({
+  dbPath,
+  jsonMode: JSON_MODE,
+  emitError: JSON_MODE
+    ? (code, payload) => exitJson(code, payload)
+    : (msg) => console.error(RED(msg)),
+  onFail: () => process.exit(3),
+});
 
 // ── 读原生行 + 全链校验（单遍 O(n)） ────────────────────────
 let rows;
@@ -120,14 +124,13 @@ if (!verify.valid) {
 // ── 链完整：锚比对三分支 ────────────────────────────────────
 const readAnchorLines = () => {
   if (!existsSync(ANCHOR_FILE)) return [];
-  return readFileSync(ANCHOR_FILE, 'utf8')
-    .split(/\r?\n/)
-    .filter(l => l.trim() && !l.trim().startsWith('#'))
+  return splitCrLfRows(readFileSync(ANCHOR_FILE, 'utf8'))
+    .filter(l => l && !l.startsWith('#'))
     .map(l => {
-      const parts = l.trim().split(/\s+/); // 每行：UTC时间 seq hash
+      const parts = l.split(/\s+/); // 每行：UTC时间 seq hash
       return { stamped: parts[0], seq: Number(parts[1]), hash: parts[2] };
     })
-    .filter(a => Number.isInteger(a.seq) && /^[0-9a-f]{64}$/.test(a.hash || ''));
+    .filter(a => Number.isInteger(a.seq) && isValidAnchorHash(a.hash));
 };
 
 const anchorLines = readAnchorLines();
@@ -203,10 +206,10 @@ const checkAnchorGit = () => {
   let summary = '';
   if (!worktree.ok) {
     const diff = runGit(['diff', '--', ANCHOR_REL]);
-    summary = (diff.stdout || diff.stderr || '').split('\n').slice(0, 10).join('\n');
+    summary = splitCrLfRows(diff.stdout || diff.stderr || '').slice(0, 10).join('\n');
   } else if (!staged.ok) {
     const diff = runGit(['diff', '--cached', '--', ANCHOR_REL]);
-    summary = ['[已 git add 未 commit]', ...(diff.stdout || '').split('\n')].slice(0, 10).join('\n');
+    summary = ['[已 git add 未 commit]', ...splitCrLfRows(diff.stdout || '')].slice(0, 10).join('\n');
   } else {
     summary = '[未被 git 跟踪：从未 git add/commit，锚从未对外生效]';
   }
@@ -218,7 +221,7 @@ const anchorGitWarnings = () => {
     console.log(YELLOW(`锚文件有未提交改动，锚定未生效——锚须 git commit 后才对外可验（docs/audit-chain-head.txt）`));
     if (anchorGit.summary) {
       console.log(YELLOW(`git diff 摘要（前 10 行）：`));
-      for (const l of anchorGit.summary.split('\n')) console.log(YELLOW(`  ${l}`));
+      for (const l of splitCrLfRows(anchorGit.summary)) console.log(YELLOW(`  ${l}`));
     }
   } else if (anchorGit.repo === false || anchorGit.checked === false) {
     console.log(YELLOW(anchorGit.note));

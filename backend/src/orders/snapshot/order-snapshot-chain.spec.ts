@@ -98,7 +98,7 @@ describe('哈希链核回归护栏（audit 字节不变 + 订单链核）', () =
 
   // ===== 3. 订单快照链核直测 =====
   describe('订单快照链核', () => {
-    const snapRow = (version: number, prevHash: string, orderId = 101) => ({
+    const snapRow = (version: number, prevHash: string | null, orderId = 101) => ({
       version,
       orderId,
       prevHash,
@@ -181,6 +181,59 @@ describe('哈希链核回归护栏（audit 字节不变 + 订单链核）', () =
       expect(result.problems.some(p => p.type === 'CONTENT')).toBe(true);
       // 截尾（只留 v1）——链自身仍 valid（锚窗口职责，非链职责）
       expect(verifyOrderSnapshotChain([{ ...r1, recordHash: h1 }]).valid).toBe(true);
+    });
+
+    // ===== B-Q8 R4 UNCHAINED 判型直测（双盲#4 R4 修后补 spec）=====
+    describe('UNCHAINED 判型（R4 双 NULL 判定）', () => {
+      it('seq=undefined/null → UNCHAINED', () => {
+        const row = { ...snapRow(1, ZERO_HASH), recordHash: 'a'.repeat(64) };
+        const noSeq = { ...row, version: undefined };
+        const result = verifyOrderSnapshotChain([noSeq]);
+        expect(result.valid).toBe(false);
+        expect(result.problems.some(p => p.type === 'UNCHAINED')).toBe(true);
+      });
+
+      it('version=1 但 prevHash=NULL → UNCHAINED（R4 双 NULL 判）', () => {
+        const row = { ...snapRow(1, null), recordHash: 'a'.repeat(64) };
+        const result = verifyOrderSnapshotChain([row]);
+        expect(result.valid).toBe(false);
+        expect(result.problems.some(p => p.type === 'UNCHAINED')).toBe(true);
+      });
+
+      it('version=1 但 recordHash=NULL → UNCHAINED（R4 双 NULL 判）', () => {
+        const row = { ...snapRow(1, ZERO_HASH), recordHash: null };
+        const result = verifyOrderSnapshotChain([row]);
+        expect(result.valid).toBe(false);
+        expect(result.problems.some(p => p.type === 'UNCHAINED')).toBe(true);
+      });
+
+      it('R4 场景：v1+ZERO+ v2.prev=v1.rec+ v3.prev=null → UNCHAINED 非 BREAK/CONTENT', () => {
+        const r1 = snapRow(1, ZERO_HASH);
+        const h1 = computeSnapshotRecordHash(ZERO_HASH, 1, r1);
+        const r2 = snapRow(2, h1);
+        const h2 = computeSnapshotRecordHash(h1, 2, r2);
+        const r3 = { ...snapRow(3, null), recordHash: null }; // v3 双 NULL
+        const result = verifyOrderSnapshotChain([
+          { ...r1, recordHash: h1 },
+          { ...r2, recordHash: h2 },
+          r3,
+        ]);
+        expect(result.valid).toBe(false);
+        const types = result.problems.map(p => p.type);
+        expect(types).toContain('UNCHAINED');
+        expect(types).not.toContain('BREAK'); // 不能误判为 BREAK
+        expect(types).not.toContain('CONTENT'); // 不能误判为 CONTENT
+      });
+
+      it('全部行 UNCHAINED → valid=false 且 0 条 chained', () => {
+        const rows = [
+          { ...snapRow(1, ZERO_HASH), recordHash: null },
+          { ...snapRow(2, ZERO_HASH), recordHash: null },
+        ];
+        const result = verifyOrderSnapshotChain(rows);
+        expect(result.valid).toBe(false);
+        expect(result.problems.every(p => p.type === 'UNCHAINED')).toBe(true);
+      });
     });
   });
 });

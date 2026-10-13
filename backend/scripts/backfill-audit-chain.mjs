@@ -16,6 +16,12 @@ import path from 'node:path';
 const BACKEND_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DEFAULT_DB = path.join(BACKEND_ROOT, 'data', 'dev_caddy_shopping.db');
 
+// 共享颜色（B-Q7：裸 ANSI 序列切 console-tty——stderr 走 RED_ERR）
+const tty = await import(
+  pathToFileURL(path.join(BACKEND_ROOT, 'src', 'orders', 'snapshot', 'console-tty.ts')).href
+);
+const { RED_ERR } = tty;
+
 const argv = process.argv.slice(2);
 const i = argv.indexOf('--db');
 const dbPath = i !== -1 && argv[i + 1] ? path.resolve(argv[i + 1]) : DEFAULT_DB;
@@ -26,7 +32,7 @@ const chain = await import(
 const { ZERO_HASH, computeRecordHash, verifyChain } = chain;
 
 if (!existsSync(dbPath)) {
-  console.error(`\x1b[31m环境错：数据库文件不存在 ${dbPath}\x1b[0m`);
+  console.error(RED_ERR(`环境错：数据库文件不存在 ${dbPath}`));
   process.exit(3);
 }
 
@@ -37,7 +43,7 @@ for (let attempt = 1; attempt <= 3; attempt++) {
     break;
   } catch (err) {
     if (attempt === 3) {
-      console.error(`\x1b[31m环境错：打开数据库失败（3 次重试后放弃）——${err}\x1b[0m`);
+      console.error(RED_ERR(`环境错：打开数据库失败（3 次重试后放弃）——${err}`));
       process.exit(3);
     }
     await new Promise(r => setTimeout(r, 200));
@@ -80,7 +86,7 @@ try {
     db.exec('COMMIT');
   } catch (err) {
     db.exec('ROLLBACK');
-    console.error(`\x1b[31m重锚失败已回滚（不留半链）——${err}\x1b[0m`);
+    console.error(RED_ERR(`重锚失败已回滚（不留半链）——${err}`));
     db.close();
     process.exit(1);
   }
@@ -95,7 +101,7 @@ try {
   db.close();
 
   if (!after.valid) {
-    console.error(`\x1b[31m重锚后复验失败（${after.problems.length} 处）——首笔：${JSON.stringify(after.problems[0])}\x1b[0m`);
+    console.error(RED_ERR(`重锚后复验失败（${after.problems.length} 处）——首笔：${JSON.stringify(after.problems[0])}`));
     process.exit(1);
   }
   console.log(`重锚完成：${after.length} 行成链，头 seq=${after.headSeq} hash=${after.headHash}`);
@@ -106,7 +112,7 @@ try {
   console.log(`  git commit -m "chore(audit): 创世锚定台账链头 seq=${after.headSeq} ${after.headHash.slice(0, 8)}"`);
   process.exit(0);
 } catch (err) {
-  console.error(`\x1b[31m环境错：${err}\x1b[0m`);
+  console.error(RED_ERR(`环境错：${err}`));
   try { db.close(); } catch { /* 已关 */ }
   process.exit(3);
 }
