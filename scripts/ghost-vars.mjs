@@ -28,8 +28,10 @@ for (const file of walk(ROOT)) {
   const text = readFileSync(file, 'utf8');
   const rel = file.slice(ROOT.length).replace(/\\/g, '/').replace(/^\//, '');
   // 定义：只统计 :root / 选择器块内的自定义属性声明（排除 var() 左侧不可能的误判——defRe 只匹配 "--x:" 形式）
+  // R1 类面扫：CRLF 兼容 + 行尾 trim（与 verify-orders-chain.mjs 同源裂解——防 Windows checkout
+  // 后 CRLF 残留把行号偏移、行尾 \r 拼到行内导致假定义/假引用误归）
   let m;
-  const lines = text.split('\n');
+  const lines = text.split(/\r?\n/).map((l) => l.replace(/\s+$/, ''));
   lines.forEach((line, i) => {
     // 去掉行内注释，避免注释里的假定义/假引用
     const clean = line.replace(/\/\*.*?\*\//g, '');
