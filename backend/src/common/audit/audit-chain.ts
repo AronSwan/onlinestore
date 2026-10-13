@@ -134,12 +134,20 @@ export function verifyChain(
   const chained: Array<Record<string, unknown>> = [];
 
   for (const row of rows) {
-    if (row.seq === null || row.seq === undefined) {
+    // R4 修：UNCHAINED 不仅看 seq NULL——还看 version 非空但 prevHash/recordHash
+    // 任一为 NULL（未链化写入或绕过链路）。双盲#4 抓"v1+ ZERO+ v2.prev=v1.rec+ v3.prev=null"
+    // 误判为 BREAK/CONTENT 而非 UNCHAINED 的判型失真场景。
+    const seqN = row.seq == null ? null : Number(row.seq);
+    const prevNull = row.prevHash == null;
+    const recNull = row.recordHash == null;
+    if (seqN === null || (seqN !== null && (prevNull || recNull))) {
       problems.push({
         type: 'UNCHAINED',
-        seq: null,
+        seq: seqN,
         id: row.id == null ? null : String(row.id),
-        detail: '链列（seq/prevHash/recordHash）为 NULL——未链化写入或绕过链路的行',
+        detail: prevNull || recNull
+          ? `链列残缺：version=${seqN} 但 prevHash/recordHash 之一为 NULL——未链化写入或绕过链路`
+          : 'seq 为 NULL——未链化写入或绕过链路的行',
       });
     } else {
       chained.push(row);

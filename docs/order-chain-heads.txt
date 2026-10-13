@@ -1,2 +1,6 @@
+# 订单快照链 git 锚——每行钉住一版森林摘要（UTC时间 受验单数 头森林hash SHA256）
+# 追加式：只增不改；改历史行=锚不符（verify exit 2）。
+# 由 npm run verify:orders -- --anchor 生成；commit 由人工执行。
+# 森林摘要=各单链头 (orderId, headSeq, headHash) 按 orderId 排序后拼接 SHA256。
 
-2026-10-13T03:36:30.076Z	3	02dc37d018add800a540f654ed9e93bbb975fbaae8bac19bea1623a429fc5dcd
+2026-10-13T04:26:14.945Z	3	741df00bc3983de588342f0882394973c2e7aeb11ad67fda43e303e085517fde

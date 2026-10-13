@@ -135,12 +135,15 @@ async function main() {
     )
     .digest('hex');
 
-  // 读现有锚
+  // 读现有锚（CRLF 兼容 + tab/space 兼容——双盲#4 抓 R1 真护栏破）
   let existingLines = [];
   if (existsSync(ANCHOR_FILE)) {
-    existingLines = readFileSync(ANCHOR_FILE, 'utf-8').split('\n').filter((l) => l && !l.startsWith('#'));
+    existingLines = readFileSync(ANCHOR_FILE, 'utf-8')
+      .split(/\r?\n/)
+      .map((l) => l.replace(/\s+$/, '')) // 去行尾空白（CRLF/LF/spc 统一）
+      .filter((l) => l && !l.startsWith('#'));
   }
-  const existingForest = existingLines[existingLines.length - 1]?.split('\t')[2];
+  const existingForest = existingLines[existingLines.length - 1]?.split(/\s+/)[2];
 
   // 报告
   const report = {
@@ -175,6 +178,19 @@ async function main() {
     }
   }
 
+  // 锚 corruption 体检（R6 双盲#4 抓）：同一行是否出现两个不同的 forestHash？
+  // 正常锚=单行单 hash；若历史行被改写/多行被合=同行有重复→ 锚文件被篡改，拒追加 exit 3。
+  if (existingLines.length > 1) {
+    const hashes = existingLines.map((l) => l.split(/\s+/)[2]).filter(Boolean);
+    const dup = hashes.find((h, i) => hashes.indexOf(h) !== i);
+    if (dup) {
+      const msg = `锚文件被篡改：存在重复 forestHash ${dup.slice(0, 8)}…——拒绝追加。复核后再锚。`;
+      if (JSON_MODE) exitJson(3, { error: 'anchor corrupted: duplicate forest hash', duplicate: dup, ...report });
+      console.error(RED(msg));
+      process.exit(3);
+    }
+  }
+
   // 锚追加
   if (ANCHOR) {
     if (totalProblems > 0) {
@@ -189,17 +205,36 @@ async function main() {
       console.error(RED(msg));
       process.exit(2);
     }
+    // R2 双盲#4 抓：空库（0 行）— forestHash = SHA256("") = e3b0c44…，是无效锚。
+    // 拒绝接受空森林为首次锚（会让任意 verify 后续必报"链已变化"）。
+    if (rawRows.length === 0) {
+      const msg = '空库/0 行快照——forestHash=SHA256("")=e3b0c44… 为无效锚，拒绝追加。先生成快照再锚。';
+      if (JSON_MODE) exitJson(2, { error: 'anchor refused: empty forest', ...report });
+      console.error(RED(msg));
+      process.exit(2);
+    }
     const ts = new Date().toISOString();
     const line = `${ts}\t${perOrder.length}\t${forestHash}\n`;
+    // R8 首次锚写注释头（与 audit-chain-head.txt 端 258-269 同步形态）
+    if (!existsSync(ANCHOR_FILE) || readFileSync(ANCHOR_FILE, 'utf-8').trim() === '') {
+      const header =
+        '# 订单快照链 git 锚——每行钉住一版森林摘要（UTC时间 受验单数 头森林hash SHA256）\n' +
+        '# 追加式：只增不改；改历史行=锚不符（verify exit 2）。\n' +
+        '# 由 npm run verify:orders -- --anchor 生成；commit 由人工执行。\n' +
+        '# 森林摘要=各单链头 (orderId, headSeq, headHash) 按 orderId 排序后拼接 SHA256。\n' +
+        '\n';
+      writeFileSync(ANCHOR_FILE, header, 'utf-8');
+    }
     appendFileSync(ANCHOR_FILE, line, 'utf-8');
     const appendedMsg = `已追加订单链锚: ${ts} 头hash=${forestHash.slice(0, 8)}… (${perOrder.length} 单)`;
     if (JSON_MODE) exitJson(0, { ...report, appended: line.trim() });
     console.log(GRN(appendedMsg));
-    // git 提示
+    // R7 git 单件提示（与 audit 端 line 195-225 同源但减半——双盲#4 抓）
+    // 仅判"未 commit"（一种状态）；其他两态（已 commit 未 push / 已 commit 已 push）合并为"已 commit"，避免状态机复杂度超收益
     try {
-      const staged = execFileSync('git', ['status', '--porcelain', ANCHOR_FILE], { cwd: ROOT }).toString().trim();
-      if (staged) {
-        console.log(YEL(`\n  ⚠ ${ANCHOR_FILE} 尚未 commit（git diff 可见）。请执行：\n  git add ${ANCHOR_FILE} && git commit -m "orders: 锚定 N 单订单链头 (${forestHash.slice(0, 8)}...)"`));
+      const diffQuiet = execFileSync('git', ['diff', '--quiet', ANCHOR_FILE], { cwd: ROOT }).status === 0;
+      if (!diffQuiet) {
+        console.log(YEL(`\n  ⚠ ${ANCHOR_FILE} 尚未 commit（git status 可见）。请执行：\n  git add ${ANCHOR_FILE} && git commit -m "orders: 锚定 ${perOrder.length} 单订单链头 (${forestHash.slice(0, 8)}...)"`));
       }
     } catch (_) { /* 非 git 环境——跳过 */ }
   } else if (totalProblems === 0) {
