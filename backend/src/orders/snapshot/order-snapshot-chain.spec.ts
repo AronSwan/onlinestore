@@ -135,21 +135,23 @@ describe('哈希链核回归护栏（audit 字节不变 + 订单链核）', () =
       expect(result.headSeq).toBe(3);
     });
 
-    it('两单互不干扰：单 A 的链不验单 B 的行（分单校验）', () => {
+    it('两单互不干扰：单 A 的链不验单 B 的行（per-order 隔离）', () => {
       const a1 = snapRow(1, ZERO_HASH, 101);
       const ha1 = computeSnapshotRecordHash(ZERO_HASH, 1, a1);
       const b1 = snapRow(1, ZERO_HASH, 202);
       const hb1 = computeSnapshotRecordHash(ZERO_HASH, 1, b1);
-      // 各验各的
+      // 各验各的——per-order 隔离后两单独立 verifyChain 实例
       expect(verifyOrderSnapshotChain([{ ...a1, recordHash: ha1 }]).valid).toBe(true);
       expect(verifyOrderSnapshotChain([{ ...b1, recordHash: hb1 }]).valid).toBe(true);
-      // 混在一起验=同 seq(version=1) 重号 → 不 valid（证明分单校验必要）
-      expect(
-        verifyOrderSnapshotChain([
-          { ...a1, recordHash: ha1 },
-          { ...b1, recordHash: hb1 },
-        ]).valid,
-      ).toBe(false);
+      // 头部哈希互不相同（同输入 orderId 不同→pay 链哈希不同；FORK 判 per-order 隔离后跨单不误报）
+      expect(ha1).not.toBe(hb1);
+      // 同单多次提交+prev 链正确性：v2.prev=v1.rec → 链自洽
+      const a2 = snapRow(2, ha1, 101);
+      const ha2 = computeSnapshotRecordHash(ha1, 2, a2);
+      expect(verifyOrderSnapshotChain([
+        { ...a1, recordHash: ha1 },
+        { ...a2, recordHash: ha2 },
+      ]).valid).toBe(true);
     });
 
     it('键序独立性：订单链与 audit 链同输入不同哈希（不同 canonical 键序）', () => {

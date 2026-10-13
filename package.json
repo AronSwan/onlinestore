@@ -16,6 +16,7 @@
     "test:perf": "cross-env NODE_OPTIONS='--no-warnings' playwright test --config=perf.config.js",
     "test:coverage": "cross-env NODE_OPTIONS='--no-warnings' playwright show-report",
     "verify:audit": "node --experimental-strip-types --no-warnings --experimental-sqlite scripts/verify-audit-chain.mjs",
+    "verify:orders": "node --experimental-strip-types --no-warnings --experimental-sqlite scripts/verify-orders-chain.mjs",
     "audit": "npm audit",
     "audit:fix": "npm audit fix",
     "outdated": "npm outdated",

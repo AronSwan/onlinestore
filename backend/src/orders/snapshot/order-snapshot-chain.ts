@@ -16,11 +16,12 @@ import {
   computeRecordHash,
   verifyChain,
   ZERO_HASH,
+  type ChainProblem,
   type ChainVerificationResult,
 } from '../../common/audit/audit-chain.ts'; // .ts 扩展名=Node 裸加载需(rewriteRelativeImportExtensions 使编译产物重写为 .js)
 
 export { ZERO_HASH };
-export type { ChainVerificationResult };
+export type { ChainProblem, ChainVerificationResult };
 
 /**
  * 订单快照 canonical 定键序（8 字段）。
@@ -50,17 +51,45 @@ export function computeSnapshotRecordHash(
 }
 
 /**
- * 每单独立链校验——把订单快照行映射为通用链核形状（version→seq）后复用
- * verifyChain（UNCHAINED/GAP/DUPLICATE/BREAK/CONTENT/FORK 六判型全继承）。
- * rows 须为同一 orderId 的全部快照（原生行，含 NULL 链列的未链化行）。
+ * 每单独立链校验——FORK 判在多单场景下需 per-orderId 隔离（每单链头
+ * 唯一性只在本单内成立，跨单不共享 prevHashOwner）。策略：按 orderId
+ * 分组后**逐单**调泛化 verifyChain——每单独立的 prevHashOwner 实例
+ * 自动隔离（FORK 不再误报为多单共零），但保留全六判型语义。
+ * 顺带返"单森林头"=各单 head 中 seq 最大者（v1 genesis 头=ZERO 不抢）。
  */
 export function verifyOrderSnapshotChain(
   rows: ReadonlyArray<Record<string, unknown>>,
 ): ChainVerificationResult {
-  return verifyChain(
-    rows.map(row => ({ ...row, seq: row.version })),
-    ORDER_SNAPSHOT_CANONICAL_KEYS,
-  );
+  const byOrder = new Map<number | string, Array<Record<string, unknown>>>();
+  for (const r of rows) {
+    const k = (r as { orderId?: number | string }).orderId;
+    if (k == null) continue;
+    let bucket = byOrder.get(k);
+    if (!bucket) {
+      bucket = [];
+      byOrder.set(k, bucket);
+    }
+    bucket.push(r);
+  }
+  let valid = true;
+  let length = 0;
+  let headHash = ZERO_HASH;
+  let headSeq = 0;
+  const problems: ChainProblem[] = [];
+  for (const [, group] of byOrder) {
+    const r = verifyChain(
+      group.map((row) => ({ ...row, seq: row.version })),
+      ORDER_SNAPSHOT_CANONICAL_KEYS,
+    );
+    if (!r.valid) valid = false;
+    length += r.length;
+    if (r.headSeq > headSeq) {
+      headHash = r.headHash;
+      headSeq = r.headSeq;
+    }
+    problems.push(...r.problems);
+  }
+  return { valid, length, headHash, headSeq, problems };
 }
 
 /** 供写侧构造 canonical 行（测试/对账用） */
