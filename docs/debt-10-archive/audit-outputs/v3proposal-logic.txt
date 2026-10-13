@@ -1,0 +1,55 @@
+# 债-10 方案 v3 逻辑路独立评审（第三轮送审）
+
+条款援引：（无争议不填）
+对象：`C:\Users\Administrator\onlinestore_remediation\docs\debt-10-architecture-research-proposal-v3.md`；对照 v2 稿、6 员调研（archive/audit-outputs）、正身仓代码。
+
+**锚点抽验前置（承重陈述三件齐）**：createRefund 四锚全中——payment-application.service.ts:371-449（域守卫 :394-409、gateway.createRefund :413、save :425）；退款落 metadata JSON 属实（typeorm-payment-order.repository.ts:149-150 原注释“建独立 refunds 表属加表变更，另立动机”）；W7 谓词先例属实（audit.service.ts:205 `WHERE seq IS NOT NULL ORDER BY seq DESC LIMIT 1`）；§3.3 前缀式公式属实（audit-chain.ts:94-95）；M5 锚属实（orders.service.ts:218）。复现命令=上述 grep/Read，日期 2026-10-13，口径=正身仓 backend/src。**v3 的事实底座无新错，缺陷全部在新设计文本层。**
+
+---
+
+## 一、T9 intent 两步推演（重点项）
+
+**[L3-01｜P1] 状态机 FAILED 终态语义过载——歧义结果被映射为不可复扫的终态**。“网关成功但事务 2 失败”被兜底扫描覆盖（行留 PENDING_GATEWAY→回查→CONFIRMED，成立）；但反方向“网关超时/丢响应而实际成功”不覆盖：事务 2 的“失败→FAILED”按 v3 §2 图是终态，FAILED 行无任何复扫路径。现行网关适配器对 `!result.success` 一律 throw（strategy-gateway.adapter.ts:128-131），网络超时与网关明确拒绝不可区分，二者同落 FAILED。危害链：现行守卫把 FAILED 排除出保留额（payment-order.aggregate.ts:222-223 `filter(r => r.status !== RefundStatus.FAILED)`）→ 一次误判 FAILED 即释放配额→用户重请退款→网关两笔都在途→超额退款。修法方向（成文级）：歧义类错误（超时/5xx/连接断/回查不决）不得落 FAILED，留 PENDING_GATEWAY 交扫描裁决，FAILED 仅收网关明确拒绝。
+论证补强：**本仓退款状态机是 T9 首创**——RefundAggregate.markAsSucceeded/markAsFailed（aggregate :64-76）全仓零调用方（仅 paymentOrder.markAsSucceeded 三处，:295/:318/:484，非退款）；现行退款创建后永停 PENDING。v3 是第一次定义退款终态迁移，失败语义即最大盲区。
+
+**[L3-02｜P1] 域守卫累计退款读源双源分立，T9 未交代守卫改读新表**。事务 1 域守卫的累计占额现在读聚合内存 `refunds` 数组（hydrate 自 metadata JSON）；T9 后新退款落 payment_refunds 表，聚合数组对其不可见→守卫失明→同支付单可无限次过守卫。§3.9 只写了存量回填方向（metadata→表），未写守卫读源切换、未写 PENDING_GATEWAY 计入保留额的语义（须计入，否则两笔并发 intent 双过守卫）。这是 T9 与既有代码的承重接缝，P2 实施前必须成文。
+
+**[L3-03｜P1] 崩溃恢复腿两处不完备**：①**回查能力不存在**——PaymentGateway 接口（payment-gateway.factory.ts:9-71）与 PaymentStrategy（payment-strategy.interface.ts:29-39）均无退款查询方法（仅 queryPaymentStatus）；§6.1-9 已列 open，但该腿是 T9 正确性的承重件（两事务窗口的唯一兜底），可行性挂账=设计完整性挂账，权重应显式标为“T9 成立前提”而非普通未决。②**回填与在途事务 2 的重复事件无防**——扫描回填与原请求事务 2 都会写 CONFIRMED+INSERT REFUND_CONFIRMED（类 1），v3 未写条件转换（`UPDATE ... WHERE status='PENDING_GATEWAY'` 且仅转换胜者插事件）；§3.4 不变式 3 的 tryClaim 只管 domain_events 行，payment_refunds 扫描无认领语义。单实例 dev 下 JIT 触发+定时扫描同进程并发仍可触发（ createdAt 阈值与在途网关调用的竞态——DDL 无 deadline 列但有 createdAt+索引 `(status, createdAt)`，固定阈值扫描谓词可行，此点不缺列；缺的是阈值>网关最大在途时延+胜者插事件的规约）。
+
+**[L3-04｜P2] 扫描锁纪律未写——朴素复用异步腿基建会把网络 I/O 包进互斥**。“复用异步腿轮询基建”的现有形态（读→补链→写一趟）不含外部调用；退款回查必须“网关查询在互斥外、回填写短互斥内”，v3 未写。不写则实现者照 drain 形状套=互斥内网络往返=复现 T9 立项理由本身（“回调延迟期间全库写排队”，§2 C 员实证）。
+
+**1c（W9/W13 交互）裁定**：退款 CONFIRMED 后 v3 无任何支付事件→订单链的触发交代，W13 行“不变（复用 W2）”只覆盖 payment.succeeded/failed（payment-events.listener.ts 现状）；现行系统 refund.created 也是零监听。**无回归**（现状同构），记 [L3-09｜P3]：REFUND_CONFIRMED 是否回写订单状态属显式未裁决，建议随文一句“不触发，理由=现状同构”或补挂账。
+
+**1d（守卫时效性）裁定**：事务 1/事务 2 之间支付状态漂移被域终态守卫天然封死——SUCCEEDED 为终态（markAsFailed 有 PaymentFailedAfterSuccessError 闸 :175-182，close 有守卫 ：192-195），互斥串行化一切写。**时效性真缺口在配额不在状态**=L3-02。v3 未论证此点但结论站得住。
+
+## 二、F-01 复验：读法 A 钉死后的分腿自洽
+
+**[L3-05｜P1] §3.1/§3.4 钉死读法 A 与 §2 T5 补件直接矛盾——F-01 图面闭环、协商记录面反转未同步**。§3.1 图+§3.4 不变式 0 规定类 2 INSERT 同事务 fail-closed 且“读法 B 禁止”；但同版 §2 T5 分歧保留原文“若按 B 员教义，类 2 也应同事务 fail-closed……此分歧未消解，随裁决带入实施（**切换类 2 为同事务是实施期可逆决策**）”——此句预设现状=非同事务，与 §3.1 相斥；T5 补理由本身（“审计 INSERT 失败将回滚已成立的订单——可用性代价无依据”）论证的恰是 §3.1 已采纳的那个代价。旁证：现行代码纪律注释（orders.service.ts:217“订单既已成立，审计失败只告警不回滚”）就是 T5 所守的旧读法，§3.1 将其反转而协商记录仍称分歧未消解。实施者按 §2 行事可合法选读法 B→崩溃丢事件窗回归。修复=改写 T5 记录为“分歧已由 §3.1 裁决归 B 员存储侧教义，三分类内核重述为链化时机区分（inline/延迟）而非 fail 语义区分”。读法 A 本身（INSERT 时机+不变式 0/1/2+seq 唯一索引兼容性）经独立推演**自洽**，F-01 的架构面修复成立。
+
+## 三、API 契约覆盖面验证
+
+- **drain 补链事务自称顶层排队者：验证通过**。JIT 触发在 COMMIT 后 fire-and-forget；即便 emit 落在互斥回调内，单写者队列语义下 drain 排队于当前持有者之后且无人 await 它——无死锁路径。仓内纪律注释（orders.service.ts:205-210“移到互斥块返回后”）与契约同向。
+- **PENDING_GATEWAY 扫描顶层：通过（有条件）**。定时器路径无持有者；唯一嵌套风险=L3-04 的互斥内网络查询。W13 监听器（emit 于互斥块外）markPaymentSucceeded 自获互斥=顶层。T9 两事务各自独立获互斥，事件插行按契约骑调用方 EntityManager——无第三条嵌套路径。
+
+## 四、定向核查项
+
+**【自判 #7｜P1×2 成立】P0 验证依赖倒置，且旧迁移断链未修**。①探测逻辑不住共享工具：全 backend/src 唯一 `@@version` 探测内联于 20261011000001（局部变量 isMysqlLike，仅判 mysql/mariadb——对 TiDB 版本串 `8.0.11-TiDB-v…` 确走 sqlite 分支）；DatabaseModule（本身是未挂载的死代码，app.module.ts:40 起另有内联配置且无 tidb→mysql 映射）不含探测。P0“DatabaseModule 挂载修复”无可验探测的代码路径，“含方言探测修复验证”须等 P1 新迁移——倒置成立，P0 门按文不可关。②**新发现**：修复范围只写“新迁移”，旧迁移 20261011000001 在真 TiDB 上走 sqlite 分支（sqlite_master 探测 .catch 空表→双引号 DDL→TiDB 非 ANSI_QUOTES 下语法错）——真 TiDB 全链迁移在旧迁移处先断，P1 验收判据 1“双方言跑通”会撞上，v3 未列旧迁移处置。
+**【自判 #8｜P2 成立】GDPR 法条配错对象**。D 员 Q3 裁决的改正路径是“字段白名单投影”（payload 内容最小化，Art 5(1)(c)+25(1)）；而“链不含明文+可删区”的合规驱动实为不可变结构×PII 的擦除/存储限制冲突（Art 17/5(1)(e)，D 员 Q4 硬边界），v3 T3/T4 重定位句未引。推导缺口成立；**不推翻 b 变体裁决**——其技术足（E 员代数不相容+Fabric PDC/QLDB 工业同构）独立于法条编号，缺口属引证精度非方向错误。建议改引"Art 17/5(1)(e)（链拓扑）+5(1)(c)/25(1)（白名单）"双句。
+
+## 五、反过拟合扫描（同类未抓实例）
+
+- **[L3-06｜P2] §4.2 判据 1 SQL 谓词错置**：`o.createdAt>cutover` 写在 ON 子句——LEFT JOIN 下切换前遗留单（dev 现存 30 单，C 员实测口径）全部误报为缺 genesis，门=0 不可达。应移 WHERE。重写验收门（响应映射 #3）自引入新错。
+- **[L3-07｜P2] §3.9 DDL 无双方言标注且含 sqlite 无效语法**：`ON UPDATE CURRENT_TIMESTAMP` 非 SQLite 语法；§3.2 对 domain_events 做了双方言注，§3.9 漏做——与 camelCase 修订“消灭映射层”的逐项对齐纪律不一。
+- **[L3-08｜P3] 8≠7 计数**：W12 剥离给 T9 后，底座路径实为 7 条（W4-W6 三+W8-W11 四），v3 修 9→8 时未随剥离再推导，§3.7/§4.1 的"8 条"与自身枚举区"W4-W6/W8-W11"不符。
+- **[L3-10｜P3] §6.3“v3 新增引证 0”不实**：§2 T3/T4 新入两条 EDPB 逐字引文（"without centralised management"/"single entity are out of scope"），v2 无此二句。
+- **[L3-11｜P3] §3.4 不变式 3 引入未定义状态词 RESUBMITTED**（F 员词表，v3 状态集无此值）——引用示例未折算为本仓词表。
+
+## 六、负面项与挂账（呈报纪律③）
+
+本席无既往裁决记录可计命中率，“修订后可过”类表述按纪律不作背书。v2 复审 15 P2/18 P3 未全修系 v3 自报，本报告只审新增/修订面。T9 的网关回查可行性（6.1-9）为 T9 成立前提，如网关侧确无退款查询能力，T9 降级为“人工对账兜底”，须在裁决文里写明该降级路径。
+
+---
+
+**总判定：0 P0 / 6 P1（L3-01/02/03/05 + 自判#7 两项）/ 5 P2 / 4 P3——T9 方向（intent 两步）成立但规格三处不完备，F-01 图面修复被 T5 记录矛盾部分回开，P0 门含不可执行判据；不宜按现稿立项。**
+
+**推荐（工程判断，非背书）**：α 修订后四送——修单集中在成文级：T9 补“歧义错误不落 FAILED+守卫改读表+回填胜者插事件+扫描锁纪律”四句、T5 记录同步、P0 门改写（探测修复验证移 P1 判据 1 或 P0 加“复现探测缺陷”实证）、§4.2 SQL/计数/引证台账勘误。修毕 P1 验收前的架构文本即可闭合，无需推翻任何裁决。

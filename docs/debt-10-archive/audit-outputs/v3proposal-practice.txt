@@ -1,0 +1,57 @@
+# 债-10 方案 v3 实操路独立评审（第三轮送审）
+
+对象：`C:\Users\Administrator\onlinestore_remediation\docs\debt-10-architecture-research-proposal-v3.md`。全部结论基于本仓实文件实跑（sqlite DDL 真跑、TypeORM 驱动真跑、dev 库真查）。
+
+---
+
+## P0 级（2 项）
+
+**P0-A【自判#1 裁决：成立】旧迁移 TiDB 雷应列入 P0 工单——v3 只规范了新迁移，未给旧迁移修理工单。**
+雷本体实锚：`backend\src\database\migrations\20261011000001-create-order-snapshots-table.ts:27` `isMysqlLike = v.includes('mysql') || v.includes('mariadb')`。真 TiDB 炸点链条：TiDB 版本串 `8.0.11-TiDB-v…` 两子串皆不含 → 误走 else 分支 → `sqlite_master` 查询在 TiDB 报表不存在错 → `:62 .catch(() => [])` 吞掉 → `exists=false` → 对 TiDB 执行带双引号标识符的 SQLite 方言 DDL（`:66-80`）→ 默认 sql_mode 无 ANSI_QUOTES → **语法错，migration:run exit 1，部署中断于第 9 个（最后一个）迁移**。且报错形态是 DDL 语法错而非“方言判错”，排查误导性强。修复成本=第 27 行加 `|| v.includes('tidb')` 一行 + 重跑冒烟。**P0 自身的 TiDB 冒烟（migration:run）按时间序先踩此雷——P0 验收依赖此修复，而它不在任何阶段行里。** v2 实操路旧审已抓此雷（archive `v2proposal-practice.txt:16`），v3 §3.2 注②只把修复写进新迁移规范=半响应。
+
+**P0-B TiDB 通路共四堵墙，P0 行五个字无工单无验收判据。**
+真跑实证：① `app.module.ts:40` 内联 factory 直传 `dbConfig.type`（`unified-master.config.ts:529 type: env.DB_TYPE` 原样），DB_TYPE=tidb 时启动即 `MissingDriverError: Wrong driver: "tidb"`（本机 typeorm 实测复现）；② 唯一含 tidb→mysql 映射的 `database.module.ts:26` 是**未挂载死模块**（app.module 未 import）；③ CLI 迁移入口 `typeorm.config.ts:7` DB_TYPE 联合类型无 'tidb'——真 TiDB 跑迁移只能 DB_TYPE=mysql+port 4000，doc 未写此用法；④ `orders\order-snapshot.db-utils.ts:19/28` 按 `connection.options.type` 分叉——type 不映射则 TiDB 被判 'other'/FOR UPDATE false（与墙①耦合）。实操影响：照 v3 §4.1 P0 行（“DatabaseModule 挂载修复（TiDB 冒烟…）”依赖=无）开工即卡——“挂载”两条路径（挂 DatabaseModule vs 并 3 行映射入 app.module factory）实体注册集不同（通配全量 glob vs 白名单 9 目录，见反过拟合 A），v3 未选边未给验收。此为 v1 实操路 F8（“P0 行没有可执行内容与可验收判据”）**第二轮原样复发**，v2 复审 12 P1 响应映射表（§1）中无行。
+
+## P1 级（8 项）
+
+**P1-1 §3.9 payment_refunds DDL 在 sqlite 直接语法错（真跑实测：`near "ON": syntax error`）**——`ON UPDATE CURRENT_TIMESTAMP` 是 MySQL 专属。§3.2 有双方言分支注而 §3.9 漏注，且 §4.2 判据 1 要求“表迁移双方言跑通 sqlite”——照抄此 DDL 即判据不可过。修复：删该子句（entity 层 `@UpdateDateColumn` 已覆盖 updatedAt，`payment.entity.ts:127` 先例）或补双方言注。另：P1 行写“payment_refunds 表”而非“entity+迁移”（与 domain_events 行写法不对称）——dev 走 synchronize=true、真源=entity 文件（§3.2 注④自定纪律），漏 entity 则 dev 建不出表。
+
+**P1-2【任务 2】网关退款状态查询 API 不存在——T9 崩溃恢复腿的硬前置缺位且无阶段行承载。** 实锚：`payment\domain\services\payment-gateway.factory.ts` PaymentGateway 接口 7 方法（createPayment/verifyCallback/isPaymentSuccess/getFailureReason/queryPaymentStatus/createRefund/closePayment）**无 queryRefundStatus**；`strategies\payment-strategy.interface.ts` 仅 `abstract refund()`；`strategy-gateway.adapter.ts` 无转发；4 个策略（alipay/wechat/credit-card/crypto）无实现。§6.1-9 虽列“网关侧支持”为未决，但“新增接口方法×接口层×策略层×适配层×4 策略”的实施面无行。实操影响：P2 落 W12 时兜底扫描查不到结果，PENDING_GATEWAY 行永久滞留或人工裁决；且崩溃点若在 gateway.createRefund 调用前 gatewayRefundId=NULL，回查键只剩 paymentOrderId+refundId——连查询键形状都没定义。
+
+**P1-3【任务 2】PENDING_GATEWAY 超时判定的时间列支撑：成立但不对称。** §3.9 有 createdAt + `idx_payment_refunds_status(status, createdAt)`——谓词 `status='PENDING_GATEWAY' AND createdAt < now()-阈值` 可跑且索引前缀匹配。缺口：表无 attempts/lastError 复用件（domain_events 腿有 attempts+毒丸，此表没有——同一 worker 两腿退避/死信行为不对称）；阈值未定（§6.1-9 已列）。
+
+**P1-4【任务 2】“复用异步腿轮询基建”机制钉死：机制可行，归属未写。** 仓内唯一调度形态=@nestjs/schedule 进程内（ScheduleModule.forRoot 注册于 `audit.module.ts:17`、`monitoring.module.ts:15`；@Cron 先例 `monitoring.service.ts:309 EVERY_MINUTE`；无外部 cron、k8s 目录无 CronJob）。实操答案：同一 Nest 进程，P1 新建 worker provider，@Interval 加第二扫描腿。但“复用”是 P2 对 P1 未建件的前向引用，归属模块（domain-events worker 同文件加腿 vs 独立 provider）、间隔参数是否共享均未写。
+
+**P1-5【任务 1】dev 期 metadata.refunds 写路径停/切零交代 + “dev 无存量”陈述不实。** 现状实锚：`typeorm-payment-order.repository.ts:148-160` 写 metadata.refunds、`:278-291` 读恢复；域守卫累计占额（`payment-order.aggregate.ts:222-229`）数据源=this.refunds（从 metadata 恢复）。P1 建表→P2 切写期间旧路径继续产 metadata.refunds 行；切换日若读写不同切，守卫数据失明→超退——该失效模式仓内发生过（`:265-267` 注释自证 W-3 批修复的正是“守卫因数据失明而形同虚设”）。**dev 库实测 1 行 metadata.refunds 存量**（PAY_MV0V2RBY_8N10U4_D579BAF6，PENDING 0.05，W-3 探针残留）——切换时该行占额即蒸发，v3 §3.9“dev 无存量”按现库为假。双轨期对账（两源行数/金额和比对）v3 零字。
+
+**P1-6【任务 3/判据 1】TiDB 获取路径无着落 + 逃生口自弱化 + sqlite 腿口径会炸。** 本机 docker 不存在（实测 command not found）、env.dev/.env.example 无 TIDB_* 配置。“或版本串含 TiDB 的连接”允许 MySQL 协议 stub 过关——只能验探测逻辑，验不了 TiDB DDL 真跑。更实操的坑：sqlite 腿若按全链 migration:run 理解**必死于第一个旧迁移**（users 等纯 MySQL 方言：ENUM/AUTO_INCREMENT/UNIQUE KEY；10 个迁移中 9 个无 sqlite 分支；dev 库 migrations 表实测 0 行=sqlite 迁移管线从未存在）。建议：判据拆 1a 探测（stub 可）+1b DDL（真 TiDB，TiDB Cloud 免费档经 TIDB_TIDB_ENDPOINTS 或装 podman），sqlite 腿限定“新迁移类隔离执行”。
+
+**P1-7【任务 3/判据 6】R3'' 执行层面未指名 + key 共享源未定义。** sqlite/MySQL 均无原生 HMAC SQL 函数，§3.8 的 `HMAC(payload)` 是伪 SQL；Tyler“verify 脚本层面”是唯一可行路线（node:crypto createHmac；verify-audit-chain.mjs 的动态 import 单源模式可直接照抄）——但 §4.2 判据 6 未写执行件。且 dev 静态 key 的存放点（env/.env.dev/config）P1 行未定，verify 脚本与写侧两处取 key 不一致=全库误报红。
+
+**P1-8【任务 4/自判#7 裁决：成立】排产件清点：四件中一件无行 + 两件隐身 + 依赖列失真。** 逐件：verify-domain-chain.mjs ✓P1 行；白名单投影函数 ✓P1 行；dev 静态 key ✓P1 行；**seed-domain-event.mjs ✗ 无任何阶段行**（§3.6 称“▲ 新增排产件”挂 P3 五写点，P3 行只写“旧链冻结（五写点+终锚）…”未点名——POST /audit/test 删除时脚本未同步落则 dev 链注入手段断供）。隐身件：R2 扩展（PENDING_GATEWAY 可见）在 §3.8 有文、P2/P3 无行；payment_refunds entity（见 P1-1）。自判#7 双层成立：(a) P0 验收物“方言探测修复”的载体（新迁移）在 P1——P0 时点无物可验，除非并入旧迁移修复（恰是 P0-A 的结论）；(b) 阶段表 P1 依赖列=“C 员事实卡”不含 P0，但 P1 判据 1 的 TiDB 腿必须用 P0 修好的通路——按表并行排产 P0/P1 则 P1 判据 1 卡死。
+
+## P2 级（2 项）
+
+**P2-1 判据 3 env 闸 DOMAIN_EVENTS_FORCE_FAIL：可实施但“第 N 批”语义不稳。** 接线点=P1 新 worker 的 drain 循环（无仓内 FORCE_FAIL 先例，新测试模式可接受）；批计数器进程内、重启归零→演练 flaky。建议改“对 attempt≤N 的行强制失败”或注入标记行。
+
+**P2-2 T9 事务 2 的“payments 更新”是聚合整行 save（metadata JSON 全量重写）**，与回调路径并发靠 runExclusiveWrite 串行（机制实锚 `db-write-mutex.ts:26` “嵌套=自锁死”，与 §3.1 API 契约表述一致）；但双轨期（P1-5）此写法会把新旧两源互相覆盖。
+
+## P3 级（1 项）
+
+**P3-1 verify:domain npm script 接线未列**（照 `package.json:18-19` verify:audit/verify:orders 先例一行事）。
+
+## 核验通过项（不立案，列证锚）
+
+§3.3 公式与 `audit-chain.ts:95`（`${prevHash}\n${canonical}` 前缀式）逐字一致、行号引用准；“9→8”计数 v3 全文无残留；§3.6 五写点锚抽查 4/5 全中（products.controller.ts:174 / orders.service.ts:218 / audit.controller.ts:318 / :387-390 @Post('test')）；§3.2 domain_events DDL 在 sqlite 真跑通过、UNIQUE(seq) 索引多 NULL PENDING 行共存实测成立；PaymentOrderId ≤64 字符与 §3.9 列宽匹配。
+
+## 反过拟合扫描（同类未抓实例）
+
+- **A. 两套 bootstrap 分叉未盘点**：DatabaseModule（通配全量实体 glob，2025-06-17 后未跟进）vs app.module 内联 factory（白名单 9 目录）——P0“挂载”若选 DatabaseModule 路线即整体换实体注册集，同表多实体冲突有 Blocker 1 先例（app.module:57-66 注释）。P0 工单必须含此盘点，v3 无。
+- **B. `.catch(() => [])` 吞探测错模式**（20261011000001:62）：修 P0-A 时应同点加探测失败日志，否则下次方言漂移仍静默走错分支。
+- **C. metadata JSON 结构化债同类实例**：metadata.paidAmount/closedAt/subject 同模式留存（P0-18 只抓 refunds）——不扩案，注记备查。
+
+---
+
+## 总判定
+
+**实操面可实施性=中：T9 分腿架构、公式与五写点锚全部经实文件/实跑核验成立，但 P0 行仍是五个字无工单无验收（两轮遗留未消）、TiDB 通路四堵墙未枚举、§3.9 DDL 在 sqlite 真跑即语法错、网关退款查询 API 与 seed 脚本两项排产件无行、双轨切换零交代——按现状开工 P0/P1 即卡；建议修 P0 两项、P1 八项（多数为一行至数行的文档补丁+一行代码）后可进实施。**

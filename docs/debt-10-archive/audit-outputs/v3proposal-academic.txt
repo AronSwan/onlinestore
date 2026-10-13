@@ -1,0 +1,115 @@
+# 债-10 方案 v3 · 学术路（引证忠实度）独立评审报告（第三轮送审）
+
+> 评审对象：`C:\Users\Administrator\onlinestore_remediation\docs\debt-10-architecture-research-proposal-v3.md`（277 行，全文细读）
+> 引证底稿：`docs\debt-10-archive\audit-outputs\research-E-crypto-shredding.txt`（18 卡）、`research-F-relay-selection.txt`（实锚 17 卡，C9 缺号）；涉锚附查 research-A/B/D 三份
+> 方法：本轮 8 条目标全部真取原文逐字比对（WebFetch 主通道；web.archive.org 对 WebFetch 超时，按上轮先例经 curl 复取——复现文件 %TEMP%\qldb_redaction_2022.html / qldb_redactrev_2023.html / perlman.html / tsc_q2.html / pgoutbox.md，检索日 2026-10-13 会话时钟）；v3/v2 引证全集经 grep diff（复现命令见各节）
+> 条款援引：承重陈述出口定律（逐字引文三件齐）＋核查器无脾气令（本报告数字均附口径与复现路径）
+
+---
+
+## 一、任务一：E/F 残余引证补验 8 条（上轮 16 目标之外）
+
+候选替换说明：任务建议单中 **E【12】**（arXiv 2105.14818 摘要两句）与 **E【13】加密腿**（"even state-of-the-art encryption..."）经查上轮归档报告已分别作为正式目标（第一节第 4 条）与三附证（第一节第 1 条）验毕——按“上轮 16 条之外”要求替换为同承重的 **E【11】**（TSC 报告：v3 b 变体重定位的 Fabric 足）与 **E【5】**（Red Badger：v3 §6.1-2 per-subject DEK 升级路径出处）。
+
+**1. E【1】Perlman Ephemerizer——一致（逐字+题录三件齐）**
+- E 引文两句连排："The obvious solution is to store the data encrypted, and then delete the key after expiration. The key is somewhat easier to manage, because it is smaller, but there is still the issue of needing to make the key reliably available for some time, and then reliably destroyed."
+- 原文核验（jissec.org 文章页，curl 直取，摘要段）：两句**全逐字命中**。题录核对：The Ephemerizer: Making Data Disappear / Radia Perlman — Sun Microsystems / JISSEC 1(1):51-68, 2005 / ISSN 1551-0123——与 E 卡四件全符。
+
+**2. E【5】Red Badger CRYPTO_SHREDDING_DESIGN.md——一致（逐字）**
+- 四段目标句全部逐字命中（github.com blob 页真取；raw.githubusercontent.com 本环境 DNS 不可达，换 blob 通道，非不可达项）："events are immutable and append-only" ✓；"Deleting or mutating events would break the event stream's integrity, aggregate rehydration, and audit guarantees"（E 省略号截于 integrity，覆盖合规）✓；"Instead of deleting the events themselves, we encrypt PII fields within events using a per-subject encryption key" ✓；"When a data subject exercises their right to erasure, we delete the key." ✓；"The encrypted PII in the event store becomes permanently unreadable — effectively erased — while the event stream's structure, ordering, and non-PII fields remain intact."（含围 em-dash）✓。
+
+**3. E【9】QLDB working.redaction 限制清单（Wayback 20221114233738 快照）——目标句一致；卡级 ②③ 锚点错置独立复核属实（与上轮 A 项同向）**
+- 目标句 ①：快照实文 "Any ledgers that were created before July 22, 2021 are currently not eligible for redaction."——**逐字命中**（E 卡①为中文转述，忠实）。
+- 目标句 ④："You can redact one revision per transaction."——**逐字命中**。
+- 附带核 ⑤：快照 "QLDB doesn't support the redaction of a particular field within a document revision. To do so, you can first use an UPDATE-REMOVE or FROM-REMOVE statement..."——E 卡⑤中文转述忠实 ✓。
+- 卡级复核（快照全文 9531 字符尽读）：②"Amazon QLDB redaction does not impact data that was replicated outside of QLDB..."与③"QLDB redaction has no impact on literal values in PartiQL statements recorded in the journal"两句**在所锚快照均 0 命中**；独立取【8】姊妹快照（ql-stored-procedures.redact_revision，20230101150426）确认实文均住其 "Redaction considerations and limitations" 节："Redaction has no impact on any QLDB data that is replicated outside of the QLDB service..."（②为转述）与 "Redaction has no impact on literal values in PartiQL statements **that are** recorded in the journal"（③近逐字改写：加 "QLDB" 前缀、去 "that are"）。live AWS 两候选 URL 均 404（服务下线，与 E 口径说明一致）。本轮独立复核与上轮发现 A（②③实出自【8】页——锚点错置）完全同向，无翻案无新案。
+
+**4. E【11】Hyperledger TSC Q2 2023 季报——一致（逐字，双通道）**
+- "Purge Private Data History feature that helps organizations meet GDPR requirements with the ability to delete private data while preserving a hash of the data on the blockchain."——WebFetch 与 curl 直取 HTML 双通道**全句逐字命中**（"Overall Activity in the Past Quarter"节，v2.5.0 LTS 改进清单首条）。
+
+**5. F C2 TiCDC Classic Architecture（docs.pingcap.com/tidb/v7.1/ticdc-architecture）——一致（四句全逐字）**
+- "Puller: pulls DDL and row changes from TiKV nodes." ✓；"Capture: The process that runs the TiCDC node. Multiple Capture processes constitute a TiCDC cluster." ✓；"These nodes regularly report their status to the etcd cluster in PD, and elect one of the nodes as the owner" ✓（原文续 "of the TiCDC cluster"，F 截断未标——同上轮 P3-②类，不另立案）；"TiCDC ensures the consistency of transactions in a single table and eventual transaction consistency in multiple tables." ✓。
+
+**6. F C4 TiUP Topology Reference（stable）——一致（逐字+默认值）**
+- "cdc_servers specifies the machines to which the TiCDC services are deployed" ✓ 逐字；host 必填（"mandatory"）✓；port 默认 8300 ✓；gc-ttl 默认 86400（原文补 "which is 24 hours"）✓。
+
+**7. F C14 AWS Prescriptive Guidance Transactional Outbox——一致（三句全逐字）**
+- "A separate service is in charge of regularly scanning the outbox table for new events, sending them to Amazon SQS, and deleting them from the table if Amazon SQS responds successfully. The polling rate is configurable in the `application.properties` file." ✓（Sample code 节）；"Send messages or events in the same order in which the service updates the database." ✓（Order of notification 条目）；"...preserves the order of messages and events by using timestamps and sequence numbers" ✓。
+
+**8. F C10 pg-transactional-outbox README（unpkg 直取 62675 字节）——一致（数字全套）**
+- v3 §3.4 承重数字逐一对表：TRX_MAX_ATTEMPTS 默认 **5** ✓；TRX_MAX_POISONOUS_ATTEMPTS 默认 **3** ✓；TRX_NEXT_MESSAGES_LOCK_IN_MS 默认 **5000** ✓；TRX_MESSAGE_PROCESSING_TIMEOUT_IN_MS 默认 **15000** ✓；TRX_NEXT_MESSAGES_BATCH_SIZE 默认 **5**（F 区间下限“C10(5)”）✓；TRX_NEXT_MESSAGES_POLLING_INTERVAL_IN_MS 默认 **500**（F“C10(500ms 默认)”）✓。F 卡环境变量名缩写（LOCK_IN_MS/PROCESSING_TIMEOUT）与实名（TRX_NEXT_MESSAGES_LOCK_IN_MS/TRX_MESSAGE_PROCESSING_TIMEOUT_IN_MS）为缩写级差异，数值全符。
+- 附带（见发现 #6）：README 毒丸行原文语义为 "started but did not finish (neither error nor success)"，与 v3 §3.4 括注措辞有差。
+
+**本轮 8 条：一致 8 / 不符 0 / 不可达 0**（目标句层面；卡级缺陷 1 项为上轮 A 项同源复核，不重复立案）。
+
+---
+
+## 二、任务二：v3 声明验证
+
+**声明 1：v3 §0/§6.3 “本版零新增外部引证（只重定位/修正 v2 已有）”——来源口径成立；引文实例口径不成立（P3+P1 各一）**
+- 复现：对 v3 全文提取 URL/arXiv ID/引证锚（grep 复现：v3 唯一 URL 类引证 arXiv:2105.14818，v2 §5.3 已有）；对 v2 全文 grep "centralised|single entity|authorize" = **0 命中**。结论：v3 未新增任何**外部来源**；但新增了**三处引文实例/外部提法**——①§2 EDPB §1 定义句（"a technology that implements a distributed and consistent database without centralised management"）；②§2 EDPB §2 范围句（"Blockchains generated and controlled by and for a single entity are out of scope for part of these guidelines"）；③§2 T9 “Stripe authorize-then-capture 业界同构”。
+- ①②为同一已引来源（EDPB 02/2025 v2.0，v2 经 E【13】已引）的新增引文实例，且本次活页复核（edpb.europa.eu 文档页，2026-10-13 取）：**两句均逐字命中**，版本核对 Final 07 July 2026 与 v3 记法一致——忠实无虞，但“零新增”承重句缺“来源口径/实例口径”限定语（P3）。③无任何锚（见声明 3），“零新增外部引证”在实例口径下被其反向证伪。
+
+**声明 2：v3 §5 对 E【4】GCP“24 小时”失真与 E【8】QLDB 转述段的“不引”处置——验证属实（无缺陷）**
+- 复现：grep v3 全文 "24 小时|30 天|45 天"——唯一命中即 §5 第 234 行“不引”声明行自身；GCP 等待期数字未在 v3 任何论证位使用。QLDB 侧：grep v3 "QLDB|redact|journal"——正文引号内 QLDB 文字仅 §5 “permanently delete...journal storage”（上轮已验主句）；上轮 A 项三段转述（"redaction is not available for active..."、"the metadata is unchanged..."、"dataHash – A structure containing..."）在 v3 **零出现**；§2 “代数同构：data 位→dataHash、链不动”为 E 员自己的代数归纳转引（E 底稿 Q3 同句式），非引文。两处“不引”承诺均兑现。
+
+**声明 3：v3 T9 依据“B 员卡2 单资源原则推论 + W9 同构 + Stripe authorize-then-capture”——Stripe 腿零锚，执笔人外部知识未锚（P1）**
+- 复现：grep 六员底稿 "authorize|授权后|两步|two-step|two-phase|capture"——Stripe 相关仅 B 卡14（webhook 三日重试/不保序/事件不可变）、卡15（Event object）、卡16（Sequin /events 最终一致），**无一处 authorize-then-capture（先授权后捕获两段式支付流）**；全仓 grep "authorize-then-capture" 唯一命中 = v3 §2 T9 来源行自身。
+- B 卡2 腿验证成立：卡2（Debezium 博客）载重句 "By only modifying a single resource - the source service's own database - it avoids any potential inconsistencies" 经活页真取**逐字命中**（Summary 节句首）；W9 为 C 员内部事实卡。
+- 定性：T9 为 v3 唯一新架构裁决（§0 列为头号变更），其来源三腿中一腿为无逐字引文+无出处+无日期的外部业界知识，违本仓承重陈述出口定律①；且该腿同时使 §0/§6.3 “零新增外部引证”在实例口径下不成立。裁决本体不因此倾覆（B 卡2+W9 两腿有锚，且 B 卡2 载重句本轮已验逐字）——故 P1 不升 P0。处置标签按任务预告记为“**执笔人外部知识未锚**”。
+
+**声明 4：v3 §6.3 对 E/F 验证状态的表述——无表述（自判 #5 属实，见任务三）**
+- 复现：grep v3 "抽验|复验|已验|未验"——除头部“学术路引证抽验延续”与 §5 两处缺陷处置（P1-A/P2-C）外，**全文无 E/F 验证覆盖状态陈述**；v2 §6.3 原有行 “E/F 新引文 | 0 次独立复验” 在 v3 被删除且未以更新后状态替代。附带核对 v3 §5 计数勘误两项均准确：E 精读 18 项（v2 枚举 17、漏 AWS 停服清单【7】——E 底稿精读清单逐项数得 18 ✓）；F 实锚 17 条（底稿卡号 C1-C18 缺 C9 ✓，与“以存档 17 为准”一致）。另核 v3 头部“37 份归档”= audit-outputs 实存文件数 ✓。
+
+---
+
+## 三、任务三：自判 #5（E/F 残余状态未更新）验证与呈报评估
+
+**验证**：属实（见声明 4）。v3 既未沿用 v2 旧状态行，也未写入两轮累计后的真状态。
+
+**本轮补验后的准确状态（数字三件齐）**：
+- **目标句口径**：累计验 24 处 = 上轮 16（E 8 + F 6——其中 C1 一卡两目标 + v1 换锚 2 处）+ 本轮 8；目标句级不符 0。
+- **卡覆盖口径**：E 12/18（【1】【2】【3】【4】【5】【8】【9】【10】【11】【12】【13】【16】）+ F 9/17（C1/C2/C4/C5/C10/C11/C14/C15/C16）= **21/35 卡已验**；未验 **14 卡**：E【6】【7】【14】【15】【17】【18】、F C3/C6/C7/C8/C12/C13/C17/C18（复现：两轮归档报告目标清单 ∪ 本报告第一节，与底稿卡号全集作差）。
+- **分母勘误**：任务模板“累计验 24/36”之 36 = E 18 + F 自报 18；v3 §5 已自纠 F=17（C9 缺号），故卡口径分母应为 **35**。执笔人自判中的“残余 20 条”同为该旧口径产物（36−16，且把 2 处 v1 换锚计入 E/F）——按卡口径，本轮前残余应为 22 卡（E 10+F 12），本轮后 14 卡。
+- **应呈报内容（事实性修正材料）**：v3 §6.3 补一行即可承重，例如——“E/F 引证抽验（学术路两轮累计）：目标句 24 处验毕全一致（含 v1 换锚 2 处）；卡覆盖 21/35（E 12/18、F 9/17，F 按 §5 存档 17 计）；未验 14 卡清单见学术路第三轮归档；卡级缺陷维持上轮 A/D/E/F 四项，本轮无新增目标句级缺陷”。逐卡清单不必入 v3 正文，归档件编号引用即可；残余 14 卡中无一处被 v3 正文当前引用（复现：v3 引用的 E/F 卡号全集 = 【8】【4】（§5 处置对象）+ EDPB/2105.14818/Red Badger/C10/C11/C13/C16/W13，均已在已验集内）——即**未验残余对 v3 现行正文零承重**，此点应随状态行同报。
+
+---
+
+## 四、反过拟合扫描（同类未抓实例）
+
+**A. Fabric PDC“多组织联盟链→单库”语境迁移（授权点）——同型但低烈度，适用性注缺位（P3）**
+v3 §2 把 b 变体主动足重排为“Fabric PDC（工业同构，arXiv:2105.14818 设计出处）”。与 EDPB 案（P1-B）对比：①声明类型不同——EDPB 原被用作“监管首选”**规范权威**，Fabric PDC 被用作“工业同构”**类比先例**，且 v3 已显式标“同构”；②借件不同——借用的是代数机制（链锚哈希、私有数据可 purge），该机制与组织语境无关（E 底稿 Q3 同判：“两者与选项 b 同族”）；③但残余语境差未注——Fabric purge 的保障结构依赖跨组织背书策略/channel 数据分发，单库场景为单写者自执行 purge，防篡改效力的来源不同（外部多方可验证 vs 自证）。一句适用性注可闭合，未注记为 P3。另核 “2105.14818=Fabric purge 设计出处”表述与 E 底稿 Q3 原句一致（“学术原论文（Fabric purge 的设计出处...）”），非 v3 新造。
+
+**B. EDPB 泛化口截断（新抓，P2）**：v3 §2 末引 "could prove useful for any blockchain" 支撑“降为同构参考而非弃用”。活页实文（2026-10-13 取）："The mitigation measures found in this document could prove useful for any blockchain **processing personal data**."——v3 引文为逐字子串但截去尾限定语；且该条款适用域为 "any blockchain"——按 v3 自己援引的 §1 定义（distributed、without centralised management），本仓单库链在 EDPB 语境内同样够不到该条款：**用以保留 EDPB 参考价值的泛化口，与用以降级 EDPB 的定义论证使用同一把尺子时自相矛盾**。减轻事实（并列非辩护）：v3 的“迁移方向保守”论证独立成立，不依赖泛化口；上轮归档报告引此句时限定语在位，截断发生在 v3 转引环节。
+
+**C. tryClaim 域内改写呈现（P3）**：v3 §3.4 “F 员 C11 示范：`UPDATE ... WHERE id=:id AND relayState IN ('PENDING','RESUBMITTED')`”——C11 实文（上轮已验）为 `WHERE id = :id AND status IN (PUBLISHED, RESUBMITTED)`；v3 以类引文代码块呈现域内改写值（status→relayState、PUBLISHED→PENDING），未标“域内改写”，读者可误读为 C11 原句。
+
+**D. C10 毒丸括注（P3）**：v3 §3.4 重试行括注“毒丸=同行连续 3 次失败提前死信，避免毒丸占满 5 次”归于 C10——README 实文语义为 "started but did not finish (neither error nor success)"（**非失败**，是未完成态）；“避免占满 5 次”理由 README 未载，属推断未标（v3 同表他行均标“推断”）。
+
+**邻道记录（不计入本路发现数）**：①B 底稿卡12 仍含 v1 幽灵句 "the certificate authority is allowed a 24 hour grace period"（上轮第 16 条已证 Cloudflare 原文无此句）——未流入 v2/v3 正文（grep 复现），仅为归档底稿残留，若日后从 B 卡12 引 MMD 行会再进口幽灵；②v3 计数自留毛边三处：§4.1 “8 条事务底座路径（W4-W6/W8-W11）”括号内实为 7 条、§1 项 7 指针“§1.2”在 v3 无对应节、§3.7 “8 条事务底座路径”总称与表内 W12 行自标“非‘事务底座改造’类”不合——属数据/逻辑路辖域，仅记录。
+
+---
+
+## 五、发现清单
+
+| # | 级 | 发现 | 锚/复现 |
+|---|----|------|---------|
+| 1 | **P1** | T9 来源腿“Stripe authorize-then-capture 业界同构”零锚：六员底稿 grep 0 命中（唯 v3 自身 1 处）；T9 为 v3 头号新裁决，来源三腿之一为执笔人外部知识未锚，并反例证伪 §0/§6.3 “零新增外部引证”（实例口径）。裁决另两腿（B 卡2+W9）有锚且 B 卡2 载重句本轮活页验逐字 | v3 §2 T9 来源行；research-B 卡1-22 全扫；Debezium Summary 句活页 |
+| 2 | **P2** | EDPB 泛化口截断去限定语＋适用域自相矛盾：实文 "...any blockchain processing personal data"，v3 截作 "could prove useful for any blockchain" 支撑“降为同构参考”；该条款域（any blockchain）在 v3 自引的 §1 定义下同样不含单库链。保守方向论证独立成立 | EDPB 文档页（2026-10-13 取）§2；v3 §2 T3/T4 末句 |
+| 3 | **P3** | “零新增外部引证”缺口径限定语：来源口径真（无新外部源）；实例口径假（EDPB §1/§2 两句新引文实例——本次活页复核均逐字——另加发现 #1 一处） | v3 §0 变更 3 / §6.3 表；v2 grep centralised=0 |
+| 4 | **P3** | Fabric PDC 多组织→单库语境迁移无适用性注（声明类型为同构类比＋借用件为语境无关代数，烈度低于 EDPB 案，故 P3 非 P1） | v3 §2 T3/T4 重定位行；本报告第四节 A |
+| 5 | **P3** | v3 §3.4 tryClaim 以类引文代码块呈现 C11 域内改写 SQL，未标“域内改写” | v3 §3.4 不变式 3；F C11 实文（上轮验） |
+| 6 | **P3** | v3 §3.4 C10 毒丸括注：实文语义 "started but did not finish (neither error nor success)" 被放宽为“连续失败”；“避免占满 5 次”为 README 未载之推断未标 | %TEMP%\pgoutbox.md 行 644；v3 §3.4 重试行 |
+| 7 | **P3** | E/F 验证状态未更新（自判 #5 复核属实）：v3 全文无状态陈述；修正材料=本报告第三节数字（目标句 24 处全一致；卡 21/35；未验 14 卡对 v3 正文零承重） | v3 grep 抽验/复验；两轮归档+本报告 |
+
+---
+
+## 六、总判定
+
+**学术路发现 7 项（0 P0 + 1 P1 + 1 P2 + 5 P3）/ 本轮补验 8 条：一致 8 / 不符 0 / 不可达 0 / 累计验 24 处目标句（卡口径 21/35——“36”为 F 自报旧分母，v3 §5 已自纠 17 卡，按纠后口径分母为 35；目标句级两轮累计不符 0）**
+
+附注：①8 条目标句全部逐字命中，缺陷项均出 v3 侧声明/转引环节或底稿卡级旧案（E【9】②③锚点错置为上轮 A 项同源独立复核，未另立案）；②v3 §5 两处“不引”承诺经验证均兑现；③网络通道：web.archive.org 与 raw.githubusercontent.com 对 WebFetch 超时/DNS 失败，均经 curl/github-blob 复取成功，无不可达项；④B 卡2 载重句（T9 依据）与 EDPB 活页两句为本轮附验，均逐字命中。
+
+---
+评审席：学术路（引证忠实度）· 独立评审员（第三轮）
+本报告未修改任何被审文件；未参考其他评审路输出；除任务三明令要求的呈报内容评估外不含立场推荐项（仅事实定性）。

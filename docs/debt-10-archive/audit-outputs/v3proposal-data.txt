@@ -1,0 +1,94 @@
+数据路独立评审（第三轮·送审 v3）实测完毕。以下为逐项报告。
+
+---
+
+# 债-10 方案 v3 数据路评审报告（第三轮送审）
+
+条款援引：P__（承重陈述出口定律①②/呈报纪律③/diff 总闸计数维度，见 AGENTS.md；无争议不逐条展开）
+
+## 一、常规任务实测
+
+### 1. DDL 实测（py -3.14 + sqlite3 :memory:，DDL 原文照抄）
+
+**§3.2 domain_events：全绿**
+- 建表 + 3 索引（唯一 seq/relay/agg）：全部成功
+- 两行 PENDING（seq=NULL）共存：通过——sqlite 唯一索引允许多 NULL，“正确算法下 PENDING 行不撞唯一索引”成立
+- INLINE 行 seq=1 二次插入：被拒（`UNIQUE constraint failed: domain_events.seq`）
+- NULL 与非 NULL seq 混存（3 行 NULL + 1 行 seq=1）：共存成立
+- §4.2 判据 2 SQL（`relayState='INLINE' AND seq IS NULL`）：跑通
+
+**§3.9 payment_refunds：sqlite 实测炸——P1**
+- 原文照抄建表：**`near "ON": syntax error`**——`updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP` 为 MySQL/TiDB 专有子句，sqlite 不支持
+- 病灶定位：剥离该子句后其余全部建表成功——失效面=仅 ON UPDATE CURRENT_TIMESTAMP 一处
+- 矛盾链：§3.2 DDL 自带“sqlite (dev)/MySQL/TiDB (prod)”分支注且实测 sqlite 全绿；§3.9 **无任何方言分支注**；而 §4.1 P1 把 payment_refunds 表列为交付、§4.2 判据 1 要求“表迁移**双方言**跑通（sqlite+TiDB）”——按 §3.9 原文写迁移，sqlite 腿必炸。v1 四 P0 之一“DDL 双路实跑”的纪律在本版新增表上失守
+
+### 2. camelCase 一致性（“消灭映射层”兑现验证）：**通过**
+- canonical 11 键逐字全部存在于 §3.2 DDL 18 列中（脚本比对，零缺失；payloadHash 确居第 9 键，v3 §3.3 表述准确）
+- audit_logs：`backend/src/common/audit/entities/audit-log.entity.ts` 链列 seq/prevHash/recordHash camelCase；迁移 `20261005000001-add-audit-chain-columns.ts` 实 SQL `ADD COLUMN prevHash/recordHash`（camelCase 无引号）
+- order_snapshots：迁移 `20261011000001` 与 entity 均 camelCase（orderId/schemaVersion/prevHash/recordHash/occurredAt 等）
+- 全仓无 NamingStrategy 覆盖（backend/src 无 snake 命名策略配置）——列名=属性名直读成立
+
+### 3. T9 配套锚：**三锚全中**
+文件 `C:\Users\Administrator\onlinestore_remediation\backend\src\payment\application\services\payment-application.service.ts`：
+- :371-449 = `createRefund` 方法整体（:371 签名、:449 收尾，逐行核对）
+- :394-409 = 域守卫 try/catch（`paymentOrder.createRefund` + RefundNotAllowedError/CurrencyMismatch/Overpaid→ConflictException 409）
+- :413 = `const gatewayResult = await gateway.createRefund({`（外部网关网络往返）
+- :425 = `await this.paymentOrderRepository.save(paymentOrder)`
+- “域守卫与 save 之间夹 gateway 调用”的顺序陈述与代码实况完全一致
+
+## 二、定向核查项
+
+### 【自判 #1】旧迁移 TiDB 雷本体未修——**成立，P1**
+- `backend/src/database/migrations/20261011000001-create-order-snapshots-table.ts:26-27` 实况：先 `toLowerCase()`，再 `v.includes('mysql') || v.includes('mariadb')`——真 TiDB 版本串（`8.0.11-TiDB-v…`）两者皆不含 → 走 else 分支 → `sqlite_master` 查询在 TiDB 报错被 `.catch(()=>[])` 吞 → 以双引号标识符 CREATE TABLE → TiDB 默认 sql_mode（无 ANSI_QUOTES）下语法错误。迁移在 TiDB 上会失败
+- v3 全文 grep：旧迁移编号仅在 §3.2 注②作为“仓内先例”出现（只规定**新迁移**判定须含 'TiDB'）；§4.1 P0“方言探测修复验证”只验新修复。**无任何旧迁移修复行**——自判原文属实
+- 连带：§4.2 判据 1“表迁移在真 TiDB 跑通”会先撞上这条未修旧迁移（迁移链顺序执行）
+
+### 【自判 #5】E/F 抽验残余面——**成立，P2**
+- 实际状态（v2proposal-academic.txt 实测）：“抽验 16 条：一致 16/不符 0/不可达 0”（E 8/18 + F 6/18 + v1 幽灵换锚 2）；E 实锚 18（research-E:154 卡号【1】-【18】齐，含 v2 漏数的 AWS 停服清单【7】）+ F 实锚 17（C1-C8+C10-C18，C9 缺号——独立清点证实）= 35 条，**剩余 19 条未验**
+- v3 §6.3 实况：v2 的“E/F 新引文 | 0 次独立复验”行被**删除**，替换为“v3 新增引证 | 0（本版未新增）”——回答的是另一问题；剩余未验规模（19 条）在 v3 全文零露面，仅头部“学术路引证抽验延续”暗示。负面项从命中率表消失，呈报纪律③面
+
+### 【计数全清点】（承重数字逐一实测）
+
+| v3 数字 | 实测 | 判定 |
+|---|---|---|
+| 276 行 | wc -l = 276 | ✓ |
+| 12 P1（§1 表） | 12 行；b0310ac message "0P0+12P1+15P2+18P3" 同口 | ✓ |
+| 成文级 10 项 | §0-3 列举恰 10 | ✓ |
+| 8 条底座路径 | **W4-W6/W8-W11 枚举=7 条** | **✗ P1（下述）** |
+| 11 键 | 11，逐字入 DDL | ✓ |
+| 37 份归档 | **audit-outputs 实测 38 份**（git ls-tree @b0310ac/@a3e3d76 均 38） | **✗ P2（下述）** |
+| 未决 12 项 | §6.1 九项+§6.2 三项 | ✓ |
+| 推断 3 处 | grep 恰 3（批大小/退避/告警） | ✓ |
+| 来源标注 | v3 无“10 处”宣称；实测【来源：】块 2 处（T3/T4、T9），**T5 无来源行**（v2 体例“每个裁决=来源标注”） | 注记（P3） |
+| 六判据 | 6 | ✓ |
+| E 18 / F 17 | 卡号【1】-【18】齐 / C1-C8,C10-C18 | ✓ |
+| commit 70e8fc2 / b0310ac 12 份 | 均存在；b0310ac stat 恰 12 文件 | ✓ |
+| 五写点锚 | products.controller:174（:211/:539/:562 为 auditProductWrite 创建/更新/删除）/orders.service:218/audit.controller:387-420（@Post('test')）/audit.controller:318（@Post('cleanup')）全部存活；“# 行不破坏锚解析器”实测成立（verify-audit-chain.mjs:128 `!l.startsWith('#')`，现锚文件头 3 行即 # 注释） | ✓ |
+| audit-chain.ts:94-95 | :95 = `createHash('sha256').update(\`${prevHash}\n${canonical}\`)` 前缀式同族 | ✓ |
+| C16"once every 1 or 5 minutes"/兜底角色修正 | research-F:106-108,129 逐字证实（主轮询 500ms-5s、兜底 1-5min——v2 角色错位确认） | ✓ |
+| C10 TRX_MAX_ATTEMPTS=5/毒丸 3、C11 tryClaim | research-F:131 及学术路抽验#12 逐字 | ✓ |
+| E【4】GCP 24h 失真（现页 30+45 天）/E【8】主句/EDPB 两引文/D 员 Q2 四标准零明文/学术路 P1-A | 全部与存档逐字相符 | ✓ |
+| 13 席 P0-18、§8.4 v6 六问 | 均存在（summary:68/:400） | ✓（但 P0-18 引文字面失真，见 P2-4） |
+| “7 轮 0 过” | v2 称 6 轮+复审轮=7，算术自洽 | ✓ |
+
+## 三、反过拟合扫描（新抓实例）
+
+- **P1【新】“8 条”计数错**：v2 原标“9 条（W4-W6/W8-W12）”枚举 8 条被抓（9≠8）；v3 修 9→8 的**同时**把 W12 移出底座类（§3.7 表内明示 W12“非‘事务底座改造’类”，§4.1 P2 行也把 W12 单列于“8 条”之外），却未联动把 8 减为 7——两个变更打架，修复引入新错。承重范围数，同 v2 被抓之病类
+- **P2【新】37 份实为 38 份**：b0310ac message“合计 37 份（6+12+19 历史轮）”自数错（历史轮 v3-round1×2+v3-round2×6+v4×6+v5×6=20 份），v3 头部承重句照抄未复点
+- **P2【新】P0-18 引文失真**：v3 §2 T9/§3.9 两处把“退款落 metadata JSON 无结构化”加引号挂 13 席 P0-18 名下；13 席正身（debt-10-coordination-summary-13-seats.md:68）原文为“退款场景完全失语——createRefund 路径零 audit/snapshot”，该文件 grep "metadata" 零命中。实质可独立证真（typeorm-payment-order.repository.ts:22-30 注释：“未列字段进 metadata JSON……refunds → metadata JSON”），但引号内非他人原文——锚定律①字面违规（内容真，故 P2 不升 P1）
+- **P3【新】§3.2 注②配方大小写前提未钉**：配方 `includes('TiDB')||includes('mysql')||includes('mariadb')` 对原始版本串成立；仓内唯一先例（20261011000001:26）先 toLowerCase 再判——照先例习惯套字面配方则 'TiDB' 永不命中小写 'tidb'，探测修复静默失效
+- **P3【新】§3.4 标题“三不变式”下列 4 条**（不变式 0/1/2/3，0 为本次 ▲ 补）——标签计数≠枚举，轻量同病
+- **P3** T5 裁决缺来源标注行（v2 §2 体例“每个裁决=来源标注”在本版 T5 失件）
+
+## 四、总表
+
+| 级 | 项 |
+|---|---|
+| P0 | 无 |
+| P1 | ①【自判#1 成立】旧迁移 20261011000001 TiDB 雷本体未修（v3 只约新迁移，P0 冒烟/判据 1 将撞雷）；② §3.9 payment_refunds DDL 含 MySQL 专有 `ON UPDATE CURRENT_TIMESTAMP`，sqlite 实测 syntax error，与判据 1 双方言要求直接冲突且无方言分支注 |
+| P2 | ③ “8 条事务底座路径”实为 7 条（W12 移类未联动减数）；④ “37 份归档”实为 38 份；⑤【自判#5 成立】E/F 剩余 19 条未验的状态在 §6.3 被替换而非更新，负面项不露面；⑥ P0-18 引号内字面非 13 席原文（实质仓内可证真） |
+| P3 | ⑦ 探测配方大小写前提未钉（与先例 toLowerCase 习惯冲突可致静默失效）；⑧ §3.4“三不变式”实列 4 条；⑨ T5 缺来源标注行 |
+
+**总判定一行**：数据面主体（§3.2 DDL、camelCase 一致性、T9 三锚、引文修订链、绝大多数承重计数）实测全绿，但 2 P1（旧迁移 TiDB 雷未修+§3.9 DDL sqlite 不可执行）+ 4 P2 成立——v3 不可原样签收，P1 两项须落 diff 后再送。
+
+（本评审未修改仓内任何文件；sqlite 实测脚本仅存于 /tmp/ddl_test.py；未参考其他评审路输出；按要求不给推荐。）
