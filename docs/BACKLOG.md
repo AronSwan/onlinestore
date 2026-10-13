@@ -425,3 +425,41 @@
 
 安全基线：`docs/safety.md`（规则→落点→锁）；验证：README"验证"节三命令；
 整改全程记录：`docs/remediation-ledger.md`；密钥一律重生成（历史提交中存在旧密钥，开启 GitHub secret scanning 已做）。
+
+### 低质量检查组 + 阶段性验收（2026-10-13 阶段 3+4 整改后挂账）
+
+**【挂账批：阶段 3+4 production-readiness 债】**（2026-10-13 用户令"是否真的做到了系统正确负责任"后立）
+
+**已知未做**（双盲审 X1/X2/Y1/Y2 + 低质量检查 A/B 席抓出 + 自审承认；整改批 `dd0f92e` / `774188e` / `6ee77fa` / `b46cb78` 仅治症状未治根因）：
+
+- **债-1** control plane 零 spec（order-snapshot.controller 5 端点 / order-snapshot-read.service / reconcile-orders.mjs 全无 spec）——为什么不做：本会话已用 jest 89/89 + tsc 0 + 3 脚本跑验替代，但纯函数测盖不住 HTTP/真库集成路径；生产切换前必补。**触发事件** = 准备上 production/staging 真环境前；**排期锚** = 待定新批"control-plane spec 批"（用户裁批名时排入）。【为什么不做+触发事件+排期锚，三选一齐】
+
+- **债-2** P1-E 修是"读取侧补偿"非系统性（TypeORM 水合对象 vs 写侧原生字符串不对称，verifyChain 读取侧转原生）——为什么不做：根治方案=统一约定写/读都用同一形态（如全存对象+`canonicalValue` 内判形态），影响全仓所有读写点，超本会话范围。**触发事件** = 准备引入 PG/TiDB 方言切换时（届时写/读形态差异会暴露在多 dialect 下）。【触发事件】
+
+- **债-3** OrdersService.findById 仍 `relations: { items: true, user: true }`（P2-F 只补了 snapshot controller 的 findOwnership 调用，orders.controller.findOne 仍在用）——为什么不做：findById 是 orders controller 主接口，签名变更涉及面广，需评估"是否所有 caller 都需要 relations"。**触发事件** = orders.controller.findOne 接入 P2 性能债清理时（应同时复审 findById 签名）。【触发事件】
+
+- **债-4** P2-J getSnapshots 分页无 max cap + 无 totalCount——为什么不做：完整分页需 cursor/total + max limit（防止 take=1000000 攻击）+ 响应包装。**触发事件** = 准备上生产 + 单 history > 50 阈值时。**排期锚** = 待定"control-plane spec 批"同批（与债-1 共批）。【排期锚+触发事件】
+
+- **债-5** 性能数字未独立复测（B 席报 396/408/1698ms 等，本会话仅"通过/不通过"未跑 bench）——为什么不做：本会话内真库 perf bench 需要 30MB+ 合成库搭建（30 分钟以上），超本会话范围。**触发事件** = 准备上生产压测前。**排期锚** = 待定"perf bench 批"（与阶段 1 余量"P0 真库测试基建"合并）。【排期锚+触发事件】
+
+- **债-6** 阶段 1 余量 5 项全未动（真库 appendSnapshot spec / 二级索引按需 / 日期分支 formatCanonical / 拆分写串行 / PG 方言）——为什么不做：每项均需独立施工，本会话范围止于"阶段 3+4 主体+整改"。**排期锚** = "阶段 1 余量批"（commit message 已挂账若干次但无独立批名）。**触发事件** = 阶段 5 启动时。**日期** = 截止下次阶段性验收前。【排期锚+触发事件+日期】
+
+- **债-7** commit 60d0f6d 含失实动机 "F-003 busy-wait→setTimeout"（父树无 busy-wait）已改注释 + P2-N 勘正，但 git 历史永久——为什么不做：git 历史不可改，但需在 PR 描述 / 移交文档里加"勘正注"。**触发事件** = 准备做首次代码移交/PR 时（移交文档须含本条勘正）。【触发事件】
+
+**已知 partial 修复**（P2-F 同病已部分治）：
+
+- P2-F：findOwnership 投影 id+userId 仅补了 order-snapshot.controller 4 handler 入口；orders.controller.findOne 仍走 findById（见债-3）。
+
+**观察行**（单例观察项，规则 6；不计数不入挂账）：
+
+- commit message 数字失实（"70% 重复代码消" / "5 端点" / "F-003 busy-wait"）——判单例依据：均为本会话批内自产未独立验证即写入；记录 2026-10-13；升级触发线：再出现"未独立复测即写入 commit message 的承重数字"即升格挂账行（谓词=数字无复现命令三件套即入账）。
+- P2-K formatAnchorHeader 调命令参数化后，verify-audit-chain.mjs 仍手写锚行解析（未切 parseAnchorLine）——判单例依据：仅 audit 端一处未切；记录 2026-10-13；升级触发线：再发现"共享模块抽出但部分 caller 仍手抄同源实现"即升格挂账行（谓词=新批抽出后≥1 caller 仍手写 ≥ 5 行同源逻辑）。
+
+**总债数**：7 条挂账（债-1~债-7）+ 2 条观察行。
+
+**下批准备动作**：
+1. 阶段 1 余量批立项（合并债-6 + 债-5 性能 bench 部分）
+2. control-plane spec 批立项（合并债-1 + 债-4）
+3. PG/TiDB 切换准备时合并债-2
+4. 首次 PR/移交前补债-7 勘正注
+
