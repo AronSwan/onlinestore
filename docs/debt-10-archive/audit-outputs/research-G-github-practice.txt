@@ -1,0 +1,324 @@
+调研完成，证据链闭合。以下为 G 员最终报告。
+
+---
+
+# G 员调研报告：GitHub 开源生态中的 tamper-evident log 实践（债-10）
+
+**任务书授权行：有**
+
+**方法论口径（诚实声明）**
+- 检索日期：任务书要求标注 2026-10-14；宿主机实际日期为 2026-10-13，本次检索发生于 **2026-10-13**，以下一律按实际检索日标注。
+- WebFetch 的页面内容经小模型转写，引文可能存在细微转写误差；短句风险低，长句均已截为 ≤3 行。
+- 标注规则：**三件齐** = 逐字引文 + 出处 + 检索日期；**线索** = 仅有搜索引擎快照或二手转述、未能直抓原文，不作为承重证据。
+
+---
+
+## Q1 行级链式 vs Merkle：真实取舍
+
+### 发现 1.1：头部 Merkle 项目全部把树放在独立层，无一例外住在业务表内
+
+**google/trillian**（CT 的生产 Go 实现；3.8k stars，3,563 commits，**维护模式**）：
+
+> "A transparent, highly scalable and cryptographically verifiable data store."
+
+> "Trillian implements a Merkle tree whose contents are served from a data storage layer"
+
+> "Trillian requires particular applications to provide their own personalities"
+
+> "Trillian is in maintenance mode." / "We recommend that any new log operators first try Tessera."
+
+（github.com/google/trilian README，检索 2026-10-13）
+
+架构答案：Merkle 住在**独立 gRPC 日志服务**里，MySQL/MariaDB 只是存储层；应用（personality）自带。即：**Merkle 与业务库物理分离，业务表内无树**。
+
+**transparency-dev/tessera**（Trillian 官方推荐继任者；251 stars，997 commits）：
+
+> "Tessera is a Go library for building tile-based transparency logs (tlogs)"
+
+> "Library instead of microservice architecture" / "No additional services to manage"
+
+> "It is the logical successor to the approach Trillian v1 takes in building and operating logs."
+
+（github.com/transparency-dev/tessera README，检索 2026-10-13）
+
+2025-26 的层位动向：**从独立服务下沉为可嵌入库**（存储走 GCP/AWS/POSIX 驱动），但仍是专用日志子系统，不是业务关系表里的结构。
+
+**sigstore/rekor**（1.2k stars，2,514 commits）：
+
+> "Rekor's goals are to provide an immutable tamper resistant ledger of metadata generated within a software projects supply chain."
+
+> "Rekor v1 is in maintenance mode." / "Rekor v2 will be backed by a tile-based log and will use a modernized version of Trillian, Trillian-Tessera."
+
+（github.com/sigstore/rekor README，检索 2026-10-13）
+
+Rekor 的架构前提同样是**独立 log 服务**（v1 叠在 Trillian 上，仓里有 Dockerfile.trillian-log-server/signer）。
+
+**codenotary/immudb**（9.0k stars，4,902 commits）：
+
+> "immudb is a database with built-in cryptographic proof and verification."
+
+> "Cryptographic commit log with parallel Merkle Tree,"
+
+> "It tracks changes in sensitive data and the integrity of the history will be protected by the clients,"
+
+（github.com/codenotary/immudb README，检索 2026-10-13）
+
+即"自证验证模型"（不信任 DB、客户端验）——与本仓验证哲学同构，但载体是**专用不可变库**，非业务库内行级结构。
+
+### 发现 1.2：行级链在业务库内有活体，但都是小库/小项目/独立证据汇
+
+**tamper-audit**（Rust crate，v0.2.0，crates.io 快照日期 2026-09-09）：
+
+> "Tamper-evident audit logging for Rust."
+
+> "auditlog provides an immutable, SHA-256 chained audit log with queryable entries and chain verification."
+
+（docs.rs/tamper-audit，检索 2026-10-13；存储层页面仅见 InMemoryStore，含可选 sqlx 依赖）
+
+线索级（快照，未直抓原文）：crates.io 另有 `security_events`（"Hash-chained, tamper-evident audit log where each event commits to its predecessor; supports HMAC event signing for integrity verification."——HMAC 与本仓 HMAC payloadHash 同构）、`libro`、`sovereign_ledger`、`vellaveto-audit`；npm 侧仅见 `json-record`（"record ledger, hash-chain, append-only, tamper-evident histories"）与零依赖教程（dev.to 2025-12-27）。npm 无头部包。
+
+**google/cybernetic-agent-governance-engine (CAGE)**（36 stars，635 commits，README 标注 release v3.1.0 2026-09-22）：
+
+> "Each node's record_hash binds SHA-256(prev_hash ‖ content_json ‖ control_id ‖ event_type ‖ node_index ‖ audit_id)"
+
+> "Each node's record_hash is SHA-256(prev_hash ‖ content_json), producing a tamper-evident chain-of-custody"
+
+（README，检索 2026-10-13）
+
+注意：Google 系项目用行级链，但链住在**专用证据汇**（Redis Streams Hash-Chained Evidence Sink + WORM bucket），不在业务库表内。
+
+**Abhi-mishra998/aegis**（5 stars，2 forks，697 commits；AI agent 治理控制面）——本仓设计的近同构体：
+
+> "Each row's prev_hash is the previous row's event_hash."
+
+> "Computes chained event_hash: SHA-256(prev_event_hash || canonical_hash)."
+
+> "Rewriting row N forces a rewrite of every subsequent row in the same shard."
+
+（docs/security/crypto-audit-chain.md，检索 2026-10-13）——**Postgres 业务库内行级链**，与 Trillian 级项目相反。
+
+**Q1 映射**：对“行级链式”裁决=**部分支持**（小项目/教程/crate 层是活体实践，Google CAGE、aegis 均为 2026 年行级链实例）；对“业务表内不做 Merkle”=**强支持**——**未找到任何“业务库内行级 Merkle”先例**，头部生态一律独立层。本仓“表内轻结构 + 升格走新纪元”与生态分层精神一致。
+
+---
+
+## Q2 同事务写入 vs 异步链化
+
+### 发现 2.1：Debezium outbox = 本仓“类 2”的工业标准形态
+
+Debezium 官方博客（2019-02-19，检索 2026-10-13）：
+
+> "but, as part of the same transaction, also a record representing the event to be sent is inserted into that outbox table"
+
+> "we cannot have one shared transaction that would span the service's database as well as Apache Kafka"
+
+> "An asynchronous process monitors that table for new entries. If there are any, it propagates the events as messages to Apache Kafka."
+
+官方文档（debezium.io/documentation/reference/stable/transformations/outbox-event-router.html，检索 2026-10-13）：
+
+> "An outbox pattern implementation avoids inconsistencies between a service's internal state (as typically persisted in its database) and state in events consumed by services that need the same data."
+
+即：**事件行同事务写库、发布/加工异步后补**——与本仓类 2（异步腿）同一形状，是微服务世界的标准解。
+
+### 发现 2.2：aegis 是“类 1+类 2 并存”的活体
+
+> "Atomic transaction: INSERT audit_logs plus INSERT pending_usage_events."
+
+> "chain_shard — int — per-(tenant, day) shard so concurrent writers don't serialize globally"
+
+（aegis crypto-audit-chain.md，检索 2026-10-13；README：审计写经 Redis stream 异步流过、"never block requests"）——行写入同事务、链化由异步 worker 读 tail hash（Redis 缓存或 Postgres）后补，用**分片避免全局串行**。
+
+### 发现 2.3：同事务一步链化的并发代价有明文讨论（对本仓类 1/3 的限定条件）
+
+AppMaster 教程（2025-08-29，检索 2026-10-13）：
+
+> "If two transactions write audit rows at the same time and both use the same prev_hash, you can end up with forks."
+
+> "Common approaches are locking a single row that represents the stream head, or using an advisory lock keyed by the stream id."
+
+> "serialize “get last hash + insert next row” for each stream"
+
+即行级链的经典坑：**并发写同一链尖会分叉**，同事务一步链化必须串行化（advisory lock/单写者/分片）。这正是 Crosby-Wallach 低事件量假设的工程落点。
+
+### 发现 2.4：CT 生态在“承诺凭证”场景选择了同步一步式
+
+Cloudflare Azul 博客（2025-04-11，检索 2026-10-13）：
+
+> "the static CT specification requires logs to hold on to requests as it batches and sequences them, and responds with an SCT only after entries have been incorporated into the log."
+
+> "The sequencer periodically (every 1s, by default) sequences the pool of pending entries"
+
+背景是 Nimbus 2023-11 停机期间 RFC6962“先承诺后入链”模式大量违约 MMD——新规范改为**入链后才发 SCT**（对外同步、内部仍 1 秒批处理）。含义：凡对外发出“已入账”承诺，生态实践趋向类 1/3（先入链后承诺）。
+
+**Q2 映射**：本仓三腿分法（类 1/3 同事务、类 2 异步）与生态实践吻合——**支持**，附限定：类 1/3 需处理链尖串行化（本仓低事件量前提对应），类 2 的窗口期语义要在验证模型里明示（outbox 语义=至少一次、可能延迟可见）。
+
+---
+
+## Q3 键序/schema 演进：新纪元有生态级先例
+
+### 发现 3.1：CT 时间分片 = 年度新纪元
+
+Google Chrome CT Log Policy（googlechrome.github.io/CertificateTransparency/log_policy.html，检索 2026-10-13）：
+
+> "The certificate expiry ranges for CT logs must be no longer than one calendar year and should be no shorter than three months."
+
+> "CT logs will be removed from Chrome once their certificate expiry range has passed."
+
+> "When log operators in good standing have one of their logs removed in this manner, they should stand up a new CT log whose expiry range extends"
+
+Cloudflare Azul 实例（半年度纪元，2025-04-11 博客）：
+
+> "Cloudflare Research 2025h1a and Cloudflare Research 2025h2a (accepting certificates expiring in the first and second half of 2025, respectively)"
+
+### 发现 3.2：sumdb 把“纪元式演进”内建进 URL
+
+Go sumdb 设计文档（go.googlesource.com/proposal design/25530-sumdb.md，作者 Russ Cox/Filippo Valsorda，检索 2026-10-13；文档日期未在抓取中确认）：
+
+> "Including the full database URL allows a transition to a new database log, such as `sum.golang.org/v2`."
+
+### 发现 3.3：Rekor v1→v2 冻结 = 带预告的新纪元
+
+> "We will eventually freeze Rekor v1, disallowing new entry uploads. This will be announced one year in advance as per our deprecation guidelines."
+
+（blog.sigstore.dev/rekor-v2-ga，2025-10，检索 2026-10-13）
+
+### 发现 3.4：结构性免疫 schema 变更（叶子不透明）
+
+> "Trillian requires particular applications to provide their own personalities"
+
+（Trillian README，检索 2026-10-13）——log 只存不透明叶子，schema 住在应用层，日志结构永不重排——与本仓“链不含明文（HMAC payloadHash 锚）”同思路：**承重结构最小化，可变内容外置**。
+
+**Q3 映射**：**强支持**新纪元裁决（CT 年度/半年度分片、sumdb /v2、Rekor 冻结三点齐）。缺口：**未找到明说“旧纪元数据永续可验”的引文**——CT 政策只说从信任程序移除（≠数据可验性承诺）。本仓“旧行永续可验”比生态先例承诺更强，属自我加码项，需自行兜底（如旧纪元外锚封存）。
+
+---
+
+## Q4 锚/digest 外部发布实践
+
+### 发现 4.1：OpenTimestamps——外部不可变介质锚定的成本模型
+
+opentimestamps-client（425 stars，579 commits，检索 2026-10-13）：
+
+> "using the Bitcoin blockchain as a timestamp notary."
+
+> "we're not doing one transaction per timestamp."
+
+> "the Bitcoin chain is widely witnessed."
+
+> "a failure of Bitcoin itself, eg due to 51% attack, is not sufficient to make Bitcoin timestamps from the past unverifiable"
+
+要点：**批量聚合后锚定**（摊薄成本）、介质需“广泛见证”、锚定产物（.ots 证明）离线可验——与本仓“定期把 digest 锚到 git”同构（定期/批量/外部不可变介质/离线验证）。方向相反：OTS 是 git→Bitcoin，本仓是业务→git。
+
+### 发现 4.2：witness 反签 checkpoint（Rekor v2 已集成）
+
+transparency-dev/witness（40 stars，527 commits，检索 2026-10-13）：
+
+> "verifying that tlogs are evolving in an append-only manner, and counter-signs checkpoints that represent an append-only evolution"
+
+> "A witness is an entity which helps to prevent split-view attacks by transprarency logs (tlogs)."（原文拼写如此）
+
+Rekor v2 GA（2025-10，检索 2026-10-13）：
+
+> "Rekor v2 also will provide stronger security guarantees that the log remains append-only by integrating witnessing"
+
+Go sumdb 同构（设计文档，检索 2026-10-13）：
+
+> "/latest will serve a signed tree size and hash for the latest log."
+
+线索（闭源已停服）：Amazon QLDB 曾内置 digest 导出（GetDigest→S3 外部保存）；AWS Blog 2019 快照："Journal – A journal consists of a sequence of blocks, each cryptographically chained to the previous..."。QLDB 已于 2025-07-31 停服（InfoQ 2024-07 报道）。——佐证“摘要外发到不可变介质”是通用形态，也提示此类产品形态运维沉重。
+
+**Q4 映射**：**部分支持**——“定期摘要锚定外部不可变介质+离线验证”模式高度成熟同构（OTS/witness/sumdb/QLDB 四源）；但 **“digest→git 仓”这一特定介质与方向的直接开源先例未找到**。git 作为锚定介质的不可变性依赖签名/reflog 保护，本仓需自查该假设（例如锚定仓本身被 force-push 的防御）。
+
+---
+
+## Q5 链式↔Merkle（或架构层）迁移的真实案例
+
+### 发现 5.1：Rekor v1→v2（2025-10 GA）：换存储后端、保透明日志概念
+
+> "transitioning its backend to a tile-backed transparency log implementation to simplify maintenance and lower operational costs"
+
+> "you can turn down Trillian log server and log signer instances"
+
+> "make sure to update your verification pipeline before transitioning your signing pipeline."
+
+（blog.sigstore.dev/rekor-v2-ga，检索 2026-10-13）
+
+### 发现 5.2：Cloudflare Nimbus(Trillian 路线)→Azul(tiles on Workers)（2025-04）
+
+> "The high bar for log operation has limited the organizations operating CT logs to only Cloudflare and five others!"
+
+> "CT log operators can efficiently serve static tiles from S3-compatible object storage buckets and cache them using CDN infrastructure, without needing dedicated API servers."
+
+（blog.cloudflare.com/azul-certificate-transparency-log，检索 2026-10-13；azul 仓 63 stars，"built for deployment on Cloudflare Workers"）
+
+### 发现 5.3：Go 生态“签名清单→透明日志”的设计期抉择（最接近“非 Merkle→Merkle”）
+
+> "The simplest possible approach, which we never seriously considered, is to have one trusted server that issues a signed certificate for each module version."
+
+> "Requiring a checksum database to log a `go.sum` entry in a transparent log before accepting it does raise the likelihood of detection."
+
+> "The original name for the Go checksum database was “the Go notary,” but we have stopped using that name to avoid confusion with the CNCF Notary project"
+
+（sumdb 设计文档，检索 2026-10-13）——记录了弃用“单点签名清单”、选透明日志的理由：单点签名可被定向作恶而不易察觉（split-view），透明日志提高暴露概率。这与本仓“链式+自证”与“Merkle+独立见证”的分野讨论同题。
+
+**Q5 映射**：找到 3 个“存储/服务架构迁移、Merkle 概念保留”案例（Rekor、Azul、sumdb 设计抉择）；**未找到“行级哈希链↔Merkle”直接对调的现网迁移记录**。含义：生态的迁移轴是“部署与存储形态”，数据结构一旦上线即不动（用纪元换新）——本仓“链式起步+新纪元预留升格路径”与该模式一致；反向（Merkle→链式）无先例，不应指望。
+
+---
+
+## 裁决检验总表
+
+| # | 本仓裁决点 | 开源实践判定 | 关键证据 | 含义 |
+|---|---|---|---|---|
+| 1 | 行级链式（业务表内） | **部分支持**（有限先例） | aegis（Postgres 业务库内行级链）、CAGE（行级链但独立证据汇）、Rust crates 生态（tamper-audit 0.2.0 等）、npm 薄 | 小型实践是活体；头部生态零例外不在业务表内放承重结构——本仓需自知这是小众路线 |
+| 2 | Merkle 层位=独立层 | **支持**（强） | Trillian 独立 gRPC 服务+MySQL；Tessera 库化；immudb 专用库；Rekor/Azul 全独立 | 未来升格 Merkle 应走独立子系统/新纪元，不回填业务表 |
+| 3 | 分腿链化（类1/3 同事务、类2 异步） | **支持**（带限定） | Debezium outbox 三引文；aegis 同构；Azul“先入链后发 SCT”；串行化代价明文（appmaster/aegis 分片） | 类 1/3 必须处理链尖串行化；类 2 窗口期语义需在验证模型明示 |
+| 4 | 新纪元（schemaVersion） | **支持**（强） | CT 年度/半年度分片三引文；sumdb /v2；Rekor v1 冻结+一年预告 | “旧行永续可验”无生态明示先例，属本仓自我加码，需旧纪元封存兜底 |
+| 5 | git 外锚 digest | **部分支持**（同构、无同向先例） | OTS（Bitcoin 锚+聚合+离线验）；witness 反签；sumdb /latest；QLDB digest[线索] | 外锚模式成熟；digest→git 特定方向无先例，git 仓自身不可变性（force-push 防御）需自查 |
+
+**总计：支持 3 / 部分支持 2 / 挑战 0 / 无先例要素 2**（业务表内 Merkle；digest→git 同向先例）。
+
+---
+
+## 反过拟合扫描（含独立新发现）
+
+1. **同源风险**：aegis 与 CAGE 均为 2026 年 AI-agent 治理类新项目（aegis 5 stars、CAGE 36 stars），与本仓同处“AI 治理+审计链”潮流——同构可能反映同一思想源（Crosby-Wallach 2009）而非独立验证。证据强度按低星项目处理，未计入“强支持”。
+2. **crate 生态年轻**：tamper-audit v0.2.0（2026-09）、security_events 等均 0.x 小版本，非久经考验；npm 侧仅线索级。结论“行级链有活体”成立，但“有成熟库可借用”不成立——**自研链化代码是当前生态的现实选择**。
+3. **独立新发现（任务书授权行项下）**：**TrapDoor 供应链攻击（2026-05，线索级，socket.dev）**——约 34-36 个恶意包伪装 crypto/audit/security 类工具横扫 npm/PyPI/crates.io。本仓不引第三方审计链包、自研 ~百行链化代码，恰好避开此攻击面；若未来引包需验 provenance。另：**QLDB 停服（2025-07-31）**说明“可验证账本 DB”产品形态商业失败，运维成本是真实约束——与 Rekor v2 把“降低运维成本”列为迁移主因相互印证，本仓“轻结构起步”方向与此信号一致。
+4. **日期口径偏差**：任务书要求 2026-10-14，实际 2026-10-13，已在首部声明。
+5. **转写风险**：WebFetch 经小模型转写，个别引文标点/省略可能有偏差；CAGE 的 README 自标 2026 日期未经二次核验。
+
+---
+
+## 任务书全文（附件）
+
+> 你是债-10 方案调研组的 **G 员（GitHub 开源生态实践调研员）**。
+> **任务书授权行：本任务书所列检查项之外，受权报告独立新发现（含同类未抓实例扫描）。**
+> **agent 声明义务：输出首节声明“任务书授权行：有”。**
+>
+> **背景**：本仓（NestJS+sqlite/TiDB 电商）事件表设计已定：**行级哈希链**（recordHash=SHA256(prevHash+canonical)、类 1/3 同事务一步链化/类 2 异步腿）、HMAC payloadHash 锚（链不含明文）、外锚 digest 到 git、schemaVersion 新纪元机制。悬而未决：链式 vs Merkle（当前裁决=链式，理由 Crosby-Wallach 低事件量分支+自证验证模型；升格预留=新纪元机制）。你的任务：去 GitHub 看真实开源项目的最新实践，检验/挑战这些裁决。
+>
+> **调研问题（五问）**：
+> Q1 **行级链式 vs Merkle 的真实取舍**——现代 append-only/tamper-evident log 实现在“在线业务表”层用什么结构？重点查：
+> - Google Trillian（CT 的生产 Go 实现——Merkle log 的 personification）：它的 Merkle 住在什么层（独立 log 服务 vs 业务库内）？为什么不是业务表行级？
+> - Sigstore Rekor（签名透明度，现代 Merkle log）：同上——架构前提（独立服务/存储）
+> - 轻量 hash-chain audit 库（各语言：Go/Rust/TS/Python 的 audit-log hash chain/npm 包）：有没有“业务库内行级链”的活跃实现？它们的 README 怎么说取舍？
+> Q2 **同事务写入 vs 异步链化**——有没有项目做过“事件行随业务事务写、链化后补”（我们的类 2）或“同事务一步链化”（类 1/3）？取舍讨论在哪（issue/设计文档）？
+> Q3 **键序/schema 演进**——append-only 结构遇到 schema 变更的真实做法（版本化键序/纪元/永不改？）：有没有 project 做过“新纪元+旧行永续可验”？
+> Q4 **锚/digest 外部发布实践**——Trillian 的 witness、Rekor 的签名树头、其他项目的“定期把摘要发布到外部不可变介质”做法——与本仓“git 外锚”同构度？
+> Q5 **从链式迁 Merkle（或反向）的真实案例**——任何项目记录过这种迁移的 issue/PR/release note？
+>
+> **方法纪律**：
+> - 用 WebSearch + WebFetch（github.com 页面可抓）真看 repo：README 关键句**逐字引文**（≤3 行）+ repo 名 + 活跃度证据（最近 commit/release 日期或 stars 量级）+ 检索日期 2026-10-14
+> - issue/PR 讨论若抓得到，引设计权衡原话
+> - 找不到明说“未找到”；不编造；拿不到原文标“线索”
+> - 每个发现映射到五问之一 + 对本仓裁决的含义（支持/挑战/中性）
+>
+> **产出**：
+> 1. 五问各一节（发现+引文+映射）
+> 2. **裁决检验总表**：本仓五个裁决点（行级链式/Merkle 层位/分腿链化/新纪元/git 外锚）各自被开源实践 支持/挑战/无先例 的判定
+> 3. 反过拟合扫描节（可空须显式）
+> 4. 输出尾部附任务书全文
+>
+> **报告完一行总结**：“G 员调研 N 个 repo / 引文 M 条三件齐 / 裁决检验：支持 X / 挑战 Y / 无先例 Z”。
+
+---
+
+**G 员调研 12 个 repo/包（9 个直抓 + 3 个线索级）+ 7 个文档/政策/博客源 / 引文 41 条三件齐（另有 4 条线索级） / 裁决检验：支持 3 / 部分支持 2 / 挑战 0 / 无先例 2（业务表内 Merkle、digest→git 同向先例）**
