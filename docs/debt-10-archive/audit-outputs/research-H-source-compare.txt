@@ -1,0 +1,262 @@
+调研完成，材料充分。以下为 H 员源码级比对报告。
+
+---
+
+# 债-10 H 员调研报告：审计链实现源码级比对
+
+**任务书授权行：有**
+**检索日期：全部引文均于 2026-10-13 抓取。** 本地缓存：`C:\Users\ADMINI~1\AppData\Local\Temp\src_probe\`（aegis 9 文件 + tamper-audit 2 文件 + tessera 3 文件），源为 github.com 与 docs.rs。
+
+**先修正 G 员三条线索的偏差（源码证据在下文各节）**：
+1. “Redis tail hash 缓存”——**不成立**。writer.py 里 Redis 只做 SETNX **互斥锁**（belt-and-suspenders），链头哈希永远从 Postgres 权威读取（H-4 FIX 注释原话："Redis is no longer in the chain path"）。
+2. “chain_shard per-(tenant,day) 分片”——**不准确**。链分片=per-(tenant, shard)，shard=MD5(request_id)%16 共 16 片；"per-(tenant,date)"是**日频 Merkle 封存根**的窗口，两者被混为一谈。
+3. ".ts/.sql 文件”——aegis 是 **Python/FastAPI + SQLAlchemy**，无 .ts。
+
+---
+
+## 一、Abhi-mishra998/aegis（Python，主对标）
+
+### 1.1 架构全景（源码级）
+
+三段式管道：网关中间件 →（Redis Stream，0.25s 预算）→ 审计消费者服务 →（advisory lock 内）→ Postgres 链行。链行之上再叠两层：per-row ed25519 回执签名 + 日频 Merkle 根封存（根跨日链）。
+
+### 1.2 链尖并发：advisory lock + Redis SETNX 双锁 + 16 分片
+
+`services/audit/writer.py`（259 行，检索 2026-10-13）：
+
+```python
+await db.execute(
+    text("SELECT pg_advisory_xact_lock(:t, :s)"),
+    {"t": tenant_lock, "s": chain_shard},
+)
+```
+
+锁内读链尖（按 timestamp+id 倒序，**非 sequence**）：
+
+```python
+select(AuditLog.event_hash)
+    .where(
+        AuditLog.tenant_id == payload.tenant_id,
+        AuditLog.chain_shard == chain_shard,
+    )
+    .order_by(desc(AuditLog.timestamp), desc(AuditLog.id))
+```
+
+分片派生：`hashlib.md5(request_id.encode(), usedforsecurity=False)` 前 2 字节 % 16（第 43-44 行）。双锁的由来是一起生产事故，注释逐字（第 69-78 行）：
+
+```python
+# concurrent load (>50 rps to the same shard) v4 detected chain
+# gaps in shards 8+12 despite the advisory lock. Root cause is
+# likely pgbouncer's transaction pooling interacting with the
+# per-connection lock semantics — hard to reproduce cleanly.
+```
+
+Redis 锁本身（第 84-86 行）：`await redis.set(_redis_lock_key, "1", nx=True, ex=30)`，拿不到锁超时 10s 后**宁可无锁继续**（注释："dropping audit rows is worse than a possible chain gap"）。
+
+### 1.3 失败语义：业务永不阻塞，审计走 DLQ
+
+网关侧 `services/gateway/_mw_audit.py`（527 行）第 436-444 行逐字：
+
+```python
+except TimeoutError:
+    logger.warning("audit_timeout", request_id=request_id)
+except Exception as e:
+    logger.error("audit_log_failed", error=str(e), request_id=request_id)
+```
+
+即审计写失败**不 500、不重抛**。消费者侧 `services/audit/main.py`（881 行）第 255-258 行是五轮设计最该看的一段注释：
+
+```python
+# H-4 FIX (2026-05-13): No external prev/event_hash computation.
+# AuditWriter.log takes the advisory lock per (tenant, shard),
+# reads the authoritative prev_hash from DB, computes the hash,
+# and inserts atomically. Redis is no longer in the chain path.
+```
+
+消费者失败即死信+ACK 推进（第 264-268 行："Dead-letter queue for terminal failures; still ACK to advance"），DLQ 由 60s 重放循环（`dlq_replay.py`）回收。幂等靠 partial unique index on request_id + `on_conflict_do_nothing()`（重复计入 `AUDIT_DUPLICATES_DROPPED_TOTAL`）。
+
+### 1.4 规范哈希：payload 完全不进哈希，且无 HMAC
+
+`sdk/common/audit_hash.py`（40 行）第 35-37 行逐字：
+
+```python
+        sort_keys=True,
+    )
+    return hashlib.sha256(f"{prev_hash}{payload}".encode()).hexdigest()
+```
+
+payload=`sort_keys` JSON 的 6 字段（tenant_id/agent_id/action/tool/decision/request_id），**metadata_json（请求响应载荷）不进哈希、也没有 HMAC 锚**——回执签名（signer.py 回执格式）同样不含 metadata_json。即 aegis 对载荷篡改**链与签名均无法检出**。
+
+### 1.5 验证工具：在线 integrity.py + 离线 aevf，各有瑕疵
+
+在线 `services/audit/integrity.py` 第 4 行自曝旧坑："FIX C-3: Recomputed hash is now assigned and compared (was previously discarded)."——曾整段时间验证器重算哈希后丢弃不比对（恒过）。验序代码（第 46-50 行）：
+
+```python
+select(AuditLog)
+.where(AuditLog.tenant_id == tenant_id)
+.order_by(AuditLog.chain_shard.asc(), AuditLog.timestamp.asc(), AuditLog.id.asc())
+.limit(_INTEGRITY_PAGE_SIZE)
+```
+
+两个源码级发现：①`.limit(10_000)` 无续页循环——超 1 万行只验前 1 万；②按 (timestamp,id) 验序，而链是按插入序构建的（DLQ 重放旧时间戳事件即错位）。models.py 注释宣称外部验证器用 `ORDER BY chain_sequence ASC`，但实际离线验证器 `tools/aegis_verify/verifier.py`（376 行）V3 步骤排序代码是 `rows.sort(key=lambda r: r.get("timestamp", ""))`——**三处声称/实际排序互不一致**。离线验证器本体设计好：V1-V6 六步（含 V6 保留期诚实度检查）、格式版本化 `SUPPORTED_FORMATS = {"aegis-evidence-bundle/2026-06"}`、唯一运行时依赖 cryptography，可气隙运行。
+
+### 1.6 演进版本化：29 个 alembic 迁移 + DB 级 append-only 触发器
+
+`services/audit/alembic/versions/` 共 29 文件（init → add_chain_shard → unique_request_id → chain_sequence → append-only 触发器 → 分区 → 密钥轮换…），链序列号是后补的 DB-only 列（迁移 z1a2b3c4d5e6，ORM 刻意不声明它以避开 pgbouncer+asyncpg 预编译缓存坑）。触发器迁移 `3a519b48a6f2_audit_log_append_only_trigger.py` 逐字：
+
+```python
+CREATE OR REPLACE FUNCTION deny_audit_log_mutation()
+RETURNS trigger AS $$
+BEGIN
+    RAISE EXCEPTION
+```
+
+```python
+CREATE TRIGGER deny_audit_log_mutation
+    BEFORE UPDATE OR DELETE ON audit_logs
+```
+
+理由原文："a compromised admin, an ORM bug, or a SQL-injection cannot silently mutate or delete chain rows"——防篡改从“检出”升级到“数据库层阻止”。
+
+### 1.7 质量评估
+
+生产伤疤型代码库：每个关键分支带 dated FIX 注释、指标埋点（`AUDIT_CHAIN_VIOLATIONS_TOTAL` 直接喂 Alertmanager 立即告警页）。**值得学的是教训，不是全部机制**（见反过拟合节）。
+
+---
+
+## 二、tamper-audit（Rust crate v0.2.0，仓库=WyattAu/auditlog）
+
+### 2.1 链实现：read-tip→construct→append，竞态不设防
+
+`src/log.rs`（255 行，本地缓存核对 docs.rs 渲染一致）第 57-66 行逐字：
+
+```rust
+let previous_hash = self
+    .store
+    .last_entry()
+    .await?
+    .map(|e| e.hash)
+    .unwrap_or_else(|| "0".repeat(64));
+
+let entry = AuditEntry::new(actor, action, resource, details, &previous_hash);
+```
+
+`last_entry()` 与 `append()` 之间**无锁、无事务**；`InMemoryStore` 的 `std::sync::Mutex<Vec<AuditEntry>>` 只护单次操作，两个并发 append 可读到同链尖→同 prev_hash→**分叉**。
+
+### 2.2 Postgres 后端同样裸奔
+
+`src/postgres.rs`（142 行，feature "persistence"）append 就是裸 INSERT（第 88-90 行：`"INSERT INTO audit_entries (id, timestamp, ...) VALUES ($1,...)"`），无事务包裹 tip 读取、无 FOR UPDATE、无 advisory lock。`last_entry` 用 `ORDER BY sequence DESC LIMIT 1`（表有 `sequence BIGINT GENERATED ALWAYS AS IDENTITY`）。migrate=`CREATE TABLE IF NOT EXISTS`，**无版本化迁移**；`ensure_genesis` 的 count 检查与插入不在同一事务（双 open 并发可插双创世）。
+
+### 2.3 哈希：7 字段裸拼接，两个真实弱点
+
+`src/entry.rs`（docs.rs 渲染，检索 2026-10-13）`hash_data()` 把 id/RFC3339 时间戳/actor/action/resource/details/prev_hash 字节**直接拼接，无分隔符无长度前缀**（相邻字段边界碰撞理论可行）；details 序列化失败静默吞掉：
+
+```rust
+data.extend_from_slice(
+    serde_json::to_string(&self.details)
+        .unwrap_or_default()
+        .as_bytes(),
+);
+```
+
+坏 payload 哈希后等价于空串。无 RFC8785 规范化，RFC3339 允许同时刻多种表示。
+
+### 2.4 验证：线性单链检查，无分叉检测
+
+`src/verify.rs`：逐条 `verify_hash()` 重算 + 与前一条 hash 比 prev_hash（失败消息"previous_hash '{}' does not match entry {} hash '{}'"），**不检同 prev_hash 分叉、不检重复哈希、无签名无时间戳检查**——2.1 的分叉在此大概率验不出来（后插入的分叉支整段通过）。
+
+### 2.5 质量评估
+
+代码干净、100% 文档化、测试覆盖链与篡改检出，但它是 v0.2 单人 crate：**并发、持久层竞态、演进全部未解**。可借鉴的只有“store trait 抽象”这一层形状，实现不可照搬。
+
+---
+
+## 三、transparency-dev/tessera（Go，任务书降级项——两主目标均可达，本节仅做类 2 同构度快照）
+
+`entry.go`（80 行）第 56-58 行注释是类 2 异步腿的工业级表述，逐字：
+
+```go
+// MarshalBundleData _may_ be called multiple times, potentially with different values for index
+// (e.g. if there's a failure in the storage when trying to persist the assignment), so index should not
+// be considered final until the storage Add method has returned successfully with the durably assigned index.
+```
+
+写入接口形状（`append_lifecycle.go` 第 523 行）：`func (t *terminator) Add(ctx context.Context, entry *Entry) IndexFuture` —— Add 立即返回**可等待的未来**（解析为持久分配的 index），Shutdown 契约原文：“all calls to Add that have returned a value will be resolved… integrated and have a checkpoint that commits to them published”。树构建/检查点发布完全后台化，等待方用 PublicationAwaiter 轮询 checkpoint。**与我们类 2 的 INSERT PENDING→异步补链→翻 INLINE 同构**：PENDING 行≈未解析 future，INLINE 翻转≈"durably assigned index"，等价物是 Shutdown 的排空契约（所有已受理写必须最终落树）。
+
+---
+
+## 四、逐点对照表
+
+| 设计点 | 本仓设计 | aegis | tamper-audit | tessera | 判定/差异本质 |
+|---|---|---|---|---|---|
+| 链尖并发 | sqlite 进程级 mutex 串行，天然免疫 | advisory xact lock per (tenant,shard) + Redis SETNX 双锁 + 16 分片；**双锁仍没根因解决**（v5 注释自认 hard to reproduce） | 无防护：last_entry→append 无锁，InMemory/Postgres 均可分叉 | 单写者 log 顺序化（IndexFuture 排队） | 本仓在 sqlite 单写者下成立且更简；aegis 的教训是**连接池+advisory lock 语义微妙**——若未来迁 Postgres，直接上双键 advisory lock 并写竞态压测，别信单锁 |
+| 失败语义 | 类1/3 业务事务内原子（审计失败=业务失败）；类2 异步腿 重试5/毒丸3/死信 | 业务**永不**等审计：网关 Redis 流 0.25s 吞异常→消费者失败即 DLQ+ACK→60s 重放；"dropping audit rows is worse than a possible chain gap" | append 失败 `?` 上抛，无重试无补偿；**调用方视角审计失败即业务失败** | Add 返回 future，失败在 future 里；Shutdown 排空契约 | **哲学分叉非优劣**：aegis=可用性优先（响应先走，审计最终一致，存在 Redis 丢数据窗口）；本仓类1/3=原子性优先（无窗口，代价是审计库故障拖业务）。各自的 PENDING/DLQ 结构彼此同构 |
+| 验证工具 | verify 脚本全链循环（前缀式公式）+git 文本锚 | 在线 integrity.py（**曾"重算不比对"恒过**；10k 截断；timestamp 验序与插入序漂移）+ 离线 aevf V1-V6（格式版本化、气隙可跑、含保留期诚实度检查）+ 违规计数器直连告警 | verify_chain 线性单链，**无分叉检测**——而它自己的并发模型恰恰会产生分叉 | 验证=对 checkpoint 签名+inclusion proof，第三方可独立复算 | aegis 的验证**外围设计**（离线 bundle/告警直连/V6）优于本仓现状；本仓的**验证正确性纪律**（真比对、全链、序=建链序）优于 aegis 实际代码 |
+| 演进版本化 | 未设计（哈希公式无版本字段） | 29 个 alembic 迁移；bundle 格式带版本串 "aegis-evidence-bundle/2026-06"；密钥轮换迁移带**历史行回填**（s18 重算全史指纹保旧签名可验） | 无（CREATE TABLE IF NOT EXISTS 即全部） | 格式即协议（tlog-tiles/c2sp），Entry 用 gob 向后兼容序列化 | **本仓缺口**：canonical 11 键与哈希公式无版本位，未来加键即全链断验。aegis 证明版本位+回填迁移是可操作的 |
+| HMAC/明文处理 | canonical 不含 payload 明文，payload 另有 HMAC 锚 | payload（metadata_json）**既不进哈希也无任何锚**——链与 ed25519 回执都不覆盖它，载荷篡改不可检出 | payload（details）**进哈希**但非规范化序列化+失败吞错（坏 payload 哈希=空串） | 叶=原始 entry 字节，RFC6962 叶哈希，树完全承诺载荷 | 本仓 HMAC 方案在三者中**唯一同时做到**“payload 可检出篡改+canonical 稳定”；这是本仓设计占优的一点 |
+
+---
+
+## 五、“我们没想到的”清单
+
+1. **DB 级 append-only 触发器**（aegis 3a519b48a6f2）：BEFORE UPDATE OR DELETE raise P0001。防的是“妥协的管理员/ORM bug/SQL 注入静默改删链行”——把不变量从应用纪律移进数据库。故意绕过须同事务 DROP TRIGGER 并记 runbook+并入下一 Merkle 根。本仓 sqlite 可用 `PRAGMA` + 触发器同款实现，成本一行 SQL。
+2. **日频 Merkle 根跨日链 + 包含证明**：即使攻击者重写整库（重算全链），客户留存的日根对不上即可检出**整库替换**——这是纯哈希链给不了的对抗等级（哈希链只能检出“改了没重算全链”的攻击）。
+3. **验证结果指标化**：`AUDIT_CHAIN_VIOLATIONS_TOTAL.inc()` 放在 return 之前，“即使下游吞掉响应体，告警页也已触发”。本仓 verify 目前只给人看。
+4. **离线证据 bundle 的保留期诚实度检查（V6）**：声称“保留 6 个月”而 bundle 最早行>6 月=宣称不诚实。审计合规向的巧检查。
+5. **密钥轮换迁移带历史回填**：s18 迁移从每行存的 public_key_pem 重算全史指纹，“existing signatures still verify”——轮换不废历史。
+6. **空树哨兵根**：`sha256(b"")`，区分“今天没有事件”与“事件丢了”。
+7. **幂等双保险的形状**：partial unique index（WHERE request_id IS NOT NULL）+ ON CONFLICT DO NOTHING + 重复计数器——双实例竞态下链不脏。
+8. **tessera 的 index 终局性原则**：“index 在存储 Add 持久成功前不算最终值”——本仓类 2 的 INLINE 翻转应视为同一原则，宜在文档里明说“seq/链列在补链腿成功前不是事实”。
+9. **空链判定**：“an empty chain is integrous by definition”（aegis 2026-05-13 修的坑：曾返回缺字段导致 UI 真值判断塌成 broken）。
+
+## 六、“它们踩过的坑”清单（全部来自源码 dated 注释）
+
+1. **H-4（2026-05-13）哈希计算曾在锁外/库外**（Redis 路径）→ 移入 advisory lock 事务内。教训：链头读取与哈希计算必须在同一串行化域。
+2. **v5-Fix（2026-07-25）advisory lock 下仍现链 gap**（shards 8+12，>50rps）——疑似 pgbouncer 事务池与连接级锁语义互作，**未根因**，叠 Redis 锁防御。教训：连接池环境下锁语义要实测，别信文档。
+3. **C-3：验证器重算了哈希但不比对**（恒过）。最危险的一类坑——验证器存在≠验证发生。本仓 verify 应有“故意篡改样例必须报红”的自检腿。
+4. **P0（2026-05-04）异步计费模式压测孤儿审计 5,926 条**→改同步+超时兜底。教训：异步腿要有压测证伪。
+5. **Gap 3（2026-05-15）同步路径与 outbox 用了不同 audit_id**→UNIQUE 约束永不触发，双行。教训：幂等键必须收敛到同一定义源。
+6. **ORM 声明 DB-only 默认值列在 pgbouncer 下炸 asyncpg 预编译缓存**→chain_sequence 刻意不进 ORM。教训：外部验证器消费的列与 ORM 解耦。
+7. **128 位截断指纹**：“没有成本节省，白减碰撞余量”→全量回填。教训：截断要有理由。
+8. **tamper-audit：`unwrap_or_default()` 吞序列化失败**——坏 payload 哈希等价空串，静默。
+9. **aegis 验序漂移**：建链=插入序，integrity.py 按 (timestamp,id)，aevf 按 timestamp 字符串，models 注释宣称 chain_sequence——四处三种序。DLQ 重放旧时间戳事件即假阳性 gap。教训（直接命中本仓）：**验证排序必须与建链排序同源**（本仓 seq 即此用，务必让 verify 按 seq 走，勿按时间戳）。
+10. **10k limit 无续页**：OOM 防护做成了验证覆盖截断。
+
+## 七、反过拟合扫描
+
+- **不引入分片**：aegis 的 16 分片+双锁+Redis 流是**多 worker 横向扩展 Postgres** 的产物；本仓 sqlite 单写者 mutex 下分片纯属负资产。
+- **不照搬“never block”**：aegis 业务不等审计是可用性取舍，且付出“响应后崩溃丢窗口”（依赖 Redis 持久化）的代价；本仓类 1/3 原子耦合是既定需求，勿被其反向动摇。
+- **不学 aegis 验证器实现**：C-3 旧坑、10k 截断、验序漂移都是反面教材；学它的外围（bundle 版本化/告警直连/V6），不学内核。
+- **不把 tamper-audit 当范本**：v0.2 单人 crate，其并发/持久缺陷恰是本仓已解决的问题；仅“store trait 抽象”值得留意。
+- **可迁移项（判据=与本仓约束兼容）**：DB append-only 触发器、哈希公式/证据格式版本位、验证器自检腿（篡改样例必报红）、违规计数器直连告警、验证按 seq 排序的明文化。
+- 本报告对 G 员三线索的修正均有逐字源码锚（见首节）；aegis 引文以本地缓存文件为准，tamper-audit 的 entry/store/verify 三文件结论来自 docs.rs 源码渲染页（postgres.rs/log.rs 有 GitHub 原文本地核对，二者一致）。
+
+---
+
+## 尾附：任务书全文
+
+> 你是债-10 方案调研组的 **H 员（源码级比对调研员）**——本员的存在理由：前轮 G 员只读了 README/文档（承认“未直抓源码”），用户令“尽量不要闭门造车”——**读真实代码，不是读宣传页**。
+> **任务书授权行：本任务书所列检查项之外，受权报告独立新发现（含同类未抓实例扫描）。**
+> **agent 声明义务：输出首节声明“任务书授权行：有”。**
+>
+> **本仓设计（对照基准，带锚）**：
+> - 行级链：recordHash=SHA256(prevHash+'\n'+canonical 11 键)，camelCase 列，canonical 不含 payload 明文（HMAC 锚）
+> - 分腿：类 1/3（user/admin mutation）业务事务内读链头（WHERE seq IS NOT NULL ORDER BY seq DESC LIMIT 1）→seq+1→一步 INSERT；类 2（系统派生）同事务 INSERT relayState='PENDING' 链列 NULL→异步腿补链+翻 INLINE（重试 5/毒丸 3/死信 DEAD）
+> - 验证：verify 脚本全链循环（前缀式公式同 audit-chain.ts:94-95）；锚=链头摘要在 git 文本文件
+> - 约束：sqlite 单写者（进程级 mutex 串行——链尖并发分叉天然免疫）
+>
+> **任务：真读以下两个项目的源码（GitHub 上 raw 文件可经 WebFetch 抓 github.com/<repo>/blob/<branch>/<path> 页面或 raw.githubusercontent.com；文件路径先从仓库树页/目录页发现）**：
+> 1. **Abhi-mishra998/aegis** 的 `docs/security/crypto-audit-chain.md` 已知存在——进一步抓其**实现源码**（从仓库根/树页找 audit chain 相关 .ts/.sql 文件）：它的链尖并发怎么解（G 员线索：chain_shard per-(tenant,day) 分片 + Redis tail hash 缓存）——读实现验证；失败语义：审计写失败阻不阻塞业务（G 员线索：“never block requests”）；验证工具长什么样；schema/键序演进有没有版本化
+> 2. **tamper-audit（Rust crate）** 的 src（docs.rs 可链到源码或 github mirror）：链实现核心（store trait/chain verify）；有没有处理并发/失败/演进
+> 3. 若上述两仓源码不可达，降级目标：**transparency-dev/tessera** 的核心包源码（reader.go/merkle 相关）——看它的“行/叶写入与树构建分离”的接口形状（对我们类 2 异步腿的同构度）
+>
+> **产出（对照表驱动）**：
+> 1. 每项目一节：核心实现摘录（**逐字代码引文**≤5 行/段+文件路径+检索日期）+ 它怎么做
+> 2. **逐点对照表**（本仓设计点 × 项目实现 × 谁更优/差异本质）：链尖并发/失败语义/验证工具/演进版本化/HMAC 明文处理
+> 3. **“我们没想到的”清单**：它们做了而我们五轮设计没覆盖的（如有）
+> 4. **“它们踩过的坑”清单**：issue/代码注释里的教训（如有）
+> 5. 反过拟合扫描节 + 尾附任务书全文
+>
+> 诚实纪律：源码抓不到就明说抓不到并降级，不编造；小项目代码质量本身要评估（不是所有实现都值得学）。
+
+（报告完）
