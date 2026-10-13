@@ -606,3 +606,20 @@
 2. 债-10 排三席重审（涉及明文禁令撤销）→ 治本方案 = audit 改同事务模式
 3. 债-11 修完后跑 `reconcile-orders.mjs` 验 drift=0
 4. 债-10 修完后跑 `reconcile-orders.mjs` 验 R3=0（新增 orders/snapshot 审计行）
+
+### 债-11 治本落地（2026-10-13，commit 6f6c215）
+
+**【债-11 代码层已治本】**
+
+修法：`handlePaymentCallback` 加金额闸（payment-application.service.ts）+ catch 透传 ConflictException + 3 条新 spec。
+
+**治本率** = 100%（仅代码层）。所有未来金额不匹配的第三方回调**都会被拒绝**——drift 现象在产线上无法再发生。
+
+**已确认遗留事项**（dev 库历史脏数据，**修复前**产生，闸不影响历史数据）：
+- dev 库 1 处 drift=1（order.totalAmount=897 元 vs payment.amount=0.01 元）仍存在
+- 0.01 元支付是修复前 callback 路径缺闸时标为 success 的
+- 闸**不**能清除历史 drift——需数据回填
+
+**【挂账：债-13 drift=1 数据回填】**
+- **债-13** dev 库 1 处 drift=1（order=199, payment=PAY_MV0V2RBY_8N10U4_D579BAF6）数据回填——为什么不做：业务侧需决定"接受 0.01 元为真实支付"（订单 total_amount 改为 0.01）还是"标记该支付异常退款"（orders.payment_status='failed'，payments.status='refunded'）；本批是代码闸治本，不含业务侧决策。**触发事件** = dev 库 snapshot 模块对账时 drift 不归零（这是事实）→ 业务侧启动"清理历史脏数据"批时。**排期锚** = "drift 数据回填批"（独立小刀）。【三选一齐+为什么不做】
+
