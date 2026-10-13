@@ -578,3 +578,31 @@
 - 治本型=完成态，可验收
 - 治标型=未完成态，挂账 + 排期 + 触发器三选一后才能结清
 - 不允许"治标=完成"出现在 stage 完成报告里（避免再次出现"工具修了=系统正确"的混淆）
+
+### 债-10/11 根因复盘（2026-10-13 用户令"严肃细致科学地查"后立）
+
+**债-11 根因（精确到代码行）**：
+- **触发位置**：`payment-application.service.ts:213-307` `handlePaymentCallback`（支付回调接收路径）
+- **缺失闸门**：line 269-274 `paymentOrder.markAsSucceeded(dto.gatewayOrderId, Money.create(dto.receiptAmount || 0, ...))` 直接信任网关返回的 `dto.receiptAmount`——未与 `internalOrder.totalAmount` 对比
+- **对比**：下单路径 line 137-148 **有**金额闸（`Math.round(expectedMinor) !== Math.round(requestedMinor)` 拒）
+- **W-3 修复盲点**：W-3 ④ 修了创建支付订单的金额校验，**未修接收回调的金额校验**——不对称漏洞
+- **drift=1 实测**：order.totalAmount=897 元，payment.amount=0.01 元（金额差 89700 倍）；payment 域标 success → 事件发 → listener 闸正确拒 → 订单保持 pending → drift
+- **修法方案**：在 `handlePaymentCallback` line 269 之后加与 line 137-148 同模式的金额校验（拉 ordersService.findOrderByMerchantOrderId + 对比 minor units）；命中后 throw ConflictException 不标 success。30 行代码。
+
+**债-10 根因（精确到代码行）**：
+- **触发位置**：`order-snapshot.service.ts:1-23` 头注释明文禁令
+- **明文禁令**："绝不调 AuditService.log（自带互斥+独立事务=嵌套自锁死，C 坑A）"
+- **不对称证据**：
+  - `orders.service.ts:218` `await this.auditService.log(...)` — orders 域其他操作都走 audit
+  - `orders.service.spec.ts:388-446` 5 处 `mockAuditService.log` 断言 — 域其他操作入审计有 spec 守
+  - 但 snapshot 写入路径**完全无 audit** — 0 行 0 spec
+- **根因**：早期三席为防嵌套事务自锁死，明文禁 snapshot 调 audit
+- **治本路径**：把 `AuditService.log` 改为接受 `EntityManager` 参数（同事务提交模式）→ 消除"嵌套自锁"理由 → 重走三席审核撤销禁令
+- **修法风险**：🔴 高——涉及三席原裁定撤销，必须经三席重审
+- **临时方案**（不过三席也能上 prod 的兜底）：在 `OrderSnapshotService.appendSnapshot` 返回前用 `setImmediate` 异步调 auditService.log（独立事务，不影响快照事务）——但这会引入"快照成功但 audit 失败"的不一致风险
+
+**下一步施工顺序**：
+1. 债-11 优先（30 行代码，零风险，立刻可上）→ 治本率达 100%
+2. 债-10 排三席重审（涉及明文禁令撤销）→ 治本方案 = audit 改同事务模式
+3. 债-11 修完后跑 `reconcile-orders.mjs` 验 drift=0
+4. 债-10 修完后跑 `reconcile-orders.mjs` 验 R3=0（新增 orders/snapshot 审计行）
