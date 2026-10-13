@@ -1,0 +1,158 @@
+# E 员调研报告：crypto-shredding / 加密留存方向——互斥三角的业界解法选项空间
+
+**口径说明**：所有引证检索/获取日期 2026-10-14；arXiv 条目均经 export API 核真（检索式与负结果见各节）；QLDB 官方文档已随服务下线，经 Wayback Machine 存档获取全文；引文均逐字、≤3 行。本报告只铺选项空间，不做最终裁决。
+
+---
+
+## Q1 crypto-shredding 谱系
+
+**概念起源**：确认为 Perlman "Ephemerizer"（2005，Sun Microsystems）。逐字引文（摘要）：
+
+> 【1】*The Ephemerizer: Making Data Disappear*，Radia Perlman（Sun Microsystems），Journal of Information Systems Security 1(1):51-68, 2005，ISSN 1551-0123，https://www.jissec.org/Contents/V1/N1/V1N1-Perlman.html（检索 2026-10-14）
+> "The obvious solution is to store the data encrypted, and then delete the key after expiration. The key is somewhat easier to manage, because it is smaller, but there is still the issue of needing to make the key reliably available for some time, and then reliably destroyed."
+
+起源动机与我们的处境完全同构：备份/交换区/取证残留使“物理删除”不可靠 → 加密+销钥。中间谱系：Vanish（自毁数据，UW，SOSP'09；项目页称目标为 "all copies of certain data become unreadable after a user-specified time"——**线索**级，正文经二级提取：https://vanish.cs.washington.edu/，检索 2026-10-14）；assured deletion 学术线在 arXiv 的代表为 1804.02834（Yu et al., 2018, assured data deletion）。**负结果**："crypto-shredding"、"self-destructing data"、"cryptographic erasure" 三个术语在 arXiv 全库 0 命中（export API，检索式 `all:"cryptographic erasure"` 等，2026-10-14）——该术语族住在工程标准与工业文档，不在学术文献。
+
+**权威定义**（NIST，逐字）：
+
+> 【2】*SP 800-88 Rev. 2, Guidelines for Media Sanitization*，R. Chandramouli / NIST，2025-09，https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-88r2.pdf（检索 2026-10-14，PDF 全文提取）
+> §3.2："CE is based on the sanitization of keys used to encrypt data or to prevent access to the keys that encrypt data. Thus, with CE, sanitization can be performed with high assurance much faster than with other sanitization techniques."
+> 同文件三条硬限制（对本仓承重）：① "For an ISM that takes the form of logical/virtual storage (e.g., cloud storage), cryptographic erase may be the only viable purge sanitization technique option."（云上唯一可行 purge 级手段）；② "Sanitization using CE should not be trusted on ISM that have been backed up or escrowed unless the organization has a high level of confidence regarding how and where the keys were stored"（备份/托管的键=盲区）；③ 数十年期数据上"CE may not be an acceptable sanitization technique"（算法被破/算力进步则密文复生）。
+
+**KMS 工程实践**（信封加密 + 销毁）：
+
+> 【3】*Delete an AWS KMS key*，AWS 文档，https://docs.aws.amazon.com/kms/latest/developerguide/deleting-keys.html（检索 2026-10-14）
+> "It deletes the key material and all metadata associated with the KMS key and is irreversible. After a KMS key is deleted, you can no longer decrypt the data that was encrypted under that KMS key, which means that data becomes unrecoverable."；且 "AWS KMS requires you to set a waiting period of 7–30 days."
+
+> 【4】*Destroy and restore key versions*，Google Cloud KMS 文档，https://cloud.google.com/kms/docs/destroy-restore（检索 2026-10-14）
+> "Destroying a key version means that the key material is permanently deleted."；"Data encrypted with a key that has been destroyed is considered crypto-shredded."
+
+GCP 官方文档直接使用 "crypto-shredded" 一词——术语的工业正统性成立。注意两家都有销毁等待期（AWS 7-30 天、GCP 24 小时调度）与 key re-import 例外（GCP）——Art.30 时限承诺要把这个等待期算进去。
+
+**不可变事件日志场景的先例**（与我们形态最接近的工程实证）：
+
+> 【5】*CRYPTO_SHREDDING_DESIGN.md*，Red Badger（Journey Dynamics 事件溯源系统设计文档），https://github.com/redbadger/journey_dynamics/blob/main/docs/CRYPTO_SHREDDING_DESIGN.md（检索 2026-10-14）
+> "In an event-sourced system, however, events are immutable and append-only. Deleting or mutating events would break the event stream's integrity... we encrypt PII fields within events using a per-subject encryption key. When a data subject exercises their right to erasure, we delete the key. The encrypted PII in the event store becomes permanently unreadable — effectively erased — while the event stream's structure, ordering, and non-PII fields remain intact."
+
+该系统的 `events.payload` 列与我们的事件表 payload 同名同构（PII 以明文 JSON 住在 payload 列，加密下沉到字段级 per-subject DEK + Key Store 信封）。其后续演进暴露了我们将撞上的同一堵墙：
+
+> 【6】*MULTI_SUBJECT_DESIGN.md*（同仓库，2024+）
+> "a single booking journey may capture personal details for several passengers. A GDPR erasure request for one passenger should remove only that passenger's PII, not the entire booking's data... On erasure, shred **only the target subject's PII** — preserve shared journey data (flight selections, pricing, booking reference) and other subjects' data."
+
+**本仓映射**：一行事件同时含 buyerLogonId+sellerEmail 两主体 = Red Badger 从单主体被迫升级为多主体设计的确切问题；他们的解法（每个 PII 事件自带 subject_id，按主体 DEK 分槽加密，共享字段不加密）是可搬运的。
+
+---
+
+## Q2 Amazon QLDB redaction 深挖
+
+QLDB 已于 2025-07-31 全停（官方清单：*Services in Full Shutdown*，AWS General Reference，"Amazon Quantum Ledger Database (Amazon QLDB) | July 31, 2025"，https://docs.aws.amazon.com/general/latest/gr/full_shutdown_services.html，检索 2026-10-14【7】）。docs.aws.amazon.com 上 QLDB 页面已撤，**存档途径**：Wayback Machine 快照（下方两个 URL 即存档入口，原 URL 已 404）。
+
+**redaction 语义**（官方文档，存档全文）：
+
+> 【8】*redact_revision stored procedure*，Amazon QLDB Developer Guide（Wayback 快照 2023-01-01），https://web.archive.org/web/20230101150426/https://docs.aws.amazon.com/qldb/latest/developerguide/ql-stored-procedures.redact_revision.html（检索 2026-10-14）
+> "Use the redact_revision stored procedure to permanently delete an individual, **inactive** document revision in an Amazon QLDB ledger **in both indexed storage and journal storage**... redaction is not available for active document revisions... the metadata is unchanged, which indicates that the journal sequence is not modified and that it only deletes the user data."
+> "dataHash – A structure containing the hash value of the removed data structure... the ledger remains cryptographically verifiable through the existing verification API operations."
+
+要点：① 能删=单个 revision 的 user data（data 结构），替换为该结构的 Ion hash（dataHash）；② 不能删=journal 序列、metadata（含 document id 与 revision hash）；③ proofs：redaction 后仍通过既有 verification API 对 digest 验证——且文档 redaction 前后示例中 revision 的 `hash` 字段**不变**。**由此推断（标注为推断，文档未逐字说明内部构造）**：QLDB 的锚定值在写入时就由 data 的 hash 折叠而来，链从不依赖 data 明文在位——明文只是可撤回的缓存。
+
+**限制清单**（对脱敏方案是现成的 checklist）：
+
+> 【9】*Redacting document revisions*，Amazon QLDB Developer Guide（Wayback 快照 2022-11-14），https://web.archive.org/web/20221114233738/https://docs.aws.amazon.com/qldb/latest/developerguide/working.redaction.html（检索 2026-10-14）
+> ① 2021-07-22 之前创建的 ledger 不支持 redaction；② "Amazon QLDB redaction does not impact data that was replicated outside of QLDB, such as data that was exported to Amazon S3 or streamed to Kinesis"；③ "QLDB redaction has no impact on literal values in PartiQL statements recorded in the journal"（语句字面量会被 journal 记录，须用参数化占位符）；④ 每事务只能 redact 一个 revision；⑤ 不能直接 redact 字段（须先 DML 改行产生新 revision 再 redact 旧 revision）。
+
+**本仓映射**：③ 是我们最易踩的同构坑——凡在链外记录含 PII 的语句/日志/回归夹具（46 回归、canary、导出），加密/脱敏都够不着；② 对应我们的快照表/冷区/备份副本；异步+单 revision/事务 对应 Art.30 时限承诺要写成 SLA。前轮 A 员卡3 引文（"deletes only the user data...leaves the journal sequence and the document metadata unchanged"）与存档原文核验一致。
+
+---
+
+## Q3 “链锚哈希不锚明文”模式
+
+**结论先行：有强先例，且 QLDB 与该模式同型。**
+
+工业级实现（Hyperledger Fabric private data collections + purge）：
+
+> 【10】*Private Data*，Hyperledger Fabric 官方文档，https://hyperledger-fabric.readthedocs.io/en/latest/private-data/private-data.html（检索 2026-10-14）
+> "A hash of that data, which is endorsed, ordered, and written to the ledgers of every peer on the channel. The hash serves as evidence of the transaction and is used for state validation and can be used for audit purposes."
+> "even the parties sharing the private data might want — or might be required by government regulations — to periodically 'purge' the data on their peers, leaving behind a hash of the data on the blockchain to serve as immutable evidence of the private data."
+> "If you need to completely remove the private data from all peers that have access to it, use the chaincode API PurgePrivateData instead of the DelPrivateData API."；且 collection 可配置 "purge private data automatically if it has not been modified for a configurable number of blocks."
+
+官方把 purge 与 GDPR 直接挂钩：
+
+> 【11】*Hyperledger Fabric Q2 2023 Quarterly Report*，Hyperledger TSC，https://toc.hyperledger.org/project-reports/2023/2023-Q2-Hyperledger-Fabric.html（检索 2026-10-14）
+> "Purge Private Data History feature that helps organizations meet GDPR requirements with the ability to delete private data while preserving a hash of the data on the blockchain."
+
+学术原论文（Fabric purge 的设计出处，arXiv export API 核真：2105.14818v2，Yacov Manevich, Artem Barger, Gal Assa，2021-05-31）：
+
+> 【12】*Redacting Transactions from Execute-Order-Validate Blockchains*，https://arxiv.org/abs/2105.14818（检索 2026-10-14）
+> "This work... presents the first design for a redactable execute-order-validate blockchain, that grants users with the right to be forgotten... It modifies the block structure and **extracts user data from the hash-chain** without loosening any correctness or liveness criteria."
+
+监管侧（最高权威，EDPB 2026-07-07 通过的 v2.0，全文获取自官网文档页）：
+
+> 【13】*Guidelines 02/2025 on processing of personal data through blockchain technologies*（v2.0），EDPB，2026-07-07 通过，https://www.edpb.europa.eu/documents/guideline/guidelines-022025-on-processing-of-personal-data-through-blockchain_en（检索 2026-10-14）
+> §5.2："It is technically demanding and often difficult to grant the request for rectification or for erasure made by a data subject when clear text, encrypted or hashed data is recorded on a blockchain. It is therefore **not advisable to register personal data in those forms on a blockchain. Instead, personal data in those forms should be stored off-chain.**"（EDPB 全文 0 次使用 "crypto-shredding" 一词——负结果，它只作描述性讨论，见下）
+> 加密腿："upon deletion of this decryption key, the encrypted data will be unintelligible, at least until the algorithm is broken... **even state-of-the-art encryption perfectly implemented will be overtaken by time if the blockchain is retained indefinitely.**"
+> 哈希腿："after deletion of the secret key or salt, the hash should not be linkable to the original data, provided that the algorithm has not been broken, the keys have not been compromised or leaked, and the salt was not leaked or poorly chosen."（同时保留："the hash will also be considered personal data"——哈希位默认仍是个人数据）
+
+法国 CNIL 同向：
+
+> 【14】*Blockchain and the GDPR: Solutions for a responsible use*，CNIL（2018-10-29，EN 版页面），https://www.cnil.fr/en/blockchain-and-gdpr-solutions-responsible-use-blockchain-context-personal-data（检索 2026-10-14）
+> "the CNIL acknowledges the existence of technological solutions that should be evaluated... in particular by blocking access to data depending on the format chosen (e.g., commitment, fingerprint generated by a hash function with a key, encryption, etc.)... it is important not to store personal data in cleartext on a blockchain."（CNIL 2023-09 更新版 *First solutions for a responsible use* 未取到 EN 原文——**线索**，FR 原版在 cnil.fr）
+
+学术法律论证（SLR 全文，arXiv 2210.04541v1 核真，Belen-Saglam/Altuncu/Lu/Li，114 篇文献系统综述）：
+
+> 【15】*A Systematic Literature Review of the Tension between the GDPR and Public Blockchain Systems*，https://arxiv.org/abs/2210.04541（检索 2026-10-14，ar5iv 全文）
+> "eichler2018blockchain pointed to off-chain storage solutions... and stated that if the data linking the hashed data to a data subject was kept off-chain and was later erased, the hashed data should once again be considered sufficiently anonymous."
+
+匿名化法律判据（WP29，逐字）：
+
+> 【16】*Opinion 05/2014 on Anonymisation Techniques (WP216)*，Article 29 Working Party，2014-04-10，https://ec.europa.eu/justice/article-29/documentation/opinion-recommendation/files/2014/wp216_en.pdf（检索 2026-10-14，PDF 全文提取）
+> "anonymisation results from processing personal data in order to irreversibly prevent identification"；"An important factor is that the processing must be irreversible."
+> 同文件把 "Keyed-hash function with stored key" 列入**假名化**技术清单（"A data controller can replay the function on the attribute using the secret key"）——键在=假名化；键毁+不可枚举才谈得上匿名化。
+
+**QLDB 同型还是异型**：**同型**。QLDB redaction 的代数（data 位→dataHash，revision hash 与 journal 序列不动、proofs 仍验）等价于“链锚 h(明文)、明文为可撤回缓存”；Fabric PDC 从写入起就只放哈希——两者与选项 b 同族。**对我仓的异型点**：我仓 recordHash = SHA256(prevHash + canonical(行)) 且 **canonical 含 payload 明文**——链从写入起就锚明文。QLDB 的“事后替换仍可验”在我仓代数下不成立（替换 payload 必然改变重算值）：照搬 QLDB 语义必须改 recordHash 的定义（写入时即锚 keyed hash）或改验证协议。这不是工程细节，是互斥三角的代数根源。
+
+---
+
+## Q4 分段/按主体链 + 可删段
+
+EDPB 明文容许“删链的一部分”：
+
+> 【13 续】EDPB 02/2025 v2.0："Where this would require the deletion of part of the blockchain, including the deletion of any copies held by nodes or other parties, controllers should ensure that sufficient technical and organisational measures are in place for doing so."
+
+西班牙 AEPD 技术注记（EDPB 指南点名的 PoC，2024-11，50 页全文）：
+
+> 【17】*Proof of concept Blockchain and the right to erasure*，AEPD（西班牙数据保护局），2024-11，https://www.aepd.es/guias/Tech-note-blockchain.pdf（检索 2026-10-14，PDF 全文提取）
+> 策略清单："Chameleon hashes and cryptographic variants, modification of the block data structure, mutable transactions (multiple versions), off-chain storage, local erasure, ZKP techniques, pruning techniques or techniques based on consensus mechanisms are some of these strategies. However, they have not been implemented in the most popular blockchain infrastructures."
+> 治理删块路径："the chain may be altered by an agreement between users to delete a block or transaction, which, while making an inconsistency manifest, does not allow the deleted information to be recovered. This is more feasible in private or permissioned Blockchain infrastructures and implies a change in the agreement between the participants/nodes, i.e. a governance measure."；其 PoC "demonstrates the feasibility of building GDPR-compliant Blockchain infrastructures... implement the right to erasure... by means of inconsistency management"（有意打破链内外一致性并以治理承接）。
+
+裁剪/截断的学术批评（arXiv 1907.07099v1 核真，Politou/Casino/Alepis/Patsakis）：
+
+> 【18】*Blockchain Mutability: Challenges and Proposed Solutions*，https://arxiv.org/abs/1907.07099（检索 2026-10-14，ar5iv 全文）
+> "truncating blockchain's history yields to a decreased security... Pruning has also been criticised for its weak enforceability as there is not any guarantee that all nodes will choose not to store the full chain. Nonetheless, it has been foreseen that pruning may be an appropriate solution for permissioned blockchain frameworks where the operating environment is more easily controlled."（另：可编辑链谱系源头为 Ateniese et al. EuroS&P 2017 chameleon hash——"the knowledge of this trapdoor allows collisions to be generated efficiently"，即靠**可控碰撞**改链=承认重锚，与本仓禁重锚冲突）
+
+**负结果（明说）**：按 data subject 分链的直接先例，arXiv 检索式 `abs:"data subject" AND abs:blockchain AND abs:erasure` 与 `abs:"per-subject"` 均 0 相关命中（2026-10-14）；RFC 9162（Certificate Transparency v2）全文 0 次出现 "shard"（CT 时间分片是政策层实践，非 RFC 条文——**线索**级，未核政策原文）；Fabric 的 collection 按**组织**分域不按数据主体分。per-subject 分链是“合理设计但无权威先例”的选项。
+
+**本仓映射的硬伤**：一行事件含买方+卖方双主体 → 按主体分链须每事件双写两链，或退化为“主主体链+counterparty 字段加密兜底”（即被迫回到选项 a）；删除主体 X 时，含 X 作为卖方的买方链副本仍残留 → 跨链残留要求 c 必须与 a 复合才闭环。
+
+---
+
+## 选项空间总表
+
+三承诺 = 保链（recordHash 链不可变且可验证）/ 禁重锚 / erasure 可交付（含 Art.30 时限可写明）。
+
+| # | 选项 | 机制 | 先例强度 | 保链 | 禁重锚 | erasure | 工程代价 | 主要风险 | 文献支持度 |
+|---|------|------|---------|------|--------|---------|---------|---------|-----------|
+| a | **crypto-shredding**（per-subject DEK 字段级加密，写时密文入链） | 链锚密文 canonical（永不失配）；删除=销 KMS 中主体键 | 强（NIST 标准化+两大云厂商术语级支持+事件溯源工业实证【1-6】） | ✔（链从未见过明文） | ✔（链不动） | 密码学删除成立；**监管口径打折**：EDPB“密文仍是个人数据+会被时间追上”【13】，Art.30 时限须计 KMS 等待期【3】 | 密钥管理最重（高可用备份 vs 删干净的张力；NIST 备份/托管盲区【2】）；密文字段不可查询（需盲索引）；快照/导出/日志外泄面须同字段加密【9-③同构坑】 | 算法/算力进步致密文复生（NIST 对 decades 数据的保留【2】）；字段漏加密（Red Badger 的任意 JSON data 字段教训【6】） | **强**（工程）/**中**（监管口径） |
+| b | **链锚哈希不锚明文**（明文住可删区，链表只存 PII-free canonical + keyed hash；QLDB/Fabric 同型） | 链只锚 HMAC(payload)+元数据；erasure=删明文+销盐/键 | 强（Fabric PDC+purge 工业实现【10】【11】【12】；EDPB 首选架构【13】；SLR/eichler 论点【15】） | ✔（不可变性收缩到哈希/元数据最小集——**语义变化：链不再证明 PII 内容完整性，只证明“该哈希曾在位”**） | ✔ | 较强：删明文+销键后 EDPB 认 “hash should not be linkable”【13】；WP216 匿名化判据=不可逆【16】 | 架构拆分（两套存储+引用一致性）；验证协议改变（明文删后只能验证哈希在链，不能重算内容）；EDPB 点名 off-chain 组件自身成为新处理面【13】 | 链外明文的完整性不再被链保护（需快照一致性另立机制）；哈希位默认仍算个人数据【13】，匿名化是论证非保证 | **强** |
+| c | **分段/按主体链**（每主体独立链，删除=整链删除） | 主体链相互独立锚定，删段不动余链 | 弱（EDPB 容许部分删链【13】、AEPD 治理删块 PoC【17】、裁剪批评【18】；**per-subject 直接先例 0 命中**） | 部分（余链 ✔；被删段连同其证明一起消失） | ✔（无需重算余链；但 AEPD“治理删块+重算”路径违反禁重锚【17】） | 物理删除=最强交付形式 | 链数=主体数爆炸；跨主体事件双写；跨链查询/全局时序证明需额外全局锚 | **双主体残留**：counterparty 链上的我删不净，必须与 a 复合【6】；弱可执行性批评（无法保证无人存全链）【18】 | **弱-中**（无直接先例，仅有监管不禁止+邻接证据） |
+| d | **键控哈希销毁→匿名化论证**（b 的法律强化腿，可独立为终态：链上只剩 HMAC，销键后主张链上残余已非个人数据） | Recital 26/WP216 不可逆判据 | 中（WP216/EDPB 逐字锚在【13】【16】，但成立与否取决于键管理与输入熵） | ✔ | ✔ | 若匿名化论证成立→残余链出 GDPR 域（比 a 的“密文=个人数据”终点更干净） | 与 b 共享架构成本 | **低熵枚举风险**：buyerLogonId/sellerEmail 可字典攻击（WP216 对低熵哈希的反转警告同源）→ 必须 keyed（非裸盐）且键真销毁；匿名化是事后论证，可能被个案挑战 | **中** |
+| e | **复合 b+a**（EDPB 首选 off-chain 架构 + 明文区 per-subject DEK 加密 + 链锚 HMAC；冷区脱敏=删键或删明文+销盐） | 两腿叠加：明文区可物理删（b 腿），删不净的副本（备份/冷区）由键销毁兜底（a 腿） | 强（全部单腿先例的交集；EDPB §5.2“off-chain+可匿名化”即此形态【13】；Red Badger 多主体 DEK【6】；Fabric purge 语义【10-12】） | ✔ | ✔ | 双保险：物理删除（明文区）+密码学删除（备份/冷区/导出） | a+b 代价叠加：密钥管理+架构拆分+盲索引 | 复杂度最高；任一腿执行不严即破功（QLDB 外部复制警告【9】是现成失败模式） | **强-中**（组合先例充分，但“两腿同时做好”的完整实证只有 Fabric PDC 部分覆盖） |
+
+**不做最终裁决**。协商时需摆出的取舍轴：① 链的语义要不要收缩（b/d/e 收缩，a 不收缩但交付打折）；② 密钥管理复杂度谁背（a/e 背）；③ 双主体行的切分方案（a/e 按 subject_id 分槽【6】；c 按链切）。
+
+**统一前置事实**：无论选哪个，我仓现行 recordHash（canonical 含明文 payload）与 QLDB/Fabric 的可删形态都**代数不相容**——先例们共同的第一步都是“写入时链就不含明文”。这是三角里“禁重锚”与“事后脱敏”互斥的根因，也是任何方案的公共改造点。
+
+**精读清单**（原文在手）：QLDB 存档×2【8】【9】、EDPB 02/2025 v2.0【13】、NIST SP 800-88r2【2】、AEPD 技术注记【17】、Fabric private-data【10】、TSC 报告【11】、AWS KMS【3】、GCP KMS【4】、WP216【16】、Perlman 摘要【1】、arXiv 2105.14818/2210.04541/1907.07099（export API 核真+ar5iv 全文×2）【12】【15】【18】、Red Badger×2【5】【6】、CNIL 2018【14】、AWS 停服清单【7】。另有 5 篇 arXiv 仅条目核真未引正文（1902.06656 Proving Erasure / 1804.02834 / 2307.04316 / 2508.08898 / 1311.2517）。**线索级（未获原文）**：Vanish 项目页引文（二级提取）、CNIL 2023 EN 版、CT 时间分片政策、immudb 官方 GDPR 文档。
+
+---
+
+E 员精读 18 篇 / 引文 18 条三件齐（另 5 篇 arXiv 条目核真 + 4 条线索标注）/ 选项空间 5 个 / 文献支持度分布：强×2（a 工程、b）·强-中×1（e 复合）·中×1（d）·弱-中×1（c）

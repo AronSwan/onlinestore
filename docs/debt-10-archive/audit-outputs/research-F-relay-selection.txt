@@ -1,0 +1,139 @@
+全部证据链闭合。汇总产出选型裁决卡。
+
+---
+
+# 债-10 中继选型专项调研报告（F 员 · 中继与工程生态件）
+
+**检索日期口径**：本会话环境时钟 2026-10-13（任务模板标 2026-10-14，本文引文按实际检索日 2026-10-13 记，跨午夜口径由协调者归一）。
+**核查器纪律**：无胜负语；所有承重陈述带锚（逐字引文+机构+URL+日期）；拿不到原文的标“线索”。
+
+---
+
+## Q1 TiCDC 精读
+
+**机制**：TiCDC 是 TiDB 的原生 CDC 组件——独立集群进程（Capture），从 TiKV 拉取行变更（Puller），按时间戳排序（Sorter），经 PD/etcd 选主调度（owner），投递到下游 sink。
+
+**下游类型**（官方枚举，穷尽列表）：TiDB / MySQL / Kafka / 存储服务（S3/GCS/Azure Blob/NFS）。**无 HTTP/webhook sink**（官方总览页枚举无此项；另TiCDC OpenAPI 是管理接口非数据出口）。
+
+**部署前提**：独立进程集群，经 TiUP 拓扑 `cdc_servers`（独立机器、默认端口 8300、gc-ttl 默认 86400s）或 TiDB Operator(K8s) 部署——**不可嵌入应用进程**。
+
+**引文（三件齐）**：
+- **C1**《TiCDC Overview》PingCAP，docs.pingcap.com/tidb/stable/ticdc-overview，2026-10-13：
+  > "TiCDC is a tool used to replicate incremental data from TiDB."
+  > "As shown in the architecture diagram, TiCDC supports replicating data to TiDB, MySQL, Kafka, and storage services."
+  > "For all DDL or DML statements, TiCDC outputs them at least once." / "…TiCDC might send the same DDL/DML statement repeatedly."
+- **C2**《TiCDC Classic Architecture (v7.1)》PingCAP，docs.pingcap.com/tidb/v7.1/ticdc-architecture，2026-10-13：
+  > "Puller: pulls DDL and row changes from TiKV nodes." / "Capture: The process that runs the TiCDC node. Multiple Capture processes constitute a TiCDC cluster."
+  > "These nodes regularly report their status to the etcd cluster in PD, and elect one of the nodes as the owner"
+  > "TiCDC ensures the consistency of transactions in a single table and eventual transaction consistency in multiple tables."
+- **C3**《TiCDC Architecture (stable，新版)》PingCAP，docs.pingcap.com/tidb/stable/ticdc-architecture，2026-10-13：
+  > "Log Service…fetches information such as row changes and DDL events from the upstream TiDB cluster" / "periodically merging and sorting DML and DDL data and pushing the sorted data to the Downstream Adapter"
+- **C4**《TiUP Topology Reference》PingCAP，docs.pingcap.com/tidb/stable/tiup-cluster-topology-reference，2026-10-13：`cdc_servers` 节 "specifies the machines to which the TiCDC services are deployed"（host 必填、port 默认 8300、gc-ttl 默认 86400 秒）。
+
+**本仓映射——三路线判定**：
+1. **TiCDC 直接做中继：结构性不可行**。本仓中继职责是“读未链化行→**应用层计算** seq/prevHash/recordHash→**事务内回写本库**”。TiCDC 是数据搬运管道（把变更复制到**下游**另一个 MySQL/Kafka），不能执行应用逻辑，也不能回写源表；且 at-least-once 语义（C1）意味着重复投递需幂等消化。链化哈希计算必须留在应用进程内。
+2. **TiCDC 只做触发：prod 可行但重**。Kafka sink → 应用消费 → 应用补链。代价：prod 需新增 TiCDC 集群 + Kafka + 消费者三件运维；**dev（better-sqlite3）无 TiCDC 等价物**，必须另写一条轮询腿 → 双方言分叉成两套中继。
+3. **不用 TiCDC 用轮询：双方言统一**。TiCDC 解决的核心问题（跨系统低开销搬运变更）不是本仓问题（本仓是同库回写加工）；Debezium 侧同理印证——CDC 优势在“捕获开销低”（C8），而本仓捕获开销本来就近似零（同库 SELECT 未链化行）。
+
+---
+
+## Q2 sqlite 侧：WAL tailing 成熟度与单写者轮询
+
+**结论：SQLite 无成熟逻辑 CDC 通道，litestream/litefs 是复制/容灾不是 CDC。**
+
+- **C5**《litestream README》Ben Johnson，github.com/benbjohnson/litestream，2026-10-13：
+  > "a standalone disaster recovery tool for SQLite." / "runs as a background process and safely replicates changes incrementally to another file or S3."
+- **C6**《Litestream 首页》litestream.io，2026-10-13：
+  > "Continuously stream SQLite changes to your preferred cloud storage or local files." / "Runs as a separate process so you can integrate into existing applications with no code changes."
+  （首页无显式“不是 CDC”声明；“非 CDC”的定性依据：其流的是物理 WAL 页而非行级变更事件。**线索**：作者 HN 评论 news.ycombinator.com/item?id=26442058 "Litestream works by reading off the SQLite WAL file which acts as a circular buffer"——抓取超时未直验。）
+- **C17**《SQLite Session Extension》sqlite.org，sqlite.org/sessionintro.html，2026-10-13：
+  > "The session extension provides a convenient mechanism to record changes to tables in an SQLite database, package those changes into a 'changeset' or 'patchset' file…"
+  > "A single session object monitors changes made to a single database…via a single sqlite3* database handle."
+  ——SQLite 存在 C 级逻辑变更捕获 API（changeset），但**按连接隔离**且 better-sqlite3 不暴露该接口 → 本仓不可达。
+- **线索**：Turso 于 2025-07 在其 libSQL 重写版引入 CDC（turso.tech/blog/introducing-change-data-capture-in-turso-sqlite-rewrite）——旁证原生 SQLite 生态此前无 CDC；github.com/kevinconway/sqlite-cdc 为触发器式 CDC（非 WAL tailing）。
+
+**单写者+进程内轮询**：dev 侧 better-sqlite3 单写者 + runExclusiveWrite 进程级 FIFO 互斥 ⇒ 中继读-算-写在同一互斥通道内天然串行，**无锁竞争问题、无需任何 SQL 锁**。轮询即 `setInterval → SELECT WHERE 未链化 ORDER BY id LIMIT N → 同事务 UPDATE`（双方言 SQL 均可写）。
+
+---
+
+## Q3 NestJS/TypeORM outbox 生态件（真实验证）
+
+**名字勘误（协调者清单核对）**：
+- "transactional-outbox-boxer"：**不存在**。npm registry 查无；最近似真实物是 .NET 库 TransactionalBox（github.com/adimiko/TransactionalBox），非 TS 生态。
+- "@level11/..."：npm registry `scope:level11` 查询返回 `total:0`——**不存在**。
+- "sebolias"：registry 查询 `total:0`——**不存在**（疑为记忆拼错的杂音）。
+- "outboxer"（npm）：registry 查询 `total:0`——npm 上不存在。
+
+**真实存在且活跃的件**（npm registry JSON 直查 2026-10-13，text=transactional-outbox 共 3655 命中，首 20 条）：
+
+| 件 | 版本/最近发布 | 判定 |
+|---|---|---|
+| `@nestjs-transactional/outbox` + `outbox-typeorm` | v3.0.0 / 2026-10-06（活） | 最对口：NestJS+TypeORM(^0.3‖^1.0)，event_publication 表 |
+| `pg-transactional-outbox` | v0.6.7 / 2026-10-09（活） | **PostgreSQL 专属**（README 明示 v14+，pgoutput 逻辑解码）→ dev/prod 双不匹配 |
+| `nestjs-outbox`（fullstackhouse） | 存在 | README 走 `pg` pool，**Postgres 专属** |
+| `@nathapp/nestjs-outbox` | v4.2.0 / 2026-10-13（活） | 面向 broker 投递 |
+| `@globalart/nestjs-typeorm-outbox` | 存在 | TypeORM 支持；README 无参数细节 |
+| `@basaltkit/events-sqlite` | v1.2.0 / 2026-09-19 | node:sqlite 的 outbox 存储（线索级，未深查） |
+
+**承重引文**：
+- **C11**《@nestjs-transactional/outbox-typeorm README》npm/unpkg，2026-10-13（二次抓取复核原文一致）：
+  > "`SELECT ... FOR UPDATE SKIP LOCKED` was tried and dropped: a pessimistic lock has to be held by a transaction wide enough to span the listener invocation, which is unsafe when listeners are slow."
+  > "`tryClaim` is one conditional `UPDATE` (`WHERE id = :id AND status IN (PUBLISHED, RESUBMITTED)`)"
+  ——**关键**：头部 TS 生态件已示范“弃 SKIP LOCKED、改条件 UPDATE 竞争”，与 TiDB 无 SKIP LOCKED 约束兼容。
+- **C10**《pg-transactional-outbox README》npm/unpkg，2026-10-13：默认值全套（见 Q4 表）；锁机制为 `locked_until` 列+DB 函数批取；PostgreSQL only。
+- **C12**《@nestjs-transactional/outbox README》：行为 "retried with backoff, deduplicated per consumer, dead-lettered when exhausted"——**无数值默认**（README 委托给子包文档，未取到）。
+- **C13**《nestjs-outbox README》(fullstackhouse)：relay 用法 `new OutboxRelay({ pool, producer }).start()`，README **未载**间隔/批量/锁细节；失败语义 "a failed publish leaves the row and increments `attempts`" / "a row past `maxAttempts` stops being picked up"。
+
+**职责错配（自建 vs 复用裁决材料）**：全部现成件的语义是“outbox 行→**发往 broker**”（Kafka/微服务传输），本仓中继语义是“行→**算哈希回写本库**”。复用得到的是表结构骨架与 worker 参数参考，复用件本体则要绕过/替换其发布层——替换量≈自建量。**@nestjs/cqrs+EventEmitter2 组合**：事件总线已有，双触发路线（R2）直接复用它，无需引件。
+
+---
+
+## Q4 中继参数行业惯例（每数字带出处）
+
+- **C7**《Pattern: Polling Publisher》microservices.io (Chris Richardson)，microservices.io/patterns/data/polling-publisher.html，2026-10-13：
+  > "Publish messages by polling the database's outbox table." / 缺点 "Tricky to publish events in order" / 优点 "Works with any SQL database"
+  （子页**不含**间隔/批量数字——前轮“只引命名”的缺口补齐：官方模式页本就不给数，数字须从实现件取。）
+- **C8**《Reliable Microservices Data Exchange With the Outbox Pattern》Debezium 官方博客 2019-02-19，debezium.io/blog/2019/02/19/...，2026-10-13：
+  > "As opposed to any polling-based approach, event capture happens with a very low overhead in near-realtime."
+  > "An instance of the OutboxEvent entity is persisted in the database — and removed right away!"
+  （注意：Debezium 模式“捕获后即删”**不适用本仓**——链化行是账本本体，须保留。）
+- **C14**《Transactional Outbox Pattern》AWS Prescriptive Guidance，docs.aws.amazon.com/prescriptive-guidance/latest/cloud-design-patterns/transactional-outbox.html，2026-10-13（全文）：
+  > "A separate service is in charge of regularly scanning the outbox table for new events, sending them to Amazon SQS, and deleting them from the table if Amazon SQS responds successfully. The polling rate is configurable in the `application.properties` file."
+  > "Send messages or events in the same order in which the service updates the database."
+  > "…preserves the order of messages and events by using timestamps and sequence numbers."
+  （官方权威确认：轮询速率是可配置参数、保序靠 sequence number——与本仓 seq 链同构。）
+- **C15**《MySQL Source (JDBC) Connector》Confluent，docs.confluent.io/cloud/current/connectors/cc-mysql-source.html，2026-10-13：`poll.interval.ms`——"Frequency in ms to poll for new data in each table." **Default: 5000**；有效下限 100ms。（注：这是查询式变更检测连接器的默认，非 outbox 专用，作上界锚点。）
+- **C16**《JIT Outbox Polling》Ledjon Behluli（个人工程博客），ledjonbehluli.com/posts/jit_outbox_polling，2026-10-13（全文）：
+  > "The problem is getting the predetermined polling interval right. Too frequent, and you put stress on the database. Too rare, and you miss time-critical business requirements."
+  > "It is the application itself who is simulating Change Data Capture." / "Maybe once every 1 or 5 minutes, as opposed to every second." / "Why not drop polling altogether? Because bad stuff happens!"
+  （双触发路线的直接文献：提交后 JIT 触发 + 长间隔定时兜底。）
+- **C18**《Outbox Pattern Implementation Guide》OneUptime 博客 2026-01-30，oneuptime.com/blog/post/2026-01-30-outbox-pattern-implementation/view，2026-10-13：示例常量 `POLL_INTERVAL_MS = 1000`、`BATCH_SIZE = 100`、`RETENTION_DAYS = 7`（每小时清理）。
+- **线索级数字**（搜索摘要，原文未取到）：LinkedIn 例 3s/100 条；CodeToByte“批处理型 5–30s 可接受、勿低于 50ms 不测压”；Stackademic“~50/批”。仅作旁证不入区间表。
+
+---
+
+## 中继选型总表
+
+| # | 路线 | dev(sqlite) | prod(TiDB) | 参数出处 | 工程代价 | 主要风险 | 成熟度 |
+|---|---|---|---|---|---|---|---|
+| R1 | **纯轮询**（间隔循环+批量+事务回写） | 可行（单写者天然串行，零锁） | 可行（FOR UPDATE 或条件 UPDATE 竞争） | C10/C14/C15/C18 | 最低：一个循环+一个事务；延迟上界=间隔 | 间隔选取两难（C16）；多实例部署时需竞争机制（条件 UPDATE 模式，C11 已示范） | **强**（模式页 C7+权威实现 C14+两件默认值 C10/C18+大厂连接器默认 C15） |
+| R2 | **双触发**（提交后 EventEmitter2 即时 drain + 长间隔兜底轮询） | 极契合（同进程、runExclusiveWrite 后即触发） | 可行（无新组件） | C16（JIT 原文）+ C7（兜底即 R1） | 低：R1 基础上加一个事件钩子+防抖 | 主文献为个人工程博客（非机构权威）；触发风暴需合并批处理 | **中-强**（模式有一手全文文献+业界同构实践，但权威层级低于 R1） |
+| R3 | **TiCDC 只做触发**（Kafka sink→消费→应用链化） | 不可行（sqlite 无 TiCDC→被迫双轨） | 可行 | C1/C2（组件）；无链化场景专用参数文献 | 高：TiCDC 集群（独立进程+PD，C2/C4）+Kafka+消费者，运维面翻倍；双方言两套中继 | at-least-once 重复投递须幂等（C1 原文）；单体引入 Kafka 栈 | **中**（组件自身强成熟，但用途映射=错配，无直接先例文献） |
+| R4 | **TiCDC 直接做中继**（sink 直落链化数据） | 不可行 | **不可行** | — | — | TiCDC 不能执行应用逻辑（哈希计算）、MySQL sink 写下游不回写源表 | **弱**（对该用途结构性不成立） |
+| R5 | **生态件复用**（现成 outbox 库） | 部分（件多为 PG 专属；outbox-typeorm 理论跨库） | 部分（outbox-typeorm 条件 UPDATE 兼容 TiDB，C11） | C10-C13 | 中：需剥离 broker 发布层再嵌入链化逻辑 | 职责错配（件=发 broker，本仓=回写加工）；@nestjs-transactional 数值默认未公开（C12） | **中**（件活跃且工程化良好，但无一做“链化”） |
+
+## 参数建议区间表（无出处处明说）
+
+| 参数 | 建议区间 | 出处 | 备注 |
+|---|---|---|---|
+| 轮询间隔 | 500ms–5s（敏感收紧至下限）；兜底轮询可放宽至 1–5min | C10(500ms 默认)/C18(1000ms)/C15(5000ms 默认)/C16(1–5min) | 本仓具体取值（如 dev 1s+prod 2s）为区间内选点，**无文献直接支持，仅推断** |
+| 批大小 | 5–100 | C10(5)/C18(100) | 链化为串行哈希计算，批量过大延长事务持锁时间；中间值（如 50）无强出处 |
+| 重试次数上限 | 5 次 | C10(TRX_MAX_ATTEMPTS=5) | 3 次毒丸检测线（C10 TRX_MAX_POISONOUS_ATTEMPTS=3）可并引 |
+| 退避策略 | 指数退避（定性）；具体系数/上限 | C12（"retried with backoff"，无数值） | **系数无文献数字，仅推断**（建议 2^n、上限 60s，推断） |
+| 死信 | attempts 满即停取（状态列+attempts+error 列同表或死信表） | C13("a row past maxAttempts stops being picked up")/C10/C12 | 死信**告警通道**惯例：**无强文献，仅推断**（本仓按现有告警通道接入） |
+| 行锁定超时（多实例时） | 锁定 5s / 单条处理超时 15s | C10(LOCK_IN_MS=5000/PROCESSING_TIMEOUT=15000) | dev 单写者场景无需行锁 |
+| 行保留/清理 | 发布后保留 7 天定期清理（仅适用“已发布副本”表） | C18(RETENTION_DAYS=7) | **本仓链化行=账本本体不可删**（C8 的“捕获后即删”不适用） |
+
+---
+
+**一行总结：F 员精读 18 篇 / 引文 18 条三件齐 / 选型路线 5 条 / 参数出处覆盖 5/7（退避系数、告警通道无数字级文献）**
