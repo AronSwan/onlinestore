@@ -1,0 +1,73 @@
+任务书授权行：有
+条款援引：P2（承重陈述出口定律——计数须带可复现派生；本任务禁修改，diff 总闸不适用）
+
+# 债-10 方案 v5 实操路独立评审（第五轮）
+
+对象：`C:\Users\Administrator\onlinestore_remediation\docs\debt-10-architecture-research-proposal-v5.md`（正身仓）。全部代码行号经本席实读核验（2026-10-13）；六路四审总判行经逐份实读（`docs\debt-10-archive\audit-outputs\v4proposal-*.txt`）。未修改任何文件；未参考其他五审路输出（尚不存在）；推荐见文末。
+
+## 一、核过通过项（任务书 1/2/4 的正面结论）
+
+1. **P0-a 两处点名精确**（任务书第 1 项前半）：`backend\src\database\migrations\20261011000001-create-order-snapshots-table.ts` 实读——:28-30 `} catch { //注释 }` 空 catch（版本探测失败静默走通用路径）、:62 `).catch(() => []);`（sqlite_master 探测吞错）均在位且逐字命中；:26 已 toLowerCase、:27 判定式 `v.includes('mysql') || v.includes('mariadb')` 亦中，加 `|| v.includes('tidb')` 为单行编辑。单测可行（jest testMatch `**/*.spec.ts` 机制覆盖 migrations 目录）。四审“同点”错位已在 v5 修正为两处分别点名——修复兑现。
+2. **P0-b “4 处承载”逐行吻合**（任务书第 1 项后半）：`backend\src\database\database.module.ts` :26 resolvedType / :27 defaultPort / :29 `type: resolvedType as any` / :38 `port: ... || defaultPort` 四处全中。工单必要性实证：`app.module.ts:52` `type: dbConfig.type` 直传、:87 `port: dbConfig.port` 无回退（DB_TYPE=tidb 必 MissingDriverError 或连错端口）；**DB_SYNCHRONIZE 已被读取**——`unified-master.config.ts:541` `synchronize: isProd ? false : env.DB_SYNCHRONIZE !== 'false'`，故“显式声明”为零代码动作，可实施。
+3. **P0-c 两动作准确必要**：`backend\src\config\typeorm.config.ts:7` 联合类型实测 `'postgres' | 'mysql' | 'better-sqlite3'` 无 tidb；:11 `type: dbType` 直传——不加 ：11 映射则 DataSource 报 invalid type，两动作必要且充分。
+4. **策略可测性改造结构可行**（任务书第 4 项）：三桩 refund 各约 10 行确定性实现（alipay.strategy.ts:59-69 / wechat-pay.strategy.ts:58-68 / credit-card.strategy.ts:58-68 恒 success:true），crypto.strategy.ts:149-155 恒拒（v5“3 策略实现+crypto 降级成文”与仓内实况吻合）；策略为普通类、在 payment.module.ts:52-68 工厂内 `new`——注入桩（构造参或 env 钩子）有天然缝隙，无 DI 改造前置；test:e2e 在（backend package.json:24）。**结论：排产可行，无结构性障碍。**
+5. **T9-e 五处锚全中**：守卫 aggregate:222-224（`.filter(r => r.status !== RefundStatus.FAILED)` 实读在位）、仓储 save:148-160（metadata.refunds 写块逐行吻合，实路径为 `infrastructure\repositories\typeorm-payment-order.repository.ts`）、事件/迁移脚本/对账腿为新增件。回归三腿（typecheck/test/test:e2e=backend package.json:17/20/24）指名属实。
+6. **14 P1 派生复现成立**：六路总判行实读——结构 1 P1（v4proposal-structure.txt:78）/数据 2（:61）/逻辑 3（:41）/实操 6（v4proposal-practice.txt:75）/治理 2（:91）/学术 0（:108），加总 14，与 v5 头部口径一致；附录 A 14→10 映射行号 1-10 连续完备。
+7. **附录 B“已修”正文行核验（任务书第 5 项，实抽超 8 项——19 项全检）**：计数族→附录 A、T9 计数→§0.1、判据 2③ 时点+路由表→§4.2-2③、L4-03→§2 规格 h 配套、L4-04→§2 T9-e、“3 行→4 处”→§4.0 P0-b、判据 3 告警→§4.2-3、空库前提→§4.2-5、R2 空窗→§4.1 P3 行、对账腿载体→§4.1 P2 行（scripts/reconcile-refunds-transition.mjs）、回归面→§2 T9-e、自查门→§0、映射缺行→附录 A、“8 轮”→§6.3、未验卡→§6.3、引号 3 处→§5、adapter 锚→§5、P0-c 两动作→§4.0、W4 标签→§4.1 归属规则——**内容全部在正文有真实承载行，无虚报“已修”**。缺陷仅在计数面（见 P1-1/P2-1）。
+
+## 二、发现（每项含实操影响与修法）
+
+### P1（3 项）
+
+**P1-1 附录 B P3 原始分母算术断裂：25 不可达**。v5:170 逐字：“P3 原始 25（派生：结构 4+数据 6+逻辑 4+实操 7+治理 5+学术 7）”——括注自和=33≠25；且五路已验 P3（结构 4+逻辑 4+实操 7+治理 5+学术 7=27，出处同上总判行）已超 25，无论数据路取何值总额≥27。实操影响：附录 B 是“12 P2/12 P3 废止”的替代对账机制，其头部分母自身断裂→“已修 18+未修 6”的处置覆盖率宣称失去可对账基数，属 v5 自认已修的“计数族”缺陷类在修复件内复发。修法：25→33（P2 原始 21 的括注与加总本席已复现成立，保留）。
+
+**P1-2 规格 g 人工裁决出口与规格 h 降级键人工核对双无实操载体**（任务书第 2 项第三问：v5 无交代）。g 定义三出口（确认成功→CONFIRMED+事件/确认拒绝→FAILED+事件/重扫→PENDING_GATEWAY 清零），h 要求“人工核对到笔（金额+时序）”——全文（含 §4.1 P2 行“T9 a-h 全量”）无载体字面：无 admin 端点（payment.controller.ts 全仓仅 ：222 `POST /refunds` 一个退款端点，无裁决/查询面）、无 CLI、无工单流程；裁决还须插 REFUND_* 事件（写路径归属未定义）。实操影响：第四出口是 v5 新增性能的核心，实施者须自行发明裁决面=未排产的设计决策；且 P2 期 R2 可见性未上线（v5 自注空窗），裁决者连读行界面都未指定。修法：P2 行补载体一句（最小=admin 只读列表面+受控 UPDATE 端点，或 scripts/rule-refund.mjs，事件插入复用扫描腿写路径）。
+
+**P1-3 判据 1b 挂起项的 BACKLOG 锚不满足本仓记账规则 5**（任务书第 3 项）。v5 §4.2-1：“挂起项入 BACKLOG 带触发条件‘资源就绪’”。`docs\BACKLOG.md` 记账规则 5（逐字）：“可判定触发事件（须附到来方式——排期或外部触发器，永不到来的事件非合格锚），三选一外加‘为什么不做’”。“资源就绪”是无到来方式的状态；三通路现状（本机 podman/docker 均不在 PATH——本席 2026-10-13 `where` 实测空输出；TiDB Cloud 需外部注册）使该锚可无限期不触发。实操影响：降级路径合法性依赖挂账行合格存在，锚不合格→挂起项静默蒸发，即 v4“验收引用未决设施”缺口的换形复发。修法：BACKLOG 行写明触发=用户完成 TiDB Cloud 注册或 podman/docker 任一就绪（外部触发器=用户动作）+日期+为什么不做。
+
+### P2（6 项）
+
+**P2-1 附录 B“已修 18 项”与其派生规则“本栏行枚举”不符**：斜杠枚举实为 19 项（程序化清点：22 片段−“T9 计数 4/5/6”内含 2 斜杠−“W4 标签 7/6”内含 1 斜杠=19；py -3.14 正则清点，2026-10-13）。实操影响：替代机制首个计数即不可机械复现。修法：改 19，或写明“计数族+T9 计数”合并为一项的规则。
+**P2-2 排产件隐身**：§4.2-2③ 宣告“eventType→路由枚举表（P1 交付件新增）”但 §4.1 P1 排产行枚举内无此件。实操影响：验收判据引用未排产交付件（三审 P1-8 同型）。修法：P1 行补“+ eventType→路由枚举表”。
+**P2-3 第 8 方法漏收**：四审实操路 [P2] 工作面漏项五子项中，QueryRefundData/RefundStatus 枚举扩展/可测性改造三件已入 P2 行，"PaymentGateway 域接口+StrategyGatewayAdapter 各加 queryRefundStatus 第 8 方法”仍无字面（P2 行“3 策略实现”只覆盖策略层；扫描腿消费的是 7 方法域接口，payment-gateway.factory.ts 实测 7 方法）。修法：P2 行补“（域接口+Adapter 第 8 方法）”。
+**P2-4 P0-b 丢失源文件名与选边理由**：:26/:27/:29/:38 是 database.module.ts 行号，v5 行内未名文件（按字面去 app.module.ts 找 ：26-38 落在无关行）；v4 的“**非**挂 DatabaseModule——通配全量实体 glob 会整体更换实体注册集（Blocker 1 先例）”整句消失，而 DatabaseModule 恰是仓内唯一 tidb-aware 模块（database.module.ts:46-49 通配 glob vs app.module.ts:54-78 白名单），无理由句时反向选边会触发注册集整体更换。修法：补“（源自 database.module.ts:26-38；仍不挂 DatabaseModule——注册集不变）”。
+**P2-5 §3.9 状态机词数自相矛盾**：v5:71“payment_refunds.status **五态**：PENDING_GATEWAY / CONFIRMED / FAILED / NEEDS_REVIEW（……派生：枚举 **4 态**）”——同句内“五”与枚举 4 与派生 4 互斥。修法：五态→四态。
+**P2-6 告警“OpenObserve 可查日志行”形状未定义且管道前提未验**：backend 内 OpenObserve 现状=config 面（environment-adapter.ts:81-127 OPENOBSERVE_URL/ORG/TOKEN/batch/alerts 全套 env）+悬空引用（该文件 ：2 注释引 cqrs-openobserve.config.ts，此文件仓内不存在）——应用日志→OpenObserve 摄入通道代码层未证存在；“可查”无查询键（refundId？），验收无机械判据。修法：指名“日志行含 refundId+attempts 字段；验收=按 refundId 检索命中”+管道前提一句。
+
+### P3（3 项）
+
+**P3-1** §0.1“统一为‘六项（a-f）’”与 §0.2 新增 g/h、§4.1“T9 a-h 全量”同稿漂移（六 vs 八，可由修订顺序重建但“统一”句失真）。修法：句尾补“（增 g/h 后=a-h 八项）”。
+**P3-2** 同一 throw 点两锚形并存：§2 用":131-132"、§5 用":128-132"（实读 if=:131、throw=:132、调用参 ：124-129，两种皆真）。修法：统一 ：131-132。
+**P3-3** RefundStatus 枚举扩展后新旧词表并存无收敛注（现值 PENDING/PROCESSING/SUCCEEDED/FAILED，payment-order.aggregate.ts:32-37 实读；加 3 后 7 值，旧 PENDING/SUCCEEDED 与新词语义重叠，聚合旧值是否弃用未注）。修法：P2 行补“旧值仅遗留只读兼容”。
+
+## 三、反过拟合扫描节（显式；含同类未抓实例，任务书授权行授权）
+
+同类计数/锚断裂类全扫结果即 P1-1、P2-1、P2-5、P3-1、P3-2（五处均为 v5 新文本自引入——其中 P1-1/P2-1 落在专为修复计数缺陷而设的附录 B 内部，属“修复轮自引入同型新错”模式，与四审学术路对 v4 §5 的判定同构）。另核过无新发现：§6.1“编号清单共 11”实数 11；§6.3 加总（9=5+4、25/35、未验 10=E5+F5、28=24+4）全对；附录 A 映射行号连续；T9-e/守卫/仓储行号引证本席实读全中（§一第 5 项）。修复自引入扫描其余面（判据 2③ 收窄为 2 枚举、worker 归属、crypto 成文、可测性改造排产）未发现引入性破坏。
+
+## 四、总判定一行
+
+**v5 实操面较 v4 实质提升——P0 四子项工单全部对到真实代码点且两动作/四处/两处点名精确，四审实操 6 P1 全有实质响应，桩可测性改造结构可行——但存在 3 P1（附录 B P3 分母 25≠33、规格 g/h 双人工流无载体、挂起项 BACKLOG 锚不合格）+ 6 P2 + 3 P3，其中两处落在“为修计数而设”的附录 B 自身，按本仓出口定律该分母作废——修毕 3 P1（均为文档级补丁，合计约半日）后实操路面可闭合。**
+
+## 五、推荐（工程判断，非背书）
+
+修毕 P1-1/P1-2/P1-3（建议连同 P2-2/P2-3/P2-4 三处排产/工单字面一并补，出 v5.1 勘误页而非 v6 全稿）后，实操路对 v5 放行进入 β 立项评估；不建议为剩余 P2/P3 整稿六送。历史命中率声明：实操路对方案稿系第二轮出具——四审 6 P1 经本轮逐项复验 6/6 在 v5 有实质响应（兑现率 100%）；但两轮均出现“修复轮自引入同型计数新错”（四审抓 v4 三处、本轮抓 v5 五处），提示该文档族的计数面在出稿时仍缺一道机械自检闸（建议：承重数字出口前跑一次“括注加总=标题数”程序化核对，仓内 py -3.14 十行以内）。
+
+---
+
+## 附：任务书全文
+
+> 你是债-10 方案 v5 评审席的**实操路**独立评审员（第五轮送审）。
+> **任务书授权行：本任务书所列检查项之外，受权报告独立新发现（含同类未抓实例扫描）。**
+> **agent 声明义务：输出首节声明“任务书授权行：有”。**
+>
+> 对象：`docs\debt-10-architecture-research-proposal-v5.md`。铁面无私可实施性挑刺。
+>
+> **任务**：
+> 1. §4.0 P0-a 两处点名可执行性（Read 20261011000001 的 ：28-30/:62 确认工单准确）；P0-b "4 处承载+DB_SYNCHRONIZE=false"（对照 database.module.ts:26-38）
+> 2. **T9 规格 g/h 实施面**：NEEDS_REVIEW 的告警落地（OpenObserve 日志行的实操形状）/四分类裁决表的策略层改造量（GatewayResult 扩展+适配器不打平+3 策略分类——与 P2 排产行对照完整性）/降级键人工核对的实操载体（工单？admin 端点？——v5 有无交代）
+> 3. 判据 1b 三通路+降级挂起的可操作性（挂起项入 BACKLOG 的实操形状）
+> 4. **策略可测性改造**排产的可行性（refund 注入桩——现有策略文件结构支持吗）
+> 5. 排产行 vs 附录 B“已修”声称的一致性（附录 B 说修了的，正文行真有吗——抽 8 项）
+> 6. 修复自引入扫描 + **反过拟合扫描节**（可空须显式）
+>
+> **输出尾部附任务书全文**。报告每项 P0-P3 带实操影响，总判定一行。禁止：不修改/不参考其他路/不给推荐。
