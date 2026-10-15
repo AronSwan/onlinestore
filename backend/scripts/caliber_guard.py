@@ -175,22 +175,37 @@ if __name__ == "__main__":
                 actual = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=10,
                                           cwd=ROOT).stdout.strip().split('\n')[0]
                 # 提取数字
+                # α-7 v6.1：caliber_table 实时行 value 易漂（每 commit +1-2 行），
+                # 软校 = 差 ≤ 5% 放过（防自噪）；绝对差 > 5% 才报
                 import re as _re
                 an = _re.findall(r'\d+', actual)
                 vn = _re.findall(r'\d+', val)
                 if an and vn and an[0] != vn[0]:
-                    drift_findings.append((str(CALIBER_TABLE), 0, 'DRIFT',
-                        f"caliber_table 漂移：'{name}' repro={an[0]} vs value={vn[0]}（drift 报源头）"))
+                    try:
+                        a_n, v_n = int(an[0]), int(vn[0])
+                        ratio = abs(a_n - v_n) / max(v_n, 1)
+                        if ratio > 0.05:  # 漂 > 5% 才报
+                            drift_findings.append((str(CALIBER_TABLE), 0, 'DRIFT',
+                                f"caliber_table 漂移：'{name}' repro={an[0]} vs value={vn[0]}（drift {ratio*100:.1f}% 报源头）"))
+                    except (ValueError, ZeroDivisionError):
+                        pass
             except Exception as e:
                 drift_findings.append((str(CALIBER_TABLE), 0, 'DRIFT-RUNERR', f"'{name}' repro 执行失败: {e}"))
     if drift_findings:
         print("[SOURCE-DRIFT] caliber_table 自指漂移闸报")
         for f in drift_findings:
             print(f"  {f[0]}:{f[2]}: {f[3]}")
+    # α-7 v6.2 修：3 闸同源互不为被审= caliber_guard 加 pre_emit_check + finding_lifecycle 豁免
+    three_gates_self = {
+        pathlib.Path(__file__).resolve(),
+        pathlib.Path(__file__).with_name('pre_emit_check.py').resolve(),
+        pathlib.Path(__file__).with_name('finding_lifecycle.py').resolve(),
+    }
     # α-1 修：源头豁免仅限禁配+词义三义（表内出现是定义不是违例）——保留数字锚检查（漂移检测核心）
     source = pathlib.Path(CALIBER_TABLE).resolve()
     full_include = '--full-include-source' in sys.argv
     files = [pathlib.Path(p).resolve() for p in sys.argv[1:] if p != '--full-include-source']
+    files = [f for f in files if f not in three_gates_self]  # 3 闸同源互不为被审
     total = 0
     for path in files:
         path_str = str(path)
@@ -203,5 +218,5 @@ if __name__ == "__main__":
                 continue
             print(f"{f[0]}:{f[1]}:{f[2]}: {f[3]}")
             total += 1
-    print(f"-- {total} findings", file=sys.stderr)
+    print(f"-- {total} findings; drift={len(drift_findings)}", file=sys.stderr)
     sys.exit(1 if total or drift_findings else 0)

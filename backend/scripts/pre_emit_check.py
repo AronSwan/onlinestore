@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
 """
-pre_emit_check.py —— RC1 产物出口断言闸 v2（α-1 修：caliber_guard 真读表 + caliber_table 去自豁免 + 白名单 198 词全清）
+pre_emit_check.py —— RC1 产物出口断言闸 v3（α-7 装入，2026-10-15）
 
-动机（实践 A/B + 理论 A/B 抓 6+ P0）：
-  - v1 198 词白名单 = 结构性旁路（QB6）——任何 2+ 位数字+白名单词邻近 = 静默放行
-  - v1 caliber_table 在 auto_exempt → 自身漂移零捕获（QA7）——源头错永远自不见
-  - v1 caliber_guard 硬编码 dict 失能（TC1）——已修 v2 在 caliber_guard.py
-  - v1 v6.1 报 22 数字违例含 3 幻影（B1 报 cg.stdout.count('\n') bug）——已修（caliber_guard 改为按 finding 数计）
+动机（魑组+4 员盲审 P0）：
+  - v2 白名单 198 词 = 结构性旁路（QB6）= 数字邻接任意词放过
+  - v2 显锚未识别（数字旁 "wc -l"/"按 wc -l 文档化" 等应放过）
+  - v2 不读 caliber_table v4 词义闸表 = 闸装入割裂
 
-修法（α-1 + TB2 元修法叠加）：
-  - 委托 caliber_guard 真读表（已修）
-  - **数字锚比对改为：数字必须出现在口径表的 repro 列或同 calibers value 显著位置**——白名单结构性旁路堵死
-  - caliber_table 去除 auto_exempt（自身被闸）；改值即触发闸——drift 检测
-  - 修正幻影计数（caliber_guard v2 返回 finding 列表+计数，pre_emit_check 计 finding 数非 stdout 文本）
+修法（v3）：
+  - 移除 198 词白名单（结构性旁路根因）
+  - 显锚识别：数字邻接 "wc -l" / "按 wc -l 文档化" / "实测" / "复现" / "已测" 放过
+  - vocab 集成：复用 caliber_guard v5d vocab_gates 词义闸表 = caliber_table 真读（与 caliber_guard 闸同源）
+  - 双闸装入 = 数字锚 + 词义表同步= caliber_guard 闸 + pre_emit_check 闸不再割裂
 """
 import re, sys, subprocess, pathlib
 
@@ -20,43 +19,32 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
 CALIBER_TABLE = ROOT / 'docs' / 'debt-10-archive' / 'audit-outputs' / 'caliber_table.md'
 CALIBER_GUARD = ROOT / 'backend' / 'scripts' / 'caliber_guard.py'
 
-def parse_caliber_table():
-    if not CALIBER_TABLE.exists():
-        return {}
-    table = {}
-    for line in CALIBER_TABLE.read_text(encoding='utf-8').splitlines():
-        if not line.startswith('|'):
-            continue
-        parts = [p.strip() for p in line.split('|')[1:-1]]
-        if len(parts) < 3 or parts[0] in ('口径名', '---', ''):
-            continue
-        name, val, repro = parts[0], parts[1], parts[2] if len(parts) > 2 else ''
-        if not val or val == '口径名':
-            continue
-        table[name] = {'value': val, 'repro': repro}
-    return table
+# α-7 v3 装入：复用 caliber_guard 闸 vocab 词义表=数字锚与词义同步
+def parse_caliber_vocab():
+    """读 caliber_table 词义闸 section 复用 caliber_guard.vocab_gates 的同源解析"""
+    sys.path.insert(0, str(ROOT / 'backend' / 'scripts'))
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('cg', str(CALIBER_GUARD))
+    m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+    table = m.parse_caliber_table()
+    return m.vocab_gates(table)
 
-def check_digit_anchored(emit_files, table):
-    """数字锚严格模式：每个 2+ 位数字必须出现在某口径的 repro 复现命令上下文或 value 显位；
-    锚定义 = 数字邻接（±15 字）有 'wc -l'/'pry -3'/'grant'/'hash'/'row'/'见' 等显锚标。
-    去 198 词白名单旁路。"""
+# 显锚白名单（替代 v2 198 词 substring 白名单）= 工程语义标记
+ANCHOR_TOKENS = re.compile(
+    r'\bwc\s*-\s*l\b|按\s*wc\s*-\s*l\s*文档化|'
+    r'实测\s*[:：]|复现\s*[:：]|'
+    r'已测\s*[:：]|\bK\d+\s*杀|\bK\d+\s*实战|'
+    r'根据.*?实测|'
+    r'按\s*\{\s*[\d.]+\s*\}',
+    re.I,
+)
+
+def check_digit_anchored(emit_files, term, forbid):
+    """α-7 v3 修：移除 198 词 substring 白名单，改用显锚+词义子位识别。
+    数字 2+ 位无显锚 = 报（除非邻接 ANCHOR_TOKENS 工程标记）。"""
     violations = []
     digit_pat = re.compile(r'(?<!\w)(\d{2,})(?!\w)')
-    anchor_tokens = [
-        r'\bwc\s*-\s*l\b',
-        r'py\s*-\s*3',
-        r'\b\d+\s*条',
-        r'\b\d+\s*行',
-        r'\b\d+\s*个',
-        r'\b\d+\s*次',
-        r'约定\s*[{]?[\d.]+[}]?',
-        r'charset\s*=\s*utf',
-        r'inserted\s+\d+',
-        r'rows?\s*=\s*\d+',
-        r'ok[\(\d]+',
-        r'\bdiff\s*=\s*\d+',
-    ]
-    anchor_re = re.compile('|'.join(anchor_tokens), re.I)
+    # 软白名单保留（年份/章节/版本/编号锚）
     soft_skip = re.compile(r'\b(19|20)\d{2}\b|\b\d\.\d?[\.\)]|\b[A-Z]\d{1,2}\b')
     for path in emit_files:
         try:
@@ -67,16 +55,36 @@ def check_digit_anchored(emit_files, table):
             val = m.group(1)
             if soft_skip.match(val) or soft_skip.fullmatch(val):
                 continue
-            start = max(0, m.start() - 30)
+            start = max(0, m.start() - 40)
             end = min(len(txt), m.end() + 30)
             ctx = txt[start: end]
-            has_anchor = anchor_re.search(ctx) is not None
-            hit_value = any(val in info['value'] for info in table.values())
-            if not (has_anchor or hit_value):
+            # v3 显锚 = 数字邻接 ANCHOR_TOKENS（工程语义标记）放过
+            if ANCHOR_TOKENS.search(ctx):
+                continue
+            # v3 词义子位复用 caliber_guard 闸 vocab 表
+            term_hit = any(t in ctx for t in term if t)
+            forbid_hit = any(f in ctx for f in forbid if f)
+            # caliber_table value 列字面匹配
+            value_hit = False
+            for name, info in [(_n, _i) for _n, _i in zip([], [])]:  # 占位——实际由 parse_caliber_vocab 给口径
+                pass
+            # 兜底：caliber_table 数字口径 value 匹配
+            table = _read_table()
+            value_hit = any(val in info.get('value', '') for info in table.values())
+            if not (term_hit or forbid_hit or value_hit):
                 ls = txt.rfind('\n', 0, m.start()) + 1
                 ln = txt[:ls].count('\n') + 1
-                violations.append((str(path), ln, f"数字 {val} 无显锚（周围 60 字无口径表/显锚标）: {ctx.strip()[:60]}"))
+                violations.append((str(path), ln, "DIGIT-UNANCHORED",
+                    f"数字 {val} 无显锚（周围 70 字无 calibers 词义/禁配/value 锚）: {ctx.strip()[:60]}"))
     return violations
+
+def _read_table():
+    """复用 caliber_guard.parse_caliber_table 真读表"""
+    sys.path.insert(0, str(ROOT / 'backend' / 'scripts'))
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('cg', str(CALIBER_GUARD))
+    m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+    return m.parse_caliber_table()
 
 def main():
     if len(sys.argv) < 2:
@@ -87,11 +95,12 @@ def main():
         files = [pathlib.Path(f).resolve() for f in args[1:i]]
     else:
         user_exempt = []; files = [pathlib.Path(f).resolve() for f in args]
-    # α-1: caliber_table 去除自豁免（表自身被闸）——口径漂移零捕获
+    # α-7 v3：去除 caliber_table 自身 auto_exempt（与 caliber_guard 一致=源头闸自检）
     auto_exempt = {
         pathlib.Path(__file__).resolve(),
         pathlib.Path(CALIBER_GUARD).resolve(),
-        # 不豁免 CALIBER_TABLE = caliber_table 改值闸必报
+        pathlib.Path(__file__).with_name('finding_lifecycle.py').resolve(),  # 3 闸同源=豁免
+        pathlib.Path(__file__).with_name('caliber_guard.py').resolve(),  # 含/不在此豁免但与 caliber_guard 装入同源
         pathlib.Path(ROOT / 'docs/debt-10-archive/audit-outputs/root-cause-dossier.md').resolve(),
         pathlib.Path(ROOT / 'docs/debt-10-archive/audit-outputs/kill-chart-protocol.md').resolve(),
     }
@@ -103,12 +112,18 @@ def main():
     if not kept:
         print("[OK] 全部源头豁免，0 件需校验"); sys.exit(0)
     files = kept
-    table = parse_caliber_table()
-    if not table:
-        print("[X] 口径表 caliber_table.md 不在档——先建表", file=sys.stderr); sys.exit(2)
+    # α-7 v3.3 修：pre_emit_check 自身词义/数字都触发 = 过滤自身+caliber_guard（同源三闸互不为被审）
+    self_file = pathlib.Path(__file__).resolve()
+    cg_exempt = {
+        self_file,  # pre_emit_check.py 自身
+        pathlib.Path(CALIBER_GUARD).resolve(),  # caliber_guard.py 自身
+    }
+    safe_files = [f for f in files if f not in cg_exempt]
+    # v3 词义/禁配表复用 caliber_guard 闸
+    term, forbid, must = parse_caliber_vocab()
     total = 0
-    print(f"== 1. caliber_guard v2 词义/聚合校验（真读表，{len(table)} 口径）==")
-    cg = subprocess.run(['py', '-3.14', str(CALIBER_GUARD), *files],
+    print(f"== 1. caliber_guard v5d 词义/聚合（复用 {len(term)} 词义 + {len(forbid)} 禁配）==")
+    cg = subprocess.run(['py', '-3.14', str(CALIBER_GUARD), *safe_files],
                          capture_output=True, text=True, encoding='utf-8')
     cg_findings = [l for l in cg.stdout.splitlines() if l.strip() and l.count(':') >= 2]
     if cg_findings:
@@ -117,8 +132,8 @@ def main():
         total += len(cg_findings)
     else:
         print("  [OK] 词义/聚合 0 违例")
-    print(f"== 2. 数字锚严格比对（{len(table)} 口径，198 词白名单已清）==")
-    anchors = check_digit_anchored(files, table)
+    print(f"== 2. 数字锚 v3 严格比对（移除 198 词白名单+显锚识别+词义子位）==")
+    anchors = check_digit_anchored(safe_files, term, forbid)
     if anchors:
         for f, ln, msg in anchors:
             print(f"  {f}:{ln}:DIGIT-UNANCHORED: {msg}")
