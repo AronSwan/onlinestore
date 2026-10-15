@@ -13,7 +13,7 @@
 | 12 不变列集 | 现 10 | SQL:78 / :15 "H 集 12→10 列" | SQL 修订注 | 不得写"12 不变列" |
 | "掺水 25%" 口径 | 3/12 窄 / 7/12 宽 | gang-a:199 + verify-wu W2:51 复现 | 出口任何 % 数字必带"窄"/"宽" | 不得裸用 |
 | "已落仓" 三义 | 落盘（文件在）/ 库落（迁移 m=1）/ 上线（写入路径） | gang-c J10 三级分解 | 任何挂账/卷宗行 | 必带子位 |
-| BACKLOG 行数实时 | 696 | `wc -l docs/BACKLOG.md` | 自引 | 不得做快照 |
+| BACKLOG 行数实时 | 703 | `wc -l docs/BACKLOG.md` | 自引 | 不得做快照 |
 | plan-a 行数实时 | 295 | `wc -l plan-a-firewall-final.md` | 自引 | 不得做快照 |
 | plan-b 行数实时 | 232 | `wc -l plan-b-tidb-model.md` | 自引 | 不得做快照 |
 | v6.1 行数实时 | 211 | `wc -l docs/debt-10-architecture-research-proposal-v6.1.md` | charter:7 | 不得做快照 |
