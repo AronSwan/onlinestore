@@ -75,6 +75,9 @@ import { NotificationModule } from './notification/notification.module';
             __dirname + '/address/**/*.entity{.ts,.js}',
             __dirname + '/basic-data/**/*.entity{.ts,.js}',
             __dirname + '/notification/**/*.entity{.ts,.js}',
+            // 债-10 v6 立项批·触发器施工批(2026-10-15)：领域事件（防火墙接线——触发器由
+            // domain-events/firewall-bootstrap.ts 幂等安装，synchronize 只建表结构）
+            __dirname + '/domain-events/**/*.entity{.ts,.js}',
           ],
           synchronize: dbConfig.synchronize,
           logging: dbConfig.logging,

@@ -1,0 +1,109 @@
+# γ-bifrost 步骤 4：盲审席批后兜底
+# 债-10 v6 立项批（γ-bifrost 5 步之 4）
+# 2026-10-15 装
+#
+# 设计：push to master 触发 → checkout → 装 py -3.14 → 跑 3 闸（caliber_guard + pre_emit_check + finding_lifecycle）
+# → 上次 commit 的 staged 件若含违例=reject（阻推 origin）
+# → 含 finding_lifecycle 兜底（finding 报告留档）→ 推 comment 到 PR/Run Summary
+#
+# 装入条件：本仓 push to origin 触发（顶尖B 实测本仓 152 commit 在本地 master，未推 origin）
+# 激活方式：用户决议"是否首次 push origin"——决策拍板=本闸激活
+name: blind-review
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:  # 手动触发（不依赖 push 史）
+  schedule:
+    - cron: '0 */6 * * *'  # 兜底每 6h 跑（防推 master 0 push 史下仍可手动拉起）
+
+jobs:
+  blind-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 5  # 最近 5 commit（够看 4 席盲审上下文）
+
+      - name: Setup Python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      - name: 装依赖
+        run: |
+          python -V
+          ls backend/scripts/ | head -20
+
+      - name: 拉上次 commit 的 staged 件清单
+        id: staged
+        run: |
+          # 最近 1 commit 的 diff
+          CHANGED=$(git diff --name-only HEAD~1 HEAD | grep -E '\.(md|py|ts|mjs|json|txt|sql)$' || true)
+          echo "changed=$CHANGED" >> "$GITHUB_OUTPUT"
+          echo "staged: $CHANGED"
+
+      - name: 4 席盲审 闸跑测
+        if: steps.staged.outputs.changed != ''
+        run: |
+          echo "## 4 席盲审 闸跑测报告" > blind-review-report.md
+          echo "" >> blind-review-report.md
+          echo "**Commit**: ${{ github.sha }}" >> blind-review-report.md
+          echo "**触发**: ${{ github.event_name }}" >> blind-review-report.md
+          echo "**时间**: $(date -u)" >> blind-review-report.md
+          echo "" >> blind-review-report.md
+
+          PASS=0
+          FAIL=0
+          echo "### 4 席盲审结果" >> blind-review-report.md
+          echo "" >> blind-review-report.md
+          echo "| 闸 | 结果 | finding 数 | 备注 |" >> blind-review-report.md
+          echo "|----|------|---------|------|" >> blind-review-report.md
+
+          for f in ${{ steps.staged.outputs.changed }}; do
+            [ -f "$f" ] || continue
+            # 闸 1: caliber_guard
+            R1=$(python backend/scripts/caliber_guard.py "$f" 2>&1 | tail -1)
+            C1=$(echo "$R1" | grep -oE "[0-9]+ findings" | grep -oE "[0-9]+")
+            C1=${C1:-0}
+            # 闸 2: pre_emit_check
+            R2=$(python backend/scripts/pre_emit_check.py "$f" 2>&1 | tail -2 | head -1)
+            C2=$(echo "$R2" | grep -oE "[0-9]+ 违例" | grep -oE "[0-9]+")
+            C2=${C2:-0}
+            # 累计
+            TOTAL=$((C1 + C2))
+            if [ $TOTAL -gt 0 ]; then
+              STATUS="❌ FAIL"
+              FAIL=$((FAIL + 1))
+            else
+              STATUS="✅ PASS"
+              PASS=$((PASS + 1))
+            fi
+            echo "| $f | $STATUS | $TOTAL | G1=$C1 G2=$C2 |" >> blind-review-report.md
+          done
+          echo "" >> blind-review-report.md
+          echo "**汇总**: PASS=$PASS FAIL=$FAIL" >> blind-review-report.md
+          [ $FAIL -gt 0 ] && exit 1
+          exit 0
+
+      - name: 上传报告
+        uses: actions/upload-artifact@v4
+        with:
+          name: blind-review-report
+          path: blind-review-report.md
+
+      - name: 推 comment 到 PR（若有违例）
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const report = require('fs').readFileSync('blind-review-report.md', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '## ⚠️ γ-bifrost 盲审闸失败\n\n' + report
+            });

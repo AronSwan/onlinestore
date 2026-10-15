@@ -11,6 +11,8 @@ import { MetricsInterceptor } from './monitoring/metrics.interceptor';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { AllExceptionsProblemDetailsFilter } from './common/filters/all-exceptions.problem-details.filter';
 import { MonitoringService } from './monitoring/monitoring.service';
+import { DataSource } from 'typeorm';
+import { ensureDomainEventsFirewall, startFirewallHealthCheck } from './domain-events/firewall-bootstrap';
 
 // 已知不安全的开发/测试默认 JWT 密钥 —— 生产环境出现即拒绝启动
 const KNOWN_INSECURE_JWT_SECRETS = [
@@ -287,6 +289,13 @@ export async function bootstrap() {
   } else {
     logger.log('Swagger documentation is disabled in production');
   }
+
+  // 债-10 v6 立项批·触发器施工批(2026-10-15)：domain_events 防火墙连接钩子——
+  // sqlite 连接级 PRAGMA + 触发器幂等安装（dev synchronize 重建表后自愈）；
+  // 非 sqlite 数据源 no-op 并告警（TiDB 形态待 charter §6.2 拍板，挂账行 2）
+  await ensureDomainEventsFirewall(app.get(DataSource));
+  // 多实例自愈（gang-a G9）：定时幂等重装防他实例 synchronize 蒸发触发器（默认 5 分钟轮）
+  startFirewallHealthCheck(app.get(DataSource));
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
