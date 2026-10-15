@@ -1,0 +1,2 @@
+YA1 fixture file for hook test — to be deleted after verification.
+This file is in onlinestore_remediation worktree, staged for commit to test hook firing.
