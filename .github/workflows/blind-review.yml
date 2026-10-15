@@ -97,7 +97,7 @@ jobs:
 
       - name: 推 comment 到 PR（若有违例）
         if: failure()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const report = require('fs').readFileSync('blind-review-report.md', 'utf8');

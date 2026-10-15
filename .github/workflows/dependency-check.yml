@@ -95,7 +95,7 @@ jobs:
         
     - name: 创建 Issue（如果发现安全漏洞）
       if: failure()
-      uses: actions/github-script@v7
+      uses: actions/github-script@v9
       with:
         script: |
           const fs = require('fs');
